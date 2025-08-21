@@ -1,0 +1,271 @@
+// lib/orders.ts
+import crypto from "crypto";
+import path from "path";
+import { access, mkdir, readFile, writeFile } from "fs/promises";
+import fs from "fs";
+
+/* ========= Types ========= */
+export type OrderStatus = "pending" | "paid" | "expired";
+export type PaymentMethod = "card" | "usdt";
+export function isTransactionAlreadyUsed(txid: string): boolean {
+  for (const order of ORDERS.values()) {
+    if (order.txid === txid && order.status === "paid") {
+      return true;
+    }
+  }
+  return false;
+}
+export interface Order {
+  id: string;
+  email?: string;
+
+  // Product
+  productId: string;
+  productName: string;
+  filePath: string;            // filename only (we resolve from /private/robots)
+  amountUsd: number;
+
+  // Payment
+  method: PaymentMethod;       // "card" | "usdt"
+  status: OrderStatus;         // "pending" | "paid" | "expired"
+  txid?: string;               // keep lowercase and optional
+
+  // Time
+  createdAt: number;           // epoch ms
+  createdAtISO?: string;       // human-readable timestamp
+
+  // One-time download token
+  downloadTokenHash?: string;
+  downloadExpiresAt?: number;
+  downloadUsed?: boolean;
+
+  // Geo (best-effort)
+  ip?: string | null;
+  countryCode?: string | null; // e.g. "ES"
+  countryName?: string | null; // e.g. "Spain"
+}
+
+/* ========= Products ========= */
+export const PRODUCTS = {
+  scalperX1: {
+    id: "scalper-x1", // This must match what the backend expects
+    name: "Scalper X1",
+    filePath: "MZPrimer_Scalper_X1_V.1.ex5",
+    priceUsd: 129,
+  },
+  fibonacciPro: {
+    id: "fibonacci-pro",
+    name: "Fibonacci Pro",
+    filePath: "fibonacci_pro.ex5",
+    priceUsd: 149,
+  },
+  // 🚫 TEMPORARILY DISABLED - COMING SOON
+  // hedgeMatrix: {
+  //   id: "hedge-matrix",
+  //   name: "Hedge Matrix",
+  //   filePath: "hedge_matrix.ex5", 
+  //   priceUsd: 119,
+  // },
+  // 🚫 TEMPORARILY DISABLED - COMING SOON  
+  // trendSeekerAi: {
+  //   id: "trend-seeker-ai",
+  //   name: "Trend Seeker AI",
+  //   filePath: "trend_seeker_ai.ex5",
+  //   priceUsd: 290,
+  // },
+} as const;
+
+/* ========= File persistence ========= */
+const DATA_DIR = path.join(process.cwd(), "data");
+const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
+const ROBOTS_DIR = path.join(process.cwd(), "private", "robots");
+
+async function ensureDataDir() {
+  await mkdir(DATA_DIR, { recursive: true });
+}
+
+async function loadOrdersFromDisk(): Promise<Map<string, Order>> {
+  try {
+    await ensureDataDir();
+    const raw = await readFile(ORDERS_FILE, "utf8");
+    const arr = JSON.parse(raw) as Order[];
+    const m = new Map<string, Order>();
+    for (const o of arr) m.set(o.id, o);
+    
+    // 🚨 ADD DEBUG
+    console.log('📥 LOADED ORDERS FROM DISK:', arr.length, 'orders');
+    arr.forEach(order => {
+      console.log('   -', order.id, order.status, order.amountUsd, order.productName);
+    });
+    
+    return m;
+  } catch {
+    console.log('📂 No orders file found or error loading, starting fresh');
+    return new Map<string, Order>();
+  }
+}
+
+async function saveOrdersToDisk(map: Map<string, Order>) {
+  try {
+    await ensureDataDir();
+    const arr = Array.from(map.values());
+    await writeFile(ORDERS_FILE, JSON.stringify(arr, null, 2), "utf8");
+    
+    // 🚨 ADD DEBUG
+    console.log('💾 ORDERS SAVED TO DISK:', arr.length, 'orders');
+    
+  } catch (e) {
+    console.error("💥 FAILED to save orders.json:", e);
+  }
+}
+
+/* ========= Store ========= */
+// in-memory, hydrated from disk on boot
+const ORDERS: Map<string, Order> = new Map();
+loadOrdersFromDisk()
+  .then((m) => {
+    for (const [k, v] of m.entries()) ORDERS.set(k, v);
+    console.log(`🗂️  Orders loaded: ${ORDERS.size}`);
+  })
+  .catch((e) => console.error("Failed to load orders.json:", e));
+
+/* ========= CRUD helpers ========= */
+export function createOrder(
+  o: Omit<Order, "id" | "status" | "createdAt" | "createdAtISO">
+): Order {
+  const now = Date.now();
+
+  const order: Order = {
+    ...o,
+    id: crypto.randomUUID(),
+    status: "pending",
+    createdAt: now,
+    createdAtISO: new Date(now).toISOString(),
+  };
+
+  ORDERS.set(order.id, order);
+  
+  // 🚨 ADD DEBUG
+  console.log('🆕 ORDER CREATED:', {
+    id: order.id,
+    amount: order.amountUsd,
+    product: order.productName,
+    method: order.method,
+    status: order.status
+  });
+  
+  // persist in background if you already have saveOrdersToDisk
+  try { saveOrdersToDisk?.(ORDERS); } catch {}
+  
+  return order;
+}
+
+export function getOrder(id: string): Order | undefined {
+  const order = ORDERS.get(id);
+  
+  // 🚨 ADD DEBUG
+  console.log('🔍 GET ORDER:', id, 'Found:', !!order);
+  if (order) {
+    console.log('   - Status:', order.status);
+    console.log('   - Amount:', order.amountUsd);
+    console.log('   - Method:', order.method);
+  } else {
+    console.log('   - Available orders:', Array.from(ORDERS.keys()));
+  }
+  
+  return order;
+}
+
+export function updateOrder(id: string, patch: Partial<Order>): Order | undefined {
+  const cur = ORDERS.get(id);
+  if (!cur) {
+    console.log('❌ UPDATE FAILED: Order not found', id);
+    return undefined;
+  }
+  
+  const next: Order = { ...cur, ...patch };
+  ORDERS.set(id, next);
+  
+  // 🚨 ADD DEBUG
+  console.log('🔄 ORDER UPDATED:', id, {
+    fromStatus: cur.status,
+    toStatus: next.status,
+    changes: patch
+  });
+  
+  // persist in background
+  saveOrdersToDisk(ORDERS).catch(() => {});
+  return next;
+}
+
+/* ========= Token issuing (after payment) ========= */
+export function issueDownloadToken(orderId: string, ttlSeconds = 24 * 3600) {
+  const order = ORDERS.get(orderId);
+  if (!order) throw new Error("Order not found");
+  if (order.status !== "paid") throw new Error("Order not paid");
+
+  const rawToken = crypto.randomBytes(32).toString("base64url"); // ~43 chars
+  const hash = crypto.createHash("sha256").update(rawToken).digest("hex");   // 64 chars
+  const expires = Date.now() + ttlSeconds * 1000;
+
+  updateOrder(orderId, {
+    downloadTokenHash: hash,
+    downloadExpiresAt: expires,
+    downloadUsed: false,
+  });
+
+  return { rawToken, expiresAt: expires };
+}
+
+/* ========= Verify + consume token ========= */
+export async function verifyAndConsumeToken(token: string): Promise<Order> {
+  if (!token) throw new Error("Missing token");
+
+  // Allow raw base64url or already-hashed hex
+  const tokenHash =
+    token.length === 64 && /^[a-f0-9]+$/i.test(token)
+      ? token
+      : crypto.createHash("sha256").update(token).digest("hex");
+
+  // Find the order that owns this token hash
+  let order: Order | undefined;
+  for (const o of ORDERS.values()) {
+    if (o.downloadTokenHash === tokenHash) { order = o; break; }
+  }
+  if (!order) throw new Error("Invalid token");
+
+  // Check if order expired due to timeout (30 minutes)
+  const orderAge = Date.now() - order.createdAt;
+  const thirtyMinutesMs = 30 * 60 * 1000;
+  
+  if (order.status === "pending" && orderAge > thirtyMinutesMs) {
+    updateOrder(order.id, { status: "expired" });
+    throw new Error("Order expired - payment not completed within 30 minutes");
+  }
+
+  if (order.status !== "paid") throw new Error("Order not paid");
+  if (order.downloadUsed) throw new Error("Token already used");
+  if (!order.downloadExpiresAt || Date.now() > order.downloadExpiresAt) {
+    updateOrder(order.id, { status: "expired" });
+    throw new Error("Download token expired");
+  }
+
+  // Ensure file exists
+  const abs = path.join(ROBOTS_DIR, path.basename(order.filePath));
+  await access(abs, fs.constants.R_OK).catch(() => { throw new Error("File not available"); });
+
+  // One-time use
+  updateOrder(order.id, { downloadUsed: true });
+
+  return order;
+}
+
+/* ========= Query helpers (debug/admin) ========= */
+export function getAllOrders(): Order[] {
+  return Array.from(ORDERS.values()).sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/* periodic safeguard save */
+setInterval(() => {
+  saveOrdersToDisk(ORDERS).catch(() => {});
+}, 5 * 60 * 1000);

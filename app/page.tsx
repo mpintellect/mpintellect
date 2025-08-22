@@ -4,7 +4,6 @@ import Navbar from '@/components/Navbar';
 import MobileMenu from '@/components/MobileMenu';
 import Hero from '@/components/Hero';
 import MarketSection from '@/components/MarketSection';
-import ToolsSection from '@/components/ToolsSection';
 import LearningHub from '@/components/LearningHub';
 import AccountsSection from '@/components/AccountsSection';
 import AiToolsSection from '@/components/AiToolsSection';
@@ -21,7 +20,6 @@ export default function Home() {
       <MobileMenu />
       <Hero />
       <MarketSection />
-      <ToolsSection />
       <LearningHub />
       <AccountsSection />
       <AiToolsSection />

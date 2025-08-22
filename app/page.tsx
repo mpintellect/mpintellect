@@ -5,7 +5,7 @@ import MobileMenu from '@/components/MobileMenu';
 import Hero from '@/components/Hero';
 import MarketSection from '@/components/MarketSection';
 import ToolsSection from '@/components/ToolsSection';
-import LearningSection from '@/components/LearningSection';
+import LearningHub from '@/components/LearningHub';
 import AccountsSection from '@/components/AccountsSection';
 import AiToolsSection from '@/components/AiToolsSection';
 import ContactSection from '@/components/ContactSection';
@@ -22,7 +22,7 @@ export default function Home() {
       <Hero />
       <MarketSection />
       <ToolsSection />
-      <LearningSection />
+      <LearningHub />
       <AccountsSection />
       <AiToolsSection />
       <ContactSection />

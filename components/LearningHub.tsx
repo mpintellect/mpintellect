@@ -100,7 +100,7 @@ export default function LearningHub() {
         {/* Quick shortcuts */}
         <div className="learn-shortcuts">
           <a href="#market" className="chip">Weekly Levels</a>
-          <a href="/blog" className="chip">Blog Guides</a>
+          <Link href="/blog" className="chip">Blog Guides</Link>
           <a href="#accounts" className="chip">Open Account</a>
           <a href="#contacts" className="chip">Ask a Question</a>
         </div>

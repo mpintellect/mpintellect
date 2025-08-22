@@ -688,7 +688,6 @@ nav a:hover {
 
 /* === Shared Card Responsiveness Fix (AI Tools + Learning) === */
 
-.learning-card,
 .robot-card {
   width: 100%;
   max-width: 100%;
@@ -696,24 +695,17 @@ nav a:hover {
 }
 
 @media (max-width: 768px) {
-  .learning-card,
-  .robot-card {
+ .robot-card {
     padding: 1.25rem;
     border-radius: 1rem;
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.03);
   }
-
-  .learning-title,
   .robot-name {
     font-size: 1.25rem;
   }
-
-  .learning-description,
   .robot-description {
     font-size: 0.9rem;
   }
-
-  .learning-button,
   .robot-buy-button {
     width: 100%;
     text-align: center;
@@ -723,84 +715,12 @@ nav a:hover {
 
 /* Touch-safe animation fallback */
 @media (hover: none) {
-  .learning-card:hover,
   .robot-card:hover {
     transform: none;
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.04);
   }
 }
-/* === Default Learning Card Styling === */
-.learning-card {
-  background: #111;
-  border: 1px solid #222;
-  border-radius: 1.25rem;
-  padding: 1.5rem;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  text-align: left;
-  opacity: 0;
-  transform: translateY(40px);
 
-/* === Desktop Hover Effect === */
-@media (hover: hover) and (pointer: fine) {
-  .learning-card {
-    opacity: 1;
-    transform: translateY(0);
-    animation: none;
-  }
-
-  .learning-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 6px 20px rgba(255, 255, 0, 0.15);
-  }
-}
-/* === Keyframe: Scroll Fade Up Animation === */
-@keyframes scrollFadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* === Default Learning Card Styling === */
-.learning-card {
-  background: #111;
-  border: 1px solid #222;
-  border-radius: 1.25rem;
-  padding: 1.5rem;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  text-align: left;
-  opacity: 0;
-  transform: translateY(40px);
-
-  /* Mobile scroll animation (1 by 1) */
-  animation-name: scrollFadeUp;
-  animation-duration: 0.6s;
-  animation-timing-function: ease-out;
-  animation-fill-mode: both;
-  animation-timeline: view();
-  animation-range: entry 10% cover 30%;
-}
-
-/* === Desktop Hover Effect === */
-@media (hover: hover) and (pointer: fine) {
-  .learning-card {
-    opacity: 1;
-    transform: translateY(0);
-    animation: none;
-  }
-
-  .learning-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 6px 20px rgba(255, 255, 0, 0.15);
-  }
-}
-}  
 /* === Keyframes: Accounts Scroll Fade Up === */
 @keyframes accountFadeUp {
   from {

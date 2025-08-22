@@ -139,8 +139,8 @@ if (!PRODUCTS[catalogKey]) {
         },
       }),
     });
-  } catch (e: any) {
-    console.error("Order creation failed:", e);
-    return NextResponse.json({ error: e?.message || "Order creation failed" }, { status: 500 });
+  } catch (e: unknown) {
+    console.error("Order creation failed:", (e as Error)?.message || e);
+    return NextResponse.json({ error: (e as Error)?.message || "Order creation failed" }, { status: 500 });
   }
 }

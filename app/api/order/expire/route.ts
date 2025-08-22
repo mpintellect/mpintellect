@@ -31,8 +31,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ status: "unchanged", currentStatus: order.status });
 
-  } catch (e: any) {
-    console.error("Order expiration failed:", e);
-    return NextResponse.json({ error: e?.message || "Expiration failed" }, { status: 500 });
+  } catch (e: unknown) {
+    console.error("Order expiration failed:", (e as Error)?.message || e);
+    return NextResponse.json({ error: (e as Error)?.message || "Expiration failed" }, { status: 500 });
   }
 }

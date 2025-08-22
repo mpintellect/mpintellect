@@ -1,37 +1,54 @@
 // app/api/contact/route.ts
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
-import SMTPTransport from "nodemailer/lib/smtp-transport";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Build an SMTP transporter from env vars
 function getTransporter() {
   const { EMAIL_SERVER, EMAIL_PORT, EMAIL_USER, EMAIL_PASSWORD } = process.env;
+
   if (!EMAIL_SERVER || !EMAIL_USER || !EMAIL_PASSWORD) {
-    throw new Error("Missing EMAIL_SERVER/EMAIL_USER/EMAIL_PASSWORD");
+    throw new Error("Missing EMAIL_SERVER / EMAIL_USER / EMAIL_PASSWORD");
   }
+
   const portNum = Number(EMAIL_PORT || 465);
-  const secure = portNum === 465;
+  const secure = portNum === 465; // 465 = SSL, 587 = STARTTLS
+
   return nodemailer.createTransport({
     host: EMAIL_SERVER,
     port: portNum,
     secure,
     auth: { user: EMAIL_USER, pass: EMAIL_PASSWORD },
-  } as SMTPTransport.Options);
+  });
 }
 
 export async function POST(req: Request) {
   try {
-    const { name, email, message, hp } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { name, email, message, hp } = body as {
+      name?: string;
+      email?: string;
+      message?: string;
+      hp?: string; // honeypot
+    };
 
-    // Simple validations
-    if (hp) return NextResponse.json({ ok: true }); // honeypot => silently ignore
+    // Honeypot: bots fill hidden field -> silently accept
+    if (hp) return NextResponse.json({ ok: true });
+
+    // Basic validation
     if (!name || !email || !message) {
-      return NextResponse.json({ ok: false, error: "All fields required." }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "All fields required." },
+        { status: 400 }
+      );
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-      return NextResponse.json({ ok: false, error: "Invalid email." }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "Invalid email." },
+        { status: 400 }
+      );
     }
 
     const to = process.env.EMAIL_TO || process.env.EMAIL_FROM || "contact@mzprimer.com";
@@ -47,16 +64,16 @@ export async function POST(req: Request) {
     `;
 
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM || `"MZPrimer" <${process.env.EMAIL_USER}>`,
+      from: process.env.EMAIL_FROM || `"MZPrimer" <${process.env.EMAIL_USER || "no-reply@mzprimer.com"}>`,
       to,
-      replyTo: email, // so you can reply directly
+      replyTo: email,
       subject: `Contact Form: ${name}`,
       text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
       html,
     });
 
     return NextResponse.json({ ok: true });
-  } catch (err: any) {
+  } catch (err) {
     console.error("Contact send error:", err);
     return NextResponse.json({ ok: false, error: "Send failed." }, { status: 500 });
   }
@@ -66,5 +83,7 @@ function escapeHtml(s: string) {
   return String(s)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }

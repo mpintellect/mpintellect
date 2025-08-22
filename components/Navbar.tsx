@@ -7,10 +7,7 @@ export default function Navbar() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -20,7 +17,7 @@ export default function Navbar() {
 
   return (
     <nav className="w-full flex justify-end items-center py-4 px-6 bg-black fixed top-0 z-50 space-x-6">
-      <a href="/" className="text-white hover:text-yellow-400 transition">Home</a>
+      <Link href="/" className="text-white hover:text-yellow-400 transition">Home</Link>
       <Link href="/#market" className="text-white hover:text-yellow-400 transition">Market</Link>
       <Link href="/#learning" className="text-white hover:text-yellow-400 transition">Learning</Link>
       <Link href="/#accounts" className="text-white hover:text-yellow-400 transition">Accounts</Link>

@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     } catch {}
 
     return NextResponse.json({ ok: true, token: rawToken, expiresAt }, { status: 200 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || "Webhook error" }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message || "Webhook error" }, { status: 500 });
   }
 }

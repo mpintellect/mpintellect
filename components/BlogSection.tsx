@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 const blogPosts = [
   {
@@ -32,7 +33,8 @@ const blogPosts = [
     slug: 'iran-israel-tensions-ar',
     date: '17.06.2025 23:33',
     image: 'https://i.postimg.cc/c4t4Qt0S/imftfttage.png',
-    description: 'تحليل معمّق للحظة الأهم في التوترات الجيوسياسية الحالية: كيف يتفاعل سوق النفط والذهب مع تطورات ما قبل منتصف الليل.',
+    description:
+      'تحليل معمّق للحظة الأهم في التوترات الجيوسياسية الحالية: كيف يتفاعل سوق النفط والذهب مع تطورات ما قبل منتصف الليل.',
     lang: 'ar',
   },
   {
@@ -40,9 +42,10 @@ const blogPosts = [
     slug: 'iran-ports-analysis-ar',
     date: '18.06.2025 00:28',
     image: 'https://i.postimg.cc/RVFDWw1M/imaawfscge.png',
-    description: 'مضيق هرمز ليس وحده في الصورة – جزيرة خارك قد تكون مفتاح الأزمة القادمة في أسعار النفط العالمية.',
+    description:
+      'مضيق هرمز ليس وحده في الصورة – جزيرة خارك قد تكون مفتاح الأزمة القادمة في أسعار النفط العالمية.',
     lang: 'ar',
-  }
+  },
 ];
 
 export default function BlogSection() {
@@ -54,24 +57,28 @@ export default function BlogSection() {
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-         {blogPosts.map((post) => {
-  console.log('Rendered post slug:', post.slug); // ← ADD THIS HERE
+          {blogPosts.map((post) => (
+            <div key={post.slug} className="blog-card">
+              <Image
+                src={post.image}
+                alt={post.title}
+                width={400}
+                height={250}
+                sizes="(max-width: 768px) 100vw, 400px"
+                className="blog-card-img"
+              />
 
-  return (
-    <div key={post.slug} className="blog-card">
-      <img src={post.image} alt={post.title} />
-      <h3 className="blog-card-title">{post.title}</h3>
-      <p className="blog-card-desc">{post.description}</p>
+              <h3 className="blog-card-title">{post.title}</h3>
+              <p className="blog-card-desc">{post.description}</p>
 
-      <div className="blog-card-footer">
-        <span>{post.date}</span>
-        <Link href={`/blog/${post.slug}`} className="blog-card-btn">
-          Read More →
-        </Link>
-      </div>
-    </div>
-  );
-})}
+              <div className="blog-card-footer">
+                <span className="blog-card-date">{post.date}</span>
+                <Link href={`/blog/${post.slug}`} className="blog-card-btn">
+                  Read More →
+                </Link>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

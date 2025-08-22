@@ -2,13 +2,13 @@
 import { NextResponse } from "next/server";
 import path from "path";
 import { stat } from "fs/promises";
-import { createReadStream } from "fs";
+import { createReadStream, ReadStream } from "fs";
 import { verifyAndConsumeToken } from "../../lib/orders";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const SECURITY_HEADERS = {
+const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
   "Cache-Control": "no-store, max-age=0",
   "X-Robots-Tag": "noindex",
@@ -19,29 +19,49 @@ export async function GET(req: Request) {
   const token = searchParams.get("token") || "";
 
   if (!token) {
-    return NextResponse.json({ error: "Download token required" }, { status: 400, headers: SECURITY_HEADERS });
+    return NextResponse.json(
+      { error: "Download token required" },
+      { status: 400, headers: SECURITY_HEADERS }
+    );
   }
 
   try {
     const order = await verifyAndConsumeToken(token);
-    const safeName = path.basename(order.filePath || "");
-    if (!/\.(ex5|mq5)$/i.test(safeName)) throw new Error("Only .ex5/.mq5 files are allowed");
+    if (!order?.filePath) {
+      return NextResponse.json(
+        { error: "Invalid order or file not found" },
+        { status: 400, headers: SECURITY_HEADERS }
+      );
+    }
 
-    const abs = path.join(process.cwd(), "private", "robots", safeName);
-    const st = await stat(abs); // throws if not found
+    const safeName = path.basename(order.filePath);
+    if (!/\.(ex5|mq5)$/i.test(safeName)) {
+      return NextResponse.json(
+        { error: "Only .ex5/.mq5 files are allowed" },
+        { status: 400, headers: SECURITY_HEADERS }
+      );
+    }
 
-    const stream = createReadStream(abs);
-    return new NextResponse(stream as any, {
+    const absPath = path.join(process.cwd(), "private", "robots", safeName);
+    const fileStat = await stat(absPath); // throws if not found
+    const fileStream: ReadStream = createReadStream(absPath);
+
+    return new NextResponse(fileStream as unknown as BodyInit, {
       status: 200,
       headers: {
         ...SECURITY_HEADERS,
         "Content-Type": "application/octet-stream",
         "Content-Disposition": `attachment; filename="${encodeURIComponent(safeName)}"`,
-        "Content-Length": String(st.size),
+        "Content-Length": String(fileStat.size),
       },
     });
-  } catch (e: any) {
-    console.error("Download error:", e?.message || e);
-    return NextResponse.json({ error: e?.message || "Download failed" }, { status: 400, headers: SECURITY_HEADERS });
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : "Unexpected download error";
+    console.error("Download error:", message);
+    return NextResponse.json(
+      { error: message },
+      { status: 400, headers: SECURITY_HEADERS }
+    );
   }
 }

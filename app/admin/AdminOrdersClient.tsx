@@ -22,59 +22,50 @@ type Order = {
 
 export default function AdminOrdersClient({ initialOrders }: { initialOrders: Order[] }) {
   const [orders] = useState<Order[]>(initialOrders);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState<string>('');
   const [status, setStatus] = useState<'all' | 'pending' | 'paid' | 'expired'>('all');
   const [method, setMethod] = useState<'all' | 'usdt' | 'card'>('all');
 
   // --- date range state (default: last 30 days → today) ---
-  function fmtDate(d: Date) {
-    return d.toISOString().slice(0, 10); // YYYY-MM-DD
-  }
+  const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const d30 = new Date(today);
-  d30.setDate(d30.getDate() - 29); // 30-day window
+  d30.setDate(d30.getDate() - 29);
 
   const [startDate, setStartDate] = useState<string>(fmtDate(d30));
   const [endDate, setEndDate] = useState<string>(fmtDate(today));
 
-  // convert YYYY-MM-DD → timestamp range (inclusive end)
-  function toDayStartTs(isoDate: string) {
-    const d = new Date(isoDate + 'T00:00:00');
-    return d.getTime();
-  }
-  function toDayEndTs(isoDate: string) {
-    const d = new Date(isoDate + 'T23:59:59.999');
-    return d.getTime();
-  }
+  const toDayStartTs = (isoDate: string) => new Date(isoDate + 'T00:00:00').getTime();
+  const toDayEndTs = (isoDate: string) => new Date(isoDate + 'T23:59:59.999').getTime();
 
-  // guard invalid ranges (e.g., blank inputs)
   const rangeStart = startDate ? toDayStartTs(startDate) : Number.NEGATIVE_INFINITY;
   const rangeEnd = endDate ? toDayEndTs(endDate) : Number.POSITIVE_INFINITY;
 
-  // Only keep orders created within the selected range
-  const ordersInRange = useMemo(() => {
-    return orders.filter((o) => o.createdAt >= rangeStart && o.createdAt <= rangeEnd);
-  }, [orders, rangeStart, rangeEnd]);
+  // filter orders by date
+  const ordersInRange = useMemo(
+    () => orders.filter(o => o.createdAt >= rangeStart && o.createdAt <= rangeEnd),
+    [orders, rangeStart, rangeEnd]
+  );
 
   // quick presets
-  function preset(days: number) {
+  const preset = (days: number) => {
     const t = new Date();
     t.setHours(0, 0, 0, 0);
     const s = new Date(t);
     s.setDate(s.getDate() - (days - 1));
     setStartDate(fmtDate(s));
     setEndDate(fmtDate(t));
-  }
-  function clearRange() {
+  };
+  const clearRange = () => {
     setStartDate('');
     setEndDate('');
-  } // all time
+  };
 
-  // filter in-memory (fast, orders are small)
+  // filter by status/method/query
   const filtered = useMemo(() => {
-    return ordersInRange.filter((o) => {
+    return ordersInRange.filter(o => {
       if (status !== 'all' && o.status !== status) return false;
       if (method !== 'all' && o.method !== method) return false;
       if (query.trim()) {
@@ -95,38 +86,39 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
     });
   }, [ordersInRange, status, method, query]);
 
-  // --- summary (uses the selected date range) ---
+  // summary stats
   const paidInRange = ordersInRange
-    .filter((o) => o.status === 'paid')
+    .filter(o => o.status === 'paid')
     .reduce((s, o) => s + (Number(o.amountUsd) || 0), 0);
 
   const counts = {
-    pending: ordersInRange.filter((o) => o.status === 'pending').length,
-    paid: ordersInRange.filter((o) => o.status === 'paid').length,
-    expired: ordersInRange.filter((o) => o.status === 'expired').length,
+    pending: ordersInRange.filter(o => o.status === 'pending').length,
+    paid: ordersInRange.filter(o => o.status === 'paid').length,
+    expired: ordersInRange.filter(o => o.status === 'expired').length,
     total: ordersInRange.length,
   };
 
-  // revenue by day sparkline for the current range (cap to last 30 labels)
+  // revenue sparkline
   const buckets: Record<string, number> = {};
-  ordersInRange.forEach((o) => {
+  ordersInRange.forEach(o => {
     if (o.status !== 'paid') return;
     const key = new Date(new Date(o.createdAt).setHours(0, 0, 0, 0))
       .toISOString()
       .slice(0, 10);
     buckets[key] = (buckets[key] || 0) + (Number(o.amountUsd) || 0);
   });
-  const keysSorted = Object.keys(buckets).sort(); // chronological
-  const lastKeys = keysSorted.slice(-30); // at most 30 bars
+  const keysSorted = Object.keys(buckets).sort();
+  const lastKeys = keysSorted.slice(-30);
   const sparkLabels = lastKeys;
-  const sparkValues = lastKeys.map((k) => buckets[k]);
+  const sparkValues = lastKeys.map(k => buckets[k]);
   const sparkMax = Math.max(1, ...sparkValues);
 
   const totalPaidFiltered = filtered
-    .filter((o) => o.status === 'paid')
+    .filter(o => o.status === 'paid')
     .reduce((sum, o) => sum + (Number(o.amountUsd) || 0), 0);
 
-  function downloadCSV() {
+  // CSV export
+  const downloadCSV = () => {
     const headers = [
       'createdAtISO',
       'status',
@@ -140,7 +132,7 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
       'orderId',
     ];
 
-    const rows = filtered.map((o) => [
+    const rows = filtered.map(o => [
       o.createdAtISO || new Date(o.createdAt).toISOString(),
       o.status,
       o.productName,
@@ -154,7 +146,7 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
     ]);
 
     const csv = [headers, ...rows]
-      .map((cols) => cols.map(escapeCSV).join(','))
+      .map(cols => cols.map(escapeCSV).join(','))
       .join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -167,7 +159,7 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-  }
+  };
 
   return (
     <>
@@ -177,12 +169,12 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
           className="admin-input"
           placeholder="Search…"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={e => setQuery(e.target.value)}
         />
         <select
           className="admin-select"
           value={status}
-          onChange={(e) => setStatus(e.target.value as any)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatus(e.target.value as typeof status)}
         >
           <option value="all">All statuses</option>
           <option value="pending">Pending</option>
@@ -192,7 +184,7 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
         <select
           className="admin-select"
           value={method}
-          onChange={(e) => setMethod(e.target.value as any)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setMethod(e.target.value as typeof method)}
         >
           <option value="all">All methods</option>
           <option value="usdt">USDT</option>
@@ -202,13 +194,9 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
         {/* Date range */}
         <div className="date-range">
           <label>From</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
+          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
           <label>To</label>
-          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
         </div>
 
         {/* Presets */}
@@ -229,7 +217,7 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
         </button>
       </div>
 
-      {/* Summary widgets (for selected date range) */}
+      {/* Summary */}
       <div className="admin-summary">
         <div className="card">
           <div className="card-title">Orders (in range)</div>
@@ -246,7 +234,7 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
         </div>
       </div>
 
-      {/* Tiny sparkline */}
+      {/* Sparkline */}
       <div className="spark-wrap">
         <div className="spark-title">Revenue per day (in range)</div>
         <div className="spark-line">
@@ -267,7 +255,7 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
         )}
       </div>
 
-      {/* Quick stats for the filtered set */}
+      {/* Stats */}
       <div className="admin-stats">
         <div className="stat">
           <div className="stat-label">Filtered Orders</div>
@@ -297,7 +285,7 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
             </tr>
           </thead>
           <tbody>
-            {filtered.map((o) => (
+            {filtered.map(o => (
               <tr key={o.id}>
                 <td>{o.createdAtISO || new Date(o.createdAt).toISOString()}</td>
                 <td>{o.status}</td>

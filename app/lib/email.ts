@@ -75,7 +75,7 @@ function buildHtml(order: OrderEmailDetails, downloadLink: string) {
     
     <!-- ✅ Logo smaller, top-right -->
     <div style="text-align:right; margin-bottom:12px;">
-      <img src="https://i.postimg.cc/rwN7Fk5Z/mzlogotransap.png" 
+      <Image src="https://i.postimg.cc/rwN7Fk5Z/mzlogotransap.png" 
            alt="MZPrimer Logo"
            style="height:32px;width:auto;"/>
     </div>

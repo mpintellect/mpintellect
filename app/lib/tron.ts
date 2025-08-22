@@ -12,16 +12,16 @@ export interface TRC20Transaction {
   };
   from: string;
   to: string;
-  value: string;
+  value: string;            // string in Sun (1e-6 USDT)
   type: 'Transfer';
 }
 
 export interface VerifyPaymentParams {
   txid?: string;
-  expectedAmount: number;
-  walletAddress: string;
-  contractAddress?: string;
-  maxAgeMinutes?: number;
+  expectedAmount: number;   // in USDT (e.g., 10.00)
+  walletAddress: string;    // base58 (T...)
+  contractAddress?: string; // defaults to USDT
+  maxAgeMinutes?: number;   // default 60
 }
 
 export interface PaymentVerificationResult {
@@ -30,122 +30,102 @@ export interface PaymentVerificationResult {
   error?: string;
 }
 
-// Constants
-const USDT_CONTRACT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // USDT TRC20 contract
-const TRONGRID_API_URL = 'https://api.trongrid.io';
-const DEFAULT_MAX_AGE_MINUTES = 60; // 1 hour
+// Simple TronGrid list shape
+type TronGridList<T> = { data: T[] };
 
-/**
- * Verifies a USDT (TRC20) payment
- */
+// Constants
+const USDT_CONTRACT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // USDT TRC20
+const TRONGRID_API_URL = 'https://api.trongrid.io';
+const DEFAULT_MAX_AGE_MINUTES = 60;
+
+/** Verifies a USDT (TRC20) payment */
 export async function verifyPayment({
   txid,
   expectedAmount,
   walletAddress,
   contractAddress = USDT_CONTRACT_ADDRESS,
-  maxAgeMinutes = DEFAULT_MAX_AGE_MINUTES
+  maxAgeMinutes = DEFAULT_MAX_AGE_MINUTES,
 }: VerifyPaymentParams): Promise<PaymentVerificationResult> {
   try {
-    // Validate inputs
     if (!process.env.TRONGRID_API_KEY) {
       throw new Error('TRONGRID_API_KEY environment variable not configured');
     }
-
     if (!walletAddress) {
       throw new Error('Wallet address is required');
     }
 
-    // Get transactions for the wallet
     const transactions = await getTRC20Transactions(walletAddress, contractAddress);
 
-    // Find matching transaction
     const maxAgeMs = maxAgeMinutes * 60 * 1000;
     const now = Date.now();
-    const expectedAmountInSun = Math.floor(expectedAmount * 10**6); // USDT has 6 decimals
+    const expectedSun = Math.floor(expectedAmount * 1e6); // USDT has 6 decimals
 
-    const matchingTx = transactions.find(tx => {
-      // Check if specific transaction ID was requested
+    const match = transactions.find((tx: TRC20Transaction) => {
       if (txid && tx.transaction_id !== txid) return false;
 
-      // Check transaction age
-      const txAge = now - tx.block_timestamp;
-      if (txAge > maxAgeMs) return false;
+      const isFresh = now - tx.block_timestamp <= maxAgeMs;
+      if (!isFresh) return false;
 
-      // Check amount (with 1% tolerance to account for exchange rate fluctuations)
-      const txAmount = parseInt(tx.value);
-      const minAmount = expectedAmountInSun * 0.99;
-      return txAmount >= minAmount;
+      const txSun = Number.parseInt(tx.value, 10);
+      // Allow tiny tolerance (1%)
+      return txSun >= expectedSun * 0.99;
     });
 
-    if (!matchingTx) {
+    if (!match) {
       return {
         success: false,
-        error: txid 
+        error: txid
           ? 'Specified transaction does not match requirements'
-          : 'No matching transaction found'
+          : 'No matching transaction found',
       };
     }
 
-    return {
-      success: true,
-      transaction: matchingTx
-    };
-
+    return { success: true, transaction: match };
   } catch (error) {
     console.error('Payment verification failed:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Payment verification failed'
+      error: error instanceof Error ? error.message : 'Payment verification failed',
     };
   }
 }
 
-/**
- * Fetches TRC20 transactions for a wallet
- */
+/** Fetch TRC20 transactions for a wallet */
 async function getTRC20Transactions(
   walletAddress: string,
   contractAddress: string,
   limit = 50
 ): Promise<TRC20Transaction[]> {
   const url = `${TRONGRID_API_URL}/v1/accounts/${walletAddress}/transactions/trc20`;
-  
-  const response = await axios.get(url, {
+
+  const res = await axios.get<TronGridList<TRC20Transaction>>(url, {
     params: {
       contract_address: contractAddress,
       limit,
-      order_by: 'block_timestamp,desc'
+      order_by: 'block_timestamp,desc',
     },
     headers: {
-      'TRON-PRO-API-KEY': process.env.TRONGRID_API_KEY!
-    }
+      'TRON-PRO-API-KEY': process.env.TRONGRID_API_KEY as string,
+    },
   });
 
-  if (!response.data?.data) {
-    throw new Error('Invalid response from TRON API');
-  }
-
-  return response.data.data
-    .filter((tx: any) => tx.type === 'Transfer' && tx.to === walletAddress);
+  const list = res.data?.data ?? [];
+  return list.filter(
+    (tx: TRC20Transaction) =>
+      tx.type === 'Transfer' &&
+      (tx.to || '').toLowerCase() === walletAddress.toLowerCase()
+  );
 }
 
-/**
- * Converts a TRON address to its base58 format
- */
+/** Convert TRON hex address → base58 (basic helper) */
 export function toBase58Address(address: string): string {
-  if (address.startsWith('T')) {
-    return address;
-  }
-  if (address.startsWith('41')) {
-    return 'T' + address.substring(2);
-  }
+  if (address.startsWith('T')) return address;
+  if (address.startsWith('41')) return 'T' + address.substring(2);
   throw new Error('Invalid TRON address format');
 }
 
-/**
- * Converts from sun units (smallest USDT unit) to standard units
- */
+/** Convert from sun (1e-6) to USDT */
 export function fromSun(value: number | string, decimals = 6): number {
-  const numericValue = typeof value === 'string' ? parseInt(value) : value;
-  return numericValue / Math.pow(10, decimals);
+  const n = typeof value === 'string' ? Number.parseInt(value, 10) : value;
+  return n / Math.pow(10, decimals);
 }

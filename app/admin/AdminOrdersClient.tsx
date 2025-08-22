@@ -2,6 +2,11 @@
 
 import { useMemo, useState } from 'react';
 
+const fmtDateTime = (ts: number, tz: 'local' | 'utc') =>
+  tz === 'utc'
+    ? new Date(ts).toISOString().replace('T', ' ').replace('Z', ' UTC')
+    : new Date(ts).toLocaleString(undefined, { hour12: false });
+
 type Order = {
   id: string;
   email?: string | null;
@@ -25,6 +30,7 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
   const [query, setQuery] = useState<string>('');
   const [status, setStatus] = useState<'all' | 'pending' | 'paid' | 'expired'>('all');
   const [method, setMethod] = useState<'all' | 'usdt' | 'card'>('all');
+  const [tz, setTz] = useState<'local' | 'utc'>('local');
 
   // --- date range state (default: last 30 days → today) ---
   const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
@@ -120,7 +126,7 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
   // CSV export
   const downloadCSV = () => {
     const headers = [
-      'createdAtISO',
+      'createdAt',
       'status',
       'product',
       'amountUsd',
@@ -133,7 +139,7 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
     ];
 
     const rows = filtered.map(o => [
-      o.createdAtISO || new Date(o.createdAt).toISOString(),
+      fmtDateTime(o.createdAt, tz),
       o.status,
       o.productName,
       String(o.amountUsd),
@@ -174,7 +180,9 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
         <select
           className="admin-select"
           value={status}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatus(e.target.value as typeof status)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+            setStatus(e.target.value as typeof status)
+          }
         >
           <option value="all">All statuses</option>
           <option value="pending">Pending</option>
@@ -184,7 +192,9 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
         <select
           className="admin-select"
           value={method}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setMethod(e.target.value as typeof method)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+            setMethod(e.target.value as typeof method)
+          }
         >
           <option value="all">All methods</option>
           <option value="usdt">USDT</option>
@@ -211,6 +221,17 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
             All time
           </button>
         </div>
+
+        {/* Timezone selector */}
+        <select
+          className="admin-select"
+          value={tz}
+          onChange={(e) => setTz(e.target.value as 'local' | 'utc')}
+          title="Timezone"
+        >
+          <option value="local">Local time</option>
+          <option value="utc">UTC</option>
+        </select>
 
         <button className="admin-btn" onClick={downloadCSV}>
           Export CSV
@@ -287,7 +308,7 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
           <tbody>
             {filtered.map(o => (
               <tr key={o.id}>
-                <td>{o.createdAtISO || new Date(o.createdAt).toISOString()}</td>
+                <td>{fmtDateTime(o.createdAt, tz)}</td>
                 <td>{o.status}</td>
                 <td>{o.productName}</td>
                 <td>${Number(o.amountUsd).toFixed(2)}</td>

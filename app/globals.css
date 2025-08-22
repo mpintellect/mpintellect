@@ -2691,19 +2691,3 @@ h1.page-title {
   background: rgba(250, 204, 21, 0.2);
   box-shadow: 0 0 10px rgba(250, 204, 21, 0.4);
 }
-/* Ensure cards are visible even if animation fails */
-.learning-card {
-  opacity: 1;                 /* default visible */
-  transform: none;
-  animation: none;
-}
-
-/* Only animate when the browser allows motion */
-@media (prefers-reduced-motion: no-preference) {
-  .learning-card {
-    opacity: 0;
-    transform: translateY(8px);
-    animation: learningFade .5s ease forwards;
-    animation-delay: var(--delay, 0s);
-  }
-}

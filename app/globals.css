@@ -2691,22 +2691,97 @@ h1.page-title {
   background: rgba(250, 204, 21, 0.2);
   box-shadow: 0 0 10px rgba(250, 204, 21, 0.4);
 }
-/* Fallback: ensure learning cards are visible without JS */
+/* === Learning Section (final, conflict-free) === */
+
+.learning-section {
+  /* Tailwind via @apply is fine if you use it, here’s plain CSS for safety */
+  padding: 4rem 1rem;
+  background: #000;
+  color: #fff;
+  text-align: center;
+  width: 100%;
+}
+
+.section-title {
+  font-size: 2rem; /* ~text-3xl */
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+  color: #9ca3af; /* gray-400 */
+  font-size: 1rem;
+  margin: 0 auto 2rem auto;
+  max-width: 42rem; /* ~max-w-2xl */
+}
+
+/* Grid */
+.learning-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+  max-width: 72rem; /* ~max-w-6xl */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) { /* sm */
+  .learning-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) { /* lg */
+  .learning-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Card */
+.learning-card {
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 1rem; /* 1.25rem is fine too */
+  padding: 1.5rem;
+  text-align: left;
+  box-shadow: 0 0 10px rgba(255,255,255,0.05);
+  transition: transform .3s ease, box-shadow .3s ease;
+
+  /* IMPORTANT: visible by default */
+  opacity: 1;
+  transform: none;
+  animation: learning-fade-up .5s ease var(--delay, 0s) both;
+}
+
+/* Hover (desktop) */
+@media (hover: hover) and (pointer: fine) {
+  .learning-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 6px 20px rgba(250, 204, 21, 0.15); /* yellow glow */
+  }
+}
+
+/* Headings & text inside cards */
+.learning-card h3 {
+  font-size: 1.125rem; /* text-lg */
+  font-weight: 600;
+  margin-bottom: .5rem;
+  color: #facc15; /* yellow-400 */
+}
+.learning-card p {
+  font-size: .95rem;
+  color: #d1d5db; /* gray-300 */
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+/* Button */
+.learn-btn {
+  display: inline-block;
+  font-size: .9rem;
+  font-weight: 600;
+  color: #facc15;
+  text-decoration: none;
+}
+.learn-btn:hover { color: #fde047; }
+
+/* Simple fade-up */
 @keyframes learning-fade-up {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: none; }
 }
-
-.learning-card {
-  opacity: 1 !important;
-  transform: none !important;
-  animation: learning-fade-up .5s ease var(--delay, 0s) both;
-}
-
-.learning-card-grid {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0,1fr));
-  gap: 1rem;
-}
-@media (min-width: 640px) { .learning-card-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
-@media (min-width: 1024px){ .learning-card-grid { grid-template-columns: repeat(4, minmax(0,1fr)); } }

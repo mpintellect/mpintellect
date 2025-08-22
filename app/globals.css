@@ -522,39 +522,6 @@ nav a:hover {
   color: #ccc;
   margin-left: 0.5rem;
 }
-/* === Learning Section === */
-.learning-section {
-  @apply bg-black text-white py-16 px-4 w-full text-center;
-}
-
-.section-title {
-  @apply text-3xl md:text-4xl font-bold mb-2;
-}
-
-.section-subtitle {
-  @apply text-gray-400 text-sm md:text-base mb-8 max-w-2xl mx-auto;
-}
-
-.learning-grid {
-  @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-w-6xl mx-auto;
-}
-
-.learning-card {
-  @apply bg-zinc-900 p-4 rounded-xl border border-zinc-700 shadow hover:shadow-lg transition duration-300 text-left;
-  min-height: 180px;
-}
-
-.learning-card h3 {
-  @apply text-lg font-semibold mb-2 text-yellow-400;
-}
-
-.learning-card p {
-  @apply text-sm text-gray-300 leading-snug mb-4;
-}
-
-.learn-btn {
-  @apply text-sm text-yellow-300 hover:text-yellow-400 font-medium;
-}
 /* === Live Ticker Styling === */
 
 .live-ticker-wrapper {

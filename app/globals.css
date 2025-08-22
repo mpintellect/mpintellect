@@ -2494,97 +2494,50 @@ h1.page-title {
   background: rgba(250, 204, 21, 0.2);
   box-shadow: 0 0 10px rgba(250, 204, 21, 0.4);
 }
-/* === Learning Section (final, conflict-free) === */
+/* === Learn Hub === */
+.learn-hub { width: 100%; background:#000; color:#fff; padding:4rem 1rem; }
+.learn-wrap { max-width: 1120px; margin: 0 auto; }
 
-.learning-section {
-  /* Tailwind via @apply is fine if you use it, here’s plain CSS for safety */
-  padding: 4rem 1rem;
-  background: #000;
-  color: #fff;
-  text-align: center;
-  width: 100%;
-}
+.learn-head { text-align:center; margin-bottom:1.75rem; }
+.learn-title { font-weight:800; font-size:clamp(1.6rem, 2.5vw, 2.2rem); }
+.learn-sub { color:#bdbdbd; margin-top:.5rem; }
 
-.section-title {
-  font-size: 2rem; /* ~text-3xl */
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+.learn-tabs {
+  display:flex; flex-wrap:wrap; gap:.5rem; justify-content:center; margin: 1rem auto 1.25rem;
 }
+.learn-tab {
+  border:1px solid #222; background:#0f0f0f; color:#dcdcdc;
+  padding:.6rem .9rem; border-radius:999px; font-weight:600; transition:.2s;
+}
+.learn-tab:hover { border-color:#333; transform:translateY(-1px); }
+.learn-tab.is-active { background:#facc15; color:#111; border-color:#facc15; }
 
-.section-subtitle {
-  color: #9ca3af; /* gray-400 */
-  font-size: 1rem;
-  margin: 0 auto 2rem auto;
-  max-width: 42rem; /* ~max-w-2xl */
+.learn-card {
+  background:#0e0e0e; border:1px solid #1f1f1f; border-radius:1.25rem;
+  padding:1.25rem; box-shadow:0 0 0 1px rgba(255,255,255,.02) inset;
 }
+.learn-points { display:grid; gap:.5rem; margin:0 0 1rem 0; padding:0; list-style:none; }
+.learn-point { color:#e6e6e6; line-height:1.4; }
 
-/* Grid */
-.learning-grid {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 1rem;
-  max-width: 72rem; /* ~max-w-6xl */
-  margin-left: auto;
-  margin-right: auto;
+.learn-cta {
+  display:inline-block; background:#facc15; color:#111; font-weight:800;
+  padding:.55rem 1.1rem; border-radius:12px; text-decoration:none; transition:.2s;
 }
+.learn-cta:hover { background:#fde047; }
 
-@media (min-width: 640px) { /* sm */
-  .learning-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.learn-notes {
+  display:grid; gap:.5rem; margin-top:1rem;
+  grid-template-columns: repeat(1, minmax(0,1fr));
 }
-@media (min-width: 1024px) { /* lg */
-  .learning-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
+@media (min-width:768px){ .learn-notes{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
 
-/* Card */
-.learning-card {
-  background: #111;
-  border: 1px solid #222;
-  border-radius: 1rem; /* 1.25rem is fine too */
-  padding: 1.5rem;
-  text-align: left;
-  box-shadow: 0 0 10px rgba(255,255,255,0.05);
-  transition: transform .3s ease, box-shadow .3s ease;
+.mini { background:#0a0a0a; border:1px solid #1b1b1b; border-radius:.8rem; padding:.6rem .7rem; }
+.mini-k { color:#a3a3a3; font-weight:700; margin-right:.4rem; }
+.mini-v { color:#eaeaea; }
 
-  /* IMPORTANT: visible by default */
-  opacity: 1;
-  transform: none;
-  animation: learning-fade-up .5s ease var(--delay, 0s) both;
+.learn-shortcuts { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1rem; justify-content:center; }
+.chip {
+  border:1px solid #222; color:#cfcfcf; padding:.45rem .8rem; border-radius:999px;
+  text-decoration:none; background:#0f0f0f; font-weight:600; transition:.2s;
 }
-
-/* Hover (desktop) */
-@media (hover: hover) and (pointer: fine) {
-  .learning-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 6px 20px rgba(250, 204, 21, 0.15); /* yellow glow */
-  }
-}
-
-/* Headings & text inside cards */
-.learning-card h3 {
-  font-size: 1.125rem; /* text-lg */
-  font-weight: 600;
-  margin-bottom: .5rem;
-  color: #facc15; /* yellow-400 */
-}
-.learning-card p {
-  font-size: .95rem;
-  color: #d1d5db; /* gray-300 */
-  line-height: 1.5;
-  margin-bottom: 1rem;
-}
-
-/* Button */
-.learn-btn {
-  display: inline-block;
-  font-size: .9rem;
-  font-weight: 600;
-  color: #facc15;
-  text-decoration: none;
-}
-.learn-btn:hover { color: #fde047; }
-
-/* Simple fade-up */
-@keyframes learning-fade-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: none; }
-}
+.chip:hover { border-color:#333; transform:translateY(-1px); }

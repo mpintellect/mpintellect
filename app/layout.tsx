@@ -93,6 +93,19 @@ export default function Layout({ children }: { children: ReactNode }) {
     });
   `}
 </Script>
+{/* Google Analytics (GA4) */}
+<Script
+  src="https://www.googletagmanager.com/gtag/js?id=G-Y5VJQCKSQE"
+  strategy="afterInteractive"
+/>
+<Script id="ga4-init" strategy="afterInteractive">
+  {`
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Y5VJQCKSQE', { anonymize_ip: true });
+  `}
+</Script>
       </body>
     </html>
   );

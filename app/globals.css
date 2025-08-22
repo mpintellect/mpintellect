@@ -2691,3 +2691,22 @@ h1.page-title {
   background: rgba(250, 204, 21, 0.2);
   box-shadow: 0 0 10px rgba(250, 204, 21, 0.4);
 }
+/* Fallback: ensure learning cards are visible without JS */
+@keyframes learning-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.learning-card {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: learning-fade-up .5s ease var(--delay, 0s) both;
+}
+
+.learning-card-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0,1fr));
+  gap: 1rem;
+}
+@media (min-width: 640px) { .learning-card-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (min-width: 1024px){ .learning-card-grid { grid-template-columns: repeat(4, minmax(0,1fr)); } }

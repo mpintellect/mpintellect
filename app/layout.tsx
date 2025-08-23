@@ -7,6 +7,7 @@ import StickyLogo from '@/components/StickyLogo';
 import Footer from '@/components/Footer';
 import MobileMenu from '@/components/MobileMenu';
 import Script from 'next/script';
+import CtaTracker from '@/components/CTATracker';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -120,6 +121,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             });
         */}
         <Script src="/cta-tracker.js" strategy="afterInteractive" />
+        <CtaTracker />
       </body>
     </html>
   );

@@ -204,11 +204,16 @@ const formattedRange = `${start.toLocaleDateString('en-US', fmt)}–${end.toLoca
 
       {/* CTA */}
       <div className="market-cta">
-        <a 
+        <a
   href="https://www.litefinance.org/fr/?uid=967798214&cid=325436&utm_source=mzprimer&utm_medium=web&utm_campaign=weekly_forecast_cta"
-  className="market-cta-button" 
-  target="_blank" 
+  className="market-cta-button"
+  target="_blank"
   rel="noopener noreferrer"
+  data-cta="true"
+  data-cta-name="Weekly Forecast"
+  data-ads-send-to="AW-16927724463/n3hlCNmcy6oaEK-n4oc_"
+  data-value="1.0"
+  data-currency="MAD"
 >
   See Full Weekly Forecast
 </a>

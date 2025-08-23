@@ -215,18 +215,39 @@ export default function MZCalculatorSection() {
         </div>
 
         {/* Actions */}
-        <div className="mzcalc-actions">
-          <button className="mzcalc-btn" onClick={calc}>Calculate</button>
-          <button className="mzcalc-btn mzcalc-btn--ghost" onClick={reset}>Reset</button>
-          <a
-            href="https://my.litefinance.org/registration?uid=967798214&cid=325438&utm_source=mzprimer&utm_medium=web&utm_campaign=calculator_cta"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-register"
-          >
-            Test on Real Account
-          </a>
-        </div>
+<div className="mzcalc-actions">
+  <button
+    className="mzcalc-btn"
+    onClick={calc}
+    data-cta="true"
+    data-cta-name="Calculate Trade"
+  >
+    Calculate
+  </button>
+
+  <button
+    className="mzcalc-btn mzcalc-btn--ghost"
+    onClick={reset}
+    data-cta="true"
+    data-cta-name="Reset Calculator"
+  >
+    Reset
+  </button>
+
+  <a
+    href="https://my.litefinance.org/registration?uid=967798214&cid=325438&utm_source=mzprimer&utm_medium=web&utm_campaign=calculator_cta"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="btn-register"
+    data-cta="true"
+    data-cta-name="Test on Real Account"
+    data-ads-send-to="AW-16927724463/n3hlCNmcy6oaEK-n4oc_"
+    data-value="1.0"
+    data-currency="MAD"
+  >
+    Test on Real Account
+  </a>
+</div>
 
         {/* Results */}
         {results && (

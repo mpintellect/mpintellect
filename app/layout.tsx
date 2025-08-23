@@ -119,6 +119,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               currency:'MAD'
             });
         */}
+        <Script src="/cta-tracker.js" strategy="afterInteractive" />
       </body>
     </html>
   );

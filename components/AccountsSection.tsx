@@ -28,13 +28,18 @@ export default function AccountsSection() {
           </div>
 
           <a
-            href="https://my.litefinance.org/registration?uid=967798214&cid=325438&utm_source=carrd&utm_medium=landing&utm_campaign=mzprimer_classic"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cta-button"
-          >
-            Start with Classic →
-          </a>
+  href="https://my.litefinance.org/registration?uid=967798214&cid=325438&utm_source=carrd&utm_medium=landing&utm_campaign=mzprimer_classic"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="cta-button"
+  data-cta="true"
+  data-cta-name="Start Classic"
+  data-ads-send-to="AW-16927724463/n3hlCNmcy6oaEK-n4oc_"
+  data-value="1.0"
+  data-currency="MAD"
+>
+  Start with Classic →
+</a>
         </div>
 
         {/* 🟡 ECN ACCOUNT */}
@@ -53,13 +58,18 @@ export default function AccountsSection() {
           </div>
 
           <a
-            href="https://my.litefinance.org/registration?uid=967798214&cid=325438&utm_source=carrd&utm_medium=landing&utm_campaign=mzprimer_ecn"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cta-button"
-          >
-            Open ECN Account →
-          </a>
+  href="https://my.litefinance.org/registration?uid=967798214&cid=325438&utm_source=carrd&utm_medium=landing&utm_campaign=mzprimer_ecn"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="cta-button"
+  data-cta="true"
+  data-cta-name="Open ECN Account"
+  data-ads-send-to="AW-16927724463/n3hlCNmcy6oaEK-n4oc_"
+  data-value="1.0"
+  data-currency="MAD"
+>
+  Open ECN Account →
+</a>
         </div>
       </div>
 

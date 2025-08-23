@@ -4,7 +4,10 @@ import { useState } from 'react';
 
 type TabKey = 'basics' | 'strategies' | 'risk';
 
-const TABS: Record<TabKey, { title: string; bullets: string[]; ctaText: string; ctaHref: string }> = {
+const TABS: Record<
+  TabKey,
+  { title: string; bullets: string[]; ctaText: string; ctaHref: string; ctaName: string; adsSendTo?: string }
+> = {
   basics: {
     title: 'Trading Basics 👣',
     bullets: [
@@ -13,7 +16,9 @@ const TABS: Record<TabKey, { title: string; bullets: string[]; ctaText: string; 
       'Margin vs. free margin',
     ],
     ctaText: 'Start with the Forex Calculator →',
-    ctaHref: '#mzcalc', // ← scroll to calculator
+    ctaHref: '#mzcalc',
+    ctaName: 'Start with the Forex Calculator',
+    adsSendTo: 'AW-16927724463/n3hlCNmcy6oaEK-n4oc_',
   },
   strategies: {
     title: 'Simple Strategies ⚙️',
@@ -23,7 +28,10 @@ const TABS: Record<TabKey, { title: string; bullets: string[]; ctaText: string; 
       'How to map confluence fast',
     ],
     ctaText: 'See Analysts’ Insights →',
-    ctaHref: 'https://www.litefinance.org/blog/analysts-opinions/?uid=967798214&cid=325438&utm_source=mzprimer&utm_medium=web&utm_campaign=learn_hub_strats',
+    ctaHref:
+      'https://www.litefinance.org/blog/analysts-opinions/?uid=967798214&cid=325438&utm_source=mzprimer&utm_medium=web&utm_campaign=learn_hub_strats',
+    ctaName: 'See Analysts Insights',
+    adsSendTo: 'AW-16927724463/n3hlCNmcy6oaEK-n4oc_',
   },
   risk: {
     title: 'Risk & Money Management 🛡️',
@@ -33,7 +41,9 @@ const TABS: Record<TabKey, { title: string; bullets: string[]; ctaText: string; 
       'Win-rate vs. R:R — what actually matters',
     ],
     ctaText: 'Position Size Helper →',
-    ctaHref: '#mzcalc', // ← scroll to calculator
+    ctaHref: '#mzcalc',
+    ctaName: 'Position Size Helper',
+    adsSendTo: 'AW-16927724463/n3hlCNmcy6oaEK-n4oc_',
   },
 };
 
@@ -65,33 +75,45 @@ export default function LearningHub() {
         </div>
 
         {/* Card */}
-        <div className="learn-card" role="tabpanel">
-          <ul className="learn-points">
-            {tab.bullets.map((b, i) => (
-              <li key={i} className="learn-point">• {b}</li>
-            ))}
-          </ul>
+<div className="learn-card" role="tabpanel">
+  <ul className="learn-points">
+    {tab.bullets.map((b, i) => (
+      <li key={i} className="learn-point">• {b}</li>
+    ))}
+  </ul>
 
-          {tab.ctaHref.startsWith('#') ? (
-  <button
-    type="button"
-    className="learn-cta"
-    onClick={() => {
-      document.getElementById(tab.ctaHref.slice(1))?.scrollIntoView({ behavior: 'smooth' });
-    }}
-  >
-    {tab.ctaText}
-  </button>
-) : (
-  <a
-    href={tab.ctaHref}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="learn-cta"
-  >
-    {tab.ctaText}
-  </a>
-)}
+  {tab.ctaHref.startsWith('#') ? (
+    <button
+      type="button"
+      className="learn-cta"
+      onClick={() => {
+        document.getElementById(tab.ctaHref.slice(1))?.scrollIntoView({ behavior: 'smooth' });
+      }}
+      // tracking hooks
+      data-cta="true"
+      data-cta-name={tab.ctaName || tab.ctaText}
+      data-ads-send-to="AW-16927724463/n3hlCNmcy6oaEK-n4oc_"
+      data-value="1.0"
+      data-currency="MAD"
+    >
+      {tab.ctaText}
+    </button>
+  ) : (
+    <a
+      href={tab.ctaHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="learn-cta"
+      // tracking hooks
+      data-cta="true"
+      data-cta-name={tab.ctaName || tab.ctaText}
+      data-ads-send-to="AW-16927724463/n3hlCNmcy6oaEK-n4oc_"
+      data-value="1.0"
+      data-currency="MAD"
+    >
+      {tab.ctaText}
+    </a>
+  )}
 
           {/* micro-notes */}
           <div className="learn-notes">

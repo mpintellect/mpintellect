@@ -13,8 +13,7 @@ const TABS: Record<TabKey, { title: string; bullets: string[]; ctaText: string; 
       'Margin vs. free margin',
     ],
     ctaText: 'Start with the Forex Calculator →',
-    ctaHref:
-      'https://www.litefinance.org/trading/forex-calculator/?uid=967798214&cid=325438&utm_source=mzprimer&utm_medium=web&utm_campaign=learn_hub_basics',
+    ctaHref: '#mzcalc', // ← scroll to calculator
   },
   strategies: {
     title: 'Simple Strategies ⚙️',
@@ -24,8 +23,7 @@ const TABS: Record<TabKey, { title: string; bullets: string[]; ctaText: string; 
       'How to map confluence fast',
     ],
     ctaText: 'See Analysts’ Insights →',
-    ctaHref:
-      'https://www.litefinance.org/blog/analysts-opinions/?uid=967798214&cid=325438&utm_source=mzprimer&utm_medium=web&utm_campaign=learn_hub_strats',
+    ctaHref: 'https://www.litefinance.org/blog/analysts-opinions/?uid=967798214&cid=325438&utm_source=mzprimer&utm_medium=web&utm_campaign=learn_hub_strats',
   },
   risk: {
     title: 'Risk & Money Management 🛡️',
@@ -35,8 +33,7 @@ const TABS: Record<TabKey, { title: string; bullets: string[]; ctaText: string; 
       'Win-rate vs. R:R — what actually matters',
     ],
     ctaText: 'Position Size Helper →',
-    ctaHref:
-      'https://www.litefinance.org/trading/forex-calculator/?uid=967798214&cid=325438&utm_source=mzprimer&utm_medium=web&utm_campaign=learn_hub_risk',
+    ctaHref: '#mzcalc', // ← scroll to calculator
   },
 };
 
@@ -75,14 +72,26 @@ export default function LearningHub() {
             ))}
           </ul>
 
-          <a
-            href={tab.ctaHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="learn-cta"
-          >
-            {tab.ctaText}
-          </a>
+          {tab.ctaHref.startsWith('#') ? (
+  <button
+    type="button"
+    className="learn-cta"
+    onClick={() => {
+      document.getElementById(tab.ctaHref.slice(1))?.scrollIntoView({ behavior: 'smooth' });
+    }}
+  >
+    {tab.ctaText}
+  </button>
+) : (
+  <a
+    href={tab.ctaHref}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="learn-cta"
+  >
+    {tab.ctaText}
+  </a>
+)}
 
           {/* micro-notes */}
           <div className="learn-notes">

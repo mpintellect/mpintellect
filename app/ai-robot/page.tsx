@@ -1,16 +1,38 @@
-'use client';
+// app/ai-robot/page.tsx  (SERVER component — no "use client")
+import type { Metadata } from 'next';
+import AIRobotCards from '@/components/AIRobotCards';
 
-import AIRobotCards from '../../components/AIRobotCards';
+export const metadata: Metadata = {
+  title: 'AI Trading Robots – MZPrimer',
+  description:
+    'Automate parts of your trading with tested AI robots for MetaTrader. Simple setup and clear risk options.',
+  openGraph: {
+    title: 'AI Trading Robots – MZPrimer',
+    description:
+      'Automate parts of your trading with tested AI robots for MetaTrader. Simple setup and clear risk options.',
+    url: 'https://mzprimer.com/ai-robot',
+    siteName: 'MZPrimer',
+    images: [{ url: 'https://mzprimer.com/og/ai-robots.jpg', width: 1200, height: 630 }],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'AI Trading Robots – MZPrimer',
+    description:
+      'Automate parts of your trading with tested AI robots for MetaTrader. Simple setup and clear risk options.',
+    images: ['https://mzprimer.com/og/ai-robots.jpg'],
+  },
+};
 
-export default function AIRobotPage() {
+export default function Page() {
   return (
-    <>
-      <main className="pt-24 px-4 md:px-8 bg-black text-white min-h-screen">
-        <section className="mt-12">
-          <h2 className="text-3xl font-bold text-center mb-6"></h2>
-          <AIRobotCards />
-        </section>
-      </main>
-    </>
+    <main className="min-h-screen bg-black">
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <h1 className="text-3xl md:text-4xl font-bold mb-6">AI Trading Robots</h1>
+        {/* This can be a Client Component; it’s fine to render it here */}
+        <AIRobotCards />
+      </div>
+    </main>
   );
 }

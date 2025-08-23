@@ -11,14 +11,20 @@ function isAuthorized(req: Request) {
   return key && key === (process.env.ADMIN_API_KEY || "");
 }
 
+// Type for allowed patch fields
+type OrderPatch = {
+  status?: "pending" | "paid" | "expired";
+  txid?: string | null;
+  email?: string | null;
+};
+
 // Small helper to read [id] from the URL path safely
 function extractIdFromUrl(url: string): string | null {
   try {
     const { pathname } = new URL(url);
     // /api/admin/orders/<id>
     const parts = pathname.split("/").filter(Boolean);
-    const id = parts[parts.length - 1] || null;
-    return id;
+    return parts[parts.length - 1] || null;
   } catch {
     return null;
   }
@@ -50,19 +56,14 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    const body = (await req.json().catch(() => ({}))) as Partial<{
-      status: "pending" | "paid" | "expired";
-      txid: string | null;
-      email: string | null;
-    }>;
+    const body: Partial<OrderPatch> = await req.json().catch(() => ({}));
 
-    const patch: Record<string, unknown> = {};
+    const patch: OrderPatch = {};
 
     if (body.status && ["pending", "paid", "expired"].includes(body.status)) {
       patch.status = body.status;
     }
     if (typeof body.txid !== "undefined") {
-      // normalize empty string → null
       patch.txid = body.txid && body.txid.trim().length > 0 ? body.txid.trim() : null;
     }
     if (typeof body.email !== "undefined") {
@@ -76,7 +77,16 @@ export async function PATCH(req: Request) {
       }
     }
 
-    const updated = updateOrder(id, patch as any);
+    // ✅ Replace the old `as any` call with a properly-typed normalized patch
+    type UpdatePatch = Parameters<typeof updateOrder>[1];
+
+const normalizedPatch: UpdatePatch = {
+  ...(patch.status ? { status: patch.status } : {}),
+  ...(typeof patch.txid !== "undefined" ? { txid: patch.txid ?? undefined } : {}),
+  ...(typeof patch.email !== "undefined" ? { email: patch.email ?? undefined } : {}),
+};
+
+const updated = updateOrder(id, normalizedPatch);
     return NextResponse.json({ ok: true, order: updated }, { status: 200 });
   } catch (e: unknown) {
     const msg = (e as Error)?.message || "Update failed";

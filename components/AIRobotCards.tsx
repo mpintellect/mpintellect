@@ -118,27 +118,38 @@ export default function AIRobotCards() {
               ))}
             </ul>
             <div className="robot-card-footer">
-              <div className="robot-price">{bot.price}</div>
-              <div className="robot-actions">
-                {bot.available ? (
-                  <a href={`/checkout?bot=${bot.id}`} className="robot-buy-button">
-                    Buy Now
-                  </a>
-                ) : (
-                  <button className="robot-buy-button coming-soon" disabled>
-                    Coming Soon
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="robot-readmore-button"
-                  onClick={() => setSelected(bot)}
-                  aria-haspopup="dialog"
-                  aria-controls="robot-modal"
-                >
-                  Read More
-                </button>
-              </div>
+  <div className="robot-price">{bot.price}</div>
+  <div className="robot-actions">
+    {bot.available ? (
+      <a
+        href={`/checkout?bot=${bot.id}`}
+        className="robot-buy-button"
+        data-cta="true"
+        data-cta-name={`Buy Now – ${bot.name}`}
+        data-ads-send-to="AW-16927724463/n3hlCNmcy6oaEK-n4oc_"
+        data-value={bot.price?.replace(/[^0-9.]/g, '') || "0"}
+        data-currency="USD"
+      >
+        Buy Now
+      </a>
+    ) : (
+      <button className="robot-buy-button coming-soon" disabled>
+        Coming Soon
+      </button>
+    )}
+
+    <button
+      type="button"
+      className="robot-readmore-button"
+      data-cta="true"
+      data-cta-name={`Read More – ${bot.name}`}
+      onClick={() => setSelected(bot)}
+      aria-haspopup="dialog"
+      aria-controls="robot-modal"
+    >
+      Read More
+    </button>
+  </div>
             </div>
           </div>
         ))}

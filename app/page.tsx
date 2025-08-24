@@ -1,5 +1,4 @@
 import StickyLogo from '@/components/StickyLogo';
-import LiveTicker from '@/components/LiveTicker';
 import Navbar from '@/components/Navbar';
 import MobileMenu from '@/components/MobileMenu';
 import Hero from '@/components/Hero';
@@ -40,7 +39,6 @@ export default function Home() {
   return (
     <>
       <StickyLogo />
-      <LiveTicker />
       <Navbar />
       <MobileMenu />
       <Hero />

@@ -24,13 +24,24 @@ const nextConfig: NextConfig = {
     {
       source: '/(.*)',
       headers: [
-        // Existing + full recommended security headers
         { key: 'X-Content-Type-Options', value: 'nosniff' },
         { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-        { key: 'Content-Security-Policy', value: "default-src 'self'; img-src 'self' https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" },
+        {
+          key: 'Content-Security-Policy',
+          value:
+            "default-src 'self' data: blob: https:; " +
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; " +
+            "style-src 'self' 'unsafe-inline' https:; " +
+            "img-src 'self' data: blob: https:; " +
+            "frame-src https://s.tradingview.com https://www.tradingview.com https://mzprimer.com https://i.postimg.cc; " +
+            "connect-src *;",
+        },
         { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-        { key: 'Referrer-Policy', value: 'no-referrer-when-downgrade' },
-        { key: 'Permissions-Policy', value: 'geolocation=(), camera=(), microphone=()' },
+        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        {
+          key: 'Permissions-Policy',
+          value: 'geolocation=(), camera=(), microphone=(), usb=(), payment=()',
+        },
       ],
     },
   ],

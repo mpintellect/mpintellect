@@ -1,4 +1,3 @@
-// next.config.ts
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
@@ -16,12 +15,8 @@ const nextConfig: NextConfig = {
 
   images: {
     remotePatterns: [
-      // allow postimg host used in BlogSection
       { protocol: 'https', hostname: 'i.postimg.cc' },
-      // (optional) allow your own domain if you’ll serve images there
       { protocol: 'https', hostname: 'mzprimer.com' },
-      // add more hosts as needed
-      // { protocol: 'https', hostname: 'your-cdn-or-domain.com' },
     ],
   },
 
@@ -29,7 +24,13 @@ const nextConfig: NextConfig = {
     {
       source: '/(.*)',
       headers: [
+        // Existing + full recommended security headers
         { key: 'X-Content-Type-Options', value: 'nosniff' },
+        { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+        { key: 'Content-Security-Policy', value: "default-src 'self'; img-src 'self' https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" },
+        { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+        { key: 'Referrer-Policy', value: 'no-referrer-when-downgrade' },
+        { key: 'Permissions-Policy', value: 'geolocation=(), camera=(), microphone=()' },
       ],
     },
   ],

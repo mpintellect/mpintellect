@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 interface Bot { id: string; name: string; price: number; }
 const BOTS: Record<string, Bot> = {
-  scalper:   { id: 'scalper',   name: 'Scalper X1',    price: 129 },
+  scalper:   { id: 'scalper',   name: 'Scalper X1',    price: 50 },
   fibonacci: { id: 'fibonacci', name: 'Fibonacci Pro', price: 149 },
   // coming soon kept out
 };

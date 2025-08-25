@@ -69,7 +69,7 @@ export const PRODUCTS = {
     id: "scalper-x1", // This must match what the backend expects
     name: "Scalper X1",
     filePath: "MZPrimer_Scalper_X1_V.1.ex5",
-    priceUsd: 129,
+    priceUsd: 50,
   },
   fibonacciPro: {
     id: "fibonacci-pro",

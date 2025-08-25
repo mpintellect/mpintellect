@@ -14,7 +14,7 @@ interface Stats {
 interface Bot { 
   id: string; 
   name: string; 
-  price: string;            // keep as formatted string like "$129"
+  price: string;            // keep as formatted string like "$50"
   available: boolean;
   short: string;            // short tagline
   description: string;      // long description for modal
@@ -33,7 +33,7 @@ export default function AIRobotCards() {
       short: 'Ultra-fast scalping built for tight spreads.',
       description:
         'Scalper X1 is designed to capture quick, frequent moves on liquid pairs. It uses volatility filters, spread checks, and time-of-day rules to avoid dead sessions. Works best on low-spread brokers (ECN), M5–M15 charts. Use sensible risk per trade and avoid news spikes.',
-      price: '$129',
+      price: '$50',
       available: true,
       features: ['MT5 Ready', '0.01–1.0 Lot Supported', 'Auto TP/SL', 'Backtested'],
       stats: {

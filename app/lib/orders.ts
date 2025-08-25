@@ -164,25 +164,33 @@ async function saveOrdersToKV(map: Map<string, Order>) {
 /* ========= Store ========= */
 // in-memory, hydrated from disk on boot
 const ORDERS: Map<string, Order> = new Map();
-loadOrdersFromDisk()
-  .then((m) => {
-    for (const [k, v] of m.entries()) ORDERS.set(k, v);
-    console.log(`🗂️  Orders loaded: ${ORDERS.size}`);
-  })
-  .catch((e) => console.error("Failed to load orders.json:", e));
-// Try to hydrate/override from KV (preferred) without removing disk fallback
-loadOrdersFromKV()
-  .then((m) => {
-    let overrides = 0;
-    for (const [k, v] of m.entries()) {
-      if (!ORDERS.has(k)) overrides++;
-      ORDERS.set(k, v);
-    }
-    if (HAS_KV) {
-      console.log(`🔄 KV hydration applied: ${m.size} total from KV (overrode/new: ${overrides}). Current total: ${ORDERS.size}`);
-    }
-  })
-  .catch((e) => console.log("KV hydration skipped:", (e as Error)?.message));
+
+// One-time hydration from disk (dev) then KV (prod)
+let _ordersHydrated: Promise<void> | null = null;
+
+async function hydrateOrdersOnce() {
+  // 1) Disk (useful in dev/local)
+  const fromDisk = await loadOrdersFromDisk();
+  for (const [k, v] of fromDisk) ORDERS.set(k, v);
+
+  // 2) KV (source of truth in prod)
+  const fromKV = await loadOrdersFromKV();
+  for (const [k, v] of fromKV) ORDERS.set(k, v);
+
+  console.log("✅ Orders hydrated:", ORDERS.size);
+}
+_ordersHydrated = hydrateOrdersOnce();
+
+// Callers that need data should await this
+export async function ensureOrdersHydrated() {
+  await _ordersHydrated;
+}
+
+// Async getter for pages/APIs that want fresh data
+export async function getAllOrdersAsync(): Promise<Order[]> {
+  await ensureOrdersHydrated();
+  return Array.from(ORDERS.values()).sort((a, b) => b.createdAt - a.createdAt);
+}
 /* ========= CRUD helpers ========= */
 export function createOrder(
   o: Omit<Order, "id" | "status" | "createdAt" | "createdAtISO">
@@ -198,6 +206,7 @@ export function createOrder(
   };
 
   ORDERS.set(order.id, order);
+  saveOrdersToKV(ORDERS).catch(() => {});
   
   // 🚨 ADD DEBUG
   console.log('🆕 ORDER CREATED:', {
@@ -210,7 +219,6 @@ export function createOrder(
   
   // persist in background if you already have saveOrdersToDisk
   try { saveOrdersToDisk?.(ORDERS); } catch {}
-  try { saveOrdersToKV?.(ORDERS); } catch {}
   return order;
 }
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAllOrders } from "../../../lib/orders";
+import { getAllOrdersAsync } from "../../../lib/orders";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
   }
 
   // Fetch all orders from in-memory store (hydrated from disk)
-  const orders = getAllOrders();
+  const orders = await getAllOrdersAsync();
 
   // Simple summary (useful in the UI)
   const summary = {

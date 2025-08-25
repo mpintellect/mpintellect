@@ -32,6 +32,7 @@ export default function CheckoutClient() {
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(30 * 60); // 30 minutes
   const [timerActive, setTimerActive] = useState(false);
+  const [buyerName, setBuyerName] = useState('');
 
   const handleCopy = useCallback(async () => {
     try {

@@ -48,6 +48,7 @@ export async function POST(req: Request) {
     const {
       method,
       email,
+      buyerName,
       // optional hints from client; we’ll validate & fallback
       productId: productIdHint,
       productName: productNameHint,
@@ -55,6 +56,7 @@ export async function POST(req: Request) {
     } = body as {
       method?: "card" | "usdt";
       email?: string;
+      buyerName?: string;   
       productId?: string;
       productName?: string;
       amountUsd?: number;
@@ -121,6 +123,7 @@ export async function POST(req: Request) {
       amountUsd,
       method,
       email: normEmail, // ← normalized
+      buyerName,
       ip,
       countryCode,
       countryName,

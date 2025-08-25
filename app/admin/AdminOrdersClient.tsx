@@ -10,6 +10,7 @@ const fmtDateTime = (ts: number, tz: 'local' | 'utc') =>
 type Order = {
   id: string;
   email?: string | null;
+  buyerName?: string | null; 
   productId: string;
   productName: string;
   filePath: string;
@@ -80,6 +81,7 @@ const clearRange = () => {
         const hay = [
           o.id,
           o.email || '',
+          o.buyerName || '',
           o.productName,
           o.txid || '',
           o.countryName || o.countryCode || '',
@@ -132,6 +134,7 @@ const clearRange = () => {
       'product',
       'amountUsd',
       'method',
+      'name',  
       'email',
       'txid',
       'country',
@@ -145,6 +148,7 @@ const clearRange = () => {
       o.productName,
       String(o.amountUsd),
       o.method,
+      o.buyerName || '',  
       o.email || '',
       o.txid || '',
       o.countryName || o.countryCode || '',
@@ -317,6 +321,7 @@ const clearRange = () => {
               <th>Product</th>
               <th>Amount</th>
               <th>Method</th>
+              <th>Name</th>  
               <th>Email</th>
               <th>TXID</th>
               <th>Country</th>
@@ -332,6 +337,7 @@ const clearRange = () => {
                 <td>{o.productName}</td>
                 <td>${Number(o.amountUsd).toFixed(2)}</td>
                 <td>{o.method}</td>
+                 <td data-label="Name">{o.buyerName || '-'}</td>
                 <td>{o.email || '-'}</td>
                 <td className="truncate">{o.txid || '-'}</td>
                 <td>{o.countryName || o.countryCode || '-'}</td>

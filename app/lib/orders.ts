@@ -36,7 +36,7 @@ export function isTransactionAlreadyUsed(txid: string): boolean {
 export interface Order {
   id: string;
   email?: string;
-
+buyerName?: string; 
   // Product
   productId: string;
   productName: string;

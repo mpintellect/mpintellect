@@ -13,10 +13,11 @@ async function kvGet<T>(key: string): Promise<T | null> {
   const { kv } = await import("@vercel/kv");
   return (await kv.get<T>(key)) ?? null;
 }
-async function kvSet<T>(key: string, val: T): Promise<void> {
+
+async function kvSet(key: string, val: unknown): Promise<void> {
   if (!HAS_KV) return;
   const { kv } = await import("@vercel/kv");
-  await kv.set(key, val as any);
+  await kv.set(key, val); // no `any`, no JSON constraint
 }
 
 // we’ll store the whole orders array under one key for simplicity

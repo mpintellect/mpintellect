@@ -2554,71 +2554,19 @@ h1.page-title {
 html {
   scroll-behavior: smooth;
 }
-/* ========================
-   Admin Mobile Optimizations
-   ======================== */
+/* ===== Admin Mobile (≤768px) ===== */
 @media (max-width: 768px) {
-  /* Toolbar stacks vertically on small screens */
-  .admin-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .admin-toolbar .admin-input,
-  .admin-toolbar .admin-select,
-  .admin-toolbar .admin-btn {
-    width: 100%;
-  }
-
-  /* Stats grid switches to single column */
-  .admin-stats {
-    grid-template-columns: 1fr;
-  }
-
-  /* Summary cards stack */
-  .admin-summary {
-    grid-template-columns: 1fr;
-  }
-
-  /* Table turns into block layout for mobile */
-  .admin-table-wrap {
-    overflow-x: auto;
-  }
-  .admin-table {
-    display: block;
-    border: 0;
-  }
-  .admin-table thead {
-    display: none;
-  }
-  .admin-table tr {
-    display: block;
-    border-bottom: 1px solid #2a2d31;
-    margin-bottom: 10px;
-    padding: 8px;
-  }
-  .admin-table td {
-    display: flex;
-    justify-content: space-between;
-    padding: 6px 0;
-    border: 0;
-  }
-  .admin-table td::before {
-    content: attr(data-label);
-    color: #a9acb2;
-    font-size: 12px;
-  }
-}
-/* ===== Admin Mobile Fix ===== */
-@media (max-width: 768px) {
-  .admin-container {
-    padding: 0 10px;
-  }
+  /* Layout */
+  .admin-container { padding: 0 10px; }
 
   .admin-toolbar {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
   }
+  .admin-input,
+  .admin-select,
+  .admin-btn { width: 100%; }
 
   .admin-stats,
   .admin-summary {
@@ -2626,24 +2574,39 @@ html {
     gap: 8px;
   }
 
-  .admin-table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .admin-table th,
-  .admin-table td {
-    white-space: nowrap;
-    padding: 8px;
-  }
-
+  /* Date / presets */
   .date-range {
+    width: 100%;
     flex-direction: column;
     gap: 4px;
-    width: 100%;
   }
+  .presets { justify-content: center; }
 
-  .presets {
-    justify-content: center;
+  /* Table → card list */
+  .admin-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .admin-table { display: block; border: 0; }
+  .admin-table thead { display: none; }
+  .admin-table tbody tr {
+    display: block;
+    border: 1px solid #2a2d31;
+    border-radius: 10px;
+    background: #111214;
+    margin-bottom: 10px;
+    padding: 8px;
+  }
+  .admin-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border: 0;
+    white-space: normal;           /* allow wrapping on small screens */
+  }
+  .admin-table tbody td::before {
+    content: attr(data-label);
+    color: #a9acb2;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 10px;
   }
 }

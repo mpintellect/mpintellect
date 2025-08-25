@@ -3,7 +3,24 @@ import crypto from "crypto";
 import path from "path";
 import { access, mkdir, readFile, writeFile } from "fs/promises";
 import fs from "fs";
+// --- Optional Vercel KV integration (no-op if not configured) ---
+const HAS_KV =
+  !!process.env.KV_REST_API_URL &&
+  !!process.env.KV_REST_API_TOKEN; // set by Vercel when KV attached
 
+async function kvGet<T>(key: string): Promise<T | null> {
+  if (!HAS_KV) return null;
+  const { kv } = await import("@vercel/kv");
+  return (await kv.get<T>(key)) ?? null;
+}
+async function kvSet<T>(key: string, val: T): Promise<void> {
+  if (!HAS_KV) return;
+  const { kv } = await import("@vercel/kv");
+  await kv.set(key, val as any);
+}
+
+// we’ll store the whole orders array under one key for simplicity
+const KV_ORDERS_DUMP_KEY = "orders:dump:v1";
 /* ========= Types ========= */
 export type OrderStatus = "pending" | "paid" | "expired";
 export type PaymentMethod = "card" | "usdt";
@@ -118,7 +135,31 @@ async function saveOrdersToDisk(map: Map<string, Order>) {
     console.error("💥 FAILED to save orders.json:", e);
   }
 }
+// --- KV mirror: load & save ---
+async function loadOrdersFromKV(): Promise<Map<string, Order>> {
+  try {
+    if (!HAS_KV) return new Map();
+    const arr = (await kvGet<Order[]>(KV_ORDERS_DUMP_KEY)) || [];
+    console.log("🔑 LOADED ORDERS FROM KV:", arr.length, "orders");
+    const m = new Map<string, Order>();
+    for (const o of arr) m.set(o.id, o);
+    return m;
+  } catch (e) {
+    console.log("⚠️ KV load skipped/failed:", (e as Error)?.message);
+    return new Map();
+  }
+}
 
+async function saveOrdersToKV(map: Map<string, Order>) {
+  try {
+    if (!HAS_KV) return;
+    const arr = Array.from(map.values());
+    await kvSet(KV_ORDERS_DUMP_KEY, arr);
+    console.log("🔐 ORDERS SAVED TO KV:", arr.length, "orders");
+  } catch (e) {
+    console.log("⚠️ KV save skipped/failed:", (e as Error)?.message);
+  }
+}
 /* ========= Store ========= */
 // in-memory, hydrated from disk on boot
 const ORDERS: Map<string, Order> = new Map();
@@ -128,7 +169,19 @@ loadOrdersFromDisk()
     console.log(`🗂️  Orders loaded: ${ORDERS.size}`);
   })
   .catch((e) => console.error("Failed to load orders.json:", e));
-
+// Try to hydrate/override from KV (preferred) without removing disk fallback
+loadOrdersFromKV()
+  .then((m) => {
+    let overrides = 0;
+    for (const [k, v] of m.entries()) {
+      if (!ORDERS.has(k)) overrides++;
+      ORDERS.set(k, v);
+    }
+    if (HAS_KV) {
+      console.log(`🔄 KV hydration applied: ${m.size} total from KV (overrode/new: ${overrides}). Current total: ${ORDERS.size}`);
+    }
+  })
+  .catch((e) => console.log("KV hydration skipped:", (e as Error)?.message));
 /* ========= CRUD helpers ========= */
 export function createOrder(
   o: Omit<Order, "id" | "status" | "createdAt" | "createdAtISO">
@@ -156,7 +209,7 @@ export function createOrder(
   
   // persist in background if you already have saveOrdersToDisk
   try { saveOrdersToDisk?.(ORDERS); } catch {}
-  
+  try { saveOrdersToKV?.(ORDERS); } catch {}
   return order;
 }
 
@@ -195,6 +248,7 @@ export function updateOrder(id: string, patch: Partial<Order>): Order | undefine
   
   // persist in background
   saveOrdersToDisk(ORDERS).catch(() => {});
+  saveOrdersToKV(ORDERS).catch(() => {});
   return next;
 }
 
@@ -268,4 +322,7 @@ export function getAllOrders(): Order[] {
 /* periodic safeguard save */
 setInterval(() => {
   saveOrdersToDisk(ORDERS).catch(() => {});
+}, 5 * 60 * 1000);
+setInterval(() => {
+  saveOrdersToKV(ORDERS).catch(() => {});
 }, 5 * 60 * 1000);

@@ -42,7 +42,8 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
 
   const [startDate, setStartDate] = useState<string>(fmtDate(d30));
   const [endDate, setEndDate] = useState<string>(fmtDate(today));
-
+const [pendingStart, setPendingStart] = useState<string>(fmtDate(d30));
+const [pendingEnd, setPendingEnd] = useState<string>(fmtDate(today));
   const toDayStartTs = (isoDate: string) => new Date(isoDate + 'T00:00:00').getTime();
   const toDayEndTs = (isoDate: string) => new Date(isoDate + 'T23:59:59.999').getTime();
 
@@ -57,17 +58,17 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
 
   // quick presets
   const preset = (days: number) => {
-    const t = new Date();
-    t.setHours(0, 0, 0, 0);
-    const s = new Date(t);
-    s.setDate(s.getDate() - (days - 1));
-    setStartDate(fmtDate(s));
-    setEndDate(fmtDate(t));
-  };
-  const clearRange = () => {
-    setStartDate('');
-    setEndDate('');
-  };
+  const t = new Date();
+  t.setHours(0, 0, 0, 0);
+  const s = new Date(t);
+  s.setDate(s.getDate() - (days - 1));
+  setPendingStart(fmtDate(s));
+  setPendingEnd(fmtDate(t));
+};
+const clearRange = () => {
+  setPendingStart('');
+  setPendingEnd('');
+};
 
   // filter by status/method/query
   const filtered = useMemo(() => {
@@ -203,11 +204,29 @@ export default function AdminOrdersClient({ initialOrders }: { initialOrders: Or
 
         {/* Date range */}
         <div className="date-range">
-          <label>From</label>
-          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-          <label>To</label>
-          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-        </div>
+  <label>From</label>
+  <input
+    type="date"
+    value={pendingStart}
+    onChange={e => setPendingStart(e.target.value)}
+  />
+  <label>To</label>
+  <input
+    type="date"
+    value={pendingEnd}
+    onChange={e => setPendingEnd(e.target.value)}
+  />
+  <button
+    className="admin-btn"
+    onClick={() => {
+      setStartDate(pendingStart);
+      setEndDate(pendingEnd);
+    }}
+    style={{ marginLeft: 8 }}
+  >
+    Apply
+  </button>
+</div>
 
         {/* Presets */}
         <div className="presets">

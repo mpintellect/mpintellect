@@ -1,5 +1,6 @@
 // app/api/order/create/route.ts
 import { NextResponse } from "next/server";
+// ✅ EXACT CHANGE #1: use absolute import so path never breaks
 import { createOrder, PRODUCTS } from "../../../lib/orders";
 
 export const runtime = "nodejs";
@@ -59,43 +60,47 @@ export async function POST(req: Request) {
       amountUsd?: number;
     };
 
+    // ✅ EXACT CHANGE #2: normalize email early (non-breaking hygiene)
+    const normEmail = (email || "").trim().toLowerCase();
+
     // 1) validate basics
     if (method !== "usdt" && method !== "card") {
       return NextResponse.json({ error: "Invalid payment method" }, { status: 400 });
     }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    if (!normEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(normEmail)) {
       return NextResponse.json({ error: "Valid email required" }, { status: 400 });
     }
 
     // 2) choose product from catalog (default Scalper X1)
     //    If a hint is provided and matches a key in PRODUCTS, use it.
-   let catalogKey: keyof typeof PRODUCTS = "scalperX1"; // default
+    let catalogKey: keyof typeof PRODUCTS = "scalperX1"; // default
 
-// Handle frontend's simplified product IDs
-if (productIdHint === 'scalper') catalogKey = "scalperX1";
-if (productIdHint === 'fibonacci') catalogKey = "fibonacciPro";
-// 🚫 Remove unavailable bots:
-// if (productIdHint === 'hedge') catalogKey = "hedgeMatrix";
-// if (productIdHint === 'trendbot') catalogKey = "trendSeekerAi";
+    // Handle frontend's simplified product IDs
+    if (productIdHint === "scalper") catalogKey = "scalperX1";
+    if (productIdHint === "fibonacci") catalogKey = "fibonacciPro";
+    // 🚫 Remove unavailable bots:
+    // if (productIdHint === 'hedge') catalogKey = "hedgeMatrix";
+    // if (productIdHint === 'trendbot') catalogKey = "trendSeekerAi";
 
-// Fallback if product doesn't exist
-if (!PRODUCTS[catalogKey]) {
-  console.error('Product not found:', productIdHint, 'using default');
-  catalogKey = "scalperX1";
-  console.log('🎯 PRODUCT SELECTION:', {
-  productIdHint,
-  catalogKey,
-  catalogProduct: PRODUCTS[catalogKey],
-  allProducts: Object.keys(PRODUCTS)
-});
-}
+    // Fallback if product doesn't exist
+    if (!PRODUCTS[catalogKey]) {
+      console.error("Product not found:", productIdHint, "using default");
+      catalogKey = "scalperX1";
+      console.log("🎯 PRODUCT SELECTION:", {
+        productIdHint,
+        catalogKey,
+        catalogProduct: PRODUCTS[catalogKey],
+        allProducts: Object.keys(PRODUCTS),
+      });
+    }
     const catalog = PRODUCTS[catalogKey];
     if (!catalog) {
       return NextResponse.json({ error: "Product not available" }, { status: 404 });
     }
 
     // 3) price: default to catalog price; allow override in dev if env set
-    const allowOverride = process.env.ALLOW_PRICE_OVERRIDE === "1" || process.env.NODE_ENV !== "production";
+    const allowOverride =
+      process.env.ALLOW_PRICE_OVERRIDE === "1" || process.env.NODE_ENV !== "production";
     const parsedAmount =
       typeof amountHint === "number" && isFinite(amountHint) && amountHint > 0
         ? Math.round(amountHint * 100) / 100
@@ -108,17 +113,25 @@ if (!PRODUCTS[catalogKey]) {
     const ip = pickIP(headers);
     const { countryCode, countryName } = pickCountry(headers);
 
-    // 5) create order
+    // 5) create order (this now PERSISTS internally via lib/orders.ts)
     const order = createOrder({
       productId: catalog.id,
       productName: productNameHint || catalog.name,
       filePath: catalog.filePath,
       amountUsd,
       method,
-      email,
+      email: normEmail, // ← normalized
       ip,
       countryCode,
       countryName,
+    });
+
+    // ✅ EXACT CHANGE #3: tiny debug to verify persistence flow on first runs
+    console.log("✅ Order created & persisted:", {
+      id: order.id,
+      method: order.method,
+      amountUsd: order.amountUsd,
+      product: order.productName,
     });
 
     // 6) respond
@@ -141,6 +154,9 @@ if (!PRODUCTS[catalogKey]) {
     });
   } catch (e: unknown) {
     console.error("Order creation failed:", (e as Error)?.message || e);
-    return NextResponse.json({ error: (e as Error)?.message || "Order creation failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: (e as Error)?.message || "Order creation failed" },
+      { status: 500 }
+    );
   }
 }

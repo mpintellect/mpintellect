@@ -4,7 +4,6 @@ import MobileMenu from '@/components/MobileMenu';
 import Hero from '@/components/Hero';
 import TraderAssistantLite from "@/components/TraderAssistantLite";
 import LearningHub from '@/components/LearningHub';
-import AccountsSection from '@/components/AccountsSection';
 import AiToolsSection from '@/components/AiToolsSection';
 import ContactSection from '@/components/ContactSection';
 import PrivacySection from '@/components/PrivacySection';
@@ -50,7 +49,6 @@ export default function Home() {
   <TraderAssistantLite />
 </section>
       <LearningHub />
-      <AccountsSection />
       <AiToolsSection />
       <ContactSection />
       <PrivacySection />

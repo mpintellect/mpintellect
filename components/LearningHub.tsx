@@ -29,7 +29,7 @@ const TABS: Record<
     ],
     ctaText: 'See Analysts’ Insights →',
     ctaHref:
-      'https://www.litefinance.org/blog/analysts-opinions/?uid=967798214&cid=325438&utm_source=mzprimer&utm_medium=web&utm_campaign=learn_hub_strats',
+      '-',
     ctaName: 'See Analysts Insights',
     adsSendTo: 'AW-16927724463/n3hlCNmcy6oaEK-n4oc_',
   },

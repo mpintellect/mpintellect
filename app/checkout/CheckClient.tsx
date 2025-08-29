@@ -257,12 +257,12 @@ function handleCopyAddress() {
 </div>
         {paymentMethod === 'usdt' ? (
   <button
-    className="checkout-btn"
-    onClick={createOrder}
-    disabled={status==='creating' || status==='awaiting' || status==='paid' || !productId || !email}
-  >
-    {status==='creating' ? 'Creating order…' : 'Create USDT Order'}
-  </button>
+  className="checkout-btn secondary disabled"
+  title="Card payments will be enabled soon"
+  onClick={(e) => e.preventDefault()}
+>
+  Bank Card Payment — coming soon
+</button>
 ) : (
   <button
     className="checkout-btn secondary disabled"

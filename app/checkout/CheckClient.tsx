@@ -248,18 +248,11 @@ function handleCopyAddress() {
 <div className="checkout-tabs">
   <button
     type="button"
-    className={`checkout-tab ${paymentMethod === 'usdt' ? 'active' : ''}`}
-    onClick={() => setPaymentMethod('usdt')}
-  >
-    USDT (TRC20)
-  </button>
-  <button
-    type="button"
     className="checkout-tab disabled"
     title="Card payments via Stripe will be available soon"
     onClick={(e) => e.preventDefault()}
   >
-    Bank Card Payment — soon
+    Bank Card Payment — coming soon
   </button>
 </div>
         {paymentMethod === 'usdt' ? (

@@ -1,3 +1,4 @@
+// next.config.ts
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
@@ -45,6 +46,12 @@ const nextConfig: NextConfig = {
       ],
     },
   ],
+
+  // 👇 Add the memory cache to avoid the “No serializer for Warning” message
+  webpack: (config) => {
+    config.cache = { type: 'memory' };
+    return config;
+  },
 };
 
 export default nextConfig;

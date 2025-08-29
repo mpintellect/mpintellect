@@ -36,7 +36,12 @@ export function isTransactionAlreadyUsed(txid: string): boolean {
 export interface Order {
   id: string;
   email?: string;
-buyerName?: string; 
+  buyerName?: string;
+
+  // USDT deposit (unique per order via HD wallet)
+  depositAddress?: string;   // TRON (TRC-20) address to receive USDT
+  depositIndex?: number;     // HD derivation index used
+
   // Product
   productId: string;
   productName: string;
@@ -51,7 +56,7 @@ buyerName?: string;
   // Time
   createdAt: number;           // epoch ms
   createdAtISO?: string;       // human-readable timestamp
-
+paymentExpiresAt?: number;   // <-- add this (epoch ms, 30-min window)
   // One-time download token
   downloadTokenHash?: string;
   downloadExpiresAt?: number;
@@ -65,32 +70,49 @@ buyerName?: string;
 
 /* ========= Products ========= */
 export const PRODUCTS = {
+  // Subscriptions (no filePath needed)
+  aiAssistantMonthly: {
+    id: "ai-assistant-monthly",
+    name: "AI Assistant – Monthly",
+    priceUsd: 10,
+    available: true,
+  },
+  aiAssistantPro: {
+    id: "ai-assistant-pro",
+    name: "AI Assistant – Pro Monthly",
+    priceUsd: 30,
+    available: false,
+  },
+
+  // One-time bots
   scalperX1: {
-    id: "scalper-x1", // This must match what the backend expects
+    id: "scalper-x1",
     name: "Scalper X1",
     filePath: "MZPrimer_Scalper_X1_V.1.ex5",
     priceUsd: 50,
+    available: true,
   },
   fibonacciPro: {
     id: "fibonacci-pro",
     name: "Fibonacci Pro",
     filePath: "fibonacci_pro.ex5",
     priceUsd: 149,
+    available: false,
   },
-  // 🚫 TEMPORARILY DISABLED - COMING SOON
-  // hedgeMatrix: {
-  //   id: "hedge-matrix",
-  //   name: "Hedge Matrix",
-  //   filePath: "hedge_matrix.ex5", 
-  //   priceUsd: 119,
-  // },
-  // 🚫 TEMPORARILY DISABLED - COMING SOON  
-  // trendSeekerAi: {
-  //   id: "trend-seeker-ai",
-  //   name: "Trend Seeker AI",
-  //   filePath: "trend_seeker_ai.ex5",
-  //   priceUsd: 290,
-  // },
+hedgeMatrix: {
+id: "hedge-matrix",
+name: "Hedge Matrix",
+filePath: "hedge_matrix.ex5",
+priceUsd: 119,
+  available: false,
+ },
+ trendSeekerAi: {
+id: "trend-seeker-ai",
+name: "Trend Seeker AI",
+filePath: "trend_seeker_ai.ex5",
+priceUsd: 290,
+available: false,
+ },
 } as const;
 
 /* ========= File persistence ========= */
@@ -127,11 +149,10 @@ async function saveOrdersToDisk(map: Map<string, Order>) {
   try {
     await ensureDataDir();
     const arr = Array.from(map.values());
-    await writeFile(ORDERS_FILE, JSON.stringify(arr, null, 2), "utf8");
-    
-    // 🚨 ADD DEBUG
-    console.log('💾 ORDERS SAVED TO DISK:', arr.length, 'orders');
-    
+    const tmp = ORDERS_FILE + ".tmp";
+    await writeFile(tmp, JSON.stringify(arr, null, 2), "utf8");
+    await fs.promises.rename(tmp, ORDERS_FILE); // atomic-ish on most OSes
+    console.log("💾 ORDERS SAVED TO DISK:", arr.length, "orders");
   } catch (e) {
     console.error("💥 FAILED to save orders.json:", e);
   }
@@ -181,8 +202,12 @@ async function hydrateOrdersOnce() {
 }
 _ordersHydrated = hydrateOrdersOnce();
 
-// Callers that need data should await this
-export async function ensureOrdersHydrated() {
+// Ensure the in-memory store is hydrated exactly once.
+export async function ensureOrdersHydrated(): Promise<void> {
+  // If hydration hasn’t been kicked off yet (edge import order), start it now.
+  if (!_ordersHydrated) {
+    _ordersHydrated = hydrateOrdersOnce();
+  }
   await _ordersHydrated;
 }
 
@@ -202,6 +227,7 @@ export function createOrder(
     id: crypto.randomUUID(),
     status: "pending",
     createdAt: now,
+    paymentExpiresAt: now + 30 * 60 * 1000, // 30 minutes
     createdAtISO: new Date(now).toISOString(),
   };
 
@@ -237,7 +263,17 @@ export function getOrder(id: string): Order | undefined {
   
   return order;
 }
-
+export function markExpiredIfNeeded(id: string): Order | undefined {
+  const o = ORDERS.get(id);
+  if (!o) return undefined;
+  if (o.status !== 'pending') return o;
+  const now = Date.now();
+  const exp = o.paymentExpiresAt ?? (o.createdAt + 30 * 60 * 1000);
+  if (now > exp) {
+    return updateOrder(id, { status: 'expired' });
+  }
+  return o;
+}
 export function updateOrder(id: string, patch: Partial<Order>): Order | undefined {
   const cur = ORDERS.get(id);
   if (!cur) {
@@ -259,6 +295,9 @@ export function updateOrder(id: string, patch: Partial<Order>): Order | undefine
   saveOrdersToDisk(ORDERS).catch(() => {});
   saveOrdersToKV(ORDERS).catch(() => {});
   return next;
+}
+export function setOrderDepositAddress(id: string, address: string, index: number) {
+  return updateOrder(id, { depositAddress: address, depositIndex: index });
 }
 
 /* ========= Token issuing (after payment) ========= */
@@ -327,11 +366,3 @@ export async function verifyAndConsumeToken(token: string): Promise<Order> {
 export function getAllOrders(): Order[] {
   return Array.from(ORDERS.values()).sort((a, b) => b.createdAt - a.createdAt);
 }
-
-/* periodic safeguard save */
-setInterval(() => {
-  saveOrdersToDisk(ORDERS).catch(() => {});
-}, 5 * 60 * 1000);
-setInterval(() => {
-  saveOrdersToKV(ORDERS).catch(() => {});
-}, 5 * 60 * 1000);

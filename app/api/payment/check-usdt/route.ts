@@ -7,16 +7,16 @@ import {
   isTransactionAlreadyUsed,
 } from "../../../lib/orders";
 import { sendOrderConfirmation } from "../../../lib/email";
+import { ensureOrdersHydrated } from "../../../lib/orders"; // adjust path
+import { sweepChildToMaster } from "../../../lib/sweep";
+const TRONGRID_BASE = "https://api.trongrid.io";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** ---- Types (to avoid any) ---- */
-interface TronTokenInfo {
-  symbol?: string;
-  address?: string;
-}
+const USDT_DECIMALS = Number(process.env.USDT_DECIMALS || 6);
 
+/** TronGrid types (minimal) */
 interface TronTx {
   transaction_id?: string;
   txID?: string;
@@ -24,346 +24,229 @@ interface TronTx {
   from?: string;
   value?: string | number;
   block_timestamp?: number;
-  ret?: string;
-  type?: string;
-  token_info?: TronTokenInfo;
-  confirmed?: boolean;
+  token_info?: { symbol?: string; address?: string };
 }
-
 interface TronApiResponse {
   data?: TronTx[];
 }
 
 /**
- * Client polls:
  * GET /api/payment/check-usdt?orderId=...&txid=OPTIONAL
  */
 export async function GET(req: Request) {
+  await ensureOrdersHydrated();
   const { searchParams } = new URL(req.url);
   const orderId = searchParams.get("orderId") || "";
   const txidHint = searchParams.get("txid") || "";
 
-  const TRON_API_KEY = process.env.TRONGRID_API_KEY || "";
-  const WALLET = (process.env.USDT_WALLET || "").toLowerCase();
-  const USDT_CONTRACT =
-    process.env.USDT_TRC20_CONTRACT || "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
-
-  if (!orderId)
+  if (!orderId) {
     return NextResponse.json(
       { status: "pending", error: "orderId missing" },
       { status: 200 }
     );
+  }
 
   const order = getOrder(orderId);
-  if (!order)
+  if (!order) {
     return NextResponse.json(
       { status: "pending", error: "Order not found" },
       { status: 200 }
     );
-  if (order.method !== "usdt")
+  }
+
+  // Hard stop if order expired (30 minutes from creation unless overridden)
+  const payExpiresAt =
+    order.paymentExpiresAt ?? order.createdAt + 30 * 60 * 1000;
+  if (Date.now() > payExpiresAt && order.status !== "paid") {
+    // Optionally persist the expired state:
+    updateOrder(order.id, { status: "expired" });
     return NextResponse.json(
-      { status: "pending", error: "Wrong method" },
+      { status: "expired", error: "Order expired" },
       { status: 200 }
     );
+  }
 
-  // Already paid → reissue a fresh one-time token (idempotent)
+  // If already paid → issue fresh download token (idempotent)
   if (order.status === "paid") {
-    const { rawToken, expiresAt } = issueDownloadToken(order.id, 24 * 3600);
+    const { rawToken, expiresAt: tokenExpiresAt } = issueDownloadToken(
+      order.id,
+      24 * 3600
+    );
     return NextResponse.json(
-      { status: "paid", token: rawToken, expiresAt },
+      { status: "paid", token: rawToken, expiresAt: tokenExpiresAt },
       { status: 200 }
     );
   }
 
-  if (!TRON_API_KEY || !WALLET) {
+  const TARGET = ((order as any).depositAddress || process.env.USDT_WALLET || "").toLowerCase();
+  const TRON_API_KEY = process.env.TRONGRID_API_KEY || "";
+  const USDT_CONTRACT =
+    process.env.USDT_TRC20_CONTRACT ||
+    "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
+
+  if (!TARGET || !TRON_API_KEY) {
+  return NextResponse.json(
+    { status: "pending", error: "Server USDT env missing" },
+    { status: 200 }
+  );
+}
+
+  const url = `https://api.trongrid.io/v1/accounts/${TARGET}/transactions/trc20?limit=50&contract_address=${USDT_CONTRACT}`;
+  console.log('[check-usdt] order', order.id, 'target', TARGET, 'amount', order.amountUsd);
+  const res = await fetch(url, {
+    headers: { "TRON-PRO-API-KEY": TRON_API_KEY },
+  });
+
+  if (!res.ok) {
     return NextResponse.json(
-      { status: "pending", error: "Server missing Tron env" },
+      { status: "pending", error: `TronGrid ${res.status}` },
       { status: 200 }
     );
   }
 
+  const data: TronApiResponse = await res.json();
+  const txs: TronTx[] = Array.isArray(data?.data) ? data.data! : [];
+
+  // Match incoming transfer TO our wallet with exact amount (order.amountUsd)
+  const match = txs.find((tx) => {
+    const to = (tx.to || "").toLowerCase();
+    const raw = tx.value;
+    const amount =
+      raw != null ? (typeof raw === "string" ? Number(raw) : Number(raw)) : 0;
+    const val = amount / 10 ** USDT_DECIMALS;
+
+    const okTo = to === TARGET;
+    const okAmt = Math.abs(val - Number(order.amountUsd)) < 1e-4;
+    const okTxid = txidHint
+      ? tx.transaction_id === txidHint || tx.txID === txidHint
+      : true;
+
+    return okTo && okAmt && okTxid;
+  });
+
+  if (!match) {
+    return NextResponse.json({ status: "pending" }, { status: 200 });
+  }
+
+  const txid = match.transaction_id || match.txID || "";
+  if (!txid) {
+    return NextResponse.json(
+      { status: "pending", error: "Missing txid" },
+      { status: 200 }
+    );
+  }
+
+  if (isTransactionAlreadyUsed(txid)) {
+    return NextResponse.json({ status: "pending" }, { status: 200 });
+  }
+
+  // Mark paid and keep the returned order (we use it below)
+  const paid = updateOrder(order.id, { status: "paid", txid });
+  // ---- Auto-sweep funds from the child address to the master wallet (with confirmations gate) ----
+let sweepTx: string | undefined;
+try {
+  const idx =
+    (paid as any)?.depositIndex !== undefined
+      ? (paid as any).depositIndex
+      : (order as any).depositIndex;
+
+  if (typeof idx === "number" && process.env.USDT_MASTER_WALLET) {
+    const minConfs = Number(process.env.USDT_MIN_CONFIRMATIONS || 10);
+    const waitMs   = Number(process.env.USDT_SWEEP_CONFIRM_DELAY_MS || 10 * 60 * 1000);
+
+    // Check age first (fallback if API doesn’t return confirmations)
+    const txTimeMs = match.block_timestamp ? Number(match.block_timestamp) : 0;
+    const isOldEnough = txTimeMs > 0 ? (Date.now() - txTimeMs) >= waitMs : false;
+
+    // Try to fetch confirmations from TronGrid (best effort)
+    let hasEnoughConfs = false;
+    try {
+      const txDetailRes = await fetch(`${TRONGRID_BASE}/v1/transactions/${txid}`, {
+        headers: { "TRON-PRO-API-KEY": process.env.TRONGRID_API_KEY || "" },
+        cache: "no-store",
+      });
+      if (txDetailRes.ok) {
+        const txDetail = await txDetailRes.json().catch(() => ({} as any));
+        const items = Array.isArray(txDetail?.data) ? txDetail.data : [];
+        const first  = items[0] || {};
+        // TronGrid doesn’t always expose a numeric "confirmations"; use a few hints:
+        // - confirmed flag
+        // - block_timestamp distance
+        // If your plan exposes a numeric confirmations, add it here:
+        const confirmedFlag = first?.confirmed === true;
+        hasEnoughConfs = confirmedFlag;
+      }
+    } catch { /* ignore */ }
+
+    if (hasEnoughConfs || isOldEnough) {
+      const r = await sweepChildToMaster(idx); // sweep full USDT balance
+      sweepTx = r.txid;
+      console.log("[sweep] moved USDT to master wallet:", r, { hasEnoughConfs, isOldEnough });
+    } else {
+      console.log("[sweep] delayed; waiting for confirmations/age", {
+        txid,
+        minConfs,
+        waitMs,
+        txTimeMs,
+        now: Date.now(),
+      });
+    }
+  } else {
+    console.log("[sweep] skipped (no depositIndex or no USDT_MASTER_WALLET)");
+  }
+} catch (e) {
+  console.warn("[sweep] failed:", (e as Error).message);
+}
+
+  // Issue one-time download token
+  const { rawToken, expiresAt } = issueDownloadToken(order.id, 24 * 3600);
+
+  // (Optional) mint a license (ignore errors; payment is source of truth)
+  let licenseKey: string | undefined;
   try {
-    // 🚨 ADD TIMEOUT AND BETTER ERROR HANDLING
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-    console.log("🔔 ENTERING PAYMENT CHECK TRY BLOCK");
-    console.log("   - Order ID:", orderId);
-    console.log("   - Wallet:", WALLET);
-    console.log("   - Has API Key:", !!TRON_API_KEY);
-
-    const url = `https://api.trongrid.io/v1/accounts/${WALLET}/transactions/trc20?limit=50&contract_address=${USDT_CONTRACT}`;
-    console.log("   - API URL:", url);
-
-    const res = await fetch(url, {
-      headers: { "TRON-PRO-API-KEY": TRON_API_KEY },
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-    console.log("   - API Response Status:", res.status);
-
-    if (!res.ok) {
-      console.log("❌ API Error:", res.status, res.statusText);
-      return NextResponse.json(
-        { status: "pending", error: `TronGrid ${res.status}` },
-        { status: 200 }
-      );
-    }
-
-    const dataUnknown: unknown = await res.json();
-    const parsed = dataUnknown as TronApiResponse;
-    const transfers: TronTx[] = Array.isArray(parsed?.data) ? parsed.data! : [];
-
-    console.log("✅ API Response received, parsing data...");
-
-    // 🚨 ADD DEBUG FOR API RESPONSE
-    console.log("📊 TRONGRID API RESPONSE:", {
-      status: res.status,
-      totalTransactions: transfers.length,
-      success: res.ok,
-      url: url,
-    });
-
-    if (transfers.length === 0) {
-      console.log("⚠️  NO transactions found in API response");
-    } else {
-      const first = transfers[0];
-      console.log("✅ Transactions found, proceeding with matching...");
-      console.log(
-        "📋 API RESPONSE SAMPLE (first transaction):",
-        first
-          ? {
-              transaction_id: first.transaction_id,
-              to: first.to,
-              value: first.value,
-              block_timestamp: first.block_timestamp,
-            }
-          : "No transactions"
-      );
-    }
-
-    // 🚨 SINGLE DEBUG SECTION - CLEAN AND ORGANIZED
-    console.log("=== USDT PAYMENT DEBUG ===");
-    console.log("Order:", {
-      id: order.id,
-      amount: order.amountUsd,
-      createdAt: new Date(order.createdAt).toISOString(),
-      status: order.status,
-    });
-    console.log("Wallet:", WALLET);
-    console.log("Total transactions from API:", transfers.length);
-
-    // Log ALL transactions with complete details
-    transfers.forEach((tx: TronTx, index: number) => {
-      const to = (tx?.to || "").toLowerCase();
-      const from = (tx?.from || "").toLowerCase();
-      const numVal =
-        typeof tx?.value === "string" ? Number(tx.value) : Number(tx?.value || 0);
-      const value = numVal / 1e6;
-      const hash = tx?.transaction_id || tx?.txID || "";
-      const timestamp = tx?.block_timestamp
-        ? new Date(Number(tx.block_timestamp)).toISOString()
-        : "unknown";
-
-      console.log(`TX ${index + 1}:`, {
-        hash: hash ? hash.slice(0, 12) + "..." : "",
-        to,
-        from,
-        value: value.toFixed(6),
-        timestamp,
-        matchesOurWallet: to === WALLET,
-        matchesAmount: Math.abs(value - order.amountUsd) < 0.01,
-        isIncoming: to === WALLET,
-        isOutgoing: from === WALLET,
+    const base =
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "";
+    if (base) {
+      const r = await fetch(`${base}/api/license/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: order.email,
+          productId: "mz-ai-assistant",
+        }),
       });
-    });
-
-    // Optional debug: allow direction override with ?direction=out when testing
-    const direction = searchParams.get("direction"); // "in" | "out" | null
-    const wantIncoming = true;
-
-    // Only consider transfers after order creation (minus a small grace window)
-    // This avoids matching very old payments.
-
-    const match = transfers.find((tx: TronTx) => {
-      try {
-        // Normalize fields with safe defaults
-        const to = (tx?.to || "").toLowerCase();
-        const from = (tx?.from || "").toLowerCase();
-        const tsMs = tx?.block_timestamp ? Number(tx.block_timestamp) : 0;
-        const hash = tx?.transaction_id || tx?.txID || "";
-
-        // Amount (TRC20 USDT uses 6 decimals)
-        const raw = tx?.value;
-        const value =
-          raw != null
-            ? (typeof raw === "string" ? Number(raw) : Number(raw)) / 1e6
-            : 0;
-
-        // 🚨 RELAXED SECURITY VALIDATION (some fields might be missing)
-        const okDirection = to === WALLET.toLowerCase();
-        const okAmt = Math.abs(value - order.amountUsd) < 0.001;
-        const okHint = txidHint ? hash === txidHint : true;
-        const okTime = tsMs > order.createdAt;
-
-        // These fields might not be present in all API responses
-        const okConfirmed = tx?.confirmed !== false; // Default to true if missing
-        const okSuccess = (tx?.ret || "SUCCESS") === "SUCCESS"; // Default to success
-        const okToken = (tx?.token_info?.symbol || "USDT") === "USDT"; // Assume USDT
-        const okContract =
-          (tx?.token_info?.address || USDT_CONTRACT) === USDT_CONTRACT;
-        const okType = (tx?.type || "Transfer") === "Transfer"; // Assume transfer
-
-        // 🚨 ADD COMPREHENSIVE DEBUGGING
-        console.log("🔍 RELAXED SECURITY CHECK:", {
-          hash: hash ? hash.slice(0, 8) : "",
-          value,
-          expected: order.amountUsd,
-          okAmt,
-          okDirection,
-          okConfirmed,
-          okSuccess,
-          okToken,
-          okContract,
-          okType,
-          transactionTime: tsMs ? new Date(tsMs).toISOString() : "unknown",
-          orderTime: new Date(order.createdAt).toISOString(),
-          okTime,
-          isNewer: tsMs > order.createdAt,
-        });
-
-        // 🚨 FOCUS ON CORE VALIDATION - relax the optional fields
-        return okDirection && okAmt && okHint && okTime && okToken && okContract;
-      } catch (error) {
-        console.log("⚠️  Error validating transaction:", error);
-        return false; // Skip invalid transactions
-      }
-    });
-
-    if (!match) {
-      console.log("❌ NO MATCH FOUND - Analysis:");
-      console.log(
-        "- Any transactions to our wallet?",
-        transfers.some(
-          (tx: TronTx) => (tx?.to || "").toLowerCase() === WALLET.toLowerCase()
-        )
-      );
-      console.log(
-        "- Any transactions with correct amount?",
-        transfers.some((tx: TronTx) => {
-          const v =
-            tx?.value != null
-              ? (typeof tx.value === "string" ? Number(tx.value) : Number(tx.value)) /
-                1e6
-              : 0;
-          return Math.abs(v - order.amountUsd) < 0.001;
-        })
-      );
-      console.log(
-        "- Any incoming payments?",
-        transfers.some(
-          (tx: TronTx) => (tx?.to || "").toLowerCase() === WALLET.toLowerCase()
-        )
-      );
-      console.log("- Order amount expected:", order.amountUsd);
-
-      // Check if we're even getting any transactions
-      if (transfers.length === 0) {
-        console.log(
-          "⚠️  NO transactions returned from TronGrid API - check API key or wallet"
-        );
-      }
-
-      return NextResponse.json({ status: "pending" }, { status: 200 });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j?.key) licenseKey = String(j.key);
     }
-
-    const txid = match.transaction_id || match.txID || "";
-    if (isTransactionAlreadyUsed(txid)) {
-      console.log("🔒 TRANSACTION LOCKED: Already used for another order", txid);
-      return NextResponse.json({ status: "pending" }, { status: 200 });
-    }
-
-    // 🚨 CRITICAL VALIDATION: Ensure this is a NEW payment, not an old one
-    const txTime = match.block_timestamp ? Number(match.block_timestamp) : 0;
-    const orderTime = order.createdAt;
-
-    if (txTime <= orderTime) {
-      console.log("❌ REJECTED: Transaction is older than order:", {
-        txTime: txTime ? new Date(txTime).toISOString() : "unknown",
-        orderTime: new Date(orderTime).toISOString(),
-        transactionId: match.transaction_id || match.txID,
-      });
-      return NextResponse.json({ status: "pending" }, { status: 200 });
-    }
-
-    console.log("✅ VALIDATED: Transaction is newer than order:", {
-      txTime: new Date(txTime).toISOString(),
-      orderTime: new Date(orderTime).toISOString(),
-      differenceMinutes: (txTime - orderTime) / (1000 * 60),
-    });
-
-    // Mark paid, store txid, issue token
-    const paid = updateOrder(order.id, {
-      status: "paid",
-      txid: match.transaction_id || match.txID || "",
-    });
-
-    console.log("🔄 Order update result:", paid);
-    console.log("New status:", paid?.status);
-
-    const { rawToken, expiresAt } = issueDownloadToken(order.id, 24 * 3600);
-
-    // Email the one-time link
-    if (paid?.email) {
-      console.log("📧 [check-usdt] Sending email", {
-        to: paid.email,
-        orderId: paid.id,
-        txid: paid.txid,
-        tokenPreview: rawToken.slice(0, 8) + "...",
-      });
-
-      try {
-        await sendOrderConfirmation({
-          to: paid.email,
-          orderId: paid.id,
-          productName: paid.productName,
-          downloadToken: rawToken,
-          amountPaid: paid.amountUsd,
-          paymentDetails: {
-            wallet: process.env.USDT_WALLET || "",
-            amount: paid.amountUsd,
-            txid: paid.txid || "", // ✅ correct key name
-            network: "TRC20",
-          },
-        });
-        console.log("✅ [check-usdt] Email sent OK");
-      } catch (err) {
-        console.error("❌ [check-usdt] Email send failed:", err);
-      }
-    } else {
-      console.warn("⚠️ [check-usdt] No email on order; skipping send", {
-        orderId: order.id,
-      });
-    }
-
-    return NextResponse.json(
-      { status: "paid", token: rawToken, expiresAt },
-      { status: 200 }
-    );
-  } catch (e: unknown) {
-    if ((e as Error).name === "AbortError") {
-      console.error("⏰ API CALL TIMEOUT: TronGrid took too long to respond");
-      return NextResponse.json(
-        { status: "pending", error: "API timeout" },
-        { status: 200 }
-      );
-    }
-    console.error("💥 PAYMENT CHECK ERROR:", (e as Error).message);
-    console.error("   - Error name:", (e as Error).name);
-    return NextResponse.json(
-      { status: "pending", error: (e as Error).message },
-      { status: 200 }
-    );
+  } catch {
+    /* ignore */
   }
+
+  // Email the customer
+  if (order.email) {
+    try {
+      await sendOrderConfirmation({
+        to: order.email,
+        orderId: order.id,
+        productName: order.productName ?? "AI Assistant Subscription",
+        amountPaid: Number(order.amountUsd),
+        downloadToken: rawToken, // required by OrderEmailDetails
+        paymentDetails: {
+          wallet: process.env.USDT_WALLET || "",
+          amount: Number(order.amountUsd),
+          txid,
+          network: "TRC20",
+        },
+      });
+    } catch (e) {
+      console.error("[check-usdt] email send error:", e);
+    }
+  }
+
+  return NextResponse.json(
+    { status: "paid", token: rawToken, expiresAt, licenseKey, sweepTx },
+    { status: 200 }
+  );
 }

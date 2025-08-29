@@ -1,11 +1,13 @@
-import { Suspense } from 'react';
-import CheckoutClient from './CheckoutClient';
 // app/checkout/page.tsx
+import { Suspense } from 'react';
+import CheckoutClient from '../checkout/CheckClient';
+
 export const metadata = {
   title: 'Checkout – MZPrimer',
   description: 'Secure checkout for MZPrimer products.',
   robots: { index: false, follow: false },
 };
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 

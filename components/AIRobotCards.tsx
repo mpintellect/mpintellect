@@ -14,11 +14,15 @@ interface Stats {
 interface Bot { 
   id: string; 
   name: string; 
-  price: string;            // keep as formatted string like "$50"
+  price: string;            // e.g. "$10/mo" or "$50"
   available: boolean;
-  short: string;            // short tagline
-  description: string;      // long description for modal
+  short: string;
+  description: string;
   features: string[];
+  /** where the Buy button goes (use ?product=… for subscriptions) */
+  href: string;
+  /** small badge text like "Subscription" (optional) */
+  badge?: string;
   stats?: Stats;
   originalPrice?: string;
 }
@@ -35,6 +39,7 @@ export default function AIRobotCards() {
         'Scalper X1 is designed to capture quick, frequent moves on liquid pairs. It uses volatility filters, spread checks, and time-of-day rules to avoid dead sessions. Works best on low-spread brokers (ECN), M5–M15 charts. Use sensible risk per trade and avoid news spikes.',
       price: '$50',
       available: true,
+      href: '/checkout?bot=scalper', 
       features: ['MT5 Ready', '0.01–1.0 Lot Supported', 'Auto TP/SL', 'Backtested'],
       stats: {
         riskReward: '1:1.2 – 1:1.8',
@@ -45,6 +50,18 @@ export default function AIRobotCards() {
       }
     },
     {
+      id: 'ai-assistant-monthly',
+      name: 'AI Assistant — Monthly',
+      short: 'Unlimited Assistant scenarios & updates.',
+      description:
+        'Get full access to the AI Assistant with all features, regular updates, and priority improvements every month.',
+      price: '$10/mo',
+      available: true,
+      href: '/checkout?product=ai-assistant-monthly',
+      badge: 'Subscription',
+      features: ['Unlimited scenarios', 'Priority improvements', 'Works across web app'],
+    },
+    {
       id: 'fibonacci',
       name: 'Fibonacci Pro',
       short: 'Retracement & extension confluence entries.',
@@ -52,6 +69,7 @@ export default function AIRobotCards() {
         'Fibonacci Pro looks for swing structure and confluence zones, with confirmation logic to reduce false starts. Suits swing–intra trades with moderate risk and clear targets.',
       price: '$149',
       available: false,
+      href: '/checkout?bot=fibonacci', // ← add this line
       features: ['Fibonacci-Based Logic', 'Auto Risk Management', 'Breakout Detection', 'Multi-Pair Compatible'],
       stats: {
         riskReward: '1:1.5 – 1:2.5',
@@ -69,6 +87,7 @@ export default function AIRobotCards() {
         'Hedge Matrix uses balanced Buy/Sell logic across correlated behavior to reduce pure directional exposure and smooth equity during choppy sessions.',
       price: '$119',
       available: false,
+      href: '/checkout?bot=hedge-matrix',
       features: ['Hedge Detection', 'Low Risk', 'Drawdown Control', 'Multiple Asset Use'],
       stats: {
         riskReward: 'Variable',
@@ -86,6 +105,7 @@ export default function AIRobotCards() {
         'Trend Seeker AI rides medium-term trends with trailing logic and volatility gates to avoid whipsaws. Works best on trending pairs and higher timeframes.',
       price: '$139',
       available: false,
+      href: '/checkout?bot=trend-seeker-ai',
       features: ['Trend Logic', 'Dynamic Trailing Stop', 'AI Signal Filters', 'Risk/Reward Balanced'],
       stats: {
         riskReward: '1:2 – 1:3',
@@ -94,7 +114,19 @@ export default function AIRobotCards() {
         timeframe: 'M30 / H1',
         accountMin: '$150'
       }
-    }
+    },
+    {
+      id: 'ai-assistant-pro',
+      name: 'AI Assistant — Pro Monthly',
+      short: 'Pro tier for power users.',
+      description:
+        'Everything in Monthly plus higher limits and extras designed for power users.',
+      price: '$30/mo',
+      available: false,
+      href: '/checkout?product=ai-assistant-pro',
+      badge: 'Subscription',
+      features: ['Higher limits', 'Priority support', 'All Monthly features'],
+    },
   ];
 
   return (
@@ -111,6 +143,11 @@ export default function AIRobotCards() {
         {robots.map((bot) => (
           <div key={bot.id} className="robot-card">
             <h3 className="robot-name">{bot.name}</h3>
+            {bot.badge && (
+  <div className="mt-2 inline-flex items-center rounded-full border border-emerald-800 bg-emerald-900/40 px-2 py-0.5 text-xs text-emerald-200">
+    {bot.badge}
+  </div>
+)}
             <p className="robot-short">{bot.short}</p>
             <ul className="robot-features">
               {bot.features.map((f, i) => (
@@ -121,34 +158,45 @@ export default function AIRobotCards() {
   <div className="robot-price">{bot.price}</div>
   <div className="robot-actions">
     {bot.available ? (
-      <a
-        href={`/checkout?bot=${bot.id}`}
-        className="robot-buy-button"
-        data-cta="true"
-        data-cta-name={`Buy Now – ${bot.name}`}
-        data-ads-send-to="AW-16927724463/n3hlCNmcy6oaEK-n4oc_"
-        data-value={bot.price?.replace(/[^0-9.]/g, '') || "0"}
-        data-currency="USD"
-      >
-        Buy Now
-      </a>
-    ) : (
-      <button className="robot-buy-button coming-soon" disabled>
-        Coming Soon
-      </button>
-    )}
+  <a
+    href={bot.href}
+    className="robot-buy-button"
+    data-cta="true"
+    data-cta-name={`Buy Now – ${bot.name}`}
+    data-ads-send-to="AW-16927724463/n3hlCNmcy6oaEK-n4oc_"
+    data-value={bot.price?.replace(/[^0-9.]/g, '') || '0'}
+    data-currency="USD"
+  >
+    Buy Now
+  </a>
+) : (
+  <button className="robot-buy-button coming-soon" disabled>
+    Coming Soon
+  </button>
+)}
 
-    <button
-      type="button"
-      className="robot-readmore-button"
-      data-cta="true"
-      data-cta-name={`Read More – ${bot.name}`}
-      onClick={() => setSelected(bot)}
-      aria-haspopup="dialog"
-      aria-controls="robot-modal"
-    >
-      Read More
-    </button>
+    {bot.id.startsWith('ai-assistant') ? (
+  <a
+    href="/tools/ai-assistant"
+    className="robot-readmore-button"
+    data-cta="true"
+    data-cta-name={`Read More – ${bot.name}`}
+  >
+    Read More
+  </a>
+) : (
+  <button
+    type="button"
+    className="robot-readmore-button"
+    data-cta="true"
+    data-cta-name={`Read More – ${bot.name}`}
+    onClick={() => setSelected(bot)}
+    aria-haspopup="dialog"
+    aria-controls="robot-modal"
+  >
+    Read More
+  </button>
+)}
   </div>
             </div>
           </div>

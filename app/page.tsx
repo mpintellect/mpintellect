@@ -2,9 +2,8 @@ import StickyLogo from '@/components/StickyLogo';
 import Navbar from '@/components/Navbar';
 import MobileMenu from '@/components/MobileMenu';
 import Hero from '@/components/Hero';
-import MarketSection from '@/components/MarketSection';
+import TraderAssistantLite from "@/components/TraderAssistantLite";
 import LearningHub from '@/components/LearningHub';
-import MZCalculatorSection from '@/components/MZCalculatorSection';
 import AccountsSection from '@/components/AccountsSection';
 import AiToolsSection from '@/components/AiToolsSection';
 import ContactSection from '@/components/ContactSection';
@@ -42,9 +41,15 @@ export default function Home() {
       <Navbar />
       <MobileMenu />
       <Hero />
-      <MarketSection />
+      <section id="ai-assistant" className="ta-anchor-offset ta-home-block ai-assistant-section">
+  <h2 className="ta-title">AI Trader Assistant</h2>
+  <p className="ta-subtitle">
+    AI-powered trading assistant: set your balance, symbol, leverage, and style to instantly calculate SL/TP levels, margin requirements, risk metrics, and view a simulated M5 price path — all in one clean, beginner-friendly tool.
+  </p>
+
+  <TraderAssistantLite />
+</section>
       <LearningHub />
-      <MZCalculatorSection />
       <AccountsSection />
       <AiToolsSection />
       <ContactSection />

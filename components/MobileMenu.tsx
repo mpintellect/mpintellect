@@ -5,11 +5,11 @@ import { Menu, X } from 'lucide-react';
 
 const navItems = [
   { label: 'Home', href: '/' },
-  { label: 'Market', href: '/#market' },
   { label: 'Learning', href: '/#learning' },
   { label: 'Accounts', href: '/#accounts' },
   { label: 'AI Trading', href: '/#aitrading' },
-  { label: 'AI Tools', href: '/ai-robot' }, // Stays as-is
+  { label: 'Trading Robots', href: '/ai-robot' },
+  { label: 'AI Assistant', href: '/tools/ai-assistant' },
   { label: 'Contact', href: '/#contacts' },
   { label: 'Privacy', href: '/#privacy' },
   { label: 'Blog', href: '/blog' },
@@ -21,9 +21,7 @@ export default function MobileMenu() {
   const [activeItem, setActiveItem] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -33,14 +31,16 @@ export default function MobileMenu() {
 
   return (
     <>
-      <div className="mobile-header">
-  <button onClick={() => setIsOpen(!isOpen)} className="mobile-menu-button">
-    {isOpen ? <X size={28} /> : <Menu size={28} />}
-  </button>
-</div>
+      {/* Burger icon on the left */}
+      <div className="mobile-header-left">
+        <button onClick={() => setIsOpen(!isOpen)} className="mobile-menu-button">
+          {isOpen ? <X size={28} /> : <Menu size={28} />}
+        </button>
+      </div>
 
-      {isOpen && (
-        <div className="mobile-menu-list">
+      {/* Backdrop + Panel */}
+      <div className={`mobile-menu-list ${isOpen ? 'open' : ''}`}>
+        <div className="mobile-menu-panel">
           {navItems.map((item) => (
             <a
               key={item.href}
@@ -55,7 +55,7 @@ export default function MobileMenu() {
             </a>
           ))}
         </div>
-      )}
+      </div>
     </>
   );
 }

@@ -1,3 +1,4 @@
+// app/lib/email.ts
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 
@@ -6,28 +7,35 @@ export interface OrderEmailDetails {
   to: string;                 // recipient email
   orderId: string;
   productName: string;
-  downloadToken: string;      // one-time token
   amountPaid: number;
+
+  // Either bot OR subscription:
+  downloadToken?: string;     // one-time token (bots only)
+  licenseKey?: string;        // license (subscriptions only)
+
+  // Optional extra context for subs
+  assistantUrl?: string;      // e.g. https://mzprimer.com/tools/ai-assistant
+
   paymentDetails?: {
     wallet: string;
     amount: number;
-    // Support either key casing; callers can send txId or txid
-    txId?: string;
+    txId?: string;            // support both casings
     txid?: string;
     network: string;
   };
 }
 
-/** Resolve site base URL (for download link) */
+/* ----------------- helpers ----------------- */
+
 function getBaseUrl() {
   const url =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXT_PUBLIC_BASE_URL ||
     "http://localhost:3000";
-  return url.replace(/\/+$/, ""); // strip trailing slash
+  return url.replace(/\/+$/, "");
 }
 
-/** Singleton transporter */
+/** Reusable SMTP transporter (singleton) */
 let _transporter: nodemailer.Transporter | null = null;
 function getTransporter() {
   if (_transporter) return _transporter;
@@ -35,53 +43,40 @@ function getTransporter() {
   const { EMAIL_SERVER, EMAIL_PORT, EMAIL_USER, EMAIL_PASSWORD } = process.env;
   if (!EMAIL_SERVER || !EMAIL_USER || !EMAIL_PASSWORD) {
     throw new Error(
-      "Email transport missing envs. Required: EMAIL_SERVER, EMAIL_USER, EMAIL_PASSWORD (EMAIL_PORT optional)."
+      "Email env missing: EMAIL_SERVER, EMAIL_USER, EMAIL_PASSWORD (EMAIL_PORT optional)."
     );
   }
 
-  const portNum = Number(EMAIL_PORT || 465);
-  const secure = portNum === 465; // 465=SSL, 587=STARTTLS
+  const portNum = Number(EMAIL_PORT || 465); // 465 SSL, 587 STARTTLS
+  const secure = portNum === 465;
 
   _transporter = nodemailer.createTransport({
     host: EMAIL_SERVER,
     port: portNum,
     secure,
     auth: { user: EMAIL_USER, pass: EMAIL_PASSWORD },
-    logger: true,   // keep while debugging
-    debug: true     // keep while debugging
+    logger: true,
+    debug: true,
   } as SMTPTransport.Options);
 
   return _transporter;
 }
 
-/** HTML email (inline styles for client compatibility) */
-function buildHtml(order: OrderEmailDetails, downloadLink: string) {
+/* ---------------- BOT TEMPLATE (with download) ---------------- */
+
+function buildHtmlBot(order: OrderEmailDetails, downloadLink: string) {
   const pay = order.paymentDetails;
-  const txId = pay?.txId ?? pay?.txid ?? ""; // <- unify here
-  const payBlock = pay
-    ? `
-      <div style="margin-top:12px;padding:12px;border:1px solid #2a2d31;border-radius:12px;background:#0f1114;color:#e9e9ea">
-        <div style="font-weight:700;margin-bottom:6px">Payment Details</div>
-        <div><b>Network:</b> ${pay.network}</div>
-        <div><b>Wallet:</b> ${pay.wallet}</div>
-        <div><b>Amount:</b> $${pay.amount.toFixed(2)}</div>
-        <div><b>TXID:</b> ${txId}</div>
-      </div>`
-    : "";
+  const txId = pay?.txId ?? pay?.txid ?? "";
 
   return `
   <div style="background:#0a0a0a;padding:24px;color:#e9e9ea;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial">
-  <div style="max-width:640px;margin:0 auto;background:#111214;border:1px solid #2a2d31;border-radius:14px;padding:24px;position:relative">
-    
-    <!-- ✅ Logo smaller, top-right -->
-    <div style="text-align:right; margin-bottom:12px;">
-      <img src="https://i.postimg.cc/rwN7Fk5Z/mzlogotransap.png"
-     alt="MZPrimer Logo"
-     style="height:32px;width:auto;display:inline-block;border:0;outline:none;text-decoration:none;" />
-    </div>
+    <div style="max-width:640px;margin:0 auto;background:#111214;border:1px solid #2a2d31;border-radius:14px;padding:24px">
+      <div style="text-align:right;margin-bottom:12px">
+        <img src="https://i.postimg.cc/rwN7Fk5Z/mzlogotransap.png" alt="MZPrimer" style="height:32px;width:auto;border:0" />
+      </div>
 
       <h2 style="margin:0 0 8px 0;font-size:22px;font-weight:800;color:#e9e9ea">Thank you for your order!</h2>
-      <p style="margin:0 0 14px 0;color:#a9acb2">Here are your purchase details:</p>
+      <p style="margin:0 0 14px 0;color:#a9acb2">Your trading bot is ready.</p>
 
       <div style="padding:12px;border:1px solid #2a2d31;border-radius:12px;background:#0f1012">
         <div style="margin-bottom:6px"><b>Product:</b> ${order.productName}</div>
@@ -89,7 +84,17 @@ function buildHtml(order: OrderEmailDetails, downloadLink: string) {
         <div><b>Order ID:</b> ${order.orderId}</div>
       </div>
 
-      ${payBlock}
+      ${
+        pay
+          ? `<div style="margin-top:12px;padding:12px;border:1px solid #2a2d31;border-radius:12px;background:#0f1114;color:#e9e9ea">
+               <div style="font-weight:700;margin-bottom:6px">Payment Details</div>
+               <div><b>Network:</b> ${pay.network}</div>
+               <div><b>Wallet:</b> ${pay.wallet}</div>
+               <div><b>Amount:</b> $${pay.amount.toFixed(2)}</div>
+               <div><b>TXID:</b> ${txId}</div>
+             </div>`
+          : ""
+      }
 
       <div style="text-align:center;margin:18px 0 10px">
         <a href="${downloadLink}"
@@ -103,31 +108,29 @@ function buildHtml(order: OrderEmailDetails, downloadLink: string) {
 
       <p style="margin-top:20px;color:#a9acb2">
         We also attached a PDF guide with installation and usage instructions.
-        If you have any questions, reply to this email or contact
-        <a href="mailto:contact@mzprimer.com" style="color:#f5c84b;text-decoration:none">contact@mzprimer.com</a>.
+        Questions? <a href="mailto:contact@mzprimer.com" style="color:#f5c84b;text-decoration:none">contact@mzprimer.com</a>.
       </p>
 
-      <div style="margin-top:32px;padding-top:16px;border-top:1px solid #333;
-                  color:#aaa;font-size:13px;line-height:1.6">
+      <div style="margin-top:32px;padding-top:16px;border-top:1px solid #333;color:#aaa;font-size:13px;line-height:1.6">
         <strong style="color:#fff">MZPrimer Team</strong><br/>
         <span style="color:#bbb">AI Trading Solutions · Education · Market Analysis</span><br/>
-        <a href="https://mzprimer.com" style="color:#f5c84b;text-decoration:none">www.mzprimer.com</a><br/>
-        <a href="mailto:contact@mzprimer.com" style="color:#f5c84b;text-decoration:none">contact@mzprimer.com</a>
+        <a href="https://mzprimer.com" style="color:#f5c84b;text-decoration:none">www.mzprimer.com</a>
       </div>
     </div>
   </div>`;
 }
 
-/** Plain-text fallback */
-function buildText(order: OrderEmailDetails, downloadLink: string) {
+function buildTextBot(order: OrderEmailDetails, downloadLink: string) {
   const lines = [
     `Thank you for your order!`,
     ``,
     `Product: ${order.productName}`,
     `Amount Paid: $${order.amountPaid.toFixed(2)}`,
     `Order ID: ${order.orderId}`,
+    ``,
+    `Download your trading bot (one-time, expires in 24h):`,
+    downloadLink,
   ];
-
   if (order.paymentDetails) {
     const txId = order.paymentDetails.txId ?? order.paymentDetails.txid ?? "";
     lines.push(
@@ -139,60 +142,154 @@ function buildText(order: OrderEmailDetails, downloadLink: string) {
       `  TXID: ${txId}`
     );
   }
-
-  lines.push(
-    ``,
-    `Download your trading bot (one-time, expires in 24h):`,
-    `${downloadLink}`,
-    ``,
-    `We've attached a PDF guide with installation instructions.`,
-    ``,
-    `Support: contact@mzprimer.com`,
-    `--`,
-    `MZPrimer Team`,
-    `https://mzprimer.com`
-  );
-
+  lines.push(``, `Support: contact@mzprimer.com`, `https://mzprimer.com`);
   return lines.join("\n");
 }
 
-/** Public API */
+/* -------- SUBSCRIPTION TEMPLATE (with license + link) -------- */
+
+function buildHtmlSubscription(order: OrderEmailDetails) {
+  const pay = order.paymentDetails;
+  const txId = pay?.txId ?? pay?.txid ?? "";
+  const openUrl = order.assistantUrl || `${getBaseUrl()}/tools/ai-assistant`;
+
+  return `
+  <div style="background:#0a0a0a;padding:24px;color:#e9e9ea;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial">
+    <div style="max-width:640px;margin:0 auto;background:#111214;border:1px solid #2a2d31;border-radius:14px;padding:24px">
+      <div style="text-align:right;margin-bottom:12px">
+        <img src="https://i.postimg.cc/rwN7Fk5Z/mzlogotransap.png" alt="MZPrimer" style="height:32px;width:auto;border:0" />
+      </div>
+
+      <h2 style="margin:0 0 8px 0;font-size:22px;font-weight:800;color:#e9e9ea">Subscription activated 🎉</h2>
+      <p style="margin:0 0 14px 0;color:#a9acb2">Your AI Assistant subscription is now active.</p>
+
+      <div style="padding:12px;border:1px solid #2a2d31;border-radius:12px;background:#0f1012">
+        <div style="margin-bottom:6px"><b>Plan:</b> ${order.productName}</div>
+        <div style="margin-bottom:6px"><b>Amount Paid:</b> $${order.amountPaid.toFixed(2)}</div>
+        <div><b>Order ID:</b> ${order.orderId}</div>
+      </div>
+
+      ${
+        pay
+          ? `<div style="margin-top:12px;padding:12px;border:1px solid #2a2d31;border-radius:12px;background:#0f1114;color:#e9e9ea">
+               <div style="font-weight:700;margin-bottom:6px">Payment Details</div>
+               <div><b>Network:</b> ${pay.network}</div>
+               <div><b>Wallet:</b> ${pay.wallet}</div>
+               <div><b>Amount:</b> $${pay.amount.toFixed(2)}</div>
+               <div><b>TXID:</b> ${txId}</div>
+             </div>`
+          : ""
+      }
+
+      ${
+        order.licenseKey
+          ? `<div style="margin-top:12px;padding:12px;border:1px dashed #3b3f46;border-radius:12px;background:#0f1012;color:#e9e9ea">
+               <div style="font-weight:700;margin-bottom:6px">Your License Key</div>
+               <div style="font-family:ui-monospace,Menlo,Consolas,monospace;background:#0b0c0e;padding:10px;border-radius:8px">
+                 ${order.licenseKey}
+               </div>
+               <div style="margin-top:6px;color:#a9acb2;font-size:12px">
+                 Keep this key safe. It may be required for activation.
+               </div>
+             </div>`
+          : ""
+      }
+
+      <div style="text-align:center;margin:18px 0 10px">
+        <a href="${openUrl}"
+           style="display:inline-block;background:#22c55e;color:#0b0f12;padding:12px 18px;border-radius:12px;text-decoration:none;font-weight:800">
+          Open AI Assistant
+        </a>
+      </div>
+
+      <p style="margin-top:20px;color:#a9acb2">
+        Need help? Reply to this email or contact
+        <a href="mailto:contact@mzprimer.com" style="color:#f5c84b;text-decoration:none">contact@mzprimer.com</a>.
+      </p>
+
+      <div style="margin-top:32px;padding-top:16px;border-top:1px solid #333;color:#aaa;font-size:13px;line-height:1.6">
+        <strong style="color:#fff">MZPrimer Team</strong><br/>
+        <span style="color:#bbb">AI Trading Solutions · Education · Market Analysis</span><br/>
+        <a href="https://mzprimer.com" style="color:#f5c84b;text-decoration:none">www.mzprimer.com</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildTextSubscription(order: OrderEmailDetails) {
+  const lines = [
+    `Subscription activated`,
+    ``,
+    `Plan: ${order.productName}`,
+    `Amount Paid: $${order.amountPaid.toFixed(2)}`,
+    `Order ID: ${order.orderId}`,
+  ];
+  if (order.paymentDetails) {
+    const txId = order.paymentDetails.txId ?? order.paymentDetails.txid ?? "";
+    lines.push(
+      ``,
+      `Payment Details:`,
+      `  Network: ${order.paymentDetails.network}`,
+      `  Wallet: ${order.paymentDetails.wallet}`,
+      `  Amount: $${order.paymentDetails.amount.toFixed(2)}`,
+      `  TXID: ${txId}`
+    );
+  }
+  const openUrl = order.assistantUrl || `${getBaseUrl()}/tools/ai-assistant`;
+  if (order.licenseKey) lines.push(``, `License Key: ${order.licenseKey}`);
+  lines.push(``, `Open AI Assistant: ${openUrl}`, ``, `Support: contact@mzprimer.com`, `https://mzprimer.com`);
+  return lines.join("\n");
+}
+
+/* ------------------- public API ------------------- */
+
 export async function sendOrderConfirmation(order: OrderEmailDetails): Promise<void> {
   if (!order?.to) throw new Error("Missing recipient email (order.to)");
 
   const baseUrl = getBaseUrl();
-  const downloadLink = `${baseUrl}/api/download?token=${encodeURIComponent(order.downloadToken)}`;
+  const isSubscription = !!order.licenseKey;
+
+  // Build download link only for bot purchases
+  const downloadLink = !isSubscription && order.downloadToken
+    ? `${baseUrl}/api/download?token=${encodeURIComponent(order.downloadToken)}`
+    : null;
 
   const tx = getTransporter();
 
-  // Helpful logs while testing
-  console.log("📧 Preparing order email", {
+  console.log("📧 Sending order email", {
     to: order.to,
     orderId: order.orderId,
     product: order.productName,
-    downloadLink,
+    mode: isSubscription ? "subscription" : "bot",
   });
 
-  try {
-    const info = await tx.sendMail({
-      from: process.env.EMAIL_FROM || `"MZPrimer" <${process.env.EMAIL_USER || "no-reply@mzprimer.com"}>`,
-      to: order.to,
-      subject: `Your MZPrimer Order #${order.orderId} — ${order.productName}`,
-      text: buildText(order, downloadLink),
-      html: buildHtml(order, downloadLink),
-      replyTo: process.env.EMAIL_FROM || undefined,
-      attachments: [
+  const html = isSubscription
+    ? buildHtmlSubscription(order)
+    : buildHtmlBot(order, downloadLink || "#");
+
+  const text = isSubscription
+    ? buildTextSubscription(order)
+    : buildTextBot(order, downloadLink || "#");
+
+  const attachments = isSubscription
+    ? [] // no PDF for subscriptions
+    : [
         {
           filename: "MZPrimer_Bot_Guide.pdf",
           path: "./public/docs/MZPrimer_Bot_Guide.pdf",
           contentType: "application/pdf",
         },
-      ],
-    });
+      ];
 
-    console.log("✅ Email sent:", info.messageId);
-  } catch (err) {
-    console.error("❌ Email send failed:", err);
-    throw err;
-  }
+  await tx.sendMail({
+    from:
+      process.env.EMAIL_FROM ||
+      `"MZPrimer" <${process.env.EMAIL_USER || "no-reply@mzprimer.com"}>`,
+    to: order.to,
+    subject: `Your MZPrimer Order #${order.orderId} — ${order.productName}`,
+    text,
+    html,
+    replyTo: process.env.EMAIL_FROM || undefined,
+    attachments,
+  });
 }

@@ -198,11 +198,21 @@ try {
   console.warn("[sweep] failed:", (e as Error).message);
 }
 
-  // Issue one-time download token
-  const { rawToken, expiresAt } = issueDownloadToken(order.id, 24 * 3600);
+// Determine if this order is a bot (has filePath) or a subscription (no filePath)
+const isBot = Boolean(order.filePath && order.filePath.trim());
 
-  // (Optional) mint a license (ignore errors; payment is source of truth)
-  let licenseKey: string | undefined;
+// Bots: issue one-time token
+let rawToken: string | undefined;
+let tokenExpiresAt: number | undefined;
+if (isBot) {
+  const t = issueDownloadToken(order.id, 24 * 3600);
+  rawToken = t.rawToken;
+  tokenExpiresAt = t.expiresAt;
+}
+
+// Subscriptions: mint license
+let licenseKey: string | undefined;
+if (!isBot) {
   try {
     const base =
       process.env.NEXT_PUBLIC_BASE_URL ||
@@ -212,41 +222,47 @@ try {
       const r = await fetch(`${base}/api/license/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: order.email,
-          productId: "mz-ai-assistant",
-        }),
+        body: JSON.stringify({ email: order.email, productId: "mz-ai-assistant" }),
       });
       const j = await r.json().catch(() => ({}));
       if (r.ok && j?.key) licenseKey = String(j.key);
     }
-  } catch {
-    /* ignore */
-  }
+  } catch {}
+}
 
-  // Email the customer
-  if (order.email) {
-    try {
-      await sendOrderConfirmation({
-        to: order.email,
-        orderId: order.id,
-        productName: order.productName ?? "AI Assistant Subscription",
-        amountPaid: Number(order.amountUsd),
-        downloadToken: rawToken, // required by OrderEmailDetails
-        paymentDetails: {
-          wallet: process.env.USDT_WALLET || "",
-          amount: Number(order.amountUsd),
-          txid,
-          network: "TRC20",
-        },
-      });
-    } catch (e) {
-      console.error("[check-usdt] email send error:", e);
-    }
-  }
+// Send email
+if (order.email) {
+  try {
+    await sendOrderConfirmation({
+      to: order.email,
+      orderId: order.id,
+      productName: order.productName ?? "Order",
+      amountPaid: Number(order.amountUsd),
 
-  return NextResponse.json(
-    { status: "paid", token: rawToken, expiresAt, licenseKey, sweepTx },
-    { status: 200 }
-  );
+      downloadToken: isBot ? rawToken : undefined,      // bots only
+      licenseKey: !isBot ? (licenseKey || "(issued)") : undefined,  // subs only
+      assistantUrl:
+        (process.env.NEXT_PUBLIC_SITE_URL ||
+         process.env.NEXT_PUBLIC_BASE_URL ||
+         "http://localhost:3000").replace(/\/+$/,"") + "/tools/ai-assistant",
+
+      paymentDetails: {
+        wallet: process.env.USDT_WALLET || "",
+        amount: Number(order.amountUsd),
+        txid,
+        network: "TRC20",
+      },
+    });
+  } catch (e) {
+    console.error("[check-usdt] email send error:", e);
+  }
+}
+
+// API response (no download token for subs)
+return NextResponse.json(
+  isBot
+    ? { status: "paid", token: rawToken, expiresAt: tokenExpiresAt, sweepTx }
+    : { status: "paid", licenseKey, sweepTx },
+  { status: 200 }
+);
 }

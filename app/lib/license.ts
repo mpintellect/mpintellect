@@ -1,4 +1,9 @@
-import crypto from 'crypto';
+import crypto from "crypto";
+
+/** SHA256 hash helper for fingerprints, license keys, etc. */
+export function hash(input: string): string {
+  return crypto.createHash("sha256").update(input).digest("hex");
+}
 
 const SECRET = process.env.LICENSE_SIGNING_SECRET!;
 

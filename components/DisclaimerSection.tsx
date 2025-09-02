@@ -11,9 +11,6 @@ export default function DisclaimerSection() {
         <p>
           Performance data is illustrative and past results do not guarantee future outcomes. Always evaluate your own risk tolerance and consult with a licensed financial advisor before making any investment decisions.
         </p>
-        <p className="disclaimer-highlight">⚠️ Important:<br />
-          We collaborate with regulated platforms, but the availability of features like leverage, trading tools, and promotions may vary depending on your location and trader profile. Always read the terms and conditions directly from the provider.
-        </p>
       </div>
     </section>
   );

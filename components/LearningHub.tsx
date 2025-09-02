@@ -16,7 +16,7 @@ const TABS: Record<
       'Margin vs. free margin',
     ],
     ctaText: 'Start with the Forex Calculator →',
-    ctaHref: '#mzcalc',
+    ctaHref: 'https://www.mzprimer.com/tools/ai-assistant',
     ctaName: 'Start with the Forex Calculator',
     adsSendTo: 'AW-16927724463/n3hlCNmcy6oaEK-n4oc_',
   },
@@ -28,8 +28,7 @@ const TABS: Record<
       'How to map confluence fast',
     ],
     ctaText: 'See Analysts’ Insights →',
-    ctaHref:
-      '-',
+    ctaHref:'https://www.mzprimer.com/tools/ai-assistant',
     ctaName: 'See Analysts Insights',
     adsSendTo: 'AW-16927724463/n3hlCNmcy6oaEK-n4oc_',
   },
@@ -41,7 +40,7 @@ const TABS: Record<
       'Win-rate vs. R:R — what actually matters',
     ],
     ctaText: 'Position Size Helper →',
-    ctaHref: '#mzcalc',
+    ctaHref: 'https://www.mzprimer.com/tools/ai-assistant',
     ctaName: 'Position Size Helper',
     adsSendTo: 'AW-16927724463/n3hlCNmcy6oaEK-n4oc_',
   },
@@ -130,7 +129,6 @@ export default function LearningHub() {
 
         {/* Quick shortcuts */}
         <div className="learn-shortcuts">
-          <a href="#market" className="chip">Weekly Levels</a>
           <a href="#aitrading" className="chip">AI Trading</a>
           <a href="#accounts" className="chip">Open Account</a>
           <Link href="/ai-robot" className="chip">Buy Trading Robot</Link>

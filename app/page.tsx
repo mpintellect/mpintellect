@@ -5,10 +5,13 @@ import Hero from '@/components/Hero';
 import TraderAssistantLite from "@/components/TraderAssistantLite";
 import LearningHub from '@/components/LearningHub';
 import AiToolsSection from '@/components/AiToolsSection';
+import AccountsSection from '@/components/AccountsSection';
 import ContactSection from '@/components/ContactSection';
 import PrivacySection from '@/components/PrivacySection';
-import TrustSection from '@/components/TrustSection';
 import DisclaimerSection from '@/components/DisclaimerSection';
+import TrustSection from '@/components/TrustSection';
+import PaymentLogo from 'components/PaymentLogo';
+
 export const metadata = {
   title: 'MZPrimer – Your Gateway to Smart Trading',
   description:
@@ -50,10 +53,12 @@ export default function Home() {
 </section>
       <LearningHub />
       <AiToolsSection />
+      <AccountsSection />
       <ContactSection />
       <PrivacySection />
-      <TrustSection />
       <DisclaimerSection />
+      <TrustSection />
+      <PaymentLogo />
     </>
   );
 }

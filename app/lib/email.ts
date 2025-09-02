@@ -1,6 +1,9 @@
 // app/lib/email.ts
 import nodemailer from "nodemailer";
-import SMTPTransport from "nodemailer/lib/smtp-transport";
+// ❌ old: import SMTPTransport from "nodemailer/lib/smtp-transport";
+import type SMTPTransport from "nodemailer/lib/smtp-transport/index.js"; // <-- ESM-safe, type-only
+import fs from "fs";
+import path from "path";
 
 /** Public type you can import elsewhere */
 export interface OrderEmailDetails {
@@ -14,7 +17,7 @@ export interface OrderEmailDetails {
   licenseKey?: string;        // license (subscriptions only)
 
   // Optional extra context for subs
-  assistantUrl?: string;      // e.g. https://mzprimer.com/tools/ai-assistant
+  assistantUrl?: string;      // e.g. https://mzprimer.com/tools/ai-assistant?activate=1
 
   paymentDetails?: {
     wallet: string;
@@ -151,7 +154,7 @@ function buildTextBot(order: OrderEmailDetails, downloadLink: string) {
 function buildHtmlSubscription(order: OrderEmailDetails) {
   const pay = order.paymentDetails;
   const txId = pay?.txId ?? pay?.txid ?? "";
-  const openUrl = order.assistantUrl || `${getBaseUrl()}/tools/ai-assistant`;
+  const openUrl = order.assistantUrl || `${getBaseUrl()}/tools/ai-assistant?activate=1`;
 
   return `
   <div style="background:#0a0a0a;padding:24px;color:#e9e9ea;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial">
@@ -235,7 +238,7 @@ function buildTextSubscription(order: OrderEmailDetails) {
       `  TXID: ${txId}`
     );
   }
-  const openUrl = order.assistantUrl || `${getBaseUrl()}/tools/ai-assistant`;
+  const openUrl = order.assistantUrl || `${getBaseUrl()}/tools/ai-assistant?activate=1`;
   if (order.licenseKey) lines.push(``, `License Key: ${order.licenseKey}`);
   lines.push(``, `Open AI Assistant: ${openUrl}`, ``, `Support: contact@mzprimer.com`, `https://mzprimer.com`);
   return lines.join("\n");
@@ -250,9 +253,27 @@ export async function sendOrderConfirmation(order: OrderEmailDetails): Promise<v
   const isSubscription = !!order.licenseKey;
 
   // Build download link only for bot purchases
-  const downloadLink = !isSubscription && order.downloadToken
-    ? `${baseUrl}/api/download?token=${encodeURIComponent(order.downloadToken)}`
-    : null;
+  const downloadLink =
+    !isSubscription && order.downloadToken
+      ? `${baseUrl}/api/download?token=${encodeURIComponent(order.downloadToken)}`
+      : null;
+
+  // Build attachments safely (bot only, PDF optional)
+  let attachments: Array<{ filename: string; path: string; contentType: string }> = [];
+  if (!isSubscription) {
+    const guideAbs = path.resolve(process.cwd(), "public", "docs", "MZPrimer_Bot_Guide.pdf");
+    if (fs.existsSync(guideAbs)) {
+      attachments = [
+        {
+          filename: "MZPrimer_Bot_Guide.pdf",
+          path: guideAbs,
+          contentType: "application/pdf",
+        },
+      ];
+    } else {
+      console.warn("[email] Bot guide PDF not found at:", guideAbs);
+    }
+  }
 
   const tx = getTransporter();
 
@@ -270,16 +291,6 @@ export async function sendOrderConfirmation(order: OrderEmailDetails): Promise<v
   const text = isSubscription
     ? buildTextSubscription(order)
     : buildTextBot(order, downloadLink || "#");
-
-  const attachments = isSubscription
-    ? [] // no PDF for subscriptions
-    : [
-        {
-          filename: "MZPrimer_Bot_Guide.pdf",
-          path: "./public/docs/MZPrimer_Bot_Guide.pdf",
-          contentType: "application/pdf",
-        },
-      ];
 
   await tx.sendMail({
     from:

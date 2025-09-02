@@ -1,6 +1,6 @@
 // app/api/order/create/route.ts
 import { NextResponse } from "next/server";
-// ✅ EXACT CHANGE #1: use absolute import so path never breaks
+// If you have a tsconfig path alias, prefer: import { createOrder, PRODUCTS } from "@/app/lib/orders";
 import { createOrder, PRODUCTS } from "../../../lib/orders";
 
 export const runtime = "nodejs";
@@ -46,7 +46,6 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
 
     const {
-      method,
       email,
       buyerName,
       // optional hints from client; we’ll validate & fallback
@@ -54,82 +53,71 @@ export async function POST(req: Request) {
       productName: productNameHint,
       amountUsd: amountHint,
     } = body as {
-      method?: "card" | "usdt";
       email?: string;
-      buyerName?: string;   
+      buyerName?: string;
       productId?: string;
       productName?: string;
       amountUsd?: number;
     };
 
-    // ✅ EXACT CHANGE #2: normalize email early (non-breaking hygiene)
+    // Normalize + validate email
     const normEmail = (email || "").trim().toLowerCase();
-
-    // 1) validate basics
-    if (method !== "usdt" && method !== "card") {
-      return NextResponse.json({ error: "Invalid payment method" }, { status: 400 });
-    }
     if (!normEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(normEmail)) {
       return NextResponse.json({ error: "Valid email required" }, { status: 400 });
     }
 
-    // 2) choose product from catalog (default Scalper X1)
-    //    If a hint is provided and matches a key in PRODUCTS, use it.
-    let catalogKey: keyof typeof PRODUCTS = "scalperX1"; // default
+    // Choose product from catalog (default: Scalper X1)
+    let catalogKey: keyof typeof PRODUCTS = "scalperX1";
+    if (productIdHint === "scalper" || productIdHint === "scalper-x1") catalogKey = "scalperX1";
+    if (productIdHint === "fibonacci" || productIdHint === "fibonacci-pro") catalogKey = "fibonacciPro";
+    if (productIdHint === "ai-assistant-monthly") catalogKey = "aiAssistantMonthly";
+    if (productIdHint === "ai-assistant-pro") catalogKey = "aiAssistantPro";
 
-    // Handle frontend's simplified product IDs
-    if (productIdHint === "scalper") catalogKey = "scalperX1";
-    if (productIdHint === "fibonacci") catalogKey = "fibonacciPro";
-    // 🚫 Remove unavailable bots:
-    // if (productIdHint === 'hedge') catalogKey = "hedgeMatrix";
-    // if (productIdHint === 'trendbot') catalogKey = "trendSeekerAi";
-
-    // Fallback if product doesn't exist
     if (!PRODUCTS[catalogKey]) {
-      console.error("Product not found:", productIdHint, "using default");
+      console.warn("Product not found, falling back to Scalper X1:", productIdHint);
       catalogKey = "scalperX1";
-      console.log("🎯 PRODUCT SELECTION:", {
-        productIdHint,
-        catalogKey,
-        catalogProduct: PRODUCTS[catalogKey],
-        allProducts: Object.keys(PRODUCTS),
-      });
     }
     const catalog = PRODUCTS[catalogKey];
     if (!catalog) {
       return NextResponse.json({ error: "Product not available" }, { status: 404 });
     }
 
-    // 3) price: default to catalog price; allow override in dev if env set
+    // Price: default to catalog price; allow override in dev if env set
     const allowOverride =
       process.env.ALLOW_PRICE_OVERRIDE === "1" || process.env.NODE_ENV !== "production";
     const parsedAmount =
       typeof amountHint === "number" && isFinite(amountHint) && amountHint > 0
         ? Math.round(amountHint * 100) / 100
         : undefined;
-
     const amountUsd = allowOverride && parsedAmount ? parsedAmount : catalog.priceUsd;
 
-    // 4) geo metadata
+    // Geo metadata
     const headers = req.headers;
     const ip = pickIP(headers);
     const { countryCode, countryName } = pickCountry(headers);
+    
+function getFilePath(p: (typeof PRODUCTS)[keyof typeof PRODUCTS]): string {
+  return "filePath" in p && typeof (p as any).filePath === "string" ? (p as any).filePath : "";
+}
+    // Create order (CARD-ONLY) — safely pick filePath only for bot SKUs
+const filePath =
+  "filePath" in catalog && typeof (catalog as any).filePath === "string"
+    ? (catalog as any).filePath
+    : "";
 
-    // 5) create order (this now PERSISTS internally via lib/orders.ts)
-    const order = createOrder({
-      productId: catalog.id,
-      productName: productNameHint || catalog.name,
-      filePath: catalog.filePath,
-      amountUsd,
-      method,
-      email: normEmail, // ← normalized
-      buyerName,
-      ip,
-      countryCode,
-      countryName,
-    });
+const order = createOrder({
+  productId: catalog.id,
+  productName: productNameHint || catalog.name,
+  filePath,                 // <-- now typed safely for both cases
+  amountUsd,
+  method: "card",
+  email: normEmail,
+  buyerName,
+  ip,
+  countryCode,
+  countryName,
+});
 
-    // ✅ EXACT CHANGE #3: tiny debug to verify persistence flow on first runs
     console.log("✅ Order created & persisted:", {
       id: order.id,
       method: order.method,
@@ -137,23 +125,15 @@ export async function POST(req: Request) {
       product: order.productName,
     });
 
-    // 6) respond
+    // Respond (no USDT/crypto block)
     return NextResponse.json({
       orderId: order.id,
-      method: order.method,
+      method: order.method, // "card"
       amountUsd: order.amountUsd,
       createdAt: order.createdAt,
       createdAtISO: order.createdAtISO,
       countryCode: order.countryCode || null,
       countryName: order.countryName || null,
-      ...(method === "usdt" && {
-        usdt: {
-          wallet: process.env.USDT_WALLET,
-          network: "TRC20" as const,
-          amount: order.amountUsd,
-          memo: order.id, // client can put this in a memo if they want
-        },
-      }),
     });
   } catch (e: unknown) {
     console.error("Order creation failed:", (e as Error)?.message || e);

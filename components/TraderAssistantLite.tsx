@@ -1,5 +1,5 @@
 'use client';
-
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import LicenseModal from '../components/LicenseModal';               // (unused for now, ok to keep)
 import { readLocalLicense } from '../app/lib/license-local';           // (optional helper)
@@ -156,6 +156,18 @@ useEffect(() => {
     for (const k of LEGACY_SUB_KEYS) localStorage.setItem(k, v);
   } catch {}
 }, [isSubscribed]);
+
+// Auto-open license modal if coming from email with ?activate=1
+const sp = useSearchParams();
+useEffect(() => {
+  if (sp.get('activate') === '1') {
+    setLicenseOpen(true);
+
+    // Optional: prefill from ?key=... if you ever include it in emails
+    const keyFromUrl = sp.get('key');
+    if (keyFromUrl) setLicenseKey(keyFromUrl.trim());
+  }
+}, [sp]);
 
   // quick activation via prompt (keeps UI unchanged)
   const activateLicense = () => {

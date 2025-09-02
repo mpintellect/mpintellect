@@ -24,7 +24,7 @@ async function kvSet(key: string, val: unknown): Promise<void> {
 const KV_ORDERS_DUMP_KEY = "orders:dump:v1";
 /* ========= Types ========= */
 export type OrderStatus = "pending" | "paid" | "expired";
-export type PaymentMethod = "card" | "usdt";
+export type PaymentMethod = "card";
 export function isTransactionAlreadyUsed(txid: string): boolean {
   for (const order of ORDERS.values()) {
     if (order.txid === txid && order.status === "paid") {
@@ -32,40 +32,6 @@ export function isTransactionAlreadyUsed(txid: string): boolean {
     }
   }
   return false;
-}
-export interface Order {
-  id: string;
-  email?: string;
-  buyerName?: string;
-
-  // USDT deposit (unique per order via HD wallet)
-  depositAddress?: string;   // TRON (TRC-20) address to receive USDT
-  depositIndex?: number;     // HD derivation index used
-
-  // Product
-  productId: string;
-  productName: string;
-  filePath: string;            // filename only (we resolve from /private/robots)
-  amountUsd: number;
-
-  // Payment
-  method: PaymentMethod;       // "card" | "usdt"
-  status: OrderStatus;         // "pending" | "paid" | "expired"
-  txid?: string;               // keep lowercase and optional
-
-  // Time
-  createdAt: number;           // epoch ms
-  createdAtISO?: string;       // human-readable timestamp
-paymentExpiresAt?: number;   // <-- add this (epoch ms, 30-min window)
-  // One-time download token
-  downloadTokenHash?: string;
-  downloadExpiresAt?: number;
-  downloadUsed?: boolean;
-
-  // Geo (best-effort)
-  ip?: string | null;
-  countryCode?: string | null; // e.g. "ES"
-  countryName?: string | null; // e.g. "Spain"
 }
 
 /* ========= Products ========= */
@@ -114,7 +80,35 @@ priceUsd: 290,
 available: false,
  },
 } as const;
+export interface Order {
+  id: string;
+  email?: string;
+  buyerName?: string;
 
+  // (USDT fields removed)
+  // depositAddress?: string;
+  // depositIndex?: number;
+
+  productId: string;
+  productName: string;
+  filePath: string;
+  amountUsd: number;
+
+  method: "card";
+  status: "pending" | "paid" | "expired";
+  txid?: string;
+
+  createdAt: number;
+  createdAtISO?: string;
+
+  downloadTokenHash?: string;
+  downloadExpiresAt?: number;
+  downloadUsed?: boolean;
+
+  ip?: string | null;
+  countryCode?: string | null;
+  countryName?: string | null;
+}
 /* ========= File persistence ========= */
 const DATA_DIR = path.join(process.cwd(), "data");
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
@@ -227,23 +221,20 @@ export function createOrder(
     id: crypto.randomUUID(),
     status: "pending",
     createdAt: now,
-    paymentExpiresAt: now + 30 * 60 * 1000, // 30 minutes
     createdAtISO: new Date(now).toISOString(),
   };
 
   ORDERS.set(order.id, order);
   saveOrdersToKV(ORDERS).catch(() => {});
-  
-  // 🚨 ADD DEBUG
-  console.log('🆕 ORDER CREATED:', {
+
+  console.log("🆕 ORDER CREATED:", {
     id: order.id,
     amount: order.amountUsd,
     product: order.productName,
     method: order.method,
-    status: order.status
+    status: order.status,
   });
-  
-  // persist in background if you already have saveOrdersToDisk
+
   try { saveOrdersToDisk?.(ORDERS); } catch {}
   return order;
 }
@@ -262,17 +253,6 @@ export function getOrder(id: string): Order | undefined {
   }
   
   return order;
-}
-export function markExpiredIfNeeded(id: string): Order | undefined {
-  const o = ORDERS.get(id);
-  if (!o) return undefined;
-  if (o.status !== 'pending') return o;
-  const now = Date.now();
-  const exp = o.paymentExpiresAt ?? (o.createdAt + 30 * 60 * 1000);
-  if (now > exp) {
-    return updateOrder(id, { status: 'expired' });
-  }
-  return o;
 }
 export function updateOrder(id: string, patch: Partial<Order>): Order | undefined {
   const cur = ORDERS.get(id);
@@ -295,9 +275,6 @@ export function updateOrder(id: string, patch: Partial<Order>): Order | undefine
   saveOrdersToDisk(ORDERS).catch(() => {});
   saveOrdersToKV(ORDERS).catch(() => {});
   return next;
-}
-export function setOrderDepositAddress(id: string, address: string, index: number) {
-  return updateOrder(id, { depositAddress: address, depositIndex: index });
 }
 
 /* ========= Token issuing (after payment) ========= */

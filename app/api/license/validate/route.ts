@@ -1,7 +1,7 @@
 // app/api/license/validate/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { DevStore } from '../../../lib/dev-store';
-import { hash } from '../../../lib/license';
+import { hash } from '../../../lib/licenses';
 
 export async function GET(req: NextRequest) {
   const key = req.nextUrl.searchParams.get('key') || '';

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyLicense } from '../../../lib/license';
+import { verifyLicense } from '../../../lib/licenses';
 
 export async function POST(req: NextRequest) {
   const { key, deviceId } = await req.json();

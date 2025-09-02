@@ -10,7 +10,7 @@ type Order = {
   productName: string;
   filePath: string;
   amountUsd: number;
-  method: "card" | "usdt";
+  method: "card";
   status: "pending" | "paid" | "expired";
   createdAt: number;
   createdAtISO?: string;

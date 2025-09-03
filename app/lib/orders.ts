@@ -40,7 +40,7 @@ export const PRODUCTS = {
   aiAssistantMonthly: {
     id: "ai-assistant-monthly",
     name: "AI Assistant – Monthly",
-    priceUsd: 1,
+    priceUsd: 10,
     available: true,
   },
   aiAssistantPro: {
@@ -55,7 +55,7 @@ export const PRODUCTS = {
     id: "scalper-x1",
     name: "Scalper X1",
     filePath: "MZPrimer_Scalper_X1_V.1.ex5",
-    priceUsd: 1,
+    priceUsd: 50,
     available: true,
   },
   fibonacciPro: {

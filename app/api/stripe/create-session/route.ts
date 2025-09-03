@@ -29,7 +29,7 @@ function baseUrl() {
   const u =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXT_PUBLIC_BASE_URL ||
-    "http://localhost:3000";
+    "http://www.mzprimer.com";
   return u.replace(/\/+$/, "");
 }
 

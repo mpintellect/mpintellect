@@ -28,6 +28,7 @@
     "qrcode.react": "^4.2.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "resend": "^6.0.2",
     "stripe": "^18.5.0",
     "tronweb": "^6.0.4"
   },

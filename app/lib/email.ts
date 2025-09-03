@@ -75,7 +75,7 @@ function buildHtmlBot(order: OrderEmailDetails, downloadLink: string) {
   <div style="background:#0a0a0a;padding:24px;color:#e9e9ea;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial">
     <div style="max-width:640px;margin:0 auto;background:#111214;border:1px solid #2a2d31;border-radius:14px;padding:24px">
       <div style="text-align:right;margin-bottom:12px">
-        <img src="https://i.postimg.cc/rwN7Fk5Z/mzlogotransap.png" alt="MZPrimer" style="height:32px;width:auto;border:0" />
+        <img src="https://i.postimg.cc/4yNW4Ts2/mzlogotransap.png" alt="MZPrimer" style="height:32px;width:auto;border:0" />
       </div>
 
       <h2 style="margin:0 0 8px 0;font-size:22px;font-weight:800;color:#e9e9ea">Thank you for your order!</h2>
@@ -160,7 +160,7 @@ function buildHtmlSubscription(order: OrderEmailDetails) {
   <div style="background:#0a0a0a;padding:24px;color:#e9e9ea;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial">
     <div style="max-width:640px;margin:0 auto;background:#111214;border:1px solid #2a2d31;border-radius:14px;padding:24px">
       <div style="text-align:right;margin-bottom:12px">
-        <img src="https://i.postimg.cc/rwN7Fk5Z/mzlogotransap.png" alt="MZPrimer" style="height:32px;width:auto;border:0" />
+        <img src="https://i.postimg.cc/4yNW4Ts2/mzlogotransap.png" alt="MZPrimer" style="height:32px;width:auto;border:0" />
       </div>
 
       <h2 style="margin:0 0 8px 0;font-size:22px;font-weight:800;color:#e9e9ea">Subscription activated 🎉</h2>

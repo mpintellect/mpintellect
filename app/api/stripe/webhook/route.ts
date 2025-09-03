@@ -8,21 +8,15 @@ import {
   issueDownloadToken,
 } from "../../../lib/orders";
 import { sendOrderConfirmation } from "../../../lib/email";
+import { createLicense } from "../../../lib/licenses";
 
-// App Router: keep Node runtime and read the raw text body
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2025-08-27.basil", // ✅ matches your SDK types
+  apiVersion: "2025-08-27.basil",
 });
 
-/**
- * We expect you already set metadata when creating the Stripe Checkout Session:
- *   metadata: { orderId, productId, email }
- * mode==="subscription" => subscription product
- * mode==="payment"      => one-time bot (downloadable)
- */
 export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature") || "";
   const secret = process.env.STRIPE_WEBHOOK_SECRET || "";
@@ -30,17 +24,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing STRIPE_WEBHOOK_SECRET" }, { status: 500 });
   }
 
+  const body = await req.text();
   let event: Stripe.Event;
-  const body = await req.text(); // IMPORTANT: raw body for signature verification
-
   try {
     event = stripe.webhooks.constructEvent(body, sig, secret);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Invalid signature";
-    return NextResponse.json({ error: `Webhook Error: ${msg}` }, { status: 400 });
+  } catch (err: any) {
+    return NextResponse.json({ error: `Webhook Error: ${err?.message || "Invalid signature"}` }, { status: 400 });
   }
 
-  // Ensure our in-memory store is hydrated before we touch orders
   await ensureOrdersHydrated();
 
   try {
@@ -55,100 +46,108 @@ export async function POST(req: Request) {
           session.metadata?.email ||
           "";
 
-        // Guard: we only act if we have an orderId (your create-session should set it)
+        console.log("🔄 Processing Stripe webhook:", {
+          orderId,
+          eventType: event.type,
+          hasEmail: !!email
+        });
+
         if (!orderId) {
-          // Nothing to do — we don’t invent orders in webhook
+          console.error("❌ No orderId in metadata");
           return NextResponse.json({ ok: true, note: "No orderId in metadata" });
         }
 
         const order = getOrder(orderId);
         if (!order) {
-          // Don’t fail the webhook: maybe create-session didn’t create a local order
+          console.error("❌ Order not found:", orderId);
           return NextResponse.json({ ok: true, note: "Order not found; skipping" });
         }
 
-        // Mark order paid (idempotent)
+        // Update order status FIRST
         if (order.status !== "paid") {
-          updateOrder(order.id, {
-            status: "paid",
+          updateOrder(order.id, { 
+            status: "paid", 
             txid: `stripe-${session.id}`,
+            email: email || order.email
           });
+          console.log("✅ Order marked as paid:", orderId);
         }
 
-        // Decide: subscription vs one-time bot
-        const isSubscription =
-          session.mode === "subscription" || !!session.subscription;
+        const isSubscription = session.mode === "subscription" || !!session.subscription;
 
-        // Prepare optional values
         let licenseKey: string | undefined;
         let rawToken: string | undefined;
         let expiresAt: number | undefined;
 
         if (isSubscription) {
-          // Create license via your existing endpoint
-          try {
-            const base =
-              process.env.NEXT_PUBLIC_BASE_URL ||
-              process.env.NEXT_PUBLIC_SITE_URL ||
-              "";
-            if (base && email) {
-              const r = await fetch(`${base.replace(/\/+$/, "")}/api/license/create`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  email,
-                  productId: "mz-ai-assistant",
-                }),
-              });
-              const j = await r.json().catch(() => ({}));
-              if (r.ok && j?.key) licenseKey = String(j.key);
-            }
-          } catch {
-            /* ignore - payment is the source of truth */
-          }
-
-          // Send subscription email (license + Open Assistant link)
+          console.log("📋 Processing subscription order");
+          
           if (email) {
-await sendOrderConfirmation({
-  to: email,
-  orderId: order.id,
-  productName: order.productName ?? "AI Assistant Subscription",
-  amountPaid: Number(order.amountUsd),
-  // Always force subscription template, even if minting lagged:
-  licenseKey: licenseKey ?? "(issued)",
-  assistantUrl: `${
-    (process.env.NEXT_PUBLIC_SITE_URL ||
-      process.env.NEXT_PUBLIC_BASE_URL ||
-      "https://mzprimer.com").replace(/\/+$/, "")
-  }/tools/ai-assistant?activate=1`,
-  paymentDetails: {
-    wallet: "Stripe",
-    amount: Number(order.amountUsd),
-    txId: session.id,
-    network: "Card",
-  },
-});
+            try {
+              const lic = await createLicense(email, productId || "mz-ai-assistant");
+              licenseKey = lic.key;
+              
+              await sendOrderConfirmation({
+                to: email,
+                orderId: order.id,
+                productName: order.productName ?? "AI Assistant Subscription",
+                amountPaid: Number(order.amountUsd),
+                licenseKey,
+                assistantUrl: `${
+                  (process.env.NEXT_PUBLIC_SITE_URL ||
+                    process.env.NEXT_PUBLIC_BASE_URL ||
+                    "https://mzprimer.com").replace(/\/+$/, "")
+                }/tools/ai-assistant?activate=1`,
+                paymentDetails: {
+                  wallet: "Stripe",
+                  amount: Number(order.amountUsd),
+                  txId: session.id,
+                  network: "Card",
+                },
+              });
+              console.log("✅ Subscription email sent to:", email);
+            } catch (emailError) {
+              console.error("❌ Failed to send subscription email:", emailError);
+            }
           }
         } else {
-          // One-time bot download
-          const t = issueDownloadToken(order.id, 24 * 3600);
-          rawToken = t.rawToken;
-          expiresAt = t.expiresAt;
+          console.log("🤖 Processing bot purchase order");
+          
+          try {
+            // Generate download token for bot purchases
+            const t = issueDownloadToken(order.id, 24 * 3600);
+            rawToken = t.rawToken;
+            expiresAt = t.expiresAt;
 
-          if (email) {
-            await sendOrderConfirmation({
-              to: email,
-              orderId: order.id,
-              productName: order.productName,
-              amountPaid: Number(order.amountUsd),
-              downloadToken: rawToken, // <- switches template to bot download
-              paymentDetails: {
-                wallet: "Stripe",
-                amount: Number(order.amountUsd),
-                txId: session.id,
-                network: "Card",
-              },
+            console.log("🪙 Generated download token:", {
+              orderId,
+              tokenLength: rawToken?.length,
+              tokenPreview: rawToken ? `${rawToken.substring(0, 10)}...` : 'NONE'
             });
+
+            if (email && rawToken) {
+              await sendOrderConfirmation({
+                to: email,
+                orderId: order.id,
+                productName: order.productName,
+                amountPaid: Number(order.amountUsd),
+                downloadToken: rawToken,
+                paymentDetails: {
+                  wallet: "Stripe",
+                  amount: Number(order.amountUsd),
+                  txId: session.id,
+                  network: "Card",
+                },
+              });
+              console.log("✅ Bot purchase email sent to:", email);
+            } else {
+              console.error("❌ Missing email or token for bot purchase:", {
+                hasEmail: !!email,
+                hasToken: !!rawToken
+              });
+            }
+          } catch (tokenError) {
+            console.error("❌ Failed to process bot purchase:", tokenError);
           }
         }
 
@@ -157,24 +156,23 @@ await sendOrderConfirmation({
           handled: "checkout.session.completed",
           orderId,
           isSubscription,
-          licenseKey,
-          token: rawToken,
-          expiresAt,
+          emailSent: !!email,
+          licenseKey: licenseKey ? `${licenseKey.substring(0, 8)}...` : null,
+          token: rawToken ? `${rawToken.substring(0, 10)}...` : null,
         });
       }
 
       case "invoice.payment_succeeded": {
-        // Optional: handle recurring subscription renewals (send “renewal” email, etc.)
-        // We won’t change orders here to avoid confusion.
+        console.log("💵 Invoice payment succeeded event");
         return NextResponse.json({ ok: true, handled: "invoice.payment_succeeded" });
       }
 
       default:
-        // Acknowledge others to keep Stripe happy
+        console.log("⚪ Ignored event type:", event.type);
         return NextResponse.json({ ok: true, ignored: event.type });
     }
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
+  } catch (err: any) {
+    console.error("[webhook] handler error:", event.type, err);
+    return NextResponse.json({ error: err?.message || "Webhook handler failed" }, { status: 500 });
   }
 }

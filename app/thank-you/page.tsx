@@ -1,4 +1,6 @@
 // app/thank-you/page.tsx
+import Link from 'next/link';
+
 export default async function ThankYouPage({
   searchParams,
 }: {
@@ -9,45 +11,93 @@ export default async function ThankYouPage({
   const pageLicense = params?.license ?? "";
   const sessionId = params?.session_id ?? "";
 
-  // Try to fetch order info by session id (works if webhook already ran)
+  // Try to fetch order info by session id
   let fetched: any = null;
+  let isBotPurchase = false;
+  let productName = "";
+
   if (sessionId) {
     try {
-      const r = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/orders/by-session?session_id=${encodeURIComponent(sessionId)}`, { cache: "no-store" });
-      fetched = await r.json();
-    } catch {}
+      const r = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/orders/by-session?session_id=${encodeURIComponent(sessionId)}`,
+        { 
+          cache: "no-store",
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        }
+      );
+      
+      if (r.ok) {
+        fetched = await r.json();
+        if (fetched?.ok && fetched.order) {
+          isBotPurchase = !!fetched.order.filePath; // Check if it's a bot purchase
+          productName = fetched.order.productName || "";
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch order:", error);
+    }
   }
 
   const resolvedOrder = fetched?.ok ? fetched.order : null;
-  // const resolvedLicense = resolvedOrder?.licenseKey || pageLicense; // if you later store it
 
   return (
     <div className="checkout-wrap">
-      <h1 className="checkout-title">Thank you!</h1>
+      <h1 className="checkout-title">Thank you for your purchase! 🎉</h1>
 
       <div className="checkout-card">
-        <h3 className="checkout-card-title">Payment received</h3>
+        <h3 className="checkout-card-title">Payment received successfully</h3>
 
-        {orderId && <p>Order ID: <b>{orderId}</b></p>}
-        {sessionId && <p>Stripe session: <code>{sessionId}</code></p>}
+        {orderId && (
+          <p>
+            <strong>Order ID:</strong> <code>{orderId}</code>
+          </p>
+        )}
+        
+        {sessionId && (
+          <p>
+            <strong>Stripe session:</strong> <code className="session-code">{sessionId}</code>
+          </p>
+        )}
 
         {resolvedOrder ? (
           <>
-            <p><b>Product:</b> {resolvedOrder.productName}</p>
-            {/* If you later expose license/download here, show it */}
-            {/* {resolvedLicense && <pre className="code-block">{resolvedLicense}</pre>} */}
-            <a className="checkout-btn" href="/tools/ai-assistant">
-              Open AI Assistant
-            </a>
+            <p><strong>Product:</strong> {productName}</p>
+            <p><strong>Amount:</strong> ${resolvedOrder.amountUsd?.toFixed(2) || "0.00"}</p>
+            
+            {isBotPurchase ? (
+              <div className="download-info">
+                <p>📥 Your download link has been sent to your email.</p>
+                <p className="small-text">Check your inbox (and spam folder) for the download instructions.</p>
+              </div>
+            ) : (
+              <div className="subscription-info">
+                <p>✅ Your subscription is now active!</p>
+                <Link href="/tools/ai-assistant" className="checkout-btn">
+                  Open AI Assistant
+                </Link>
+              </div>
+            )}
           </>
         ) : (
           <>
-            <p>We’ve sent a confirmation email{orderId ? " with your details" : ""}.</p>
-            <a className="checkout-btn" href="/tools/ai-assistant">
-              Open AI Assistant
-            </a>
+            <div className="pending-info">
+              <p>We're processing your order...</p>
+              <p>We've sent a confirmation email{orderId ? " with your order details" : ""}.</p>
+              <p className="small-text">
+                If you don't see the email within a few minutes, please check your spam folder.
+              </p>
+            </div>
           </>
         )}
+
+        {/* Support information */}
+        <div className="support-section">
+          <h4>Need help?</h4>
+          <p>Contact us at <a href="mailto:contact@mzprimer.com">contact@mzprimer.com</a></p>
+        </div>
       </div>
     </div>
   );

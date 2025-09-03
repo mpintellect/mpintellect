@@ -3,7 +3,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import LicenseModal from '../components/LicenseModal';               // (unused for now, ok to keep)
 import { readLocalLicense } from '../app/lib/license-local';           // (optional helper)
-import { getDeviceFingerprint } from '../app/lib/fingerprint';          // (optional helper)
+import { getDeviceFingerprint } from '../app/utils/fingerprint.client';          // (optional helper)
 // === Shared storage keys (global across pages) ===
 const USAGE_KEY = 'mz_ai_uses_global_v1';
 const SUB_KEY   = 'mz_ai_subscribed_global_v1';

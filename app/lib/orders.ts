@@ -300,13 +300,13 @@ export function issueDownloadToken(orderId: string, ttlSeconds = 24 * 3600) {
 export async function verifyAndConsumeToken(token: string): Promise<Order> {
   if (!token) throw new Error("Missing token");
 
-  // Allow raw base64url or already-hashed hex
+  await ensureOrdersHydrated();
+
   const tokenHash =
     token.length === 64 && /^[a-f0-9]+$/i.test(token)
       ? token
       : crypto.createHash("sha256").update(token).digest("hex");
 
-  // Find the order that owns this token hash
   let order: Order | undefined;
   for (const o of ORDERS.values()) {
     if (o.downloadTokenHash === tokenHash) { order = o; break; }
@@ -338,7 +338,46 @@ export async function verifyAndConsumeToken(token: string): Promise<Order> {
 
   return order;
 }
+// AFTER — verify only, NO consumption here
+export async function verifyDownloadToken(token: string): Promise<Order> {
+  if (!token) throw new Error("Missing token");
 
+  // ✅ Hydrate before reading ORDERS
+  await ensureOrdersHydrated();
+
+  const tokenHash =
+    token.length === 64 && /^[a-f0-9]+$/i.test(token)
+      ? token
+      : crypto.createHash("sha256").update(token).digest("hex");
+
+  let order: Order | undefined;
+  for (const o of ORDERS.values()) {
+    if (o.downloadTokenHash === tokenHash) { order = o; break; }
+  }
+  if (!order) throw new Error("Invalid token");
+
+  // 30-min payment window enforcement
+  const orderAge = Date.now() - order.createdAt;
+  const thirtyMinutesMs = 30 * 60 * 1000;
+  if (order.status === "pending" && orderAge > thirtyMinutesMs) {
+    updateOrder(order.id, { status: "expired" });
+    throw new Error("Order expired - payment not completed within 30 minutes");
+  }
+
+  if (order.status !== "paid") throw new Error("Order not paid");
+  if (order.downloadUsed) throw new Error("Token already used");
+  if (!order.downloadExpiresAt || Date.now() > order.downloadExpiresAt) {
+    updateOrder(order.id, { status: "expired" });
+    throw new Error("Download token expired");
+  }
+
+  return order;
+}
+
+// NEW: consume only when you KNOW you can send the bytes
+export function markDownloadUsed(orderId: string) {
+  updateOrder(orderId, { downloadUsed: true });
+}
 /* ========= Query helpers (debug/admin) ========= */
 export function getAllOrders(): Order[] {
   return Array.from(ORDERS.values()).sort((a, b) => b.createdAt - a.createdAt);

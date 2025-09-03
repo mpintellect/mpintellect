@@ -1,12 +1,19 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PROTECTED = ['/admin']; // protect the Admin UI routes
+const PROTECTED = ['/admin'];
 
 export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+  const { pathname, protocol } = req.nextUrl;
 
-  // Only gate /admin (your APIs already use x-admin-key)
+  // ✅ FORCE HTTPS IN PRODUCTION (add this)
+  if (process.env.NODE_ENV === 'production' && protocol === 'http:') {
+    const httpsUrl = req.nextUrl.clone();
+    httpsUrl.protocol = 'https:';
+    return NextResponse.redirect(httpsUrl);
+  }
+
+  // Existing admin protection
   if (!PROTECTED.some(p => pathname.startsWith(p))) {
     return NextResponse.next();
   }
@@ -14,7 +21,6 @@ export function middleware(req: NextRequest) {
   const user = process.env.ADMIN_BASIC_USER || '';
   const pass = process.env.ADMIN_BASIC_PASS || '';
 
-  // If creds aren’t set, don’t block (useful in dev)
   if (!user || !pass) return NextResponse.next();
 
   const auth = req.headers.get('authorization') || '';

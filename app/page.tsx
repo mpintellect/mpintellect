@@ -10,7 +10,7 @@ import ContactSection from '@/components/ContactSection';
 import PrivacySection from '@/components/PrivacySection';
 import DisclaimerSection from '@/components/DisclaimerSection';
 import TrustSection from '@/components/TrustSection';
-import PaymentLogo from 'components/PaymentLogo';
+import PaymentLogo from '@/components/PaymentLogo';
 
 export const metadata = {
   title: 'MZPrimer – Your Gateway to Smart Trading',

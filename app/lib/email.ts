@@ -252,7 +252,7 @@ export async function sendOrderConfirmation(order: OrderEmailDetails): Promise<v
   const baseUrl = getBaseUrl();
   const isSubscription = !!order.licenseKey;
 
-  // Build download link only for bot purchases
+  // Build download link only for bot purchases - use the raw token
   const downloadLink =
     !isSubscription && order.downloadToken
       ? `${baseUrl}/api/download?token=${encodeURIComponent(order.downloadToken)}`
@@ -282,15 +282,18 @@ export async function sendOrderConfirmation(order: OrderEmailDetails): Promise<v
     orderId: order.orderId,
     product: order.productName,
     mode: isSubscription ? "subscription" : "bot",
+    hasDownloadToken: !!order.downloadToken,
+    downloadLink: downloadLink || "NONE"
   });
 
+  // Use the actual download link for bots, fallback to "#" only for subscriptions
   const html = isSubscription
     ? buildHtmlSubscription(order)
-    : buildHtmlBot(order, downloadLink || "#");
+    : buildHtmlBot(order, downloadLink || "#download-error");
 
   const text = isSubscription
     ? buildTextSubscription(order)
-    : buildTextBot(order, downloadLink || "#");
+    : buildTextBot(order, downloadLink || "Download link not available");
 
   await tx.sendMail({
     from:

@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "app/download/route.ts": {
+      "includeFiles": "private/robots/MZPrimer_Scalper_X_V.1.ex5"
+    }
+  }
+}

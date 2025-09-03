@@ -1,6 +1,10 @@
 // app/tools/ai-assistant/page.tsx
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import TraderAssistantLite from "../../../components/TraderAssistantLite";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "AI Trader Assistant – MZPrimer",
@@ -15,11 +19,16 @@ export default function Page() {
         <header className="ta-header">
           <h1 className="ta-title">AI Trader Assistant MZ</h1>
           <p className="ta-subtitle">
-  "AI-powered trading assistant: set your balance, symbol, leverage, and style to instantly calculate SL/TP levels, margin requirements, risk metrics, and view a simulated M5 price path — all in one clean, beginner-friendly tool."
+            AI-powered trading assistant: set your balance, symbol, leverage, and style to
+            instantly calculate SL/TP levels, margin requirements, risk metrics, and view a
+            simulated M5 price path — all in one clean, beginner-friendly tool.
           </p>
         </header>
 
-        <TraderAssistantLite />
+        {/* Wrap client component that uses useSearchParams */}
+        <Suspense fallback={<div className="ta-loading">Loading…</div>}>
+          <TraderAssistantLite />
+        </Suspense>
       </div>
     </main>
   );

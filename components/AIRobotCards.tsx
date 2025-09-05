@@ -32,12 +32,24 @@ export default function AIRobotCards() {
 
   const robots: Bot[] = [
     {
+      id: 'ai-assistant-monthly',
+      name: 'AI Assistant — Monthly',
+      short: 'Unlimited Assistant scenarios & updates.',
+      description:
+        'Get full access to the AI Assistant with all features, regular updates, and priority improvements every month.',
+      price: '$6/mo',
+      available: true,
+      href: '/checkout?product=ai-assistant-monthly',
+      badge: 'Subscription',
+      features: ['Unlimited scenarios', 'Priority improvements', 'Works across web app'],
+    },
+    {
       id: 'scalper',
       name: 'Scalper X1',
       short: 'Ultra-fast scalping built for tight spreads.',
       description:
         'Scalper X1 is designed to capture quick, frequent moves on liquid pairs. It uses volatility filters, spread checks, and time-of-day rules to avoid dead sessions. Works best on low-spread brokers (ECN), M5–M15 charts. Use sensible risk per trade and avoid news spikes.',
-      price: '$50',
+      price: '$15',
       available: true,
       href: '/checkout?bot=scalper', 
       features: ['MT5 Ready', '0.01–1.0 Lot Supported', 'Auto TP/SL', 'Backtested'],
@@ -48,18 +60,6 @@ export default function AIRobotCards() {
         timeframe: 'M5 / M15',
         accountMin: '$100'
       }
-    },
-    {
-      id: 'ai-assistant-monthly',
-      name: 'AI Assistant — Monthly',
-      short: 'Unlimited Assistant scenarios & updates.',
-      description:
-        'Get full access to the AI Assistant with all features, regular updates, and priority improvements every month.',
-      price: '$10/mo',
-      available: true,
-      href: '/checkout?product=ai-assistant-monthly',
-      badge: 'Subscription',
-      features: ['Unlimited scenarios', 'Priority improvements', 'Works across web app'],
     },
     {
       id: 'fibonacci',

@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="footer-one-line">
       <div className="footer-content">
         <img
-          src="https://i.postimg.cc/4yNW4Ts2/mzlogotransap.png"
+          src="https://i.postimg.cc/5ypD6FmV/mzlogotransap.png"
           alt="MZPrimer Logo"
           className="footer-logo"
         />

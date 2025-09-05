@@ -9,7 +9,7 @@ export default function Hero() {
       className="flex flex-col items-center text-center bg-black text-white pt-10 md:pt-16 pb-12"
     >
       <motion.img
-        src="https://i.postimg.cc/4yNW4Ts2/mzlogotransap.png"
+        src="https://i.postimg.cc/5ypD6FmV/mzlogotransap.png"
         alt="MZPrimer Logo"
         initial={{ opacity: 0, scale: 0.92 }}
         animate={{ opacity: 1, scale: 1 }}

@@ -1,18 +1,21 @@
 'use client';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import LicenseModal from '../components/LicenseModal';               // (unused for now, ok to keep)
-import { readLocalLicense } from '../app/lib/license-local';           // (optional helper)
-import { getDeviceFingerprint } from '../app/utils/fingerprint.client';          // (optional helper)
+import LicenseModal from '../components/LicenseModal';
+import { readLocalLicense } from '../app/lib/license-local';
+import { getDeviceFingerprint } from '../app/utils/fingerprint.client';
+import { fetchCurrentPrice } from '../app/lib/fetchPrice'; // adjust path as needed
+
+
 // === Shared storage keys (global across pages) ===
 const USAGE_KEY = 'mz_ai_uses_global_v1';
 const SUB_KEY   = 'mz_ai_subscribed_global_v1';
 const LIC_KEY   = 'mz_ai_license_global_v1';
 
-// Legacy keys to migrate (kept for backward compatibility)
 const LEGACY_USAGE_KEYS = ['mz_ai_uses', 'mz_ai_uses_lite', 'ai_uses'];
 const LEGACY_SUB_KEYS   = ['mz_ai_subscribed'];
 const LEGACY_LIC_KEYS   = ['mz_ai_license'];
+
 /* =========================
    Types & symbol contracts
 ========================= */
@@ -169,6 +172,31 @@ useEffect(() => {
   }
 }, [sp]);
 
+const [symbol, setSymbol] = useState<SymbolKey>('EURUSD');
+  const [price, setPrice] = useState(1.0850);
+const [autoPriceLoading, setAutoPriceLoading] = useState(false);
+ const [style, setStyle] = useState<StyleKey>('balanced');
+const [isPriceLoading, setIsPriceLoading] = useState(false);
+
+useEffect(() => {
+  console.log("🔁 useEffect triggered for symbol:", symbol);
+
+  const updatePrice = async () => {
+    setIsPriceLoading(true);
+    try {
+      const newPrice = await fetchCurrentPrice(symbol);
+      console.log("📈 newPrice fetched:", newPrice);
+      if (newPrice !== null && !isNaN(newPrice)) {
+        setPrice(Number(newPrice.toFixed(DECIMALS[symbol] ?? 2)));
+      }
+    } catch (err) {
+      console.error('Error fetching price:', err);
+    }
+    setIsPriceLoading(false);
+  };
+
+  updatePrice();
+}, [symbol]);
   // quick activation via prompt (keeps UI unchanged)
   const activateLicense = () => {
     const key = window.prompt('Enter your license key to unlock the AI Assistant:')?.trim();
@@ -185,7 +213,6 @@ useEffect(() => {
     setIsSubscribed(true);
     alert('License activated. Enjoy unlimited access!');
   };
-
   /* ---------- Inputs ---------- */
   const [balance, setBalance]   = useState(1000);
   const [accountType, setAccountType] = useState<typeof ACCOUNT_TYPES[number]>('ECN');
@@ -193,12 +220,8 @@ useEffect(() => {
   const [leverage, setLeverage] = useState<number>(100);
 
   const [assetGroup, setAssetGroup] = useState<AssetGroupKey>('fx');
-  const [symbol, setSymbol] = useState<SymbolKey>('EURUSD');
   const [dir, setDir] = useState<'buy'|'sell'>('buy');
   const [lot, setLot] = useState(0.10);
-
-  const [price, setPrice] = useState(1.0850);
-  const [style, setStyle] = useState<StyleKey>('balanced');
   const [scenario, setScenario] = useState<'tp'|'sl'>('tp');
   const [showResults, setShowResults] = useState(false);
 
@@ -377,8 +400,17 @@ const needsPaywall = !isSubscribed && usageCount >= FREE_USES;
 
           <div className="ta-field ta-span-2">
             <label>Current Price</label>
-            <input className="ta-input" type="number" value={price}
-              onChange={(e)=>setPrice(Number(e.target.value || 0))} step={spec.pip}/>
+            <input
+  className="ta-input"
+  type="number"
+  value={price}
+  onChange={(e) => setPrice(Number(e.target.value || 0))}
+  step={spec.pip}
+  disabled={autoPriceLoading}
+/>
+{autoPriceLoading && (
+  <div className="text-xs text-gray-400 mt-1">Fetching live price…</div>
+)}
           </div>
 
           <div className="ta-field ta-span-2">

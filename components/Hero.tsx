@@ -27,15 +27,15 @@ export default function Hero() {
         </p>
 
         <a
-          href="#"
+          href="tools/ai-assistant"
           onClick={(e) => {
             e.preventDefault();
-            const scrollAmount = window.innerHeight;
-            window.scrollBy({ top: scrollAmount, left: 0, behavior: 'smooth' });
+            const el = document.getElementById('ai-assistant');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
           }}
           className="btn-primary no-underline"
         >
-          Start Exploring
+          Get AI Assistant
         </a>
       </section>
 

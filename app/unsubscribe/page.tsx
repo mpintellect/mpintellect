@@ -1,10 +1,9 @@
-// app/unsubscribe/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function UnsubscribePage() {
+function UnsubscribeInner() {
   const [status, setStatus] = useState<'loading' | 'done' | 'error'>('loading');
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
@@ -47,10 +46,23 @@ export default function UnsubscribePage() {
         {status === 'error' && (
           <>
             <h1 className="text-3xl font-bold mb-6">Something went wrong</h1>
-            <p className="text-red-400">Could not unsubscribe. Please contact <a href="mailto:contact@mzprimer.com" className="underline">support</a>.</p>
+            <p className="text-red-400">
+              Could not unsubscribe. Please contact{' '}
+              <a href="mailto:contact@mzprimer.com" className="underline">
+                support
+              </a>.
+            </p>
           </>
         )}
       </div>
     </main>
+  );
+}
+
+export default function UnsubscribePage() {
+  return (
+    <Suspense fallback={<div className="text-white p-8">Loading...</div>}>
+      <UnsubscribeInner />
+    </Suspense>
   );
 }

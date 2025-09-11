@@ -21,7 +21,7 @@ const LEGACY_LIC_KEYS   = ['mz_ai_license'];
 ========================= */
 
 type SymbolKey =
-  | 'EURUSD' | 'GBPUSD' | 'USDJPY' | 'USDCAD' | 'AUDUSD'
+  | 'select' | 'EURUSD' | 'GBPUSD' | 'USDJPY' | 'USDCAD' | 'AUDUSD'
   | 'NZDUSD' | 'USDCHF' | 'XAUUSD' | 'XAUEUR' | 'XAGUSD'
   | 'BTCUSD' | 'ETHUSD' | 'AAPL'  | 'TSLA'   | 'AMZN';
 
@@ -42,6 +42,7 @@ function normalizeLicense(input: unknown): NormalizedLicense {
   return { key: '' };
 }
 const CONTRACT: Record<SymbolKey, { contract: number; pip: number }> = {
+  select: { contract: 100000, pip: 0.0001 }, // default to EURUSD
   EURUSD: { contract: 100000, pip: 0.0001 },
   GBPUSD: { contract: 100000, pip: 0.0001 },
   USDJPY: { contract: 100000, pip: 0.01 },
@@ -60,7 +61,7 @@ const CONTRACT: Record<SymbolKey, { contract: number; pip: number }> = {
 };
 
 const DECIMALS: Record<SymbolKey, number> = {
-  EURUSD: 4, GBPUSD: 4, USDJPY: 2, USDCAD: 4, AUDUSD: 4,
+  select: 4, EURUSD: 4, GBPUSD: 4, USDJPY: 2, USDCAD: 4, AUDUSD: 4,
   NZDUSD: 4, USDCHF: 4, XAUUSD: 2, XAUEUR: 2, XAGUSD: 2,
   BTCUSD: 1, ETHUSD: 1, AAPL: 2, TSLA: 2, AMZN: 2,
 };
@@ -70,7 +71,7 @@ const ACCOUNT_TYPES = ['Standard', 'ECN', 'Classic'] as const;
 const ACCOUNT_CCY   = ['USD', 'EUR', 'GBP'] as const;
 
 const ASSET_GROUPS: Array<{ key: AssetGroupKey; label: string; symbols: SymbolKey[] }> = [
-  { key: 'fx',      label: 'Forex - Major Currency Pairs', symbols: ['EURUSD','GBPUSD','USDJPY','USDCAD','AUDUSD','NZDUSD','USDCHF'] },
+  { key: 'fx',      label: 'Forex - Major Currency Pairs', symbols: ['select','EURUSD','GBPUSD','USDJPY','USDCAD','AUDUSD','NZDUSD','USDCHF'] },
   { key: 'metals',  label: 'Metals',                       symbols: ['XAUUSD','XAUEUR','XAGUSD'] },
   { key: 'crypto',  label: 'Crypto',                       symbols: ['BTCUSD','ETHUSD'] },
   { key: 'stocks', label: 'US Stocks',                      symbols: ['AAPL','TSLA','AMZN'] },
@@ -172,13 +173,14 @@ useEffect(() => {
   }
 }, [sp]);
 
-const [symbol, setSymbol] = useState<SymbolKey>('EURUSD');
+const [symbol, setSymbol] = useState<SymbolKey>('select' as SymbolKey);
   const [price, setPrice] = useState(1.0850);
 const [autoPriceLoading, setAutoPriceLoading] = useState(false);
  const [style, setStyle] = useState<StyleKey>('balanced');
 const [isPriceLoading, setIsPriceLoading] = useState(false);
 
 useEffect(() => {
+  if (symbol === 'select') return;
   console.log("🔁 useEffect triggered for symbol:", symbol);
 
   const updatePrice = async () => {

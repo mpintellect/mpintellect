@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 
+
 const navItems = [
   { label: 'Home', href: '/' },
   { label: 'Learning', href: '/#learning' },
@@ -15,8 +16,11 @@ const navItems = [
 ];
 
 export default function MobileMenu() {
+
   const [isOpen, setIsOpen] = useState(false);
   const [activeItem, setActiveItem] = useState<string | null>(null);
+
+  
 
   return (
     <>

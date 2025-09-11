@@ -1,7 +1,7 @@
 import StickyLogo from '@/components/StickyLogo';
 import Navbar from '@/components/Navbar';
-import MobileMenu from '@/components/MobileMenu';
 import Hero from '@/components/Hero';
+import MobileMenu from '@/components/MobileMenu';
 import TraderAssistantLite from '@/components/TraderAssistantLite';
 import LearningHub from '@/components/LearningHub';
 import AiToolsSection from '@/components/AiToolsSection';
@@ -14,8 +14,8 @@ export default function Home() {
     <>
       <StickyLogo />
       <Navbar />
-      <MobileMenu />
       <Hero />
+      <MobileMenu />
       <TraderAssistantLite />
       <LearningHub />
       <AiToolsSection />

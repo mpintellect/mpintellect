@@ -32,10 +32,13 @@ export default function Footer() {
       <div className="footer-content">
   <div className="footer-logo-badges">
     <img
-      src="https://i.postimg.cc/5ypD6FmV/mzlogotransap.png"
-      alt="MZPrimer Logo"
-      className="footer-logo"
-    />
+  src="/logos/mzlogo.webp"
+  alt="MZPrimer Logo"
+  className="footer-logo"
+  loading="lazy"
+  width="120"
+  height="120"
+/>
     <div className="payment-badges">
       <img src="/logos/stripe.svg" alt="Stripe" className="trust-logo" />
   <img src="/logos/visa.svg" alt="Visa" className="trust-logo" />

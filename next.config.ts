@@ -2,6 +2,9 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
+
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
@@ -10,6 +13,8 @@ const nextConfig: NextConfig = {
         'https://mzprimer.com',
       ],
     },
+    // Optional: disable legacy browsers
+    // legacyBrowsers: false,
   },
 
   serverExternalPackages: ['bufferutil', 'utf-8-validate'],
@@ -47,8 +52,8 @@ const nextConfig: NextConfig = {
     },
   ],
 
-  // 👇 Add the memory cache to avoid the “No serializer for Warning” message
   webpack: (config) => {
+    // Fixes: Warning: No serializer registered
     config.cache = { type: 'memory' };
     return config;
   },

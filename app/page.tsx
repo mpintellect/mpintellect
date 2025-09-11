@@ -1,19 +1,12 @@
-import { Suspense } from 'react';
 import StickyLogo from '@/components/StickyLogo';
 import Navbar from '@/components/Navbar';
 import MobileMenu from '@/components/MobileMenu';
 import Hero from '@/components/Hero';
-import TraderAssistantLite from "@/components/TraderAssistantLite";
+import TraderAssistantLite from '@/components/TraderAssistantLite';
 import LearningHub from '@/components/LearningHub';
 import AiToolsSection from '@/components/AiToolsSection';
-import AccountsSection from '@/components/AccountsSection';
+import AIRobotCards from '@/components/AIRobotCards';
 import ContactSection from '@/components/ContactSection';
-import PrivacySection from '@/components/PrivacySection';
-import DisclaimerSection from '@/components/DisclaimerSection';
-import TrustSection from '@/components/TrustSection';
-import PaymentLogo from '@/components/PaymentLogo';
-
-// (Optional) avoid prerendering if any CSR bailout remains
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
@@ -23,26 +16,11 @@ export default function Home() {
       <Navbar />
       <MobileMenu />
       <Hero />
-      <section id="ai-assistant" className="ta-anchor-offset ta-home-block ai-assistant-section">
-        <h2 className="ta-title">AI Trader Assistant</h2>
-        <p className="ta-subtitle">
-          AI-powered trading assistant: set your balance, symbol, leverage, and style to instantly calculate SL/TP levels, margin requirements, risk metrics, and view a simulated M5 price path — all in one clean, beginner-friendly tool.
-        </p>
-
-        {/* ✅ Wrap component that uses useSearchParams */}
-        <Suspense fallback={<div className="ta-loading">Loading…</div>}>
-          <TraderAssistantLite />
-        </Suspense>
-      </section>
-
+      <TraderAssistantLite />
       <LearningHub />
       <AiToolsSection />
-      <AccountsSection />
+      <AIRobotCards />
       <ContactSection />
-      <PrivacySection />
-      <DisclaimerSection />
-      <TrustSection />
-      <PaymentLogo />
     </>
   );
 }

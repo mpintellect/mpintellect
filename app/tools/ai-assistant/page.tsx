@@ -16,14 +16,6 @@ export default function Page() {
   return (
     <main className="ta-page">
       <div className="ta-container">
-        <header className="ta-header">
-          <h1 className="ta-title">AI Trader Assistant MZ</h1>
-          <p className="ta-subtitle">
-            AI-powered trading assistant: set your balance, symbol, leverage, and style to
-            instantly calculate SL/TP levels, margin requirements, risk metrics, and view a
-            simulated M5 price path — all in one clean, beginner-friendly tool.
-          </p>
-        </header>
 
         {/* Wrap client component that uses useSearchParams */}
         <Suspense fallback={<div className="ta-loading">Loading…</div>}>

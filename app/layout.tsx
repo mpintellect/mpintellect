@@ -4,11 +4,10 @@ import { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
 import Navbar from '@/components/Navbar';
 import StickyLogo from '@/components/StickyLogo';
-import Footer from '@/components/Footer';
 import MobileMenu from '@/components/MobileMenu';
 import Script from 'next/script';
 import CtaTracker from '@/components/CTATracker';
-
+import Footer from '@/components/Footer';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
@@ -31,10 +30,12 @@ export default function Layout({ children }: { children: ReactNode }) {
         <MobileMenu />
 
         {/* Main content */}
-        {children}
+        <main className="flex-grow">
+    {children}
+  </main>
 
-        {/* Footer */}
-        <Footer />
+  {/* Footer */}
+  <Footer />
 
         {/* ---------------- AdRoll ---------------- */}
         <Script id="adroll-loader" strategy="afterInteractive">

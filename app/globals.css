@@ -1,7 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+  
 /* === Reset & Base === */
 * {
   margin: 0;
@@ -231,74 +231,6 @@ nav a:hover {
   height: 60px;
   margin-top: -28px;
   object-fit: contain;
-}
-/* === MOBILE MENU STYLING - ELEGANT LEFT STYLE === */
-.mobile-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 999;
-  width: 100%;
-  background-color: #000;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0% 1rem;
-  border-bottom: 1px solid #222;
-}
-.mobile-menu-button {
-  color: white;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  transform: translateY(-8px);
-}
-
-.mobile-menu-list {
-  position: fixed;
-  top: 40px;
-  left: 0;
-  width: 150px;
-  background-color: #000;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start; /* 👈 aligned to the left */
-  padding: 1rem 1.5rem;
-  z-index: 10000;
-  animation: slideDown 0.3s ease-out forwards;
-}
-@keyframes slideInLeft {
-  0% {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  100% {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-.mobile-menu-link {
-  color: white;
-  font-size: 0.9rem;
-  font-weight: 400;
-  padding: 0.5rem 0;
-  text-align: left;
-  width: 100%;
-  border-bottom: 1px solid #222;
-  transition: all 0.2s ease;
-}
-
-.mobile-menu-link:hover {
-  color: #facc15;
-  padding-left: 6px;
-  font-weight: 500;
-}
-
-.mobile-menu-link.active {
-  color: #facc15;
-  font-weight: bold;
 }
 /* === AI Robot Section Styling === */
 /* === Clean One-Line Footer === */
@@ -983,13 +915,13 @@ article {
   color: #ccc;
   font-size: 1.05rem;
   line-height: 1.75;
-  padding-bottom: 4rem;
+  padding-bottom: 2rem;
 }
 
 article h2, article h3, article h4 {
   color: #fff;
   font-weight: 600;
-  margin-top: 2rem;
+  margin-top: 2em;
   margin-bottom: 1rem;
   line-height: 1.4;
 }
@@ -1149,6 +1081,15 @@ section {
     padding-right: 1.5rem;
   }
 }
+@media (max-width: 768px) {
+  .blog-article {
+    padding-left: 1.2rem;
+    padding-right: 1.2rem;
+    max-width: 100%;
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+}
 /* === Article Wrapper for Blog Post === */
 .blog-article-wrapper {
   width: 100%;
@@ -1156,12 +1097,47 @@ section {
   margin: 0 auto;
   padding-left: 1rem;
   padding-right: 1rem;
+  padding-top: 4rem;
+}
+@media (max-width: 768px) {
+  article {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    font-size: 1rem;
+    line-height: 1.7;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+  article {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
+/* Optional: Slightly reduce inner padding on small screens */
+@media (max-width: 480px) {
+  .blog-article-wrapper {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  article {
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  article pre {
+    font-size: 0.85rem;
+    word-break: break-word;
+    overflow-x: auto;
+  }
+}
+}
 @media (min-width: 768px) {
   .blog-article-wrapper {
-    padding-left: 2rem;
-    padding-right: 2rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 4rem;
   }
 }
 .back-to-blog {
@@ -2063,382 +2039,15 @@ h1.page-title {
   --ta-muted: #a9b0bb;
   --ta-dash: #202633;
   --ta-accent: #facc15;
-}
-.ta-page { padding-top: 88px; }
-/* Container */
-.ta-wrap {
-  width: min(100%, var(--ta-max));
-  margin-inline: auto;
-  padding: 24px 18px 90px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--ta-gap);
-}
-
-/* Title + subtitle (works even if no special classes on the H1) */
-.ta-header { margin: 0 0 8px; }
-.ta-wrap h1 {
-  color: var(--ta-text);
-  font-weight: 800;
-  line-height: 1.2;
-  font-size: 28px;
-  margin: 0 0 6px;
-}
-@media (min-width: 900px) {
-  .ta-wrap h1 { font-size: 34px; }
-}
-.ta-subtitle { color: var(--ta-muted); font-size: 14px; margin: 0; }
-
-/* Form grid */
-.ta-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
-
-@media (min-width: 900px) {
-  .ta-grid { grid-template-columns: 1fr 1fr; gap: 16px 20px; }
-  .ta-field.ta-span-2 { grid-column: 1 / 3; }
-}
-.ta-field { display: flex; flex-direction: column; gap: 6px; }
-.ta-field > label { font-size: 12px; color: var(--ta-muted); }
-.ta-span-2 { grid-column: 1 / -1; }
-@media (min-width: 900px) {
-  .ta-span-2 { grid-column: 1 / 3; }
-}
-
-/* Inputs / selects (native) */
-.ta-input {
-  height: 44px;
-  width: 100%;
-  border-radius: 12px;
-  background: var(--ta-input-bg);
-  border: 1px solid var(--ta-input-bd);
-  color: var(--ta-text);
-  padding: 0 12px;
-  outline: none;
-  position: relative;      /* new stacking context for dropdown */
-  z-index: 5;
-}
-.ta-input:focus {
-  border-color: #3b4353;
-  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.16);
-}
-.ta-hint { font-size: 12px; color: var(--ta-muted); margin-top: 6px; }
-
-/* Primary action (sits right below the form) */
-.ta-btn {
-  display: block;
-  margin: 12px auto 8px;   /* centers the button */
-  padding: 10px 16px;
-  border-radius: 12px;
-  border: 0;
-  background: var(--ta-accent);
-  color: #0c0c0d;
-  font-weight: 700;
-  cursor: pointer;
-}
-.ta-btn:hover { filter: brightness(0.98); }
-
-/* Results stack right below the button */
-.ta-results { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
-
-/* Cards */
-.ta-panels { display: grid; grid-template-columns: 1fr; gap: 16px; }
-@media (min-width: 900px) { .ta-panels { grid-template-columns: 1fr 1fr; } }
-.ta-card {
-  background: var(--ta-card-bg);
-  border: 1px solid var(--ta-card-bd);
-  border-radius: 14px;
-  padding: 16px;
-}
-.ta-card-title { font-weight: 700; color: var(--ta-text); margin-bottom: 10px; }
-.ta-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 0; border-bottom: 1px dashed var(--ta-dash);
-}
-.ta-row:last-child { border-bottom: 0; }
-.ta-row span { color: var(--ta-muted); }
-.ta-row b { color: var(--ta-text); font-variant-numeric: tabular-nums; }
-.ta-sub { color: var(--ta-muted); margin-left: 6px; }
-
-/* Suggestions */
-.ta-suggestions {
-  background: var(--ta-card-bg);
-  border: 1px solid var(--ta-card-bd);
-  border-radius: 14px;
-  padding: 14px;
-}
-.ta-suggestions ul { margin: 6px 0 0; padding-left: 16px; color: #c9ced6; }
-.ta-suggestions li { margin: 6px 0; }
-
-/* Chart card */
-.ta-chart-wrap {
-  background: var(--ta-card-bg);
-  border: 1px solid var(--ta-card-bd);
-  border-radius: 14px;
-  padding: 12px;
-  position: relative;      /* for z-index layering below */
-}
-.ta-chart-title { color: var(--ta-muted); font-size: 13px; margin-bottom: 8px; }
-
-/* Scenario chips */
-.ta-chart-controls {
-  display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;
-}
-.ta-chip {
-  background: #12161c; border: 1px solid #2b313c; color: #cbd1d9;
-  padding: 6px 12px; font-size: 12px; border-radius: 9999px; cursor: pointer;
-}
-.ta-chip.active { background: #1b2028; border-color: #364052; color: var(--ta-accent); }
-
-/* Canvas */
-.ta-chart-canvas {
-  width: 100%; height: auto; display: block; background: #0c0f13; border-radius: 10px;
-}
-
-/* Prevent native <select> dropdown from being clipped */
-.ta-wrap, .ta-grid, .ta-card, .ta-chart-wrap { overflow: visible; }
-.ta-results, .ta-panels, .ta-chart-wrap { z-index: 1; }
-
-/* Mobile tweaks */
-@media (max-width: 768px) {
-  .ta-wrap { padding: 48px 14px 100px; }
-  .ta-btn { width: 100%; text-align: center; }
-}
-/* === AI Assistant: title visibility & compact spacing (override) === */
-.ta-wrap { padding-top: 56px; }                   /* clear the fixed navbar */
-.ta-header { margin: 0 0 8px; }                   /* reduce empty space */
-
-:where(.ta-page,.ta-wrap,.ta-container) h1 {
-  color: #e9edf3 !important;
-  font-weight: 800;
-  line-height: 1.2;
-  margin: 0 0 6px !important;
-  font-size: 28px;
-}
-@media (min-width: 900px){
-  :where(.ta-page,.ta-wrap,.ta-container) h1 { font-size: 34px; }
-}
-
-/* make sure the block sits above backgrounds or overlapping elements */
-.ta-wrap, .ta-header { position: relative; z-index: 2; }
-/* === AI Assistant: native <select> dropdown fix (clipping/alignment) === */
-.ta-wrap, .ta-grid, .ta-card, .ta-chart-wrap { overflow: visible !important; }
-
-/* Put the select itself on a higher stacking layer */
-select.ta-input { position: relative; z-index: 10; width: 100%; }
-
-/* Nice caret + keep width so the popup anchors under the field */
-select.ta-input {
-  -webkit-appearance: none; appearance: none;
-  background-image:
-    linear-gradient(45deg, transparent 50%, #a9b0bb 50%),
-    linear-gradient(135deg, #a9b0bb 50%, transparent 50%);
-  background-position: right 12px center, right 6px center;
-  background-size: 6px 6px, 6px 6px;
-  background-repeat: no-repeat;
-  padding-right: 28px; /* space for caret */
-}
-/* === AI Assistant: 2-column form with “card” fields and 3 visual groups === */
-
-/* Keep 2 columns on desktop, 1 on mobile (you likely already have this) */
-.ta-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
-}
-@media (min-width: 900px) {
-  .ta-grid { grid-template-columns: 1fr 1fr; }
-}
-
-/* Each field looks like a mini card */
-.ta-field {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  border-radius: 12px;
-  background: #121317;
-  border: 1px solid #1f2430;
-}
-
-/* Inputs keep the existing style */
-.ta-input {
-  height: 44px;
-  width: 100%;
-  border-radius: 10px;
-  background: #0f1114;
-  border: 1px solid #262c36;
-  color: #e9edf3;
-  padding: 0 12px;
-  outline: none;
-}
-.ta-input:focus {
-  border-color: #3b4353;
-  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.16);
-}
-
-/* Fix native <select> dropdown clipping/alignment */
-.ta-wrap, .ta-grid, .ta-card, .ta-chart-wrap { overflow: visible !important; }
-.ta-field { z-index: 1; }
-.ta-field:focus-within { z-index: 1000; }
-select.ta-input {
-  position: relative;
-  z-index: 10;
-  -webkit-appearance: none;
-  appearance: none;
-  background-image:
-    linear-gradient(45deg, transparent 50%, #a9b0bb 50%),
-    linear-gradient(135deg, #a9b0bb 50%, transparent 50%);
-  background-position: right 12px center, right 6px center;
-  background-size: 6px 6px, 6px 6px;
-  background-repeat: no-repeat;
-  padding-right: 28px;
-}
-
-/* Center the action button under the grid */
-.ta-btn { display: inline-flex; align-items: center; justify-content: center; }
-@media (min-width: 900px) {
-  .ta-btn { align-self: center; } /* centered on desktop */
-}
-
-/* ---------- Group headings (no JSX change) ----------
-   We inject small group titles before certain fields.
-   Assumes field order:
-   1: Account Type, 2: Balance, 3: Leverage, 4: Account Currency,
-   5: Trading Asset,
-   6: Current Price, 7: Trading Style
-*/
-
-/* Group 1 label above field #1 (spans both columns visually) */
-.ta-grid > .ta-field:nth-child(1) {
-  margin-top: 4px;
-}
-.ta-grid > .ta-field:nth-child(1)::before {
-  content: "Account";
-  position: absolute;
-  top: -14px;
-  left: 6px;
-  font-size: 12px;
-  color: #a9b0bb;
-}
-
-/* Add a bit more space after field #4 (end of group 1) */
-.ta-grid > .ta-field:nth-child(4) { margin-bottom: 8px; }
-
-/* Group 2 label above field #5 (Trading Asset) */
-.ta-grid > .ta-field:nth-child(5) {
-  margin-top: 16px;
-}
-.ta-grid > .ta-field:nth-child(5)::before {
-  content: "Trading Asset";
-  position: absolute;
-  top: -14px;
-  left: 6px;
-  font-size: 12px;
-  color: #a9b0bb;
-}
-
-/* Space after field #5 (end of group 2) */
-.ta-grid > .ta-field:nth-child(5) { margin-bottom: 8px; }
-
-/* Group 3 label above field #6 (Current Price + Trading Style) */
-.ta-grid > .ta-field:nth-child(6) {
-  margin-top: 16px;
-}
-.ta-grid > .ta-field:nth-child(6)::before {
-  content: "Execution Settings";
-  position: absolute;
-  top: -14px;
-  left: 6px;
-  font-size: 12px;
-  color: #a9b0bb;
-}
-
-/* On desktop, keep two columns but let wide fields still span if needed */
-.ta-field.ta-span-2 { grid-column: 1 / -1; }
-
-/* Mobile: single column stack remains clean */
-@media (max-width: 899px) {
-  .ta-btn { width: 100%; }
-}
-
-/* Optional: tighten the page title spacing if needed */
-.ta-header { margin: 0 0 8px; }
-:where(.ta-page, .ta-wrap, .ta-container) h1 {
-  margin: 0 0 6px !important;
-}
-/* === AI Assistant: Two-column input deck (desktop), one column (mobile) === */
-.ta-deck {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-}
-
-/* On desktop: two columns; make the last (Execution Settings) card span both */
-@media (min-width: 1024px) {
-  .ta-deck {
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
-  }
-  /* If your third card has a known class, e.g. .ta-exec-card, prefer that.
-     Fallback: target the 3rd card inside the deck to span both columns. */
-  .ta-deck > .ta-card:nth-of-type(3) {
-    grid-column: 1 / -1;
-  }
-}
-
-/* Center the title when we add ta-center in JSX */
-.ta-card-title.ta-center {
-  text-align: center;
-  margin-bottom: 12px;
-}
-
-/* Make selects open on top of content and align under their field */
-.ta-deck,
-.ta-card {
-  overflow: visible;
-}
-select.ta-input {
-  position: relative;
-  z-index: 10;
-  width: 100%;
-  -webkit-appearance: none;
-  appearance: none;
-  background-image:
-    linear-gradient(45deg, transparent 50%, #a9b0bb 50%),
-    linear-gradient(135deg, #a9b0bb 50%, transparent 50%);
-  background-position: right 12px center, right 6px center;
-  background-size: 6px 6px, 6px 6px;
-  background-repeat: no-repeat;
-  padding-right: 28px;
-}
-
-/* Optional: keep the primary button centered under the deck on desktop */
-@media (min-width: 1024px) {
-  .ta-btn.ta-center {
-    align-self: center;
-  }
-}
-/**** =========================================
-   AI Trader Assistant — Elegant, Responsive
-   (canonical block; paste at end of globals.css)
-============================================= ****/
-
-:root {
-  --ta-max: 1120px;
-  --ta-gap: 18px;
-  --ta-card-bg: #101319;
-  --ta-card-bd: #1c2230;
-  --ta-input-bg: #0d1016;
-  --ta-input-bd: #242b39;
-  --ta-text: #e9edf3;
-  --ta-muted: #a7b0bd;
-  --ta-dash: #1f2533;
-  --ta-accent: #facc15;
   --ta-soft: 14px;
   --ta-shadow: 0 10px 24px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.03);
 }
 
-/* Container & header */
+.ta-page { 
+  padding-top: 10px; 
+}
+
+/* Container */
 .ta-wrap {
   width: min(100%, var(--ta-max));
   margin-inline: auto;
@@ -2447,8 +2056,11 @@ select.ta-input {
   flex-direction: column;
   gap: var(--ta-gap);
   position: relative;
-  z-index: 1;
+  z-index: 0;
 }
+
+/* Title + subtitle */
+.ta-header { margin: 0 0 8px; }
 .ta-wrap h1 {
   color: var(--ta-text);
   font-weight: 800;
@@ -2472,7 +2084,7 @@ select.ta-input {
     grid-template-columns: 1fr 1fr;
     gap: 18px;
   }
-  .ta-card--exec { grid-column: 1 / -1; } /* last card full width on desktop */
+  .ta-card--exec { grid-column: 1 / -1; }
 }
 
 /* Card */
@@ -2482,7 +2094,7 @@ select.ta-input {
   border-radius: var(--ta-soft);
   padding: 16px;
   box-shadow: var(--ta-shadow);
-  overflow: visible;     /* allow selects to open outside */
+  overflow: visible;
 }
 .ta-card-title {
   font-weight: 700;
@@ -2507,7 +2119,12 @@ select.ta-input {
   .ta-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
-/* Field grid inside each card (auto wraps) */
+/* Form grid */
+.ta-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (min-width: 900px) {
+  .ta-grid { grid-template-columns: 1fr 1fr; gap: 16px 20px; }
+  .ta-field.ta-span-2 { grid-column: 1 / 3; }
+}
 .ta-field { display: flex; flex-direction: column; gap: 6px; }
 .ta-field > label { font-size: 12px; color: var(--ta-muted); }
 .ta-span-2 { grid-column: 1 / -1; }
@@ -2523,27 +2140,28 @@ select.ta-input {
   padding: 0 12px;
   outline: none;
   position: relative;
-  z-index: 10; /* keep dropdown above neighbors */
+  z-index: 10;
 }
 .ta-input:focus {
-  border-color: #3a4354;
+  border-color: #3b4353;
   box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.16);
 }
 .ta-hint { font-size: 12px; color: var(--ta-muted); margin-top: 6px; }
 
 /* Native select caret & popup alignment */
 select.ta-input {
-  -webkit-appearance: none; appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
   background-image:
-    linear-gradient(45deg, transparent 50%, #9eabbc 50%),
-    linear-gradient(135deg, #9eabbc 50%, transparent 50%);
+    linear-gradient(45deg, transparent 50%, #a9b0bb 50%),
+    linear-gradient(135deg, #a9b0bb 50%, transparent 50%);
   background-position: right 12px center, right 6px center;
   background-size: 6px 6px, 6px 6px;
   background-repeat: no-repeat;
   padding-right: 28px;
 }
 
-/* Button (inside Execution card) */
+/* Button */
 .ta-actions { display: flex; justify-content: center; }
 .ta-btn {
   margin-top: 4px;
@@ -2558,15 +2176,11 @@ select.ta-input {
 }
 .ta-btn:hover { filter: brightness(0.98); }
 
-/* Results: cards below */
-.ta-panels {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-}
-@media (min-width: 900px) {
-  .ta-panels { grid-template-columns: 1fr 1fr; }
-}
+/* Results */
+.ta-results { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
+.ta-panels { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 900px) { .ta-panels { grid-template-columns: 1fr 1fr; } }
+
 .ta-row {
   display: flex;
   justify-content: space-between;
@@ -2596,7 +2210,7 @@ select.ta-input {
   border: 1px solid #1b2230;
 }
 
-/* Chart block */
+/* Chart */
 .ta-chart-wrap {
   background: var(--ta-card-bg);
   border: 1px solid var(--ta-card-bd);
@@ -2626,12 +2240,13 @@ select.ta-input {
   border-radius: 10px;
 }
 
-/* Mobile polish */
+/* Mobile tweaks */
 @media (max-width: 768px) {
   .ta-wrap { padding: 48px 14px 100px; }
   .ta-bar { grid-template-columns: 1fr; }
 }
-/* Safe fade (no transform) so native <select> dropdowns align correctly */
+
+/* Animation */
 .scroll-fade-up {
   opacity: 0;
   filter: blur(2px);
@@ -2640,14 +2255,7 @@ select.ta-input {
 @keyframes taFadeOnly {
   to { opacity: 1; filter: blur(0); }
 }
-/* Hard block any transforms on input containers */
-.ta-deck, .ta-card, .ta-bar { transform: none !important; }
-select.ta-input {
-  width: 100%;
-  min-width: 100%;
-  position: relative;
-  z-index: 10;
-}
+
 /* License modal */
 .ta-lic-backdrop{
   position:fixed; inset:0; background:rgba(0,0,0,.5);
@@ -2661,20 +2269,14 @@ select.ta-input {
 .ta-lic-help{ color:#a9b0bb; margin:6px 0 10px; }
 .ta-lic-error{ color:#ef4444; font-size:13px; margin:8px 0; }
 .ta-lic-actions{ display:flex; gap:12px; margin-top:10px; }
-/* === Paywall & Subscription Overlay === */
-/* Wrapper for relative overlay anchoring */
-.ta-results-wrap {
-  position: relative;
-}
 
-/* Blur the content when limited */
+/* Paywall & Subscription Overlay */
+.ta-results-wrap { position: relative; }
 .ta-results.blurred {
   filter: blur(6px);
   pointer-events: none;
   user-select: none;
 }
-
-/* Overlay card */
 .ta-overlay {
   position: absolute;
   inset: 0;
@@ -2684,7 +2286,6 @@ select.ta-input {
   padding: 16px;
   z-index: 30;
 }
-
 .ta-overlay-box {
   width: min(520px, 92vw);
   background: rgba(12, 13, 16, 0.92);
@@ -2694,7 +2295,6 @@ select.ta-input {
   backdrop-filter: blur(4px);
   text-align: center;
 }
-
 .ta-overlay-title { color: #e9edf3; font-weight: 800; font-size: 20px; margin: 0 0 6px; }
 .ta-overlay-text  { color: #a9b0bb; font-size: 14px;  margin: 0 0 14px; }
 .ta-overlay-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
@@ -2813,121 +2413,6 @@ select.ta-input {
 @media (min-width: 768px) {
   .ta-header .ta-title { font-size: 2.4rem; }
   .ta-header .ta-subtitle { font-size: 1.05rem; }
-}
-/* Show burger by default (pre-hydration safe). Hide it on md+ */
-.mobile-header {
-  position: sticky; top: 0; z-index: 60;
-  background:#0b0b0b; border-bottom:1px solid #17181b;
-  display:flex; justify-content:flex-end; align-items:center;
-  padding:10px 14px; min-height:56px;
-}
-.mobile-menu-button { background:transparent; border:0; color:#e9e9ea; }
-
-.mobile-menu-list {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.55);
-  backdrop-filter: blur(2px);
-  opacity: 0; pointer-events: none; transition: opacity .18s ease;
-}
-.mobile-menu-list.open { opacity: 1; pointer-events: auto; }
-
-.mobile-menu-panel {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 260px;                /* width of the sliding panel */
-  background: #111214;
-  border-right: 1px solid #2a2d31;
-  padding: 20px 16px;
-  display: grid;
-  gap: 10px;
-  transform: translateX(-100%);
-  transition: transform 0.25s ease;
-}
-
-/* When menu is open, slide panel in from the left */
-.mobile-menu-list.open .mobile-menu-panel {
-  transform: translateX(0);
-}
-.mobile-menu-link {
-  display:block; padding:12px; border-radius:8px; color:#e9e9ea; text-decoration:none;
-}
-.mobile-menu-link:hover { background:#181a1f; }
-.mobile-menu-link.active { background:#20232a; }
-
-/* Desktop: hide mobile UI entirely */
-@media (min-width: 768px) {
-  .mobile-header { display:none; }
-  .mobile-menu-list { display:none; }
-}
-/* Burger button on the top-left */
-.mobile-header-left {
-  position: fixed;
-  top: 2px;          /* Move icon higher (change this value to move it up/down) */
-  left: 12px;
-  z-index: 60;
-}
-
-/* Full-screen dark backdrop */
-.mobile-menu-list {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: none;
-  z-index: 50;
-}
-
-/* Show backdrop when menu open */
-.mobile-menu-list.open {
-  display: block;
-}
-
-/* Slide-in panel from left with full height */
-.mobile-menu-panel {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 250px;
-  background: #111214;
-  padding: 20px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  transform: translateX(-100%);
-  transition: transform 0.25s ease;
-  overflow-y: auto;        /* Allow scrolling if menu too long */
-  max-height: 100vh;       /* Limit panel height to screen height */
-}
-
-/* When menu open, slide panel in */
-.mobile-menu-list.open .mobile-menu-panel {
-  transform: translateX(0);
-}
-
-/* Menu links */
-.mobile-menu-link {
-  color: #fff;
-  text-decoration: none;
-  padding: 10px 12px;
-  border-radius: 6px;
-  transition: background 0.2s ease;
-}
-.mobile-menu-link:hover {
-  background: #1e1f23;
-}
-.mobile-menu-link.active {
-  background: #ffc107;
-  color: #111;
-}
-
-/* Hide on desktop */
-@media (min-width: 768px) {
-  .mobile-header-left,
-  .mobile-menu-list {
-    display: none !important;
-  }
 }
 
 .trust-section {
@@ -3317,4 +2802,432 @@ select.ta-input {
   text-align: center;
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.9rem;
+}
+/* === Footer Layout === */
+.footer-one-line {
+  background-color: #000;
+  color: #b0b3b8;
+  padding: 2rem 1rem;
+}
+
+.footer-content {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid #222;
+  padding-bottom: 2rem;
+  text-align: center;
+}
+
+.footer-logo {
+  width: 140px;
+  height: auto;
+}
+
+.footer-text {
+  font-size: 0.875rem;
+  color: #888;
+}
+
+.footer-grid {
+  max-width: 1280px;
+  margin: 2rem auto 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .footer-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    text-align: left;
+  }
+}
+
+.footer-column h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.footer-column ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-column li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-column a {
+  font-size: 0.875rem;
+  color: #b0b3b8;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer-column a:hover {
+  color: #d4af37;
+}
+
+.footer-logo-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .footer-logo-badges {
+    flex-direction: row;
+    align-items: center;
+    gap: 2rem;
+  }
+}
+@media (max-width: 639px) {
+  .footer-logo {
+    margin: 0 auto;
+    display: block;
+  }
+}
+
+.payment-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.payment-badges img {
+  height: 40px;
+  max-width: 80px;
+  object-fit: contain;
+  filter: brightness(1) contrast(1.1);
+  transition: opacity 0.3s ease;
+}
+
+.payment-badges img:hover {
+  opacity: 0.8;
+}
+
+/* === Footer Subscribe Section === */
+.footer-subscribe {
+  width: 100%;
+  max-width: 999px;
+  margin: -1rem auto 0;
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .footer-subscribe {
+    max-width: 880px;
+  }
+}
+.subscribe-column form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: stretch;
+  width: 100%;
+}
+
+
+.subscribe-column input {
+  background-color: #111;
+  border: 1px solid #333;
+  padding: 0.75rem 1.25rem;
+  border-radius: 999px;
+  font-size: 1rem;
+  color: #fff;
+  width: 100%;        /* Default full width */
+  max-width: 600px;   /* Limit on desktop */
+  flex-grow: 1;
+  min-width: 0;
+  outline: none;
+}
+
+.subscribe-column input::placeholder {
+  color: #777;
+  font-size: 0.875rem;
+}
+
+.subscribe-column button {
+  background-color: #d4af37;
+  color: #000;
+  font-weight: 600;
+  border: none;
+  border-radius: 999px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  white-space: nowrap;
+}
+
+.subscribe-column button:hover {
+  background-color: #e6c257;
+}
+
+.subscribe-success {
+  color: #4ade80;
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.subscribe-error {
+  color: #f87171;
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+}
+/* Mobile-specific styles */
+        @media (max-width: 639px) {
+            .footer-grid {
+                grid-template-columns: repeat(2, 1fr);
+                text-align: left;
+            }
+            
+            .footer-column:nth-child(1) {
+                order: 1;
+            }
+            
+            .footer-column:nth-child(2) {
+                order: 3;
+            }
+            
+            .footer-column:nth-child(3) {
+                order: 2;
+            }
+            
+            .footer-column:nth-child(4) {
+                order: 4;
+            }
+            
+            .subscribe-column {
+                order: 5;
+                grid-column: 1 / span 2;
+                text-align: center;
+            }
+        }
+@media (min-width: 768px) {
+  .subscribe-column input {
+    max-width: 800px; /* or 800px if you want it longer */
+  }
+}
+/* Example unsubscribe-specific styling (if needed) */
+.unsubscribe-page {
+  background: #000;
+  color: #fff;
+  text-align: center;
+  padding: 4rem 2rem;
+}
+/* === FAQ Section Styles === */
+
+.section-container {
+  background-color: #0b0b0b;
+  padding: 60px 20px;
+  color: #dcdcdc;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2.4rem;
+  font-weight: 800;
+  margin-bottom: 48px;
+  color: #ffffff;
+}
+
+.faq-list {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.faq-item {
+  background: #111214;
+  border: 1px solid #2a2d31;
+  border-radius: 10px;
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.faq-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 0 1px #00ff83;
+}
+
+.faq-question {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #facc15;
+  margin-bottom: 10px;
+}
+
+.faq-answer {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: #c5c5c5;
+}
+/* === About Page Styles === */
+
+.about-container {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 60px 20px;
+  color: #dcdcdc;
+}
+
+.about-text {
+  margin-bottom: 24px;
+  line-height: 1.7;
+  font-size: 1rem;
+  color: #c7c7c7;
+}
+
+.about-list {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-top: 10px;
+  margin-bottom: 40px;
+  color: #eeeeee;
+}
+
+.about-list li {
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+
+.about-contact {
+  margin-top: 32px;
+  font-size: 1rem;
+  color: #bbbbbb;
+}
+
+.about-link {
+  color: #facc15;
+  text-decoration: underline;
+}
+/* Mobile-specific hiding */
+@media (min-width: 768px) {
+  .mobile-menu { display: none !important; }
+}
+/* === DESKTOP NAVBAR === */
+.navbar-desktop {
+  display: none;
+}
+@media (min-width: 768px) {
+  .navbar-desktop {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: black;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 50;
+    gap: 1.25rem;
+  }
+}
+.mobile-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 999;
+  width: 100%;
+  background-color: #000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0% 1rem;
+  border-bottom: 1px solid #222;
+}
+.mobile-menu-button {
+  color: white;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transform: translateY(-8px);
+}
+@keyframes slideInLeft {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.mobile-menu-list {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease;
+}
+.mobile-menu-list.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.mobile-menu-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 260px;
+  background: #111214;
+  border-right: 1px solid #2a2d31;
+  padding: 20px 16px;
+  display: grid;
+  gap: 10px;
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+}
+.mobile-menu-list.open .mobile-menu-panel {
+  transform: translateX(0);
+}
+@media (min-width: 768px) {
+  .mobile-header { display:none; }
+  .mobile-menu-list { display:none; }
+}
+.mobile-header-left {
+  position: fixed;
+  top: 2px;
+  left: 12px;
+  z-index: 60;
+}
+.mobile-menu-link {
+  color: #fff;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+.mobile-menu-link:hover {
+  background: #1e1f23;
+}
+.mobile-menu-link.active {
+  background: #ffc107;
+  color: #111;
 }

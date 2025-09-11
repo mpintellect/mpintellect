@@ -23,10 +23,10 @@ const LEGACY_LIC_KEYS   = ['mz_ai_license'];
 type SymbolKey =
   | 'EURUSD' | 'GBPUSD' | 'USDJPY' | 'USDCAD' | 'AUDUSD'
   | 'NZDUSD' | 'USDCHF' | 'XAUUSD' | 'XAUEUR' | 'XAGUSD'
-  | 'BTCUSD' | 'ETHUSD' | 'GER40'  | 'US30'   | 'US100';
+  | 'BTCUSD' | 'ETHUSD' | 'AAPL'  | 'TSLA'   | 'AMZN';
 
 type StyleKey = 'scalper' | 'balanced' | 'aggressive' | 'swing';
-type AssetGroupKey = 'fx' | 'metals' | 'crypto' | 'indices';
+type AssetGroupKey = 'fx' | 'metals' | 'crypto' | 'stocks';
 type NormalizedLicense = { key: string; expiresAt?: number };
 
 // Accepts string | {key, expiresAt} | null/undefined and normalizes it
@@ -54,15 +54,15 @@ const CONTRACT: Record<SymbolKey, { contract: number; pip: number }> = {
   XAGUSD: { contract: 5000,    pip: 0.01    },
   BTCUSD: { contract: 1,       pip: 0.5     },
   ETHUSD: { contract: 1,       pip: 0.1     },
-  GER40:  { contract: 1,       pip: 1       },
-  US30:   { contract: 1,       pip: 1       },
-  US100:  { contract: 1,       pip: 1       },
+  AAPL:   { contract: 1,       pip: 0.1     },
+  TSLA:   { contract: 1,       pip: 0.1     },
+  AMZN:   { contract: 1,       pip: 0.1     },
 };
 
 const DECIMALS: Record<SymbolKey, number> = {
   EURUSD: 4, GBPUSD: 4, USDJPY: 2, USDCAD: 4, AUDUSD: 4,
   NZDUSD: 4, USDCHF: 4, XAUUSD: 2, XAUEUR: 2, XAGUSD: 2,
-  BTCUSD: 1, ETHUSD: 1, GER40: 0, US30: 0, US100: 0,
+  BTCUSD: 1, ETHUSD: 1, AAPL: 2, TSLA: 2, AMZN: 2,
 };
 
 const LEVERAGES = [25, 50, 100, 200, 500, 1000] as const;
@@ -73,7 +73,7 @@ const ASSET_GROUPS: Array<{ key: AssetGroupKey; label: string; symbols: SymbolKe
   { key: 'fx',      label: 'Forex - Major Currency Pairs', symbols: ['EURUSD','GBPUSD','USDJPY','USDCAD','AUDUSD','NZDUSD','USDCHF'] },
   { key: 'metals',  label: 'Metals',                       symbols: ['XAUUSD','XAUEUR','XAGUSD'] },
   { key: 'crypto',  label: 'Crypto',                       symbols: ['BTCUSD','ETHUSD'] },
-  { key: 'indices', label: 'Indices',                      symbols: ['GER40','US30','US100'] },
+  { key: 'stocks', label: 'US Stocks',                      symbols: ['AAPL','TSLA','AMZN'] },
 ];
 
 function styleParams(style: StyleKey) {
@@ -306,7 +306,14 @@ const needsPaywall = !isSubscribed && usageCount >= FREE_USES;
   }
   /* ---------- Render ---------- */
   return (
-    <div className="ta-wrap scroll-fade-up">
+    <section id="ai-assistant" className="ta-anchor-offset ta-home-block ai-assistant-section">
+      <div className="ta-header">
+        <h2 className="ta-title">AI Trader Assistant</h2>
+        <p className="ta-subtitle">
+          AI-powered trading assistant: set your balance, symbol, leverage, and style to instantly calculate SL/TP levels, margin requirements, risk metrics, and view a simulated M5 price path — all in one clean, beginner-friendly tool.
+        </p>
+      </div>
+ <div className="ta-wrap scroll-fade-up">
       {/* === Inputs – three cards === */}
       <div className="ta-deck">
         {/* Card 1: Account */}
@@ -510,7 +517,7 @@ const needsPaywall = !isSubscribed && usageCount >= FREE_USES;
               className="ta-btn"
               onClick={() => (window.location.href = '/checkout')}
             >
-              Subscribe – $10 / month
+              Subscribe – $6 / month
             </button>
             <button
               className="ta-link-btn"
@@ -539,7 +546,8 @@ const needsPaywall = !isSubscribed && usageCount >= FREE_USES;
   onClose={() => setLicenseOpen(false)}
   onSave={handleActivateLicense}
 />
-</div>
+  </div>
+   </section>
 );
 }
 

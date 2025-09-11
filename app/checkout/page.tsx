@@ -1,7 +1,6 @@
 // app/checkout/page.tsx
 import { Suspense } from 'react';
 import CheckoutClient from '../checkout/CheckClient';
-import PaymentLogo from 'components/PaymentLogo';
 
 export const metadata = {
   title: 'Checkout – MZPrimer',
@@ -16,7 +15,6 @@ export default function Page() {
   return (
     <Suspense fallback={<div className="checkout-container">Loading…</div>}>
       <CheckoutClient />
-      <PaymentLogo />
     </Suspense>
   );
 }

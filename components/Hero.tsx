@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import Image from 'next/image';
+import '@/app/globals.css'; // if not already imported
 
 export default function Hero() {
   return (
@@ -8,14 +9,16 @@ export default function Hero() {
       id="hero"
       className="flex flex-col items-center text-center bg-black text-white pt-10 md:pt-16 pb-12"
     >
-      <motion.img
-        src="https://i.postimg.cc/5ypD6FmV/mzlogotransap.png"
-        alt="MZPrimer Logo"
-        initial={{ opacity: 0, scale: 0.92 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1.4, ease: 'easeInOut' }}
-        className="w-16 md:w-20 mb-4"
-      />
+      <div className="fade-in">
+        <Image
+          src="/logos/mzlogo.webp"
+          alt="MZPrimer Logo"
+          width={300}
+          height={300}
+          priority
+          className="w-16 md:w-20 mb-4"
+        />
+      </div>
 
       <h1 className="text-3xl md:text-5xl font-bold mb-3 leading-tight">
         Enhance Your Trading with<br />AI-Driven Tools

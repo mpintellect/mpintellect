@@ -1,6 +1,39 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import fs from 'fs';
 import path from 'path';
-import { sendEmail } from '../app/utils/emailSender';
+import nodemailer from 'nodemailer';
+
+// --- 1. Define email sending logic inline ---
+async function sendEmail({
+  to,
+  subject,
+  html,
+}: {
+  to: string;
+  subject: string;
+  html: string;
+}) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_SERVER!,
+    port: parseInt(process.env.EMAIL_PORT || '465', 10),
+    secure: true,
+    auth: {
+      user: process.env.EMAIL_USER!,
+      pass: process.env.EMAIL_PASSWORD!,
+    },
+  });
+
+  await transporter.sendMail({
+    from: `"MZPrimer LTD" <${process.env.EMAIL_FROM}>`,
+    to,
+    subject,
+    html,
+  });
+}
+
+// --- 2. Setup paths and read batch-1.json only ---
 
 const batchesDir = path.join(process.cwd(), 'data', 'batches');
 const sentLogPath = path.join(batchesDir, 'sent-log.json');
@@ -8,7 +41,7 @@ const sentLogPath = path.join(batchesDir, 'sent-log.json');
 let sentBatches: string[] = fs.existsSync(sentLogPath) ? JSON.parse(fs.readFileSync(sentLogPath, 'utf-8')) : [];
 
 const allBatches = fs.readdirSync(batchesDir).filter(f => f.startsWith('batch-')).sort();
-const nextBatchFile = allBatches.find(f => !sentBatches.includes(f));
+const nextBatchFile = 'batch-10.json';
 if (!nextBatchFile) {
   console.log('✅ All batches sent');
   process.exit(0);
@@ -16,7 +49,7 @@ if (!nextBatchFile) {
 
 const contacts = JSON.parse(fs.readFileSync(path.join(batchesDir, nextBatchFile), 'utf-8'));
 
-const subject = '😓 That 0.01 lot XAUUSD loss? Let’s not repeat it…';
+const subject = 'Your recent 0.01 XAUUSD loss isn’t the end — here’s the smarter way forward';
 
 const htmlTemplate = (email: string) => `
   <div style="background:#111;color:#fff;padding:20px;font-family:sans-serif;border-radius:8px;line-height:1.6;">
@@ -49,9 +82,9 @@ const htmlTemplate = (email: string) => `
 
     <div style="text-align:center;margin:22px 0">
       <a href="https://mzprimer.com/tools/ai-assistant?symbol=XAUUSD&simulate=1&utm_source=email&utm_medium=welcome&utm_campaign=loss_recovery"
-         style="display:inline-block;padding:12px 20px;background:#00ff83;color:#111;font-weight:bold;text-decoration:none;border-radius:8px;">
-        👉 Try the AI Simulation (Free)
-      </a>
+   style="display:inline-block;padding:12px 20px;background:#d4af37;color:#111;font-weight:bold;text-decoration:none;border-radius:8px;">
+   👉 Try the AI Simulation (Free)
+</a>
     </div>
 
     <p style="color:#a9acb2;font-style:italic;font-size:14px;margin-top:-10px">

@@ -23,10 +23,14 @@ const LEGACY_LIC_KEYS   = ['mz_ai_license'];
 type SymbolKey =
   | 'select' | 'EURUSD' | 'GBPUSD' | 'USDJPY' | 'USDCAD' | 'AUDUSD'
   | 'NZDUSD' | 'USDCHF' | 'XAUUSD' | 'XAUEUR' | 'XAGUSD'
-  | 'BTCUSD' | 'ETHUSD' | 'AAPL'  | 'TSLA'   | 'AMZN';
+  | 'XPTUSD' | 'USCRUDE'
+  | 'BTCUSD' | 'ETHUSD' | 'XRPUSD' | 'DGEUSD' | 'LTCUSD'
+  | '#AAPL'  | '#TSLA'  | '#AMZN'  | '#TSCO'  | '#AMD'
+  | 'FDAX'   | 'FTSE'
+  | 'EURJPY' | 'EURGBP' | 'GBPJPY' | 'GBPCHF';
 
 type StyleKey = 'scalper' | 'balanced' | 'aggressive' | 'swing';
-type AssetGroupKey = 'fx' | 'metals' | 'crypto' | 'stocks';
+type AssetGroupKey = 'fx' | 'metals' | 'crypto' | 'stocks' | 'indices';
 type NormalizedLicense = { key: string; expiresAt?: number };
 
 // Accepts string | {key, expiresAt} | null/undefined and normalizes it
@@ -41,29 +45,78 @@ function normalizeLicense(input: unknown): NormalizedLicense {
   }
   return { key: '' };
 }
+const DISPLAY_NAMES: Record<SymbolKey, string> = {
+  select: 'Select Symbol',
+  EURUSD: 'EURUSD (Euro / US Dollar)',
+  GBPUSD: 'GBPUSD (British Pound / US Dollar)',
+  USDJPY: 'USDJPY (US Dollar / Japanese Yen)',
+  USDCAD: 'USDCAD (US Dollar / Canadian Dollar)',
+  AUDUSD: 'AUDUSD (Australian Dollar / US Dollar)',
+  NZDUSD: 'NZDUSD (NZ Dollar / US Dollar)',
+  USDCHF: 'USDCHF (US Dollar / Swiss Franc)',
+  XAUUSD: 'XAUUSD (Gold / US Dollar)',
+  XAUEUR: 'XAUEUR (Gold / Euro)',
+  XAGUSD: 'XAGUSD (Silver / US Dollar)',
+  XPTUSD: 'XPTUSD (Platinum / US Dollar)',
+  USCRUDE: 'USCRUDE (Crude Oil)',
+  BTCUSD: 'BTCUSD (Bitcoin)',
+  ETHUSD: 'ETHUSD (Ethereum)',
+  XRPUSD: 'XRPUSD (Ripple)',
+  DGEUSD: 'DGEUSD (Dogecoin)',
+  LTCUSD: 'LTCUSD (Litecoin)',
+  '#AAPL': '#AAPL (Apple Inc.)',
+  '#TSLA': '#TSLA (Tesla Inc.)',
+  '#AMZN': '#AMZN (Amazon.com)',
+  '#TSCO': '#TSCO (Tractor Supply Co)',
+  '#AMD':  '#AMD (Advanced Micro Devices)',
+  FDAX: 'FDAX (German DAX Index)',
+  FTSE: 'FTSE (UK 100 Index)',
+  EURJPY: 'EURJPY (Euro / Japanese Yen)',
+  EURGBP: 'EURGBP (Euro / British Pound)',
+  GBPJPY: 'GBPJPY (British Pound / Japanese Yen)',
+  GBPCHF: 'GBPCHF (British Pound / Swiss Franc)',
+};
 const CONTRACT: Record<SymbolKey, { contract: number; pip: number }> = {
-  select: { contract: 100000, pip: 0.0001 }, // default to EURUSD
-  EURUSD: { contract: 100000, pip: 0.0001 },
-  GBPUSD: { contract: 100000, pip: 0.0001 },
-  USDJPY: { contract: 100000, pip: 0.01 },
-  USDCAD: { contract: 100000, pip: 0.0001 },
-  AUDUSD: { contract: 100000, pip: 0.0001 },
-  NZDUSD: { contract: 100000, pip: 0.0001 },
-  USDCHF: { contract: 100000, pip: 0.0001 },
-  XAUUSD: { contract: 100,     pip: 0.1     },
-  XAUEUR: { contract: 100,     pip: 0.1     },
-  XAGUSD: { contract: 5000,    pip: 0.01    },
-  BTCUSD: { contract: 1,       pip: 0.5     },
-  ETHUSD: { contract: 1,       pip: 0.1     },
-  AAPL:   { contract: 1,       pip: 0.1     },
-  TSLA:   { contract: 1,       pip: 0.1     },
-  AMZN:   { contract: 1,       pip: 0.1     },
+  select:     { contract: 100000, pip: 0.0001 }, // default
+  EURUSD:     { contract: 100000, pip: 0.0001 },
+  GBPUSD:     { contract: 100000, pip: 0.0001 },
+  USDJPY:     { contract: 100000, pip: 0.01 },
+  USDCAD:     { contract: 100000, pip: 0.0001 },
+  AUDUSD:     { contract: 100000, pip: 0.0001 },
+  NZDUSD:     { contract: 100000, pip: 0.0001 },
+  USDCHF:     { contract: 100000, pip: 0.0001 },
+  XAUUSD:     { contract: 100,     pip: 0.1 },     // Gold
+  XAUEUR:     { contract: 100,     pip: 0.1 },     // Gold in EUR
+  XAGUSD:     { contract: 5000,    pip: 0.01 },    // Silver
+  XPTUSD:     { contract: 100,     pip: 0.1 },     // Platinum
+  USCRUDE:    { contract: 1000,    pip: 0.01 },    // Crude Oil (XTIUSD renamed)
+  BTCUSD:     { contract: 1,       pip: 0.5 },
+  ETHUSD:     { contract: 1,       pip: 0.1 },
+  XRPUSD:     { contract: 1,       pip: 0.0001 },
+  DGEUSD:     { contract: 1,       pip: 0.0001 },  // Dogecoin (renamed)
+  LTCUSD:     { contract: 1,       pip: 0.01 },
+  "#AAPL":    { contract: 1,       pip: 0.1 },
+  "#TSLA":    { contract: 1,       pip: 0.1 },
+  "#AMZN":    { contract: 1,       pip: 0.1 },
+  "#TSCO":    { contract: 1,       pip: 0.1 },
+  "#AMD":     { contract: 1,       pip: 0.1 },
+  FDAX:       { contract: 1,       pip: 1 },       // DAX (GER40)
+  FTSE:       { contract: 1,       pip: 1 },       // UK100
+  EURJPY:     { contract: 100000,  pip: 0.01 },
+  EURGBP:     { contract: 100000,  pip: 0.0001 },
+  GBPJPY:     { contract: 100000,  pip: 0.01 },
+  GBPCHF:     { contract: 100000,  pip: 0.0001 },
 };
 
 const DECIMALS: Record<SymbolKey, number> = {
-  select: 4, EURUSD: 4, GBPUSD: 4, USDJPY: 2, USDCAD: 4, AUDUSD: 4,
-  NZDUSD: 4, USDCHF: 4, XAUUSD: 2, XAUEUR: 2, XAGUSD: 2,
-  BTCUSD: 1, ETHUSD: 1, AAPL: 2, TSLA: 2, AMZN: 2,
+  select: 4,
+  EURUSD: 4, GBPUSD: 4, USDJPY: 2, USDCAD: 4, AUDUSD: 4,
+  NZDUSD: 4, USDCHF: 4,
+  XAUUSD: 2, XAUEUR: 2, XAGUSD: 2, XPTUSD: 2, USCRUDE: 2,
+  BTCUSD: 1, ETHUSD: 1, XRPUSD: 4, DGEUSD: 4, LTCUSD: 2,
+  "#AAPL": 2, "#TSLA": 2, "#AMZN": 2, "#TSCO": 2, "#AMD": 2,
+  FDAX: 0, FTSE: 1,
+  EURJPY: 3, EURGBP: 4, GBPJPY: 3, GBPCHF: 4,
 };
 
 const LEVERAGES = [25, 50, 100, 200, 500, 1000] as const;
@@ -71,10 +124,13 @@ const ACCOUNT_TYPES = ['Standard', 'ECN', 'Classic'] as const;
 const ACCOUNT_CCY   = ['USD', 'EUR', 'GBP'] as const;
 
 const ASSET_GROUPS: Array<{ key: AssetGroupKey; label: string; symbols: SymbolKey[] }> = [
-  { key: 'fx',      label: 'Forex - Major Currency Pairs', symbols: ['select','EURUSD','GBPUSD','USDJPY','USDCAD','AUDUSD','NZDUSD','USDCHF'] },
-  { key: 'metals',  label: 'Metals',                       symbols: ['XAUUSD','XAUEUR','XAGUSD'] },
-  { key: 'crypto',  label: 'Crypto',                       symbols: ['BTCUSD','ETHUSD'] },
-  { key: 'stocks', label: 'US Stocks',                      symbols: ['AAPL','TSLA','AMZN'] },
+  { key: 'fx',      label: 'Forex - Major Currency Pairs', symbols: [
+    'select','EURUSD','GBPUSD','USDJPY','USDCAD','AUDUSD','NZDUSD','USDCHF',
+    'EURJPY','EURGBP','GBPJPY','GBPCHF'] },
+  { key: 'metals',  label: 'Metals & Energy', symbols: ['XAUUSD','XAUEUR','XAGUSD','XPTUSD','USCRUDE'] },
+  { key: 'crypto',  label: 'Cryptocurrencies', symbols: ['BTCUSD','ETHUSD','XRPUSD','DGEUSD','LTCUSD'] },
+  { key: 'stocks',  label: 'US Stocks', symbols: ['#AAPL','#TSLA','#AMZN','#TSCO','#AMD'] },
+  { key: 'indices', label: 'Indices', symbols: ['FDAX','FTSE'] },
 ];
 
 function styleParams(style: StyleKey) {
@@ -381,7 +437,7 @@ const needsPaywall = !isSubscribed && usageCount >= FREE_USES;
             <select className="ta-input" value={symbol}
               onChange={(e)=>setSymbol(e.target.value as SymbolKey)}>
               {ASSET_GROUPS.find(g => g.key === assetGroup)!.symbols.map(k => (
-                <option key={k} value={k}>{k}</option>
+                <option key={k} value={k}>{DISPLAY_NAMES[k]}</option>
               ))}
             </select>
           </div>

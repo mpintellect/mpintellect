@@ -25,12 +25,12 @@ type SymbolKey =
   | 'NZDUSD' | 'USDCHF' | 'XAUUSD' | 'XAUEUR' | 'XAGUSD'
   | 'XPTUSD' | 'USCRUDE'
   | 'BTCUSD' | 'ETHUSD' | 'XRPUSD' | 'DGEUSD' | 'LTCUSD'
-  | '#AAPL'  | '#TSLA'  | '#AMZN'  | '#TSCO'  | '#AMD'
+  | 'SPX'  | 'NQ'  | 'YM'  | 'SX5E'  | 'CAC'
   | 'FDAX'   | 'FTSE'
   | 'EURJPY' | 'EURGBP' | 'GBPJPY' | 'GBPCHF';
 
 type StyleKey = 'scalper' | 'balanced' | 'aggressive' | 'swing';
-type AssetGroupKey = 'fx' | 'metals' | 'crypto' | 'stocks' | 'indices';
+type AssetGroupKey = 'fx' | 'metals' | 'crypto'  | 'indices';
 type NormalizedLicense = { key: string; expiresAt?: number };
 
 // Accepts string | {key, expiresAt} | null/undefined and normalizes it
@@ -64,11 +64,11 @@ const DISPLAY_NAMES: Record<SymbolKey, string> = {
   XRPUSD: 'XRPUSD (Ripple)',
   DGEUSD: 'DGEUSD (Dogecoin)',
   LTCUSD: 'LTCUSD (Litecoin)',
-  '#AAPL': '#AAPL (Apple Inc.)',
-  '#TSLA': '#TSLA (Tesla Inc.)',
-  '#AMZN': '#AMZN (Amazon.com)',
-  '#TSCO': '#TSCO (Tractor Supply Co)',
-  '#AMD':  '#AMD (Advanced Micro Devices)',
+  SPX: 'SPX (S&P 500 Index (US))',
+  NQ: 'NQ (NASDAQ 100 Index (US))',
+  YM: 'YM (Dow Jones 30 Index (US).com)',
+  SX5E: 'SX5E (Tractor Supply Co)',
+  CAC:  'CAC (CAC 40 Index (France))',
   FDAX: 'FDAX (German DAX Index)',
   FTSE: 'FTSE (UK 100 Index)',
   EURJPY: 'EURJPY (Euro / Japanese Yen)',
@@ -95,11 +95,11 @@ const CONTRACT: Record<SymbolKey, { contract: number; pip: number }> = {
   XRPUSD:     { contract: 1,       pip: 0.0001 },
   DGEUSD:     { contract: 1,       pip: 0.0001 },  // Dogecoin (renamed)
   LTCUSD:     { contract: 1,       pip: 0.01 },
-  "#AAPL":    { contract: 1,       pip: 0.1 },
-  "#TSLA":    { contract: 1,       pip: 0.1 },
-  "#AMZN":    { contract: 1,       pip: 0.1 },
-  "#TSCO":    { contract: 1,       pip: 0.1 },
-  "#AMD":     { contract: 1,       pip: 0.1 },
+  SPX:    { contract: 1,       pip: 0.1 },
+  NQ:    { contract: 1,       pip: 0.1 },
+  YM:    { contract: 1,       pip: 0.1 },
+  SX5E:    { contract: 1,       pip: 0.1 },
+  CAC:     { contract: 1,       pip: 0.1 },
   FDAX:       { contract: 1,       pip: 1 },       // DAX (GER40)
   FTSE:       { contract: 1,       pip: 1 },       // UK100
   EURJPY:     { contract: 100000,  pip: 0.01 },
@@ -110,13 +110,13 @@ const CONTRACT: Record<SymbolKey, { contract: number; pip: number }> = {
 
 const DECIMALS: Record<SymbolKey, number> = {
   select: 4,
-  EURUSD: 4, GBPUSD: 4, USDJPY: 2, USDCAD: 4, AUDUSD: 4,
-  NZDUSD: 4, USDCHF: 4,
-  XAUUSD: 2, XAUEUR: 2, XAGUSD: 2, XPTUSD: 2, USCRUDE: 2,
-  BTCUSD: 1, ETHUSD: 1, XRPUSD: 4, DGEUSD: 4, LTCUSD: 2,
-  "#AAPL": 2, "#TSLA": 2, "#AMZN": 2, "#TSCO": 2, "#AMD": 2,
-  FDAX: 0, FTSE: 1,
-  EURJPY: 3, EURGBP: 4, GBPJPY: 3, GBPCHF: 4,
+  EURUSD: 5, GBPUSD: 5, USDJPY: 3, USDCAD: 5, AUDUSD: 5,
+  NZDUSD: 5, USDCHF: 5,
+  XAUUSD: 2, XAUEUR: 2, XAGUSD: 3, XPTUSD: 2, USCRUDE: 2,
+  BTCUSD: 1, ETHUSD: 2, XRPUSD: 4, DGEUSD: 4, LTCUSD: 2,
+  SPX: 2, NQ: 2, YM: 2, SX5E: 2, CAC: 2,
+  FDAX: 1, FTSE: 1,
+  EURJPY: 3, EURGBP: 5, GBPJPY: 3, GBPCHF: 5,
 };
 
 const LEVERAGES = [25, 50, 100, 200, 500, 1000] as const;
@@ -129,8 +129,7 @@ const ASSET_GROUPS: Array<{ key: AssetGroupKey; label: string; symbols: SymbolKe
     'EURJPY','EURGBP','GBPJPY','GBPCHF'] },
   { key: 'metals',  label: 'Metals & Energy', symbols: ['XAUUSD','XAUEUR','XAGUSD','XPTUSD','USCRUDE'] },
   { key: 'crypto',  label: 'Cryptocurrencies', symbols: ['BTCUSD','ETHUSD','XRPUSD','DGEUSD','LTCUSD'] },
-  { key: 'stocks',  label: 'US Stocks', symbols: ['#AAPL','#TSLA','#AMZN','#TSCO','#AMD'] },
-  { key: 'indices', label: 'Indices', symbols: ['FDAX','FTSE'] },
+  { key: 'indices',  label: 'Indices', symbols: ['SPX','NQ','YM','SX5E','CAC','FDAX','FTSE'] },
 ];
 
 function styleParams(style: StyleKey) {

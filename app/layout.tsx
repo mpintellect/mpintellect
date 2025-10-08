@@ -7,6 +7,7 @@ import StickyLogo from '@/components/StickyLogo';
 import MobileMenu from '@/components/MobileMenu';
 import Script from 'next/script';
 import CtaTracker from '@/components/CTATracker';
+import AiChatWidget from "@/components/AiChatWidget";
 import Footer from '@/components/Footer';
 const inter = Inter({ subsets: ['latin'] });
 
@@ -33,7 +34,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <main className="flex-grow">
     {children}
   </main>
-
+  <AiChatWidget />
   {/* Footer */}
   <Footer />
 
@@ -123,6 +124,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         */}
         <Script src="/cta-tracker.js" strategy="afterInteractive" />
         <CtaTracker />
+
       </body>
     </html>
   );

@@ -4,6 +4,7 @@ export default function Navbar() {
   return (
     <nav className="navbar-desktop">
       <Link href="/" className="text-white hover:text-yellow-400 transition">Home</Link>
+      <Link href="/AIChat" className="text-white hover:text-yellow-400 transition">AI Expert Chat</Link>
       <Link href="/#learning" className="text-white hover:text-yellow-400 transition">Learning</Link>
       <Link href="/#aitrading" className="text-white hover:text-yellow-400 transition">AI Trading</Link>
       <Link href="/ai-robot" className="text-white hover:text-yellow-400 transition">Trading Robots</Link>

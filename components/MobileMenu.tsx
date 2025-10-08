@@ -6,6 +6,7 @@ import { Menu, X } from 'lucide-react';
 
 const navItems = [
   { label: 'Home', href: '/' },
+  { label: 'AI Expert Chat', href: '/AIChat' },
   { label: 'Learning', href: '/#learning' },
   { label: 'AI Trading', href: '/#aitrading' },
   { label: 'Trading Robots', href: '/ai-robot' },

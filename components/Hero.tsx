@@ -1,25 +1,32 @@
 'use client';
 
-import Image from 'next/image';
-import '@/app/globals.css'; // if not already imported
+import { useEffect } from 'react';
 
-export default function Hero() {
+type HeroProps = {
+  chatRef: React.RefObject<{ triggerChat: () => void }>;
+};
+
+export default function Hero({ chatRef }: HeroProps) {
+  useEffect(() => {
+    // Reserved for scroll animation logic
+  }, []);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const el = document.getElementById('aiassistant');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => {
+        chatRef.current?.triggerChat(); // Trigger chat open
+      }, 500);
+    }
+  };
+
   return (
     <section
       id="hero"
-      className="flex flex-col items-center text-center bg-black text-white pt-10 md:pt-16 pb-12"
+      className="flex flex-col items-center text-center bg-black text-white pt-12 md:pt-20 pb-[30vh] md:pb-[20vh]"
     >
-      <div className="fade-in">
-        <Image
-          src="/logos/mzlogo.webp"
-          alt="MZPrimer Logo"
-          width={300}
-          height={300}
-          priority
-          className="w-16 md:w-20 mb-4"
-        />
-      </div>
-
       <h1 className="text-3xl md:text-5xl font-bold mb-3 leading-tight">
         Enhance Your Trading with<br />AI-Driven Tools
       </h1>
@@ -28,17 +35,7 @@ export default function Hero() {
         Unlock insights, test strategies, and grow your edge with advanced AI solutions tailored for traders.
       </p>
 
-      <a
-        href="tools/ai-assistant"
-        onClick={(e) => {
-          e.preventDefault();
-          const el = document.getElementById('ai-assistant');
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }}
-        className="btn-primary no-underline"
-      >
-        Get AI Assistant
-      </a>
+  
     </section>
   );
 }

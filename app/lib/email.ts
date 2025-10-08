@@ -1,7 +1,6 @@
 // app/lib/email.ts
 import nodemailer from "nodemailer";
-// ❌ old: import SMTPTransport from "nodemailer/lib/smtp-transport";
-import type SMTPTransport from "nodemailer/lib/smtp-transport/index.js"; // <-- ESM-safe, type-only
+import type SMTPTransport from "nodemailer/lib/smtp-transport/index.js";
 import fs from "fs";
 import path from "path";
 
@@ -75,7 +74,7 @@ function buildHtmlBot(order: OrderEmailDetails, downloadLink: string) {
   <div style="background:#0a0a0a;padding:24px;color:#e9e9ea;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial">
     <div style="max-width:640px;margin:0 auto;background:#111214;border:1px solid #2a2d31;border-radius:14px;padding:24px">
       <div style="text-align:right;margin-bottom:12px">
-        <img src="https://i.postimg.cc/4yNW4Ts2/mzlogotransap.png" alt="MZPrimer" style="height:32px;width:auto;border:0" />
+        <img src="https://mzprimer.com/logos/logoblack.webp" alt="MZPrimer" style="height:32px;width:auto;border:0" />
       </div>
 
       <h2 style="margin:0 0 8px 0;font-size:22px;font-weight:800;color:#e9e9ea">Thank you for your order!</h2>
@@ -117,7 +116,7 @@ function buildHtmlBot(order: OrderEmailDetails, downloadLink: string) {
       <div style="margin-top:32px;padding-top:16px;border-top:1px solid #333;color:#aaa;font-size:13px;line-height:1.6">
         <strong style="color:#fff">MZPrimer Team</strong><br/>
         <span style="color:#bbb">AI Trading Solutions · Education · Market Analysis</span><br/>
-        <a href="https://mzprimer.com" style="color:#f5c84b;text-decoration:none">www.mzprimer.com</a>
+        <a href="${getBaseUrl()}" style="color:#f5c84b;text-decoration:none">www.mzprimer.com</a>
       </div>
     </div>
   </div>`;
@@ -145,7 +144,7 @@ function buildTextBot(order: OrderEmailDetails, downloadLink: string) {
       `  TXID: ${txId}`
     );
   }
-  lines.push(``, `Support: contact@mzprimer.com`, `https://mzprimer.com`);
+  lines.push(``, `Support: contact@mzprimer.com`, `${getBaseUrl()}`);
   return lines.join("\n");
 }
 
@@ -154,13 +153,13 @@ function buildTextBot(order: OrderEmailDetails, downloadLink: string) {
 function buildHtmlSubscription(order: OrderEmailDetails) {
   const pay = order.paymentDetails;
   const txId = pay?.txId ?? pay?.txid ?? "";
-  const openUrl = order.assistantUrl || `${getBaseUrl()}/tools/ai-assistant?activate=1`;
+  const openUrl = order.assistantUrl || `${getBaseUrl()}/`;
 
   return `
   <div style="background:#0a0a0a;padding:24px;color:#e9e9ea;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial">
     <div style="max-width:640px;margin:0 auto;background:#111214;border:1px solid #2a2d31;border-radius:14px;padding:24px">
       <div style="text-align:right;margin-bottom:12px">
-        <img src="https://i.postimg.cc/4yNW4Ts2/mzlogotransap.png" alt="MZPrimer" style="height:32px;width:auto;border:0" />
+        <img src="https://mzprimer.com/logos/logoblack.webp" alt="MZPrimer" style="height:32px;width:auto;border:0" />
       </div>
 
       <h2 style="margin:0 0 8px 0;font-size:22px;font-weight:800;color:#e9e9ea">Subscription activated 🎉</h2>
@@ -213,7 +212,7 @@ function buildHtmlSubscription(order: OrderEmailDetails) {
       <div style="margin-top:32px;padding-top:16px;border-top:1px solid #333;color:#aaa;font-size:13px;line-height:1.6">
         <strong style="color:#fff">MZPrimer Team</strong><br/>
         <span style="color:#bbb">AI Trading Solutions · Education · Market Analysis</span><br/>
-        <a href="https://mzprimer.com" style="color:#f5c84b;text-decoration:none">www.mzprimer.com</a>
+        <a href="${getBaseUrl()}" style="color:#f5c84b;text-decoration:none">www.mzprimer.com</a>
       </div>
     </div>
   </div>`;
@@ -238,9 +237,9 @@ function buildTextSubscription(order: OrderEmailDetails) {
       `  TXID: ${txId}`
     );
   }
-  const openUrl = order.assistantUrl || `${getBaseUrl()}/tools/ai-assistant?activate=1`;
+  const openUrl = order.assistantUrl || `${getBaseUrl()}/`;
   if (order.licenseKey) lines.push(``, `License Key: ${order.licenseKey}`);
-  lines.push(``, `Open AI Assistant: ${openUrl}`, ``, `Support: contact@mzprimer.com`, `https://mzprimer.com`);
+  lines.push(``, `Open AI Assistant: ${openUrl}`, ``, `Support: contact@mzprimer.com`, `${getBaseUrl()}`);
   return lines.join("\n");
 }
 

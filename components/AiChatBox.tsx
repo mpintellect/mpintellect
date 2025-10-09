@@ -239,10 +239,12 @@ useEffect(() => {
 }, [hasLicense, trialUsed, messages.length, trialCount, autoStart]);
   // Scroll to bottom when new messages arrive
   useEffect(() => {
-    if (chatRef.current && !scrollLocked.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight;
-    }
-  }, [messages]);
+  if (chatRef.current && !scrollLocked.current) {
+    // Scroll to 1/3rd from top instead of full bottom
+    const targetPosition = chatRef.current.scrollHeight * 0.3;
+    chatRef.current.scrollTo({ top: targetPosition, behavior: "smooth" });
+  }
+}, [messages]);
 
   // Enhanced chat log saving with usage tracking
   async function saveChatLogClient(userId: string, chatData: any) {

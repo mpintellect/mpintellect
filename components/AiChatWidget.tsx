@@ -113,10 +113,12 @@ useEffect(() => {
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
-    if (chatRef.current && !scrollLocked.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight;
-    }
-  }, [messages]);
+  if (chatRef.current && !scrollLocked.current) {
+    // Scroll to 1/3rd from top instead of full bottom
+    const targetPosition = chatRef.current.scrollHeight * 0.3;
+    chatRef.current.scrollTo({ top: targetPosition, behavior: "smooth" });
+  }
+}, [messages]);
 
   const handleLicenseSubmit = async (key: string) => {
     console.log("🎯 handleLicenseSubmit called with key:", key);

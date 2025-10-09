@@ -4611,7 +4611,7 @@ select.ta-input {
 .scroll-card:hover {
   background: #222;
   border-color: #555;
-  transform: translateY(-20px);
+  transform: translateY(2px);
 }
 
 .scroll-symbol {

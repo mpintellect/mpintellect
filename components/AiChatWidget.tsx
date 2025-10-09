@@ -114,9 +114,8 @@ useEffect(() => {
   // Scroll to bottom when new messages arrive
   useEffect(() => {
   if (chatRef.current && !scrollLocked.current) {
-    // Scroll to 1/3rd from top instead of full bottom
-    const targetPosition = chatRef.current.scrollHeight * 0.3;
-    chatRef.current.scrollTo({ top: targetPosition, behavior: "smooth" });
+    // Simple scroll to bottom - always show latest message
+    chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }
 }, [messages]);
 

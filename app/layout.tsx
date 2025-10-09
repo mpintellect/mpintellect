@@ -29,7 +29,6 @@ export default function Layout({ children }: { children: ReactNode }) {
 
         {/* Mobile Menu */}
         <MobileMenu />
-
         {/* Main content */}
         <main className="flex-grow">
     {children}

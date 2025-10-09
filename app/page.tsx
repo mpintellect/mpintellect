@@ -2,6 +2,7 @@ import StickyLogo from '@/components/StickyLogo';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import MobileMenu from '@/components/MobileMenu';
+import PerformanceTracker from '@/components/PerformanceTracker';
 import AiChatSection from "@/components/AiChatSection";
 import TraderAssistantLite from '@/components/TraderAssistantLite';
 import LearningHub from '@/components/LearningHub';
@@ -18,6 +19,7 @@ export default function Home() {
       <Navbar />
       <Hero />
       <MobileMenu />
+      <PerformanceTracker />
       <AiChatSection />
       <TraderAssistantLite />
       <LearningHub />

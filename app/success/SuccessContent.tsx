@@ -68,7 +68,7 @@ export default function SuccessContent() {
           <p><strong>Important:</strong> Your license key will be sent to the email address you used during checkout.</p>
         </div>
         
-        <Link href="/tools/ai-assistant" className="return-button">
+        <Link href="/AIChat" className="return-button">
           Return to MZPrimer AI Assistant
         </Link>
         

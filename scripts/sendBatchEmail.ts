@@ -30,6 +30,13 @@ async function sendEmail({
     to,
     subject,
     html,
+    // ✅ ADD PROPER EMAIL HEADERS
+    headers: {
+      'Content-Type': 'text/html; charset=UTF-8',
+      'Content-Transfer-Encoding': 'quoted-printable',
+    },
+    // ✅ ADD ENCODING OPTIONS
+    encoding: 'UTF-8'
   });
 }
 
@@ -49,53 +56,66 @@ if (!nextBatchFile) {
 
 const contacts = JSON.parse(fs.readFileSync(path.join(batchesDir, nextBatchFile), 'utf-8'));
 
-const subject = 'Your recent 0.01 XAUUSD loss isn’t the end — here’s the smarter way forward';
+// ✅ FIXED SUBJECT - Remove special characters
+const subject = 'Smarter TP, SL, and Lot Size In Seconds';
 
 const htmlTemplate = (email: string) => `
-  <div style="background:#111;color:#fff;padding:20px;font-family:sans-serif;border-radius:8px;line-height:1.6;">
-    <h2>Welcome Trader,</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MZPrimer AI Assistant</title>
+</head>
+<body style="background:#0a0a0a;padding:24px;color:#e9e9ea;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+    <div style="max-width:640px;margin:0 auto;background:#111214;border:1px solid #2a2d31;border-radius:14px;padding:24px">
+      <div style="text-align:right;margin-bottom:12px">
+        <img src="https://mzprimer.com/logos/logoblack.webp" alt="MZPrimer" style="height:32px;width:auto;border:0" />
+      </div>
 
-    <p style="margin-bottom:10px;font-size:15px;">
-      We know trading isn’t easy. That <strong>0.01 lot XAUUSD trade</strong> you opened recently… it hurt.<br/>
-      <em>Sound familiar?</em> It’s not just you.
-    </p>
-
-    <div style="margin:22px 0;padding:18px;border-left:4px solid #f87171;background:#1a1a1a;color:#fefefe;border-radius:6px">
-      <p style="margin:0;font-size:15px;">
-        Just a few days ago, you opened a <strong>0.01 lot trade on XAUUSD</strong>.<br/>
-        The setup looked right. But then came the stop-loss. 💥  
+      <h2 style="margin:0 0 8px 0;font-size:22px;font-weight:800;color:#e9e9ea">Preview Your Next Trade — Before You Risk It</h2>
+      <p style="margin:0 0 14px 0;color:#a9acb2">
+        Still setting TP, SL or lot size manually? There's a smarter way.
       </p>
+
+      <div style="padding:14px 16px;border:1px solid #2a2d31;border-radius:12px;background:#0f1012;margin:18px 0;color:#ffffff">
+        <p style="margin:0;font-size:15px">
+          Meet the <strong>MZPrimer AI Chat Assistant</strong> — your instant trade setup guide.
+        </p>
+        <p style="margin:10px 0 0 0;font-size:14px;color:#a9acb2">
+          Just ask: <code style="background:#1c1c1c;padding:2px 6px;border-radius:4px;color:#f5c84b">"I want to trade XAUUSD with $100"</code><br/>
+          And get a full response:
+        </p>
+        <ul style="margin:10px 0 0 18px;font-size:14px;line-height:1.6;color:#d4d4d4">
+          <li>📍 Suggested pending order (Buy/Sell Stop/Limit)</li>
+          <li>🎯 TP & SL levels based on trend & risk</li>
+          <li>📊 Risk in USD + estimated win chance</li>
+          <li>📈 Live price and market conditions</li>
+          <li>💬 Smart explanation of the logic</li>
+        </ul>
+      </div>
+
+      <p style="font-size:15px;color:#a9acb2;margin-top:14px">
+        It's not a signal. It's an <strong>interactive simulation</strong> of your own setup — based on live price action, volatility, and trend strength.
+      </p>
+
+      <div style="text-align:center;margin:24px 0 12px">
+        <a href="https://mzprimer.com/?utm_source=email&utm_medium=ai-launch&utm_campaign=ai-simulation"
+          style="display:inline-block;padding:12px 20px;background:#f5c84b;color:#111;font-weight:bold;text-decoration:none;border-radius:8px;">
+          👉 Try Your Free Simulation Now
+        </a>
+      </div>
+      <p style="color:#a9acb2;font-style:italic;font-size:14px;text-align:center;margin:12px 0 0">
+        No signup required. No risk. Just smarter trades.
+      </p>
+
+      <div style="margin-top:28px;color:#888;font-size:13px;text-align:center;">
+        You received this email from <strong>MZPrimer LTD</strong>. 
+        <a href="https://mzprimer.com/unsubscribe?email=${encodeURIComponent(email)}" style="color:#aaa;text-decoration:underline">Unsubscribe</a>
+      </div>
     </div>
-
-    <p style="margin-top:12px;color:#a9acb2;font-size:15px;">
-      More than <strong>67%</strong> of retail traders close a trade too early or too late — even when their analysis is solid.<br/>
-      Emotions take over. Fear wins. Logic disappears.
-    </p>
-
-    <p style="margin-top:18px;font-size:16px;color:#ffffff;font-weight:600">
-      That’s why we built the <span style="color:#00ff83">MZPrimer AI Assistant</span>.
-    </p>
-
-    <p style="margin-top:8px;color:#a9acb2;font-size:15px;">
-      Simulate your trade setup — and preview how the market may unfold — <u>before risking another dollar</u>.
-    </p>
-
-    <div style="text-align:center;margin:22px 0">
-      <a href="https://mzprimer.com/tools/ai-assistant?symbol=XAUUSD&simulate=1&utm_source=email&utm_medium=welcome&utm_campaign=loss_recovery"
-   style="display:inline-block;padding:12px 20px;background:#d4af37;color:#111;font-weight:bold;text-decoration:none;border-radius:8px;">
-   👉 Try the AI Simulation (Free)
-</a>
-    </div>
-
-    <p style="color:#a9acb2;font-style:italic;font-size:14px;margin-top:-10px">
-      If you’ve lost trades before — you’re not failing. You’re learning. Let’s speed that up.
-    </p>
-
-    <div style="margin-top:28px;color:#888;font-size:13px;text-align:center;">
-      You received this email from <strong>MZPrimer LTD</strong>. 
-      <a href="https://mzprimer.com/unsubscribe?email=${encodeURIComponent(email)}" style="color:#aaa;text-decoration:underline">Unsubscribe</a>
-    </div>
-  </div>
+</body>
+</html>
 `;
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -104,10 +124,10 @@ const sendBatch = async () => {
   for (const contact of contacts) {
     try {
       await sendEmail({
-  to: contact.Email,
-  subject,
-  html: htmlTemplate(contact.Email),
-});
+        to: contact.Email,
+        subject,
+        html: htmlTemplate(contact.Email),
+      });
       console.log(`✅ Sent to ${contact.Email}`);
       await delay(3000);
     } catch (err) {

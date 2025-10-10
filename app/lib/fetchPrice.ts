@@ -30,6 +30,14 @@ const SYMBOL_MAP: Record<string, string> = {
   EURGBP: 'EURGBP',
   GBPJPY: 'GBPJPY',
   GBPCHF: 'GBPCHF',
+  // Add your additional symbols
+  NASDAQ: 'NASDAQ',
+  US30: 'US30',
+  TSLA: '#TSLA',
+  AAPL: '#AAPL',
+  AMD: '#AMD',
+  AMZN: '#AMZN',
+  TSCO: '#TSCO'
 };
 
 export async function fetchCurrentPrice(symbol: string): Promise<number | null> {
@@ -39,6 +47,7 @@ export async function fetchCurrentPrice(symbol: string): Promise<number | null> 
     const mappedSymbol = SYMBOL_MAP[symbol] || symbol;
     console.log(`🔍 [fetchCurrentPrice] Mapped symbol: ${mappedSymbol}`);
     
+    // ✅ FIXED: Read from individual documents in 'prices' collection
     const docRef = doc(db, 'prices', mappedSymbol);
     console.log(`🔍 [fetchCurrentPrice] Document path: prices/${mappedSymbol}`);
     

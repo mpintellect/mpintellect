@@ -1,7 +1,12 @@
 [
   {
     "Name": "Mezgani",
-    "Email": "abdrahman.mez@gmail.com",
+    "Email": "test-xssth7111@srv1.mail-tester.com",
+    "Phone": "7911493473"
+  },
+  {
+    "Name": "Mezgani",
+    "Email": "abdrahman.mez7@gmail.com",
     "Phone": "7911493473"
   }
     ]

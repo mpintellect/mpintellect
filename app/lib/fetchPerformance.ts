@@ -1,7 +1,4 @@
 // lib/fetchPerformance.ts
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "./firebase";
-
 export type SymbolPerformance = {
   symbol: string;
   winRate: number;
@@ -19,23 +16,62 @@ export type PerformanceSummary = {
 
 export async function fetchPerformanceSummary(): Promise<PerformanceSummary | null> {
   try {
-    const docRef = doc(db, "performance_summary", "latest");
-    const snapshot = await getDoc(docRef);
+    console.log('🌐 Fetching from server API...');
+    
+    const response = await fetch('/api/performance', {
+      // ✅ Important for caching
+      cache: 'default',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (!snapshot.exists()) {
-      console.warn("⚠️ No performance summary found.");
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // ✅ Handle error response from API
+    if (data.error) {
+      console.warn('⚠️ API returned error:', data.error);
       return null;
     }
 
-    const data = snapshot.data();
-    return {
-      generatedAt: data.generatedAt,
-      period: data.period,
-      topPerformers: data.topPerformers,
-      worstPerformers: data.worstPerformers,
-    };
+    console.log('✅ Server API data loaded');
+    return data;
+
   } catch (error) {
-    console.error("❌ Error fetching performance summary:", error);
+    console.error('❌ Error fetching from server API:', error);
+    return null;
+  }
+}
+
+// ✅ Optional: Get cache status
+export async function getPerformanceCacheStatus() {
+  try {
+    const response = await fetch('/api/performance', {
+      method: 'POST'
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Error getting cache status:', error);
+    return null;
+  }
+}
+
+// ✅ Optional: Force cache refresh
+export async function refreshPerformanceCache(): Promise<PerformanceSummary | null> {
+  try {
+    // Clear server cache by making it expired
+    const response = await fetch('/api/performance?refresh=true', {
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Error refreshing cache:', error);
     return null;
   }
 }

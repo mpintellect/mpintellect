@@ -33,11 +33,9 @@ export default function PerformanceTracker() {
   };
 
   const handleTrackClick = (e: React.MouseEvent) => {
-    // Pause animation when clicking on the track itself
     const loop = e.currentTarget.querySelector('.scroll-loop') as HTMLElement;
     if (loop) {
       loop.style.animationPlayState = 'paused';
-      // Resume after 3 seconds
       setTimeout(() => {
         loop.style.animationPlayState = 'running';
       }, 3000);
@@ -58,14 +56,12 @@ export default function PerformanceTracker() {
       className="scroll-card"
       onClick={handleCardClick}
       onTouchStart={(e) => {
-        // Pause animation on touch start for mobile
         const loop = e.currentTarget.closest('.scroll-track')?.querySelector('.scroll-loop') as HTMLElement;
         if (loop) {
           loop.style.animationPlayState = 'paused';
         }
       }}
       onTouchEnd={(e) => {
-        // Resume animation after 2 seconds on touch end
         setTimeout(() => {
           const loop = e.currentTarget.closest('.scroll-track')?.querySelector('.scroll-loop') as HTMLElement;
           if (loop) {

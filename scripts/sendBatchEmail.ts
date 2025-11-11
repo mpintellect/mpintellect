@@ -48,7 +48,7 @@ const sentLogPath = path.join(batchesDir, 'sent-log.json');
 let sentBatches: string[] = fs.existsSync(sentLogPath) ? JSON.parse(fs.readFileSync(sentLogPath, 'utf-8')) : [];
 
 const allBatches = fs.readdirSync(batchesDir).filter(f => f.startsWith('batch-')).sort();
-const nextBatchFile = 'batch-1.json';
+const nextBatchFile = 'batch-5.json';
 if (!nextBatchFile) {
   console.log('✅ All batches sent');
   process.exit(0);

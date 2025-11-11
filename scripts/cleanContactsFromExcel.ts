@@ -8,44 +8,51 @@ import XLSX from 'xlsx';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// File paths
+// Config
 const inputFile = path.resolve(__dirname, '../data/contacts.xlsx');
-const outputFile = path.resolve(__dirname, '../data/cleaned_contacts.json');
+const outputDir = path.resolve(__dirname, '../data/batchesIB');
+const batchSize = 200;
 
-// Helpers
+// Helper: validate email
 const isValidEmail = (email: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim().toLowerCase()) &&
   email.length <= 100;
 
+// Helper: normalize email
 const normalizeEmail = (raw: string) =>
-  raw.trim().split(' ')[0].replace(/[^a-zA-Z0-9@._-]/g, '');
+  raw.trim().split(' ')[0].replace(/[^a-zA-Z0-9@._-]/g, '').toLowerCase();
 
+// Read Excel
 const workbook = XLSX.readFile(inputFile);
 const sheet = workbook.Sheets[workbook.SheetNames[0]];
 const rawRows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet);
 
-const seenEmails = new Set<string>();
-const cleaned: { Name: string; Email: string; Phone: string }[] = [];
+// Clean emails
+const seen = new Set<string>();
+const cleaned: { Email: string }[] = [];
 
 for (const row of rawRows) {
-  const name = row.NAME || row.Name || '';
-  const emailRaw = row.EMAIL || row.Email || '';
-  const phoneRaw = row.PHONE || row.Phone || '';
+  const rawEmail = row.EMAIL || row.Email || Object.values(row)[0]; // fallback
+  const email = normalizeEmail(rawEmail || '');
 
-  const email = normalizeEmail(emailRaw);
-  const phone = phoneRaw.toString().replace(/\D/g, '');
-
-  if (!name || !email || !phone) continue;
   if (!isValidEmail(email)) continue;
-  if (seenEmails.has(email)) continue;
+  if (seen.has(email)) continue;
 
-  seenEmails.add(email);
-  cleaned.push({ Name: name.trim(), Email: email.toLowerCase(), Phone: phone });
+  seen.add(email);
+  cleaned.push({ Email: email });
 }
 
-// Sort by phone
-cleaned.sort((a, b) => Number(a.Phone) - Number(b.Phone));
+// Create output directory
+if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
 
-// Output
-fs.writeFileSync(outputFile, JSON.stringify(cleaned, null, 2));
-console.log(`✅ Cleaned ${cleaned.length} contacts saved to ${outputFile}`);
+// Split into batches
+let batchNum = 1;
+for (let i = 0; i < cleaned.length; i += batchSize) {
+  const batch = cleaned.slice(i, i + batchSize);
+  const filename = path.join(outputDir, `batch-${batchNum}.json`);
+  fs.writeFileSync(filename, JSON.stringify(batch, null, 2));
+  console.log(`✅ Saved ${batch.length} emails to ${filename}`);
+  batchNum++;
+}
+
+console.log(`🎉 Done. Total cleaned: ${cleaned.length}`);

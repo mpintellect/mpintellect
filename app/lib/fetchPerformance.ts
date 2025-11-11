@@ -1,77 +1,41 @@
-// lib/fetchPerformance.ts
-export type SymbolPerformance = {
-  symbol: string;
-  winRate: number;
-  tp: number;
-  sl: number;
-  grade: string;
-};
-
+// app/lib/fetchPerformance.ts
 export type PerformanceSummary = {
-  generatedAt: string;
-  period: string;
-  topPerformers: SymbolPerformance[];
-  worstPerformers: SymbolPerformance[];
+  topPerformers: {
+    symbol: string;
+    grade: string;
+    winRate: number;
+    tp: number;
+    sl: number;
+  }[];
+  worstPerformers: {
+    symbol: string;
+    grade: string;
+    winRate: number;
+    tp: number;
+    sl: number;
+  }[];
 };
 
-export async function fetchPerformanceSummary(): Promise<PerformanceSummary | null> {
+export async function fetchPerformanceSummary(): Promise<PerformanceSummary> {
   try {
-    console.log('🌐 Fetching from server API...');
+    console.log("🔄 Fetching performance data via API route...");
     
-    const response = await fetch('/api/performance', {
-      // ✅ Important for caching
-      cache: 'default',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const res = await fetch('/api/performance', {
+      cache: 'no-store' // Important: bypass browser cache
     });
-
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-
-    const data = await response.json();
     
-    // ✅ Handle error response from API
-    if (data.error) {
-      console.warn('⚠️ API returned error:', data.error);
-      return null;
+    console.log("📡 API Route response status:", res.status);
+    
+    if (!res.ok) {
+      throw new Error(`API route failed: ${res.status}`);
     }
-
-    console.log('✅ Server API data loaded');
+    
+    const data = await res.json();
+    console.log("✅ Successfully fetched performance data");
     return data;
-
-  } catch (error) {
-    console.error('❌ Error fetching from server API:', error);
-    return null;
-  }
-}
-
-// ✅ Optional: Get cache status
-export async function getPerformanceCacheStatus() {
-  try {
-    const response = await fetch('/api/performance', {
-      method: 'POST'
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('❌ Error getting cache status:', error);
-    return null;
-  }
-}
-
-// ✅ Optional: Force cache refresh
-export async function refreshPerformanceCache(): Promise<PerformanceSummary | null> {
-  try {
-    // Clear server cache by making it expired
-    const response = await fetch('/api/performance?refresh=true', {
-      headers: {
-        'Cache-Control': 'no-cache'
-      }
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('❌ Error refreshing cache:', error);
-    return null;
+    
+  } catch (err) {
+    console.error("❌ Error loading performance summary:", err);
+    throw err;
   }
 }

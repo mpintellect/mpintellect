@@ -12,6 +12,25 @@ import LicenseModal from "./LicenseModalAI";
 import { validateLicenseKey } from "@/app/lib/validateLicense";
 import { v4 as uuidv4 } from 'uuid';
 
+// === LOCAL STORAGE TRIAL FUNCTIONS ===
+const getTrialCount = (): number => {
+  if (typeof window === 'undefined') return 0;
+  const saved = localStorage.getItem("MZP_TRIAL_COUNT");
+  return saved ? parseInt(saved) : 0;
+};
+
+const incrementTrialCount = (): number => {
+  if (typeof window === 'undefined') return 0;
+  const current = getTrialCount();
+  const newCount = current + 1;
+  localStorage.setItem("MZP_TRIAL_COUNT", newCount.toString());
+  return newCount;
+};
+
+const hasTrialRemaining = (): boolean => {
+  return getTrialCount() < 2;
+};
+
 // === TYPES ===
 type AiChatBoxProps = {
   mode?: "popup" | "section";
@@ -52,33 +71,16 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
 
   // Enhanced trial and license state management
   useEffect(() => {
-    const initializeUserState = async () => {
+    const initializeUserState = () => {
       const licenseKey = localStorage.getItem("MZP_LICENSE_KEY");
       const licenseExpires = Number(localStorage.getItem("MZP_LICENSE_EXPIRES"));
       const isValid = !!licenseKey && !!licenseExpires && Date.now() < licenseExpires;
       setHasLicense(isValid);
 
-      // Get trial count from backend if user is logged in
-      if (userId) {
-        try {
-          const trialStatus = await checkTrialStatus(userId);
-          setTrialCount(2 - trialStatus.remaining);
-          setTrialUsed(!trialStatus.available);
-        } catch (error) {
-          console.error("Failed to fetch trial status:", error);
-          // Fallback to localStorage
-          const savedTrialCount = localStorage.getItem("MZP_TRIAL_COUNT");
-          const count = savedTrialCount ? parseInt(savedTrialCount) : 0;
-          setTrialCount(count);
-          setTrialUsed(count >= 2);
-        }
-      } else {
-        // Fallback for anonymous users
-        const savedTrialCount = localStorage.getItem("MZP_TRIAL_COUNT");
-        const count = savedTrialCount ? parseInt(savedTrialCount) : 0;
-        setTrialCount(count);
-        setTrialUsed(count >= 2);
-      }
+      // Get trial count from localStorage
+      const count = getTrialCount();
+      setTrialCount(count);
+      setTrialUsed(count >= 2);
     };
 
     initializeUserState();
@@ -96,14 +98,6 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
       setTrialUsed(false);
       setShowLicenseModal(false);
       setStep(1); // ✅ Move to chat
-
-      if (userId) {
-        await trackUsage({
-          userId,
-          licenseKey: key,
-          action: 'license_activation'
-        });
-      }
 
       // ✅ Show only this clean message set
       setMessages([
@@ -178,31 +172,11 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
     }
   };
 
-  // Enhanced trial count management with backend tracking
-  const incrementTrialCount = async () => {
-    const newCount = trialCount + 1;
+  // Enhanced trial count management with local storage only
+  const incrementTrial = async () => {
+    const newCount = incrementTrialCount();
     setTrialCount(newCount);
-    localStorage.setItem("MZP_TRIAL_COUNT", newCount.toString());
-    
-    // Track trial usage in backend
-    if (userId) {
-      try {
-        await incrementTrialCountBackend(userId);
-        await trackUsage({
-          userId,
-          action: 'trial_used',
-          symbol: symbol || undefined,
-          capital: capital ? parseFloat(capital) : undefined
-        });
-      } catch (error) {
-        console.error("Failed to track trial usage:", error);
-      }
-    }
-    
-    if (newCount >= 2) {
-      setTrialUsed(true);
-    }
-    
+    setTrialUsed(newCount >= 2);
     return newCount;
   };
 
@@ -237,6 +211,7 @@ useEffect(() => {
     }, 300);
   }
 }, [hasLicense, trialUsed, messages.length, trialCount, autoStart]);
+
   // Scroll to bottom when new messages arrive
   useEffect(() => {
   if (chatRef.current && !scrollLocked.current) {
@@ -245,7 +220,7 @@ useEffect(() => {
   }
 }, [messages]);
 
-  // Enhanced chat log saving with usage tracking
+  // Enhanced chat log saving
   async function saveChatLogClient(userId: string, chatData: any) {
     try {
       // Save to your existing chatlogs collection
@@ -254,12 +229,6 @@ useEffect(() => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, chatData }),
       });
-
-      // Enhanced: Track usage analytics
-      if (userId) {
-        const licenseKey = localStorage.getItem("MZP_LICENSE_KEY") || undefined;
-        await saveAIAnalysis(userId, chatData, licenseKey);
-      }
     } catch (err) {
       console.error("❌ Error saving chat:", err);
     }
@@ -318,7 +287,7 @@ useEffect(() => {
       }
 
       // Increment trial count before processing
-      const newTrialCount = await incrementTrialCount();
+      const newTrialCount = await incrementTrial();
 
       setCapital(input);
       setMessages((prev) => [
@@ -740,65 +709,4 @@ if (newTrialCount >= 2 && !hasLicense) {
       )}
     </div>
   );
-}
-
-// Firebase analytics and trial management functions
-// ✅ Check Trial Status
-async function checkTrialStatus(userId: string): Promise<{ available: boolean; remaining: number }> {
-  try {
-    const response = await fetch("/api/AIchat/trial-status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    });
-
-    if (response.ok) return await response.json();
-
-    throw new Error("Trial check failed");
-  } catch (error) {
-    console.error("Trial check fallback:", error);
-    const savedTrialCount = localStorage.getItem("MZP_TRIAL_COUNT");
-    const count = savedTrialCount ? parseInt(savedTrialCount) : 0;
-    const remaining = Math.max(0, 2 - count);
-    return { available: remaining > 0, remaining };
-  }
-}
-
-// ✅ Increment Trial Count
-async function incrementTrialCountBackend(userId: string) {
-  try {
-    await fetch("/api/AIchat/increment-trial", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    });
-  } catch (error) {
-    console.error("Failed to increment trial count:", error);
-  }
-}
-
-// ✅ Track Usage
-async function trackUsage(usageData: any) {
-  try {
-    await fetch("/api/AIchat/track-usage", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(usageData),
-    });
-  } catch (error) {
-    console.error("Failed to track usage:", error);
-  }
-}
-
-// ✅ Save AI Analysis
-async function saveAIAnalysis(userId: string, chatData: any, licenseKey?: string) {
-  try {
-    await fetch("/api/AIchat/save-analysis", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, chatData, licenseKey }),
-    });
-  } catch (error) {
-    console.error("Failed to save AI analysis:", error);
-  }
 }

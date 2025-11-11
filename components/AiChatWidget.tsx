@@ -12,6 +12,25 @@ import LicenseModal from "./LicenseModalAI";
 import { validateLicenseKey } from "@/app/lib/validateLicense";
 import { v4 as uuidv4 } from 'uuid';
 
+// === LOCAL STORAGE TRIAL FUNCTIONS ===
+const getTrialCount = (): number => {
+  if (typeof window === 'undefined') return 0;
+  const saved = localStorage.getItem("MZP_TRIAL_COUNT");
+  return saved ? parseInt(saved) : 0;
+};
+
+const incrementTrialCount = (): number => {
+  if (typeof window === 'undefined') return 0;
+  const current = getTrialCount();
+  const newCount = current + 1;
+  localStorage.setItem("MZP_TRIAL_COUNT", newCount.toString());
+  return newCount;
+};
+
+const hasTrialRemaining = (): boolean => {
+  return getTrialCount() < 2;
+};
+
 // === TYPES ===
 type ChatMessage = {
   sender: "ai" | "user";
@@ -47,77 +66,60 @@ export default function AiChatWidget() {
 
   // Enhanced trial and license state management
   useEffect(() => {
-    const initializeUserState = async () => {
+    const initializeUserState = () => {
       const licenseKey = localStorage.getItem("MZP_LICENSE_KEY");
       const licenseExpires = Number(localStorage.getItem("MZP_LICENSE_EXPIRES"));
       const isValid = !!licenseKey && !!licenseExpires && Date.now() < licenseExpires;
       setHasLicense(isValid);
 
-      // Get trial count from backend if user is logged in
-      if (userId) {
-        try {
-          const trialStatus = await checkTrialStatus(userId);
-          setTrialCount(2 - trialStatus.remaining);
-          setTrialUsed(!trialStatus.available);
-        } catch (error) {
-          console.error("Failed to fetch trial status:", error);
-          // Fallback to localStorage
-          const savedTrialCount = localStorage.getItem("MZP_TRIAL_COUNT");
-          const count = savedTrialCount ? parseInt(savedTrialCount) : 0;
-          setTrialCount(count);
-          setTrialUsed(count >= 2);
-        }
-      } else {
-        // Fallback for anonymous users
-        const savedTrialCount = localStorage.getItem("MZP_TRIAL_COUNT");
-        const count = savedTrialCount ? parseInt(savedTrialCount) : 0;
-        setTrialCount(count);
-        setTrialUsed(count >= 2);
-      }
+      // Get trial count from localStorage
+      const count = getTrialCount();
+      setTrialCount(count);
+      setTrialUsed(count >= 2);
     };
 
     initializeUserState();
   }, [userId]);
 
   // Welcome message - show chat directly if has license or trial available
-useEffect(() => {
-  if (isOpen && messages.length === 0) {
-    setTimeout(() => {
-      const welcomeMessages: ChatMessage[] = [
-        {
-          sender: "ai" as const,
-          text: "🤖 MZPrimer AI:\nWelcome! I'm your personal AI Trading Assistant. Let's analyze a strategic setup.",
-        },
-      ];
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      setTimeout(() => {
+        const welcomeMessages: ChatMessage[] = [
+          {
+            sender: "ai" as const,
+            text: "🤖 MZPrimer AI:\nWelcome! I'm your personal AI Trading Assistant. Let's analyze a strategic setup.",
+          },
+        ];
 
-      // Only show trial message if user doesn't have a license
-      if (!hasLicense) {
+        // Only show trial message if user doesn't have a license
+        if (!hasLicense) {
+          welcomeMessages.push({
+            sender: "ai" as const, 
+            text: trialCount === 0 
+              ? "🎉 You have 2 free trials remaining. Let's get started!" 
+              : `🔄 You have ${2 - trialCount} free trial${2 - trialCount === 1 ? '' : 's'} remaining.`
+          });
+        }
+
         welcomeMessages.push({
           sender: "ai" as const, 
-          text: trialCount === 0 
-            ? "🎉 You have 2 free trials remaining. Let's get started!" 
-            : `🔄 You have ${2 - trialCount} free trial${2 - trialCount === 1 ? '' : 's'} remaining.`
+          text: "2️⃣ 🔍 Choose a Trading Symbol to begin:"
         });
-      }
 
-      welcomeMessages.push({
-        sender: "ai" as const, 
-        text: "2️⃣ 🔍 Choose a Trading Symbol to begin:"
-      });
-
-      setMessages(welcomeMessages);
-      setStep(1);
-    }, 300);
-  }
-}, [isOpen, hasLicense, trialUsed, messages.length, trialCount]);
+        setMessages(welcomeMessages);
+        setStep(1);
+      }, 300);
+    }
+  }, [isOpen, hasLicense, trialUsed, messages.length, trialCount]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
-  if (chatRef.current && !scrollLocked.current) {
-    // Simple scroll to bottom - always show latest message
-    chatRef.current.scrollTop = chatRef.current.scrollHeight;
-  }
-}, [messages]);
+    if (chatRef.current && !scrollLocked.current) {
+      // Simple scroll to bottom - always show latest message
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   const handleLicenseSubmit = async (key: string) => {
     console.log("🎯 handleLicenseSubmit called with key:", key);
@@ -131,14 +133,6 @@ useEffect(() => {
       setTrialUsed(false);
       setShowLicenseModal(false);
       setStep(1);
-
-      if (userId) {
-        await trackUsage({
-          userId,
-          licenseKey: key,
-          action: 'license_activation'
-        });
-      }
 
       setMessages([
         { sender: "ai", text: "🔓 License activated successfully. Welcome!" },
@@ -209,34 +203,15 @@ useEffect(() => {
     }
   };
 
-  // Enhanced trial count management with backend tracking
-  const incrementTrialCount = async () => {
-    const newCount = trialCount + 1;
+  // Enhanced trial count management with local storage only
+  const incrementTrial = async () => {
+    const newCount = incrementTrialCount();
     setTrialCount(newCount);
-    localStorage.setItem("MZP_TRIAL_COUNT", newCount.toString());
-    
-    if (userId) {
-      try {
-        await incrementTrialCountBackend(userId);
-        await trackUsage({
-          userId,
-          action: 'trial_used',
-          symbol: symbol || undefined,
-          capital: capital ? parseFloat(capital) : undefined
-        });
-      } catch (error) {
-        console.error("Failed to track trial usage:", error);
-      }
-    }
-    
-    if (newCount >= 2) {
-      setTrialUsed(true);
-    }
-    
+    setTrialUsed(newCount >= 2);
     return newCount;
   };
 
-  // Enhanced chat log saving with usage tracking
+  // Enhanced chat log saving
   async function saveChatLogClient(userId: string, chatData: any) {
     try {
       await fetch("/api/saveChat", {
@@ -244,11 +219,6 @@ useEffect(() => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, chatData }),
       });
-
-      if (userId) {
-        const licenseKey = localStorage.getItem("MZP_LICENSE_KEY") || undefined;
-        await saveAIAnalysis(userId, chatData, licenseKey);
-      }
     } catch (err) {
       console.error("❌ Error saving chat:", err);
     }
@@ -307,7 +277,7 @@ useEffect(() => {
       }
 
       // Increment trial count before processing
-      const newTrialCount = await incrementTrialCount();
+      const newTrialCount = await incrementTrial();
 
       setCapital(input);
       setMessages((prev) => [
@@ -446,8 +416,6 @@ useEffect(() => {
               `• Primary Order: <strong>${orderType}</strong>\n` +
               `• Order Rationale: ${orderRationale}`
           });
-
-      
         } else {
           summary.splice(1, 0, {
             title: "📋 Order Status",
@@ -507,7 +475,7 @@ useEffect(() => {
           }
         }
 
-        if (newTrialCount >= 2) {
+        if (newTrialCount >= 2 && !hasLicense) {
           setMessages((prev) => [
             ...prev,
             {
@@ -725,61 +693,4 @@ useEffect(() => {
       )}
     </>
   );
-}
-
-// Firebase analytics and trial management functions
-async function checkTrialStatus(userId: string): Promise<{ available: boolean; remaining: number }> {
-  try {
-    const response = await fetch("/api/AIchat/trial-status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    });
-
-    if (response.ok) return await response.json();
-
-    throw new Error("Trial check failed");
-  } catch (error) {
-    console.error("Trial check fallback:", error);
-    const savedTrialCount = localStorage.getItem("MZP_TRIAL_COUNT");
-    const count = savedTrialCount ? parseInt(savedTrialCount) : 0;
-    const remaining = Math.max(0, 2 - count);
-    return { available: remaining > 0, remaining };
-  }
-}
-
-async function incrementTrialCountBackend(userId: string) {
-  try {
-    await fetch("/api/AIchat/increment-trial", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    });
-  } catch (error) {
-    console.error("Failed to increment trial count:", error);
-  }
-}
-
-async function trackUsage(usageData: any) {
-  try {
-    await fetch("/api/AIchat/track-usage", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(usageData),
-    });
-  } catch (error) {
-    console.error("Failed to track usage:", error);
-  }
-}
-
-async function saveAIAnalysis(userId: string, chatData: any, licenseKey?: string) {
-  try {
-    await fetch("/api/AIchat/save-analysis", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, chatData, licenseKey }),
-    });
-  } catch (error) {
-    console.error("Failed to save AI analysis:", error);
-  }
 }

@@ -8,7 +8,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 // 🔐 Stripe Price IDs → Setup Credits
 const PRICE_MAP: Record<string, string> = {
-  "10": "price_1SVWXPDoB4i1qeaLkhaI09nB",   // €4.5 → 10 setups
+  "10": "price_1SVbAXDoB4i1qeaLC32KJQ6L",   // €4.5 → 10 setups
   "20": "price_1SVWWXDoB4i1qeaL2dquhtfv",   // €8 → 20 setups
   "30": "price_1SVWUlDoB4i1qeaLabDsRHo2",   // €12 → 30 setups
 };

@@ -8215,3 +8215,6 @@ select {
     max-width: 80px;
   }
 }
+/* Fix mobile dashboard width */
+.client-cabinet { max-width: 100vw; overflow-x: hidden; }
+.cabinet-main, .dashboard-view { width: 100%; box-sizing: border-box; }

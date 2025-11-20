@@ -2,13 +2,15 @@
 import './globals.css';
 import { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
-import Navbar from '@/components/Navbar';
-import StickyLogo from '@/components/StickyLogo';
-import MobileMenu from '@/components/MobileMenu';
+
+// Change 1: Import the new conditional wrapper instead of the direct component
+import ConditionalStickyLogo from '@/components/ConditionalStickyLogo';
+import ConditionalMobileMenu from '@/components/ConditionalMobileMenu'; 
+import ConditionalNavbar from '@/components/ConditionalNavbar'; 
 import Script from 'next/script';
 import CtaTracker from '@/components/CTATracker';
-import AiChatWidget from "@/components/AiChatWidget";
 import Footer from '@/components/Footer';
+
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
@@ -21,21 +23,21 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className={`${inter.className} bg-black text-white relative`}>
-        {/* Global Navbar */}
-        <Navbar />
+      
 
-        {/* Sticky MP logo */}
-        <StickyLogo />
+        {/* Change 2: Use the conditional wrapper for Sticky Logo */}
+        <ConditionalStickyLogo />
+        <ConditionalNavbar />
+        {/* Conditional Mobile Menu */}
+        <ConditionalMobileMenu />
 
-        {/* Mobile Menu */}
-        <MobileMenu />
         {/* Main content */}
         <main className="flex-grow">
-    {children}
-  </main>
-  <AiChatWidget />
-  {/* Footer */}
-  <Footer />
+          {children}
+        </main>
+        
+        {/* Footer */}
+        <Footer />
 
         {/* ---------------- AdRoll ---------------- */}
         <Script id="adroll-loader" strategy="afterInteractive">
@@ -87,10 +89,6 @@ export default function Layout({ children }: { children: ReactNode }) {
             });
           `}
         </Script>
-        {/* If you want full noscript parity for GTM, add this inside <body> as well:
-            <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5M6V2F8L"
-            height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-        */}
 
         {/* ---------------- ONE gtag.js loader ---------------- */}
         <Script
@@ -113,14 +111,6 @@ export default function Layout({ children }: { children: ReactNode }) {
           `}
         </Script>
 
-        {/* ⚠️ DO NOT auto-fire conversions on page load.
-            Fire conversions only on real actions (button clicks / form submit) with:
-            gtag('event','conversion',{
-              send_to:'AW-16927724463/n3hlCNmcy6oaEK-n4oc_',
-              value:1.0,
-              currency:'MAD'
-            });
-        */}
         <Script src="/cta-tracker.js" strategy="afterInteractive" />
         <CtaTracker />
 

@@ -6,7 +6,6 @@ import { Menu, X } from 'lucide-react';
 
 const navItems = [
   { label: 'Home', href: '/' },
-  { label: 'AI Expert Chat', href: '/AIChat' },
   { label: 'Learning', href: '/#learning' },
   { label: 'AI Trading', href: '/#aitrading' },
   { label: 'Trading Robots', href: '/ai-robot' },
@@ -14,6 +13,7 @@ const navItems = [
   { label: 'Contact', href: '/#contacts' },
   { label: 'Privacy', href: '/legal' },
   { label: 'Blog', href: '/blog' },
+  { label: 'LOGIN', href: '/client/login' },
 ];
 
 export default function MobileMenu() {

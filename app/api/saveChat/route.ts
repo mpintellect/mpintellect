@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "../../lib/firebaseAdmin";
 
 export async function POST(req: NextRequest) {
-  const { userId, chatData } = await req.json();
+  const { userId, setupData } = await req.json();
 
-  if (!userId || !chatData) {
+  if (!userId || !setupData) {
     return NextResponse.json({ success: false, error: "Missing data" }, { status: 400 });
   }
 
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       .collection("chatlogs")
       .doc(userId)
       .collection("entries")
-      .add(chatData);
+      .add(setupData);
 
     return NextResponse.json({ success: true });
   } catch (err) {

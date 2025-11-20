@@ -3,16 +3,106 @@
 
 import { useEffect, useRef, useState } from "react";
 import { fetchCurrentPrice } from "../app/lib/fetchPrice";
-import { SYMBOLS, DISPLAY_NAMES, SymbolKey, CONTRACT_SIZES } from "@/data/symbols";
 import { useUser } from "../app/hooks/useUser";
-import { fetchSetup, TradeSetupData, hasValidPendingOrders, getPrimaryOrder, getAllPendingOrders, getOrderConfidence, getMarketContext, type ExtendedTradeSetupData } from "../app/lib/fetchSetup";
-import SubscribeModal from "./SubscribeModal";
+import { fetchSetup, hasValidPendingOrders, getPrimaryOrder, getAllPendingOrders, getOrderConfidence, getMarketContext, type ExtendedTradeSetupData } from "../app/lib/fetchSetup";
 import { loadStripe } from "@stripe/stripe-js";
-import LicenseModal from "./LicenseModalAI";
-import { validateLicenseKey } from "@/app/lib/validateLicense";
-import { v4 as uuidv4 } from 'uuid';
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { auth, db } from "../app/lib/firebaseClient";
+import { setDoc, doc } from "firebase/firestore";
+import { useRouter } from "next/navigation";
+import { saveSetup } from "@/app/lib/firebase/saveSetup";
+import { useOneSetup } from "../app/lib/firebase/useSetup";
 
-// === LOCAL STORAGE TRIAL FUNCTIONS ===
+// ==========================================
+// 📊 EMBEDDED SYMBOL CONFIGURATION
+// ==========================================
+
+const ALL_SYMBOLS = [
+  "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD",
+  "NZDUSD", "USDCHF", "XAUUSD", "XAUEUR", "XAGUSD",
+  "XPTUSD", "USCRUDE", "BTCUSD", "ETHUSD", "XRPUSD",
+  "DGEUSD", "LTCUSD", "SPX", "NQ", "YM",
+  "SX5E", "CAC", "FDAX", "FTSE", "EURJPY",
+  "EURGBP", "GBPJPY", "GBPCHF"
+] as const;
+
+type SymbolKey = typeof ALL_SYMBOLS[number];
+
+const SYMBOL_NAMES: Record<string, string> = {
+  EURUSD: "Euro / US Dollar",
+  GBPUSD: "British Pound / US Dollar",
+  USDJPY: "US Dollar / Japanese Yen",
+  USDCAD: "US Dollar / Canadian Dollar",
+  AUDUSD: "Australian Dollar / US Dollar",
+  NZDUSD: "New Zealand Dollar / US Dollar",
+  USDCHF: "US Dollar / Swiss Franc",
+  EURJPY: "Euro / Japanese Yen",
+  EURGBP: "Euro / British Pound",
+  GBPJPY: "British Pound / Japanese Yen",
+  GBPCHF: "British Pound / Swiss Franc",
+  XAUUSD: "Gold / US Dollar",
+  XAUEUR: "Gold / Euro",
+  XAGUSD: "Silver / US Dollar",
+  XPTUSD: "Platinum / US Dollar",
+  USCRUDE: "WTI Crude Oil",
+  BTCUSD: "Bitcoin / US Dollar",
+  ETHUSD: "Ethereum / US Dollar",
+  XRPUSD: "Ripple / US Dollar",
+  LTCUSD: "Litecoin / US Dollar",
+  DGEUSD: "Dogecoin / US Dollar",
+  SPX: "S&P 500",
+  NQ: "Nasdaq 100",
+  YM: "Dow Jones 30",
+  SX5E: "Euro Stoxx 50",
+  CAC: "CAC 40",
+  FDAX: "DAX 40",
+  FTSE: "FTSE 100"
+};
+
+// ✅ EXACT MATCH WITH BACKEND PIP/CONTRACT SETTINGS
+const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: number }> = {
+  // Forex (Standard Lot = 100,000 units)
+  "EURUSD": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "GBPUSD": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "USDJPY": { pip: 0.01, contract: 100000, decimals: 3 },
+  "USDCAD": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "AUDUSD": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "NZDUSD": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "USDCHF": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "EURJPY": { pip: 0.01, contract: 100000, decimals: 3 },
+  "EURGBP": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "GBPJPY": { pip: 0.01, contract: 100000, decimals: 3 },
+  "GBPCHF": { pip: 0.0001, contract: 100000, decimals: 5 },
+
+  // Metals
+  "XAUUSD": { pip: 0.01, contract: 100, decimals: 2 }, 
+  "XAUEUR": { pip: 0.01, contract: 100, decimals: 2 },
+  "XAGUSD": { pip: 0.001, contract: 5000, decimals: 3 },
+  "XPTUSD": { pip: 0.01, contract: 100, decimals: 2 },
+
+  // Energy
+  "USCRUDE": { pip: 0.01, contract: 1000, decimals: 2 },
+
+  // Crypto (1 Lot = 1 Coin)
+  "BTCUSD": { pip: 1.0, contract: 1, decimals: 1 },
+  "ETHUSD": { pip: 0.1, contract: 1, decimals: 2 },
+  "XRPUSD": { pip: 0.0001, contract: 1, decimals: 4 },
+  "LTCUSD": { pip: 0.01, contract: 1, decimals: 2 },
+  "DGEUSD": { pip: 0.0001, contract: 1, decimals: 4 },
+
+  // Indices (Standard Lot = 1 Contract)
+  "SPX": { pip: 0.1, contract: 1, decimals: 2 },
+  "NQ": { pip: 0.1, contract: 1, decimals: 2 },
+  "YM": { pip: 1.0, contract: 1, decimals: 1 },
+  "SX5E": { pip: 0.1, contract: 1, decimals: 2 },
+  "CAC": { pip: 0.1, contract: 1, decimals: 2 },
+  "FDAX": { pip: 0.1, contract: 1, decimals: 1 },
+  "FTSE": { pip: 0.1, contract: 1, decimals: 1 },
+};
+
+// ==========================================
+// 💾 LOCAL STORAGE TRIAL FUNCTIONS
+// ==========================================
 const getTrialCount = (): number => {
   if (typeof window === 'undefined') return 0;
   const saved = localStorage.getItem("MZP_TRIAL_COUNT");
@@ -27,11 +117,9 @@ const incrementTrialCount = (): number => {
   return newCount;
 };
 
-const hasTrialRemaining = (): boolean => {
-  return getTrialCount() < 2;
-};
-
-// === TYPES ===
+// ==========================================
+// 🧩 TYPES & INTERFACES
+// ==========================================
 type AiChatBoxProps = {
   mode?: "popup" | "section";
   onClose?: () => void;
@@ -48,194 +136,374 @@ type SummaryBlock = {
   content: string;
 };
 
+// ==========================================
+// 🖼️ MODAL COMPONENTS
+// ==========================================
+
+// Quick Registration Modal
+function QuickRegisterModal({ 
+  onClose, 
+  onSuccess,
+  selectedPlan 
+}: { 
+  onClose: () => void; 
+  onSuccess: (user: any, plan: string) => void;
+  selectedPlan: string;
+}) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleQuickRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    if (!email || !password || !confirmPassword) {
+      setError("Please fill in all fields");
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      await sendEmailVerification(user);
+
+      await setDoc(doc(db, "users", user.uid), {
+        email: email.toLowerCase().trim(),
+        setupCount: 1, // 🎁 1 free setup for registration
+        referredBy: null,
+        emailVerified: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      onSuccess(user, selectedPlan);
+      
+    } catch (err: any) {
+      if (err.code === 'auth/email-already-in-use') {
+        setError("This email is already registered. Please login instead.");
+      } else if (err.code === 'auth/invalid-email') {
+        setError("Invalid email address format.");
+      } else if (err.code === 'auth/weak-password') {
+        setError("Password is too weak. Please use a stronger password.");
+      } else {
+        setError(err.message || "Registration failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h3>🎯 Quick Registration</h3>
+          <p>Create your account to purchase the {selectedPlan} Setup Plan</p>
+          <button onClick={onClose} className="close-modal">✕</button>
+        </div>
+
+        <form onSubmit={handleQuickRegister} className="quick-register-form">
+          <div className="form-group">
+            <label>Email Address</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Password (min 6 characters)</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Confirm Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
+
+          <div className="modal-actions">
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="primary-btn"
+            >
+              {loading ? "Creating Account..." : `Register & Continue to Payment`}
+            </button>
+            <button 
+              type="button" 
+              onClick={onClose}
+              className="secondary-btn"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+          </div>
+
+          <div className="registration-note">
+            <p>📧 We'll send a verification email. You can verify later and start using your setups immediately.</p>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Pricing Plans Modal
+function PricingPlansModal({ 
+  onClose, 
+  onPlanSelect,
+  onRegisterClick 
+}: { 
+  onClose: () => void; 
+  onPlanSelect: (plan: string) => void;
+  onRegisterClick: () => void;
+}) {
+  const plans = [
+    { id: "10", name: "Basic Plan", setups: "10 Setups", price: "€4.50", popular: false },
+    { id: "20", name: "Pro Plan", setups: "20 Setups", price: "€8.00", popular: true },
+    { id: "30", name: "Elite Plan", setups: "30 Setups", price: "€12.00", popular: false }
+  ];
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content pricing-modal">
+        <div className="modal-header">
+          <h3>🎯 Choose Your Setup Plan</h3>
+          <p>Select a plan that fits your trading needs</p>
+          <button onClick={onClose} className="close-modal">✕</button>
+        </div>
+
+        <div className="pricing-options">
+          {plans.map((plan) => (
+            <div 
+              key={plan.id} 
+              className={`pricing-card ${plan.popular ? 'popular' : ''}`}
+            >
+              {plan.popular && <div className="popular-badge">MOST POPULAR</div>}
+              
+              <div className="plan-header">
+                <h4>{plan.name}</h4>
+                <div className="setups-count">{plan.setups}</div>
+              </div>
+              
+              <div className="plan-price">
+                {plan.price}
+              </div>
+              
+              <button 
+                onClick={() => onPlanSelect(plan.id)}
+                className="select-plan-btn"
+              >
+                Select Plan
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="pricing-footer">
+          <div className="register-option">
+            <h4>🔑 Create Account First</h4>
+            <p>Register to get 1 free setup and manage your credits</p>
+            <button 
+              onClick={onRegisterClick}
+              className="register-first-btn"
+            >
+              Register Now (Get 1 Free Setup)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 🚀 MAIN COMPONENT
+// ==========================================
+
 export default function AiChatBox({ mode = "section", onClose, autoStart = true }: AiChatBoxProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [step, setStep] = useState(0);
   const [symbol, setSymbol] = useState<SymbolKey | null>(null);
   const [capital, setCapital] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const { userId } = useUser();
+  
+  const { userId, setupCount, user, isLoading: userLoading } = useUser();
+  const router = useRouter();
+  
   const chatRef = useRef<HTMLDivElement>(null);
   const scrollLocked = useRef(false);
-  const [showSubscribe, setShowSubscribe] = useState(false);
-  const [showLicenseModal, setShowLicenseModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [trialCount, setTrialCount] = useState(0);
-  const [trialUsed, setTrialUsed] = useState(false);
 
-  // Stripe
+  // Modal states
+  const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showQuickRegister, setShowQuickRegister] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string>("");
+
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-  // ✅ LICENSE VALIDATION
-  const [hasLicense, setHasLicense] = useState<boolean>(false);
-
-  // Enhanced trial and license state management
   useEffect(() => {
-    const initializeUserState = () => {
-      const licenseKey = localStorage.getItem("MZP_LICENSE_KEY");
-      const licenseExpires = Number(localStorage.getItem("MZP_LICENSE_EXPIRES"));
-      const isValid = !!licenseKey && !!licenseExpires && Date.now() < licenseExpires;
-      setHasLicense(isValid);
-
-      // Get trial count from localStorage
-      const count = getTrialCount();
-      setTrialCount(count);
-      setTrialUsed(count >= 2);
-    };
-
-    initializeUserState();
+    const count = getTrialCount();
+    setTrialCount(count);
   }, [userId]);
 
-  const handleLicenseSubmit = async (key: string) => {
-    console.log("🎯 handleLicenseSubmit called with key:", key);
-    const res = await validateLicenseKey(key);
-
-    if (res.valid && res.expiresAt) {
-      localStorage.setItem("MZP_LICENSE_KEY", key);
-      localStorage.setItem("MZP_LICENSE_EXPIRES", res.expiresAt.toString());
-
-      setHasLicense(true);
-      setTrialUsed(false);
-      setShowLicenseModal(false);
-      setStep(1); // ✅ Move to chat
-
-      // ✅ Show only this clean message set
-      setMessages([
-        { sender: "ai", text: "🔓 License activated successfully. Welcome!" },
-        { sender: "ai", text: "2️⃣ 🔍 Choose a Trading Symbol to begin:" },
-      ]);
-    } else {
-      setMessages([
-        { sender: "ai", text: "❌ Invalid or expired license key." },
-      ]);
+  const handleBuySetups = async (plan: string, userEmail?: string) => {
+    if (!user) {
+      console.error("No user found for purchase");
+      return;
     }
-  };
 
-  const handleSubscribe = async (priceId: string) => {
-    console.log("🔄 [1] handleSubscribe called with priceId:", priceId);
     setIsLoading(true);
-    
     try {
-      const orderId = uuidv4(); // ✅ generate orderId
-      console.log("📤 [2] Making API request to /api/stripe/checkout...");
-      const res = await fetch("/api/stripe/checkout", {
+      const res = await fetch("/api/checkout/create-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, orderId }),
+        body: JSON.stringify({ 
+          uid: user.uid, 
+          plan: plan,
+          email: user.email || userEmail
+        }),
       });
 
-      console.log("📥 [3] API response status:", res.status);
-      console.log("📥 [4] API response ok:", res.ok);
-      
       if (!res.ok) {
-        const errorText = await res.text();
-        console.error("❌ [5] API error response:", errorText);
-        throw new Error(`Checkout failed with status: ${res.status}`);
+        const errorData = await res.json();
+        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
       }
-      
+
       const data = await res.json();
-      console.log("✅ [6] API success data:", data);
-      
-      // Check what we received
+
       if (data.url) {
-        console.log("🔗 [7] Redirecting to URL:", data.url);
-        // Close modal first if it's open
-        setShowSubscribe(false);
-        // Force redirect
         window.location.href = data.url;
-      } else if (data.sessionId) {
-  console.log("🔗 [8] Using Stripe.js redirect with sessionId:", data.sessionId);
-  const stripe = await stripePromise;
-  if (stripe) {
-    const { error } = await stripe.redirectToCheckout({ 
-      sessionId: data.sessionId 
-    });
-    if (error) {
-      console.error("❌ [9] Stripe redirect error:", error);
-      throw new Error(error.message || "Stripe redirect failed");
-    }
-  }
       } else {
-        console.error("❌ [10] No URL or sessionId in response");
-        throw new Error("No checkout URL received");
+        throw new Error("Checkout URL not received.");
       }
-      
     } catch (error: any) {
-      console.error("💥 [11] Checkout error:", error);
-      setMessages((prev) => [
-        ...prev,
-        { sender: "ai", text: `❌ Payment failed: ${error.message || "Please try again"}` }
-      ]);
+      console.error("Buy setup error:", error);
+      alert(`Failed to start checkout: ${error.message}`);
     } finally {
-      console.log("🏁 [12] handleSubscribe finished");
       setIsLoading(false);
     }
   };
 
-  // Enhanced trial count management with local storage only
+  const handlePlanSelect = (plan: string) => {
+    setSelectedPlan(plan);
+    if (user) {
+      handleBuySetups(plan);
+      setShowPricingModal(false);
+    } else {
+      setShowPricingModal(false);
+      setShowQuickRegister(true);
+    }
+  };
+
+  const handleQuickRegisterSuccess = (newUser: any, plan: string) => {
+    setShowQuickRegister(false);
+    handleBuySetups(plan, newUser.email);
+  };
+
+  const handleRegisterFirst = () => {
+    setShowPricingModal(false);
+    setShowQuickRegister(true);
+    setSelectedPlan("10");
+  };
+
   const incrementTrial = async () => {
     const newCount = incrementTrialCount();
     setTrialCount(newCount);
-    setTrialUsed(newCount >= 2);
     return newCount;
   };
 
-  // Welcome message - show chat directly if has license or trial available
-useEffect(() => {
-  if ((hasLicense || !trialUsed) && messages.length === 0 && autoStart) {
-    setTimeout(() => {
-      const welcomeMessages: ChatMessage[] = [
-        {
-          sender: "ai" as const,
-          text: "🤖 MZPrimer AI:\nWelcome! I'm your personal AI Trading Assistant. Let's analyze a strategic setup.",
-        },
-      ];
+  // Welcome message
+  useEffect(() => {
+    const hasAccess = user || trialCount < 2;
+    
+    if (hasAccess && messages.length === 0 && autoStart && !userLoading) {
+      setTimeout(() => {
+        const welcomeMessages: ChatMessage[] = [
+          {
+            sender: "ai" as const,
+            text: "🤖 MZPrimer AI:\nWelcome! I'm your personal AI Trading Assistant. Let's analyze a strategic setup.",
+          },
+        ];
 
-      // Only show trial message if user doesn't have a license
-      if (!hasLicense) {
+        if (user) {
+          welcomeMessages.push({
+            sender: "ai" as const,
+            text: `🎯 You have ${setupCount} setup credit${setupCount === 1 ? '' : 's'} available.`
+          });
+        } else {
+          welcomeMessages.push({
+            sender: "ai" as const, 
+            text: `🎉 You have ${2 - trialCount} free trial${2 - trialCount === 1 ? '' : 's'} remaining.`
+          });
+        }
+
         welcomeMessages.push({
           sender: "ai" as const, 
-          text: trialCount === 0 
-            ? "🎉 You have 2 free trials remaining. Let's get started!" 
-            : `🔄 You have ${2 - trialCount} free trial${2 - trialCount === 1 ? '' : 's'} remaining.`
+          text: "2️⃣ 🔍 Choose a Trading Symbol to begin:"
         });
-      }
 
-      welcomeMessages.push({
-        sender: "ai" as const, 
-        text: "2️⃣ 🔍 Choose a Trading Symbol to begin:"
-      });
-
-      setMessages(welcomeMessages);
-      setStep(1);
-    }, 300);
-  }
-}, [hasLicense, trialUsed, messages.length, trialCount, autoStart]);
-
-  // Scroll to bottom when new messages arrive
-  useEffect(() => {
-  if (chatRef.current && !scrollLocked.current) {
-    // Simple scroll to bottom - always show latest message
-    chatRef.current.scrollTop = chatRef.current.scrollHeight;
-  }
-}, [messages]);
-
-  // Enhanced chat log saving
-  async function saveChatLogClient(userId: string, chatData: any) {
-    try {
-      // Save to your existing chatlogs collection
-      await fetch("/api/saveChat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, chatData }),
-      });
-    } catch (err) {
-      console.error("❌ Error saving chat:", err);
+        setMessages(welcomeMessages);
+        setStep(1);
+      }, 300);
     }
-  }
+  }, [messages.length, autoStart, user, setupCount, userLoading, trialCount]);
 
-  // Main handler for user input
+  useEffect(() => {
+    if (chatRef.current && !scrollLocked.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   const handleUserInput = async (input: string) => {
+    if (!user && trialCount >= 2) {
+      setShowPricingModal(true);
+      return;
+    }
+
     setMessages((prev) => [...prev, { sender: "user", text: input }]);
     setIsTyping(true);
 
@@ -256,7 +524,7 @@ useEffect(() => {
 
       setMessages((prev) => [
         ...prev,
-        { sender: "ai", text: `📊 ${DISPLAY_NAMES[selectedSymbol]}\nLive Price: ${price}` },
+        { sender: "ai", text: `📊 ${SYMBOL_NAMES[selectedSymbol] || selectedSymbol}\nLive Price: ${price}` },
         { sender: "ai", text: "💰 What's your trading capital in USD?" },
       ]);
 
@@ -286,8 +554,62 @@ useEffect(() => {
         return;
       }
 
-      // Increment trial count before processing
-      const newTrialCount = await incrementTrial();
+      let proceed = false;
+      let newTrialCount = trialCount;
+
+      // Access Control Logic
+      if (user) {
+        const result = await useOneSetup(); 
+        if (result === "ok") {
+          proceed = true;
+        } else if (result === "no-credits") {
+          setMessages((prev) => [
+            ...prev,
+            {
+              sender: "ai",
+              text: [
+                {
+                  title: "❌ No Setups Left",
+                  content: "You've used all your setup credits. Please buy more to continue.",
+                },
+              ],
+            },
+          ]);
+          
+          setMessages((prev) => [
+            ...prev,
+            {
+              sender: "ai",
+              text: [
+                {
+                  title: "🛒 Buy More Setups",
+                  content: `<button onclick="window.location.href='/client/dashboard?showPlans=true'" style="background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                    View Pricing Plans
+                  </button>`,
+                },
+              ],
+            },
+          ]);
+          setIsTyping(false);
+          return;
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            { sender: "ai", text: "⚠️ Error verifying account. Try again." },
+          ]);
+          setIsTyping(false);
+          return;
+        }
+      } else {
+        if (trialCount < 2) {
+          newTrialCount = await incrementTrial();
+          proceed = true;
+        } else {
+          setShowPricingModal(true);
+          setIsTyping(false);
+          return;
+        }
+      }
 
       setCapital(input);
       setMessages((prev) => [
@@ -296,13 +618,9 @@ useEffect(() => {
       ]);
       setStep(3);
 
-      let setup: ExtendedTradeSetupData | null = null;
-      let price: number | null = null;
-
       try {
-        setup = await fetchSetup(symbol) as ExtendedTradeSetupData;
-        price = await fetchCurrentPrice(symbol);
-
+        const setup = await fetchSetup(symbol) as ExtendedTradeSetupData;
+        
         if (!setup) {
           setMessages((prev) => [
             ...prev,
@@ -312,11 +630,15 @@ useEffect(() => {
           return;
         }
 
-        const confidenceScore = setup.risk_score?.confidence_score ?? setup.confidence?.confidence_score ?? 50;
-        const pip = CONTRACT_SIZES[symbol].pip;
-        const contract = CONTRACT_SIZES[symbol].contract;
+        // ✅ SAFE confidence access
+        const confidenceScore = setup.risk_score?.confidence_score ?? (setup as any).confidence?.confidence_score ?? 50;
+        
+        // ✅ SAFE EMBEDDED SYMBOL SPECS
+        const symbolSpec = SYMBOL_SPECS[symbol] || { pip: 0.0001, contract: 100000, decimals: 5 };
+        const contract = symbolSpec.contract;
+        const decimalPlaces = symbolSpec.decimals;
 
-        // ✅ ENHANCED: Use PENDING ORDERS system with helper functions
+        // ✅ EXTRACT ORDER DATA
         const hasValidOrders = hasValidPendingOrders(setup);
         const primaryOrder = getPrimaryOrder(setup);
         const allOrders = getAllPendingOrders(setup);
@@ -331,29 +653,45 @@ useEffect(() => {
         let orderRationale = "No specific order generated";
 
         if (hasValidOrders && primaryOrder) {
-          // ✅ USE PENDING ORDER DATA
-          entryPrice = primaryOrder.entry_price;
-          slPrice = primaryOrder.sl_price;
-          tpPrice = primaryOrder.tp_price;
-          rrRatio = primaryOrder.rr_ratio;
-          orderType = primaryOrder.type;
-          orderRationale = primaryOrder.rationale;
+          entryPrice = Number(primaryOrder.entry_price) || 0;
+          slPrice = Number(primaryOrder.sl_price) || 0;
+          tpPrice = Number(primaryOrder.tp_price) || 0;
+          rrRatio = Number(primaryOrder.rr_ratio) || 1.0;
+          orderType = primaryOrder.type || "LIMIT";
+          orderRationale = primaryOrder.rationale || "Algorithm generated";
         } else {
-          // Fallback to old entry_zone system if pending orders not available
-          const entryZone = setup.entry_zone?.entry_zone || [0, 0];
-          entryPrice = (entryZone[0] + entryZone[1]) / 2;
-          slPrice = setup.tp_sl?.sl_level || entryPrice * 0.99;
-          tpPrice = setup.tp_sl?.tp_level || entryPrice * 1.01;
-          rrRatio = setup.tp_sl?.rr_ratio || 1.0;
-          orderRationale = "Fallback to entry zone system";
+          // Fallback
+          const currentPrice = setup.pending_orders?.current_price || 0;
+          entryPrice = currentPrice;
+          slPrice = entryPrice * 0.99;
+          tpPrice = entryPrice * 1.01;
+          orderRationale = "Fallback estimation";
         }
 
+        // ✅ CORRECTED RISK CALCULATION
         const priceDifference = Math.abs(entryPrice - slPrice);
+        
+        // Calculate Dollar Risk per 1 Lot traded
         const riskPerTradePerLot = priceDifference * contract;
-        const maxRiskAmount = capitalNumber * 0.02;
-        const lotSize = maxRiskAmount / (riskPerTradePerLot || 1);
+
+        const maxRiskAmount = capitalNumber * 0.02; // 2% Risk Rule
+
+        // ✅ FIX: Prevent division by zero & enforce min 0.01 lot
+        let lotSize = 0;
+        if (riskPerTradePerLot > 0.00000001) {
+          const rawLots = maxRiskAmount / riskPerTradePerLot;
+          lotSize = parseFloat(rawLots.toFixed(2)); // Round to 2 decimals
+          
+          // Enforce minimum 0.01 lot if valid trade
+          if (lotSize < 0.01) lotSize = 0.01;
+        } else {
+            lotSize = 0.0; // Invalid trade parameters
+        }
+
         const actualRiskAmount = riskPerTradePerLot * lotSize;
-        const riskPercentage = (actualRiskAmount / capitalNumber) * 100;
+        const riskPercentage = capitalNumber > 0 ? (actualRiskAmount / capitalNumber) * 100 : 0;
+        
+        // Calculate distances for display
         const slDistanceUSD = Math.abs(slPrice - entryPrice) * contract * lotSize;
         const tpDistanceUSD = Math.abs(tpPrice - entryPrice) * contract * lotSize;
 
@@ -364,30 +702,12 @@ useEffect(() => {
           ? "⚠️ **LOW CONFIDENCE** – Consider waiting for better setup."
           : "✅ **CONFIRMED SETUP** – Trade looks promising.";
 
-        // ✅ FIXED: Use centralized decimal mapping (MUST MATCH BACKEND)
-        const getDecimalPlaces = (symbol: SymbolKey): number => {
-          const decimalMap: Record<SymbolKey, number> = {
-            // Forex
-            "EURUSD": 5, "GBPUSD": 5, "USDJPY": 3, "USDCAD": 5, "AUDUSD": 5,
-            "NZDUSD": 5, "USDCHF": 5, "EURJPY": 3, "EURGBP": 5, "GBPJPY": 3, "GBPCHF": 5,
-            // Commodities
-            "XAUUSD": 2, "XAUEUR": 2, "XAGUSD": 3, "XPTUSD": 2, "USCRUDE": 2,
-            // Crypto
-            "BTCUSD": 1, "ETHUSD": 2, "XRPUSD": 4, "DGEUSD": 4, "LTCUSD": 2,
-            // Indices
-            "SPX": 2, "NQ": 2, "YM": 2, "SX5E": 2, "CAC": 2, "FDAX": 1, "FTSE": 1,
-          };
-          return decimalMap[symbol] || 5; // Default to 5 decimals
-        };
-
-        const decimalPlaces = getDecimalPlaces(symbol);
-
-        // ✅ ENHANCED: Dynamic summary with PENDING ORDERS info
+        // Build Summary
         const summary: SummaryBlock[] = [
           {
             title: "🎯 Trade Signal",
             content:
-              `• Symbol: <strong>${symbol} (${DISPLAY_NAMES[symbol]})</strong>\n` +
+              `• Symbol: <strong>${symbol} (${SYMBOL_NAMES[symbol] || symbol})</strong>\n` +
               `• Decision: ${
                 setup.final_decision === "BUY"
                   ? '<span class="buy"><strong>BUY</strong></span> 📈'
@@ -407,7 +727,7 @@ useEffect(() => {
               `• Take Profit: <strong>${tpPrice.toFixed(decimalPlaces)}</strong> (<span style="color:green;">$${tpDistanceUSD.toFixed(2)}</span>)\n` +
               `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>\n` +
               `• Strategy: ${orderRationale}`,
-},
+          },
           {
             title: "💰 Risk Management",
             content:
@@ -422,11 +742,8 @@ useEffect(() => {
           },
         ];
 
-        // ✅ ENHANCED: Pending Orders Information Section
         if (hasValidOrders) {
           const ordersCount = allOrders.length;
-          
-          // Add Pending Orders section at the top
           summary.splice(1, 0, {
             title: "📋 Pending Orders Available",
             content:
@@ -436,14 +753,10 @@ useEffect(() => {
               `• Primary Order: <strong>${orderType}</strong>\n` +
               `• Order Rationale: ${orderRationale}`
           });
-
-          // ✅ OPTIONAL: Add additional orders details if you want to show all available orders
-      
         } else {
-          // Show that no pending orders are available
           summary.splice(1, 0, {
             title: "📋 Order Status",
-            content: "• <strong>No pending orders available</strong>\n• Using fallback entry zone system"
+            content: "• <strong>No valid pending orders</strong>\n• Consider waiting or manual entry"
           });
         }
 
@@ -452,87 +765,53 @@ useEffect(() => {
           text: [block] 
         }));
 
-        const riskWarnings: SummaryBlock[] = [];
-        if (lotSize > 100) {
-          riskWarnings.push({
-            title: "⚠️ Risk Warning",
-            content: `Lot size ${lotSize.toFixed(2)} exceeds maximum. Reduce position.`,
-          });
-        }
-        if (riskPercentage > 2.5) {
-          riskWarnings.push({
-            title: "⚠️ Risk Warning",
-            content: `You're risking ${riskPercentage.toFixed(1)}% - Max recommended is 2%.`,
-          });
-        }
+        scrollLocked.current = true;
+        setMessages((prev) => [...prev, ...summaryCards]);
 
-        if (riskWarnings.length > 0) {
-          const warningCards: ChatMessage[] = riskWarnings.map((warning) => ({
-            sender: "ai" as const,
-            text: [warning],
-          }));
-          setMessages((prev) => [...prev, ...warningCards, ...summaryCards]);
-        } else {
-          scrollLocked.current = true;
-          setMessages((prev) => [...prev, ...summaryCards]);
+        if (!user && newTrialCount >= 2) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              sender: "ai",
+              text: [
+                {
+                  title: "🚫 Trial Limit Reached",
+                  content: "You've used all 2 free trials. Register and buy setups to continue using MZPrimer AI.",
+                },
+              ],
+            },
+          ]);
         }
 
-        // ✅ ENHANCED: Add execution timing based on order type
-        if (hasValidOrders) {
-          let timingAdvice = "";
-          if (orderType.includes("STOP")) {
-            timingAdvice = "⏰ Wait for price to reach entry level for breakout confirmation";
-          } else if (orderType.includes("LIMIT")) {
-            timingAdvice = "⏰ Order will execute when price pulls back to entry level";
-          }
-
-          if (timingAdvice) {
+        // ✅ Saving logic
+        if (userId) {
+          try {
+            console.log("🔄 Saving setup for user:", userId);
+            
+            const finalRR = (tpPrice && slPrice && entryPrice) ? 
+              Math.abs(tpPrice - entryPrice) / Math.abs(entryPrice - slPrice) : 1.0;
+            
+            await saveSetup({
+              userId,
+              symbol,
+              entryPrice,
+              takeProfit: tpPrice,
+              stopLoss: slPrice,
+              capital: capitalNumber,      
+              lotSize: lotSize,            
+              riskReward: finalRR  
+            });
+            
+            console.log("✅ Setup saved successfully");
+          } catch (err) {
+            console.error("❌ Failed to save setup:", err);
             setMessages((prev) => [
               ...prev,
-              {
-                sender: "ai" as const,
-                text: [{
-                  title: "⏰ Execution Timing",
-                  content: timingAdvice
-                }]
-              }
+              { sender: "ai", text: "⚠️ Analysis complete, but failed to save to history." },
             ]);
           }
         }
 
-        // Show trial limit message if this was the last trial
-if (newTrialCount >= 2 && !hasLicense) {
-  setMessages((prev) => [
-    ...prev,
-    {
-      sender: "ai",
-      text: [
-        {
-          title: "🚫 Trial Limit Reached",
-          content: "You've used all 2 free trials. Subscribe or activate your license to continue using MZPrimer AI.",
-        },
-      ],
-    },
-  ]);
-}
-
-        if (userId && setup) {
-          try {
-            await saveChatLogClient(userId, {
-              symbol,
-              capital: capitalNumber,
-              price,
-              setup,
-              lotSize,
-              riskPercentage,
-              orderType,
-              hasPendingOrders: hasValidOrders,
-              timestamp: Date.now(),
-            });
-          } catch (err) {
-            console.error("❌ Failed to save chat log:", err);
-          }
-        }
       } catch (error: any) {
         console.error("❌ Error processing setup:", error?.message || error);
         setMessages((prev) => [
@@ -545,78 +824,111 @@ if (newTrialCount >= 2 && !hasLicense) {
     }
   };
 
-  // === PAYWALL UI - Only show after 2 trials ===
-  if (trialUsed && !hasLicense) {
+  const showPaywall = (!user && trialCount >= 2) || (user && setupCount <= 0);
+
+  if (showPaywall && !userLoading) {
     return (
-      <div className="chatbot-locked">
+      <div className="chatbox-wrapper">
         <div className="license-header">
           <h3>🔐 MZPrimer AI Assistant</h3>
-          <p>You've used all 2 free trials. Upgrade to continue using advanced trading analysis.</p>
+          <p>
+            {user 
+              ? "You've used all your setup credits. Buy more setups to continue using advanced trading analysis."
+              : "You've used all 2 free trials. Register or buy setups to continue using advanced trading analysis."
+            }
+          </p>
         </div>
         
         <div className="license-options">
           <div className="license-option">
-            <h4>🎯 Subscribe Now</h4>
-            <p>Get unlimited access to AI trading analysis</p>
+            <h4>🎯 Buy Setups</h4>
+            <p>Get more setup credits to continue using AI analysis</p>
             <button 
-              onClick={() => setShowSubscribe(true)} 
+              onClick={() => setShowPricingModal(true)} 
               className="subscribe-button primary"
               disabled={isLoading}
             >
-              {isLoading ? "Loading..." : "Subscribe Now"}
+              {isLoading ? "Loading..." : "Buy Setups"}
             </button>
           </div>
           
-          <div className="license-option">
-            <h4>🔑 Activate License</h4>
-            <p>Already have a license key?</p>
-            <button 
-              onClick={() => setShowLicenseModal(true)} 
-              className="license-button secondary"
-            >
-              Activate License
-            </button>
-          </div>
+          {!user && (
+            <div className="license-option">
+              <h4>🔑 Create Account</h4>
+              <p>Register to get 1 free setup and manage your credits</p>
+              <button 
+                onClick={handleRegisterFirst}
+                className="register-button secondary"
+              >
+                Register Now
+              </button>
+            </div>
+          )}
         </div>
 
-        {showSubscribe && (
-          <SubscribeModal
-            onClose={() => setShowSubscribe(false)}
-            onSubscribe={handleSubscribe}
+        {showPricingModal && (
+          <PricingPlansModal
+            onClose={() => setShowPricingModal(false)}
+            onPlanSelect={handlePlanSelect}
+            onRegisterClick={handleRegisterFirst}
           />
         )}
 
-        {showLicenseModal && (
-          <LicenseModal
-            onSubmit={handleLicenseSubmit}
-            onClose={() => setShowLicenseModal(false)}
+        {showQuickRegister && (
+          <QuickRegisterModal
+            onClose={() => setShowQuickRegister(false)}
+            onSuccess={handleQuickRegisterSuccess}
+            selectedPlan={selectedPlan || "10"}
           />
         )}
       </div>
     );
   }
 
-  // === Main Chat UI - Show when has license OR trials available ===
+  if (userLoading) {
+    return (
+      <div className={mode === "popup" ? "chatbox-wrapper popup" : "chatbox-wrapper section"}>
+        <div className="chatbot-loading">Loading AI Assistant...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className={mode === "popup" ? "chatbot-popup" : "chatbot-section"}>
+    <div className={mode === "popup" ? "chatbox-wrapper popup" : "chatbox-wrapper section"}>
+      {showPricingModal && (
+        <PricingPlansModal
+          onClose={() => setShowPricingModal(false)}
+          onPlanSelect={handlePlanSelect}
+          onRegisterClick={handleRegisterFirst}
+        />
+      )}
+
+      {showQuickRegister && (
+        <QuickRegisterModal
+          onClose={() => setShowQuickRegister(false)}
+          onSuccess={handleQuickRegisterSuccess}
+          selectedPlan={selectedPlan || "10"}
+        />
+      )}
+
       {mode === "popup" && (
-        <div className="chatbot-header">
+        <div className="chatbox-header">
           <div>MZPrimer AI Assistant</div>
-          <button onClick={onClose} className="close-button">
+          <button onClick={onClose} className="chatbox-close">
             ✕
           </button>
         </div>
       )}
 
-      <div className="chatbot-body" ref={chatRef}>
+      <div className="chatbox-body" ref={chatRef}>
         {messages.map((msg, idx) => (
           <div key={idx} className={`chat-msg ${msg.sender === "ai" ? "ai" : "user"}`}>
             {Array.isArray(msg.text) ? (
               msg.text.map((block: any, i: number) => (
                 <div className="ai-card" key={i}>
-                  <div className="section-title">{block.title}</div>
+                  <div className="ai-card-title">{block.title}</div>
                   <div
-                    className="section-content"
+                    className="ai-card-content"
                     dangerouslySetInnerHTML={{
                       __html: block.content.replace(/\n/g, "<br/>"),
                     }}
@@ -624,7 +936,7 @@ if (newTrialCount >= 2 && !hasLicense) {
                 </div>
               ))
             ) : (
-              <div className={msg.sender === "user" ? "user-card" : "chat-text"}>
+              <div className={msg.sender === "user" ? "user-bubble" : "ai-bubble"}>
                 <div
                   dangerouslySetInnerHTML={{
                     __html: msg.text.replace(/\n/g, "<br/>"),
@@ -634,24 +946,23 @@ if (newTrialCount >= 2 && !hasLicense) {
             )}
           </div>
         ))}
-        {isTyping && <div className="chat-msg ai">⏳ Analyzing market data...</div>}
+        {isTyping && <div className="chat-msg ai-msg">⏳ Analyzing market data...</div>}
       </div>
 
-      {/* Inputs */}
       {step === 1 && (
-        <div className="chatbot-input">
+        <div className="chatbox-input-group">
           <select
             value={symbol || ""}
             onChange={(e) => {
               const selected = e.target.value as SymbolKey;
               if (selected) handleUserInput(selected);
             }}
-            className="symbol-select"
+            className="chatbox-select"
           >
             <option value="">Select a symbol…</option>
-            {SYMBOLS.map((sym) => (
+            {ALL_SYMBOLS.map((sym) => (
               <option key={sym} value={sym}>
-                {DISPLAY_NAMES[sym]} ({sym})
+                {SYMBOL_NAMES[sym]} ({sym})
               </option>
             ))}
           </select>
@@ -660,7 +971,7 @@ if (newTrialCount >= 2 && !hasLicense) {
 
       {step === 2 && (
         <form
-          className="chatbot-input"
+          className="chatbox-input-group"
           onSubmit={(e) => {
             e.preventDefault();
             if (!capital.trim()) return;
@@ -669,16 +980,17 @@ if (newTrialCount >= 2 && !hasLicense) {
         >
           <input
             type="number"
-            name="input"
+            name="capital"
             value={capital}
             onChange={(e) => setCapital(e.target.value)}
             placeholder="Enter capital in USD…"
             autoComplete="off"
-            min="1"
+            inputMode="decimal"
             step="0.01"
-            className="capital-input"
+            min="1"
+            className="chatbox-input"
           />
-          <button type="submit" className="submit-button">
+          <button type="submit" className="chatbox-submit">
             Analyze
           </button>
         </form>
@@ -694,18 +1006,11 @@ if (newTrialCount >= 2 && !hasLicense) {
               setMessages([]);
               scrollLocked.current = false;
             }} 
-            className="reset-button"
+            className="chatbox-reset"
           >
-            {trialUsed && !hasLicense ? "Upgrade to Continue" : "Start New Analysis"}
+            {showPaywall ? "Buy More Setups" : "Start New Analysis"}
           </button>
         </div>
-      )}
-
-      {showSubscribe && (
-        <SubscribeModal
-          onClose={() => setShowSubscribe(false)}
-          onSubscribe={handleSubscribe}
-        />
       )}
     </div>
   );

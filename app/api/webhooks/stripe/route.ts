@@ -1,16 +1,22 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { adminDb } from "@/app/lib/firebaseAdmin";
 import { sendOrderConfirmation } from "@/app/lib/email";
-import { adminDb } from "../../../lib/firebaseAdmin";
-import { Timestamp } from "firebase-admin/firestore";
-import { createLicense } from "@/app/lib/firebase/licenses";
-import { trackUsage } from "@/app/lib/firebase/analytics";
-import { PRODUCT_PRICES } from "../../../lib/product-prices";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-08-27.basil",
+});
+//
+// 🎁 Setup plans delivered after payment
+//
+const SETUP_PLANS: Record<string, number> = {
+  "price_1SSyQORmR6ESDQvobwheaXws": 10, // €4.5 → 10 setups
+  "price_1SSyRGRmR6ESDQvoKgAI9CAN": 20, // €8 → 20 setups
+  "price_1SSyUORmR6ESDQvo7dzPKmPt": 30, // €12 → 30 setups
+};
 
 export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature") || "";
@@ -27,152 +33,100 @@ export async function POST(req: Request) {
   try {
     event = stripe.webhooks.constructEvent(body, sig, secret);
   } catch (err: any) {
-    console.error("❌ Webhook signature verification failed:", err.message);
-    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+    console.error("❌ Invalid webhook signature:", err.message);
+    return NextResponse.json({ error: err.message }, { status: 400 });
   }
 
-  console.log(`✅ Webhook received: ${event.type}`);
+  console.log(`⚡ Stripe webhook event: ${event.type}`);
 
-  try {
-    switch (event.type) {
-      case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
-        await handleCheckoutSessionCompleted(session);
-        return NextResponse.json({ received: true, handled: event.type });
-      }
-
-      case "payment_intent.succeeded":
-      case "charge.succeeded":
-      case "payment_intent.created":
-      case "charge.updated": {
-        console.log(`ℹ️ Event: ${event.type}`);
-        return NextResponse.json({ received: true, handled: event.type });
-      }
-
-      default:
-        console.log(`⚪ Unhandled event type: ${event.type}`);
-        return NextResponse.json({ received: true, ignored: event.type });
-    }
-  } catch (error: any) {
-    console.error("❌ Webhook handler error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    await handleCheckoutCompleted(session);
   }
+
+  return NextResponse.json({ received: true });
 }
 
-async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
-  console.log("🔄 Processing checkout.session.completed");
+//
+// 🔥 CHECKOUT SUCCESS HANDLER
+//
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  console.log("🔄 Processing: checkout.session.completed");
 
-  const orderId = session.metadata?.orderId || null;
+  const uid = session.metadata?.uid;
   const customerEmail = session.customer_details?.email;
-  const amountTotal = session.amount_total ? session.amount_total / 100 : 0;
 
-  if (!customerEmail) {
-    console.error("❌ No customer email found in session");
+  if (!uid || !customerEmail) {
+    console.error("❌ Missing uid or customerEmail in metadata");
     return;
   }
 
+  // Fetch line items to get the priceId
+  const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+  const priceId = lineItems.data[0]?.price?.id;
+
+  if (!priceId) {
+    console.error("❌ Missing Stripe Price ID");
+    return;
+  }
+
+  const setupsToAdd = SETUP_PLANS[priceId];
+
+  if (!setupsToAdd) {
+    console.log("⚪ Non-setup product purchased → Ignored");
+    return;
+  }
+
+  // --------------------------
+  // 🔥 Update Firestore setupCount
+  // --------------------------
   try {
-    // Get product info from line items
-    const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
-    const priceId = lineItems.data[0]?.price?.id;
+    const userRef = adminDb.collection("users").doc(uid);
 
-    if (!priceId) {
-      console.error("❌ No price ID found in line items");
-      return;
-    }
+    await adminDb.runTransaction(async (tx) => {
+      const userDoc = await tx.get(userRef);
+      const currentCount = userDoc.exists ? userDoc.data()?.setupCount || 0 : 0;
 
-    const productConfig = PRODUCT_PRICES[priceId as keyof typeof PRODUCT_PRICES];
-
-    if (!productConfig) {
-      console.log(`⚪ Ignoring non-AI Assistant product: ${priceId}`);
-      return;
-    }
-
-    console.log("🎯 Processing AI Assistant purchase:", {
-      email: customerEmail,
-      product: productConfig.name,
-      priceId,
-      amount: amountTotal,
-      orderId,
+      tx.set(
+        userRef,
+        {
+          setupCount: currentCount + setupsToAdd,
+          updatedAt: new Date().toISOString(),
+          lastPurchase: {
+            amount: setupsToAdd,
+            stripeSessionId: session.id,
+          },
+        },
+        { merge: true }
+      );
     });
 
-    // Generate license key
-    const licenseKey = generateLicenseKey();
+    console.log(`🎉 Updated setupCount for UID ${uid}: +${setupsToAdd}`);
+  } catch (err) {
+    console.error("❌ Firestore update failed:", err);
+  }
 
-    // Calculate expiration date
-    const expiresAt = calculateExpirationDate(productConfig.duration);
-
-    // ✅ Store license in Firebase
-    await createLicense({
-      email: customerEmail,
-      licenseKey,
-      productName: productConfig.name,
-      expiresAt: Timestamp.fromDate(expiresAt),
-      stripeSessionId: session.id,
-      priceId,
-      orderId,
-    });
-
-    // ✅ Track analytics
-    await trackUsage({
-      userId: customerEmail,
-      licenseKey,
-      action: "payment_success",
-      productName: productConfig.name,
-      amount: amountTotal,
-      orderId,
-    });
-
-    console.log("📝 License saved to Firebase:", licenseKey);
-
-    // ✅ Send confirmation email
-    const emailDetails = {
+  // --------------------------
+  // 💌 Send Order Confirmation Email
+  // --------------------------
+  try {
+    await sendOrderConfirmation({
       to: customerEmail,
-      orderId: orderId || session.id,
-      productName: productConfig.name,
-      amountPaid: amountTotal,
-      licenseKey,
+      orderId: session.id,
+      productName: `${setupsToAdd} Setup Credits`,
+      amountPaid: (session.amount_total ?? 0) / 100,
       paymentDetails: {
-        wallet: "Stripe Payment",
-        amount: amountTotal,
-        network: "Card Payment",
+        wallet: "Stripe",
+        amount: (session.amount_total ?? 0) / 100,
+        network: "Card",
         txId: session.payment_intent as string,
       },
-    };
+    });
 
-    try {
-      await sendOrderConfirmation(emailDetails);
-      console.log(`✅ Confirmation email sent to ${customerEmail}`);
-    } catch (emailError) {
-      console.error("❌ Failed to send confirmation email:", emailError);
-    }
-  } catch (error: any) {
-    console.error("❌ Error processing checkout session:", error);
-  }
-}
-
-function generateLicenseKey(): string {
-  const prefix = "MZP-AI-";
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let result = "";
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return prefix + result;
-}
-
-function calculateExpirationDate(duration: string): Date {
-  const expiresAt = new Date();
-
-  switch (duration) {
-    case "5d":
-      expiresAt.setDate(expiresAt.getDate() + 5);
-      break;
-    case "24h":
-    default:
-      expiresAt.setHours(expiresAt.getHours() + 24);
-      break;
+    console.log(`📧 Receipt sent to: ${customerEmail}`);
+  } catch (err) {
+    console.error("❌ Failed to send email receipt:", err);
   }
 
-  return expiresAt;
+  console.log("✅ Checkout processing complete!");
 }

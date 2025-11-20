@@ -1,45 +1,50 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
-type HeroProps = {
-  chatRef: React.RefObject<{ triggerChat: () => void }>;
-};
+export default function Hero() {
+  useEffect(() => {}, []);
 
-export default function Hero({ chatRef }: HeroProps) {
-  useEffect(() => {
-    // Reserved for scroll animation logic
-  }, []);
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const el = document.getElementById('aiassistant');
+  const handleClick = () => {
+    const el = document.getElementById("aiassistant");
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-      setTimeout(() => {
-        chatRef.current?.triggerChat(); // Trigger chat open
-      }, 500);
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
   return (
-    <section
-      id="hero"
-      className="flex flex-col items-center text-center bg-black text-white pt-12 md:pt-20 pb-[30vh] md:pb-[20vh]"
-    >
+    <section id="hero">
+      {/* Logo Image */}
       <img
         src="/logos/mzlogo.webp"
         alt="MZPrimer Logo"
-        className="w-40 md:w-52 mb-4"
+        className="w-40 md:w-56"
       />
 
-      <h1 className="text-3xl md:text-5xl font-bold mb-3 leading-tight">
-        Enhance Your Trading with<br />AI-Driven Tools
+      {/* Headline */}
+      <h1>
+        Enhance Your Trading with<br />
+        <span className="hero-gold">AI-Driven Tools</span>
       </h1>
 
-      <p className="text-gray-400 text-base md:text-lg mb-6">
+      {/* Subtitle */}
+      <p>
         Unlock insights, test strategies, and grow your edge with advanced AI solutions tailored for traders.
       </p>
+
+      {/* CTA Button */}
+      <button
+        onClick={handleClick}
+        className="btn-primary"
+        style={{
+          maxWidth: "220px",
+          fontSize: "1.1rem",
+          padding: "16px 32px",
+          marginTop: "1rem",
+        }}
+      >
+        Start Now
+      </button>
     </section>
   );
 }

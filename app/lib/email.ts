@@ -4,52 +4,51 @@ import type SMTPTransport from "nodemailer/lib/smtp-transport/index.js";
 import fs from "fs";
 import path from "path";
 
-/** Public type you can import elsewhere */
+/* -------------------------------------------
+   📌 PUBLIC TYPE FOR EMAIL PARAMETERS
+------------------------------------------- */
 export interface OrderEmailDetails {
-  to: string;                 // recipient email
-  orderId: string;
-  productName: string;
-  amountPaid: number;
-
-  // Either bot OR subscription:
-  downloadToken?: string;     // one-time token (bots only)
-  licenseKey?: string;        // license (subscriptions only)
-
-  // Optional extra context for subs
-  assistantUrl?: string;      // e.g. https://mzprimer.com/tools/ai-assistant?activate=1
-
+  to: string;                // recipient email
+  orderId: string;           // Stripe session ID
+  productName: string;       // "AI Bot Trading", "Setup Plan (20 setups)"
+  amountPaid: number;        // numeric amount
+  downloadToken?: string;    // ONLY for AI Bot purchases
   paymentDetails?: {
     wallet: string;
     amount: number;
-    txId?: string;            // support both casings
+    txId?: string;
     txid?: string;
     network: string;
   };
 }
 
-/* ----------------- helpers ----------------- */
-
+/* -------------------------------------------
+   Helpers
+------------------------------------------- */
 function getBaseUrl() {
   const url =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXT_PUBLIC_BASE_URL ||
-    "http://www.mzprimer.com";
+    "https://www.mzprimer.com";
+
   return url.replace(/\/+$/, "");
 }
 
-/** Reusable SMTP transporter (singleton) */
+/* -------------------------------------------
+   SMTP TRANSPORTER (REUSABLE SINGLETON)
+------------------------------------------- */
 let _transporter: nodemailer.Transporter | null = null;
+
 function getTransporter() {
   if (_transporter) return _transporter;
 
   const { EMAIL_SERVER, EMAIL_PORT, EMAIL_USER, EMAIL_PASSWORD } = process.env;
+
   if (!EMAIL_SERVER || !EMAIL_USER || !EMAIL_PASSWORD) {
-    throw new Error(
-      "Email env missing: EMAIL_SERVER, EMAIL_USER, EMAIL_PASSWORD (EMAIL_PORT optional)."
-    );
+    throw new Error("Missing email SMTP credentials.");
   }
 
-  const portNum = Number(EMAIL_PORT || 465); // 465 SSL, 587 STARTTLS
+  const portNum = Number(EMAIL_PORT || 465);
   const secure = portNum === 465;
 
   _transporter = nodemailer.createTransport({
@@ -64,245 +63,208 @@ function getTransporter() {
   return _transporter;
 }
 
-/* ---------------- BOT TEMPLATE (with download) ---------------- */
-
+/* -------------------------------------------
+   📌 HTML TEMPLATE — AI BOT (WITH DOWNLOAD)
+------------------------------------------- */
 function buildHtmlBot(order: OrderEmailDetails, downloadLink: string) {
   const pay = order.paymentDetails;
   const txId = pay?.txId ?? pay?.txid ?? "";
 
   return `
-  <div style="background:#0a0a0a;padding:24px;color:#e9e9ea;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial">
-    <div style="max-width:640px;margin:0 auto;background:#111214;border:1px solid #2a2d31;border-radius:14px;padding:24px">
-      <div style="text-align:right;margin-bottom:12px">
-        <img src="https://mzprimer.com/logos/logoblack.webp" alt="MZPrimer" style="height:32px;width:auto;border:0" />
+  <div style="background:#0a0a0a;padding:24px;color:#f2f2f2;font-family:Arial;">
+    <div style="max-width:650px;margin:0 auto;background:#111214;border:1px solid #2d2f33;border-radius:16px;padding:28px;">
+
+      <div style="text-align:right;">
+        <img src="https://mzprimer.com/logos/logoblack.webp" style="height:36px;" />
       </div>
 
-      <h2 style="margin:0 0 8px 0;font-size:22px;font-weight:800;color:#e9e9ea">Thank you for your order!</h2>
-      <p style="margin:0 0 14px 0;color:#a9acb2">Your trading bot is ready.</p>
+      <h2 style="color:#f2f2f2;font-size:22px;font-weight:bold;margin-bottom:12px;">
+        Your AI Trading Bot is Ready 🎉
+      </h2>
 
-      <div style="padding:12px;border:1px solid #2a2d31;border-radius:12px;background:#0f1012">
-        <div style="margin-bottom:6px"><b>Product:</b> ${order.productName}</div>
-        <div style="margin-bottom:6px"><b>Amount Paid:</b> $${order.amountPaid.toFixed(2)}</div>
+      <p style="color:#c7c7c7;margin-bottom:18px;">
+        Thank you for your purchase. Your bot is now available for download.
+      </p>
+
+      <div style="background:#0e0f11;padding:18px;border-radius:12px;border:1px solid #2d2f33;margin-bottom:16px;">
+        <div style="margin-bottom:6px;"><b>Product:</b> ${order.productName}</div>
+        <div style="margin-bottom:6px;"><b>Amount Paid:</b> $${order.amountPaid.toFixed(2)}</div>
         <div><b>Order ID:</b> ${order.orderId}</div>
       </div>
 
       ${
         pay
-          ? `<div style="margin-top:12px;padding:12px;border:1px solid #2a2d31;border-radius:12px;background:#0f1114;color:#e9e9ea">
-               <div style="font-weight:700;margin-bottom:6px">Payment Details</div>
+          ? `<div style="background:#0f1012;padding:18px;border-radius:12px;border:1px solid #2d2f33;margin-bottom:16px;">
+               <div style="font-weight:bold;margin-bottom:6px;">Payment Details</div>
                <div><b>Network:</b> ${pay.network}</div>
                <div><b>Wallet:</b> ${pay.wallet}</div>
-               <div><b>Amount:</b> $${pay.amount.toFixed(2)}</div>
                <div><b>TXID:</b> ${txId}</div>
+               <div><b>Paid:</b> $${pay.amount.toFixed(2)}</div>
              </div>`
           : ""
       }
 
-      <div style="text-align:center;margin:18px 0 10px">
+      <div style="text-align:center;margin:22px 0;">
         <a href="${downloadLink}"
-           style="display:inline-block;background:#f5c84b;color:#111;padding:12px 18px;border-radius:12px;text-decoration:none;font-weight:800">
-          Download Your Trading Bot
+           style="background:#f5c84b;color:#111;padding:14px 24px;border-radius:12px;text-decoration:none;font-weight:bold;font-size:15px;">
+          Download Trading Bot
         </a>
-        <div style="color:#a9acb2;margin-top:8px;font-size:12px">
+        <p style="color:#a9acb2;font-size:12px;margin-top:8px;">
           Link is one-time and expires in 24 hours.
-        </div>
+        </p>
       </div>
 
-      <p style="margin-top:20px;color:#a9acb2">
-        We also attached a PDF guide with installation and usage instructions.
-        Questions? <a href="mailto:contact@mzprimer.com" style="color:#f5c84b;text-decoration:none">contact@mzprimer.com</a>.
+      <p style="margin-top:20px;color:#b8b8b8;font-size:14px;">
+        A PDF installation guide is attached for you.
       </p>
 
-      <div style="margin-top:32px;padding-top:16px;border-top:1px solid #333;color:#aaa;font-size:13px;line-height:1.6">
-        <strong style="color:#fff">MZPrimer Team</strong><br/>
-        <span style="color:#bbb">AI Trading Solutions · Education · Market Analysis</span><br/>
-        <a href="${getBaseUrl()}" style="color:#f5c84b;text-decoration:none">www.mzprimer.com</a>
+      <div style="margin-top:30px;color:#aaa;border-top:1px solid #2d2f33;padding-top:16px;font-size:13px;">
+        <strong style="color:#fff;">MZPrimer Team</strong><br/>
+        AI Trading Tools & Smart Market Solutions<br/>
+        <a href="${getBaseUrl()}" style="color:#f5c84b;">www.mzprimer.com</a>
       </div>
+
     </div>
   </div>`;
 }
 
+/* -------------------------------------------
+   📌 TEXT TEMPLATE (BOT)
+------------------------------------------- */
 function buildTextBot(order: OrderEmailDetails, downloadLink: string) {
   const lines = [
-    `Thank you for your order!`,
+    `Your AI Trading Bot is Ready`,
     ``,
     `Product: ${order.productName}`,
     `Amount Paid: $${order.amountPaid.toFixed(2)}`,
     `Order ID: ${order.orderId}`,
     ``,
-    `Download your trading bot (one-time, expires in 24h):`,
-    downloadLink,
+    `Download: ${downloadLink}`,
+    ``,
   ];
+
   if (order.paymentDetails) {
     const txId = order.paymentDetails.txId ?? order.paymentDetails.txid ?? "";
     lines.push(
-      ``,
       `Payment Details:`,
       `  Network: ${order.paymentDetails.network}`,
       `  Wallet: ${order.paymentDetails.wallet}`,
-      `  Amount: $${order.paymentDetails.amount.toFixed(2)}`,
-      `  TXID: ${txId}`
+      `  Amount: ${order.paymentDetails.amount}`,
+      `  TXID: ${txId}`,
+      ``
     );
   }
-  lines.push(``, `Support: contact@mzprimer.com`, `${getBaseUrl()}`);
+
+  lines.push(`Support: contact@mzprimer.com`, `${getBaseUrl()}`);
   return lines.join("\n");
 }
 
-/* -------- SUBSCRIPTION TEMPLATE (with license + link) -------- */
-
-function buildHtmlSubscription(order: OrderEmailDetails) {
-  const pay = order.paymentDetails;
-  const txId = pay?.txId ?? pay?.txid ?? "";
-  const openUrl = order.assistantUrl || `${getBaseUrl()}/`;
-
+/* -------------------------------------------
+   📌 HTML TEMPLATE — SETUP PLANS
+------------------------------------------- */
+function buildHtmlSetup(order: OrderEmailDetails) {
   return `
-  <div style="background:#0a0a0a;padding:24px;color:#e9e9ea;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial">
-    <div style="max-width:640px;margin:0 auto;background:#111214;border:1px solid #2a2d31;border-radius:14px;padding:24px">
-      <div style="text-align:right;margin-bottom:12px">
-        <img src="https://mzprimer.com/logos/logoblack.webp" alt="MZPrimer" style="height:32px;width:auto;border:0" />
+  <div style="background:#0a0a0a;padding:24px;color:#e9e9ea;font-family:Arial;">
+    <div style="max-width:650px;margin:0 auto;background:#111214;border:1px solid #2d2f33;border-radius:16px;padding:28px;">
+
+      <div style="text-align:right;">
+        <img src="https://mzprimer.com/logos/logoblack.webp" style="height:36px;" />
       </div>
 
-      <h2 style="margin:0 0 8px 0;font-size:22px;font-weight:800;color:#e9e9ea">Subscription activated 🎉</h2>
-      <p style="margin:0 0 14px 0;color:#a9acb2">Your AI Assistant subscription is now active.</p>
+      <h2 style="color:#fff;font-size:22px;font-weight:bold;margin-bottom:14px;">
+        Purchase Confirmed 🎉
+      </h2>
 
-      <div style="padding:12px;border:1px solid #2a2d31;border-radius:12px;background:#0f1012">
-        <div style="margin-bottom:6px"><b>Plan:</b> ${order.productName}</div>
-        <div style="margin-bottom:6px"><b>Amount Paid:</b> $${order.amountPaid.toFixed(2)}</div>
+      <p style="color:#c7c7c7;">
+        Your setup plan has been successfully activated.
+      </p>
+
+      <div style="background:#0e0f11;padding:18px;border-radius:12px;border:1px solid #2d2f33;margin-top:14px;">
+        <div><b>Plan:</b> ${order.productName}</div>
+        <div><b>Amount Paid:</b> $${order.amountPaid.toFixed(2)}</div>
         <div><b>Order ID:</b> ${order.orderId}</div>
       </div>
 
-      ${
-        pay
-          ? `<div style="margin-top:12px;padding:12px;border:1px solid #2a2d31;border-radius:12px;background:#0f1114;color:#e9e9ea">
-               <div style="font-weight:700;margin-bottom:6px">Payment Details</div>
-               <div><b>Network:</b> ${pay.network}</div>
-               <div><b>Wallet:</b> ${pay.wallet}</div>
-               <div><b>Amount:</b> $${pay.amount.toFixed(2)}</div>
-               <div><b>TXID:</b> ${txId}</div>
-             </div>`
-          : ""
-      }
+      <p style="margin-top:20px;color:#b8b8b8;font-size:14px;">
+        You can now access your setups in your dashboard.
+      </p>
 
-      ${
-        order.licenseKey
-          ? `<div style="margin-top:12px;padding:12px;border:1px dashed #3b3f46;border-radius:12px;background:#0f1012;color:#e9e9ea">
-               <div style="font-weight:700;margin-bottom:6px">Your License Key</div>
-               <div style="font-family:ui-monospace,Menlo,Consolas,monospace;background:#0b0c0e;padding:10px;border-radius:8px">
-                 ${order.licenseKey}
-               </div>
-               <div style="margin-top:6px;color:#a9acb2;font-size:12px">
-                 Keep this key safe. It may be required for activation.
-               </div>
-             </div>`
-          : ""
-      }
-
-      <div style="text-align:center;margin:18px 0 10px">
-        <a href="${openUrl}"
-           style="display:inline-block;background:#22c55e;color:#0b0f12;padding:12px 18px;border-radius:12px;text-decoration:none;font-weight:800">
-          Open AI Assistant
+      <div style="text-align:center;margin-top:20px;">
+        <a href="${getBaseUrl()}/client/dashboard"
+           style="background:#22c55e;padding:14px 22px;border-radius:12px;font-weight:700;color:#0e1011;text-decoration:none;">
+          Go to Dashboard
         </a>
       </div>
 
-      <p style="margin-top:20px;color:#a9acb2">
-        Need help? Reply to this email or contact
-        <a href="mailto:contact@mzprimer.com" style="color:#f5c84b;text-decoration:none">contact@mzprimer.com</a>.
-      </p>
-
-      <div style="margin-top:32px;padding-top:16px;border-top:1px solid #333;color:#aaa;font-size:13px;line-height:1.6">
-        <strong style="color:#fff">MZPrimer Team</strong><br/>
-        <span style="color:#bbb">AI Trading Solutions · Education · Market Analysis</span><br/>
-        <a href="${getBaseUrl()}" style="color:#f5c84b;text-decoration:none">www.mzprimer.com</a>
+      <div style="margin-top:30px;color:#aaa;border-top:1px solid #2d2f33;padding-top:16px;font-size:13px;">
+        <strong style="color:#fff;">MZPrimer Team</strong><br/>
+        Advanced AI Trading Tools<br/>
+        <a href="${getBaseUrl()}" style="color:#f5c84b;">www.mzprimer.com</a>
       </div>
     </div>
   </div>`;
 }
 
-function buildTextSubscription(order: OrderEmailDetails) {
-  const lines = [
-    `Subscription activated`,
+/* -------------------------------------------
+   📌 TEXT TEMPLATE — SETUP
+------------------------------------------- */
+function buildTextSetup(order: OrderEmailDetails) {
+  return [
+    `Purchase Confirmed`,
     ``,
     `Plan: ${order.productName}`,
     `Amount Paid: $${order.amountPaid.toFixed(2)}`,
     `Order ID: ${order.orderId}`,
-  ];
-  if (order.paymentDetails) {
-    const txId = order.paymentDetails.txId ?? order.paymentDetails.txid ?? "";
-    lines.push(
-      ``,
-      `Payment Details:`,
-      `  Network: ${order.paymentDetails.network}`,
-      `  Wallet: ${order.paymentDetails.wallet}`,
-      `  Amount: $${order.paymentDetails.amount.toFixed(2)}`,
-      `  TXID: ${txId}`
-    );
-  }
-  const openUrl = order.assistantUrl || `${getBaseUrl()}/`;
-  if (order.licenseKey) lines.push(``, `License Key: ${order.licenseKey}`);
-  lines.push(``, `Open AI Assistant: ${openUrl}`, ``, `Support: contact@mzprimer.com`, `${getBaseUrl()}`);
-  return lines.join("\n");
+    ``,
+    `Dashboard: ${getBaseUrl()}/client/dashboard`,
+    ``,
+    `Support: contact@mzprimer.com`,
+  ].join("\n");
 }
 
-/* ------------------- public API ------------------- */
-
+/* -------------------------------------------
+   📌 MAIN SEND FUNCTION
+------------------------------------------- */
 export async function sendOrderConfirmation(order: OrderEmailDetails): Promise<void> {
-  if (!order?.to) throw new Error("Missing recipient email (order.to)");
+  if (!order.to) throw new Error("Missing recipient email (order.to)");
 
+  const isBot = !!order.downloadToken;
   const baseUrl = getBaseUrl();
-  const isSubscription = !!order.licenseKey;
 
-  // Build download link only for bot purchases - use the raw token
   const downloadLink =
-    !isSubscription && order.downloadToken
+    isBot && order.downloadToken
       ? `${baseUrl}/api/download?token=${encodeURIComponent(order.downloadToken)}`
       : null;
 
-  // Build attachments safely (bot only, PDF optional)
+  const transporter = getTransporter();
+
+  // Attach PDF guide ONLY for bot purchases
   let attachments: Array<{ filename: string; path: string; contentType: string }> = [];
-  if (!isSubscription) {
+  if (isBot) {
     const guideAbs = path.resolve(process.cwd(), "public", "docs", "MZPrimer_Bot_Guide.pdf");
     if (fs.existsSync(guideAbs)) {
-      attachments = [
-        {
-          filename: "MZPrimer_Bot_Guide.pdf",
-          path: guideAbs,
-          contentType: "application/pdf",
-        },
-      ];
-    } else {
-      console.warn("[email] Bot guide PDF not found at:", guideAbs);
+      attachments.push({
+        filename: "MZPrimer_Bot_Guide.pdf",
+        path: guideAbs,
+        contentType: "application/pdf",
+      });
     }
   }
 
-  const tx = getTransporter();
+  const html = isBot
+    ? buildHtmlBot(order, downloadLink!)
+    : buildHtmlSetup(order);
 
-  console.log("📧 Sending order email", {
-    to: order.to,
-    orderId: order.orderId,
-    product: order.productName,
-    mode: isSubscription ? "subscription" : "bot",
-    hasDownloadToken: !!order.downloadToken,
-    downloadLink: downloadLink || "NONE"
-  });
+  const text = isBot
+    ? buildTextBot(order, downloadLink!)
+    : buildTextSetup(order);
 
-  // Use the actual download link for bots, fallback to "#" only for subscriptions
-  const html = isSubscription
-    ? buildHtmlSubscription(order)
-    : buildHtmlBot(order, downloadLink || "#download-error");
-
-  const text = isSubscription
-    ? buildTextSubscription(order)
-    : buildTextBot(order, downloadLink || "Download link not available");
-
-  await tx.sendMail({
-    from:
-      process.env.EMAIL_FROM ||
-      `"MZPrimer" <${process.env.EMAIL_USER || "no-reply@mzprimer.com"}>`,
-    to: order.to,
-    subject: `Your MZPrimer Order #${order.orderId} — ${order.productName}`,
-    text,
-    html,
-    replyTo: process.env.EMAIL_FROM || undefined,
-    attachments,
-  });
+  await transporter.sendMail({
+  from: `"MZPrimer LTD" <${process.env.EMAIL_USER || "no-reply@mzprimer.com"}>`,
+  to: order.to,
+  subject: `Your MZPrimer Order — ${order.productName}`,
+  text,
+  html,
+  attachments,
+});
 }

@@ -10,10 +10,11 @@ import toast from "react-hot-toast";
 import AiChatBox from "@/components/AiChatBox";
 import { useOneSetup } from "@/app/lib/firebase/useSetup";
 import UserAnalytics from "./components/AnalyticsSection";
+import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [setupCount, setSetupCount] = useState<number>(0);
@@ -587,5 +588,20 @@ export default function DashboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="client-cabinet">
+        <div className="cabinet-loading">
+          <div className="loading-spinner"></div>
+          <p>Loading dashboard...</p>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }

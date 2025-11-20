@@ -398,7 +398,7 @@ function DashboardContent() {
             <div className="actions-grid two-column">
               <div className="action-card primary-action">
                 <div className="action-icon">🎯</div>
-                <h3>Use Setup</h3>
+                <h3>Use Setup</h3> 
                 <p>Analyze markets with AI Assistant</p>
                 <button 
                   onClick={handleUseSetup}
@@ -414,13 +414,14 @@ function DashboardContent() {
                 <h3>Buy Setups</h3>
                 <p>Purchase more setup credits</p>
                 <button 
-                  onClick={() => setShowPlanModal(true)}
-                  className="action-btn secondary"
+                  onClick={() => {
+                    document.getElementById('purchase-section')?.scrollIntoView({ behavior: 'smooth' });
+                 }}
+              className="action-btn secondary"
                 >
                   View Plans
                 </button>
               </div>
-
               <div className="action-card">
                 <div className="action-icon">👥</div>
                 <h3>Refer Friends</h3>
@@ -457,7 +458,7 @@ function DashboardContent() {
             )}
 
             {/* Purchase Plans */}
-            <div className="purchase-section">
+            <div className="purchase-section" id="purchase-section">
               <h2>Quick Purchase</h2>
               <div className="purchase-grid">
                 <div className="purchase-option">

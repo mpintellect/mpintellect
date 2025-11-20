@@ -83,12 +83,12 @@ const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: nu
   // Energy
   "USCRUDE": { pip: 0.01, contract: 1000, decimals: 2 },
 
-  // Crypto (1 Lot = 1 Coin)
-  "BTCUSD": { pip: 1.0, contract: 1, decimals: 1 },
-  "ETHUSD": { pip: 0.1, contract: 1, decimals: 2 },
-  "XRPUSD": { pip: 0.0001, contract: 1, decimals: 4 },
-  "LTCUSD": { pip: 0.01, contract: 1, decimals: 2 },
-  "DGEUSD": { pip: 0.0001, contract: 1, decimals: 4 },
+  // Crypto - ADJUSTED FOR MT5 CONTRACT SIZES (Standard CFD lots)
+  "BTCUSD": { pip: 1.0, contract: 1, decimals: 1 },      // 1 Lot = 1 Bitcoin
+  "ETHUSD": { pip: 0.1, contract: 1, decimals: 2 },      // 1 Lot = 1 Ether
+  "XRPUSD": { pip: 0.0001, contract: 1000, decimals: 4 }, // ✅ 1 Lot = 1000 XRP (Standard CFD)
+  "LTCUSD": { pip: 0.01, contract: 10, decimals: 2 },    // ✅ 1 Lot = 10 LTC
+  "DGEUSD": { pip: 0.0001, contract: 1000, decimals: 4 }, // ✅ 1 Lot = 1000 DOGE
 
   // Indices (Standard Lot = 1 Contract)
   "SPX": { pip: 0.1, contract: 1, decimals: 2 },

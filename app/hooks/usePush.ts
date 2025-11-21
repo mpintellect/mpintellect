@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { urlBase64ToUint8Array } from '../lib/push-utils';
+import { urlBase64ToUint8Array } from '../lib/push-utils'; // Ensure correct path
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '../lib/firebaseClient'; // Your provided client file
+import { auth } from '../lib/firebaseClient'; 
 
 export function usePush() {
   const [isSupported, setIsSupported] = useState(false);
@@ -10,7 +10,6 @@ export function usePush() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Check support on mount
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       setIsSupported(true);
       checkExistingSubscription();
@@ -19,7 +18,7 @@ export function usePush() {
 
   const checkExistingSubscription = async () => {
     try {
-      const registration = await navigator.serviceWorker.ready; // wait for SW
+      const registration = await navigator.serviceWorker.ready;
       const sub = await registration.pushManager.getSubscription();
       if (sub) {
         setSubscription(sub);
@@ -34,21 +33,26 @@ export function usePush() {
         alert("You must be logged in to subscribe.");
         return;
     }
+    
+    // SAFETY CHECK: Verify Vapid Key Exists
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!vapidKey) {
+        console.error("Missing VAPID public key in environment variables.");
+        alert("System Error: Push keys are missing.");
+        return;
+    }
 
     setLoading(true);
     try {
       const registration = await navigator.serviceWorker.register('/sw.js');
       
-      // 1. Ask browser for permission
       const sub = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
 
-      // 2. Get Firebase ID Token
       const idToken = await user.getIdToken();
 
-      // 3. Send to your Backend
       const res = await fetch('/api/push/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -61,7 +65,7 @@ export function usePush() {
       alert("Success! Notifications enabled.");
     } catch (error) {
       console.error("Subscription failed:", error);
-      alert("Failed to enable notifications. Check console.");
+      alert("Failed to enable. Check permissions.");
     } finally {
       setLoading(false);
     }

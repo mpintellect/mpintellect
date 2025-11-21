@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminAuth, adminDb } from "../../../lib/firebaseAdmin"; // Your Admin SDK Setup
+import { adminAuth, adminDb } from "../../../lib/firebaseAdmin"; 
 
 export async function POST(req: Request) {
   try {
@@ -9,18 +9,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing data" }, { status: 400 });
     }
 
-    // 1. Verify the User
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
 
-    // 2. Save to Firestore Collection named 'push_subscriptions'
-    // We use the User UID as the document ID so it's easy to find later
+    // We are saving it as 'subscriptionData'. The SEND file now matches this.
     await adminDb.collection("push_subscriptions").doc(uid).set({
       userId: uid,
-      subscriptionData: subscription, // This object has endpoint, p256dh, auth keys
+      subscriptionData: subscription, 
       createdAt: new Date(),
       deviceInfo: req.headers.get("user-agent") || "Unknown Device"
-    });
+    }, { merge: true }); // Merge protects against overwriting other fields if you add them later
 
     return NextResponse.json({ success: true });
 

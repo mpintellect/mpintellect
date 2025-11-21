@@ -1,4 +1,4 @@
-// app/lib/fetchSetup.ts - SIMPLIFIED VERSION USING API ROUTE
+// app/lib/fetchSetup.ts - UPDATED FOR INDIVIDUAL SYMBOL FILES
 import { SymbolKey } from "@/data/symbols";
 
 /** Individual pending order */
@@ -127,38 +127,71 @@ export function getMarketContext(setup: ExtendedTradeSetupData | null): string {
 }
 
 /**
- * ✅ Fetch all setups at once
+ * ✅ Fetch all setups at once (DEPRECATED - Individual files now)
+ * This is kept for backward compatibility but will return empty
  */
 export async function fetchAllSetups(): Promise<Record<string, any> | null> {
   try {
-    console.log('🔍 Fetching all setups from Google Storage...');
+    console.log('⚠️ fetchAllSetups() is deprecated - using individual symbol files now');
     
-    const response = await fetch('https://us-central1-mzprimer-livefeed.cloudfunctions.net/api/tradesetup');
-    
-    if (!response.ok) {
-      console.error(`❌ Failed to fetch tradesetup.json: ${response.status}`);
-      return null;
-    }
-
-    const data = await response.json();
-    console.log(`✅ Successfully fetched ${Object.keys(data).length} setups`);
-    
-    return data;
+    // Return empty object for backward compatibility
+    return {};
   } catch (error) {
-    console.error('❌ Error fetching all setups:', error);
+    console.error('❌ Error in fetchAllSetups:', error);
     return null;
   }
 }
 
 /**
- * ✅ Get available symbols from tradesetup.json
+ * ✅ Get available symbols - Now returns all supported symbols since we have individual files
  */
 export async function getAvailableSetupSymbols(): Promise<string[]> {
   try {
-    const allSetups = await fetchAllSetups();
-    return allSetups ? Object.keys(allSetups) : [];
+    // Since we now have individual files for all symbols, return all supported ones
+    const supportedSymbols: string[] = [
+      "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD",
+      "NZDUSD", "USDCHF", "XAUUSD", "XAUEUR", "XAGUSD",
+      "XPTUSD", "USCRUDE", "BTCUSD", "ETHUSD", "XRPUSD",
+      "DGEUSD", "LTCUSD", "SPX", "NQ", "YM",
+      "SX5E", "CAC", "FDAX", "FTSE", "EURJPY",
+      "EURGBP", "GBPJPY", "GBPCHF"
+    ];
+    
+    console.log(`✅ Available symbols: ${supportedSymbols.length} individual files`);
+    return supportedSymbols;
   } catch (error) {
     console.error('❌ Error getting available symbols:', error);
     return [];
+  }
+}
+
+/**
+ * ✅ NEW: Fetch multiple symbols at once
+ */
+export async function fetchMultipleSetups(symbols: SymbolKey[]): Promise<Record<string, ExtendedTradeSetupData | null>> {
+  try {
+    console.log(`🔍 Fetching multiple setups: ${symbols.join(', ')}`);
+    
+    const promises = symbols.map(symbol => fetchSetup(symbol));
+    const results = await Promise.allSettled(promises);
+    
+    const setups: Record<string, ExtendedTradeSetupData | null> = {};
+    
+    results.forEach((result, index) => {
+      const symbol = symbols[index];
+      if (result.status === 'fulfilled' && result.value) {
+        setups[symbol] = result.value;
+      } else {
+        setups[symbol] = null;
+        console.warn(`❌ Failed to fetch setup for ${symbol}`);
+      }
+    });
+    
+    console.log(`✅ Successfully fetched ${Object.values(setups).filter(Boolean).length}/${symbols.length} setups`);
+    return setups;
+    
+  } catch (error) {
+    console.error('❌ Error fetching multiple setups:', error);
+    return {};
   }
 }

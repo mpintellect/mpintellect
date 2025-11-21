@@ -12,31 +12,40 @@ export async function GET(request: NextRequest) {
 
     console.log('🚀 Setup API called for symbol:', symbol);
     
-    const response = await fetch('https://us-central1-mzprimer-livefeed.cloudfunctions.net/api/tradesetup', {
+    // ✅ FETCH INDIVIDUAL SYMBOL FILE FROM GCS
+    // Now using: https://storage.googleapis.com/mzprimer-data-store/output_SYMBOL.json
+    const gcsUrl = `https://storage.googleapis.com/mzprimer-data-store/output_${symbol}.json`;
+    
+    console.log('📡 Fetching from GCS:', gcsUrl);
+    
+    const response = await fetch(gcsUrl, {
       headers: {
         'Accept': 'application/json',
         'Cache-Control': 'no-cache'
-      }
+      },
+      // Revalidate every 60 seconds to match Python upload cycle
+      next: { revalidate: 60 }
     });
     
     console.log('📡 Google Storage response status:', response.status);
 
     if (!response.ok) {
+      if (response.status === 404) {
+        console.warn(`❌ Symbol file 'output_${symbol}.json' not found in GCS`);
+        return NextResponse.json({ error: "Symbol setup not found" }, { status: 404 });
+      }
       throw new Error(`Google Storage returned ${response.status}`);
     }
 
-    const data = await response.json();
-    console.log('📦 Available symbols:', Object.keys(data));
+    const symbolData = await response.json();
     
-    const symbolData = data[symbol];
+    console.log(`✅ Successfully fetched setup for ${symbol}`);
     
-    if (!symbolData) {
-      console.warn(`❌ Symbol '${symbol}' not found in tradesetup.json`);
-      return NextResponse.json({ error: "Symbol not found" }, { status: 404 });
-    }
-
-    console.log(`✅ Successfully found setup for ${symbol}`);
-    return NextResponse.json(symbolData);
+    return NextResponse.json(symbolData, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30',
+      },
+    });
 
   } catch (error) {
     console.error('❌ Setup API error:', error);

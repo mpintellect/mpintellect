@@ -5,7 +5,7 @@ import { adminDb } from "../../../lib/firebaseAdmin";
 // Init WebPush
 webpush.setVapidDetails(
   process.env.VAPID_SUBJECT!, // e.g., "mailto:admin@yoursite.com"
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+  process.env.VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 );
 
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     }
 
     // 1. Get User's Subscription from DB
-    const userDoc = await adminDb.collection("users").doc(targetUserId).get();
+    const userDoc = await adminDb.collection("push_subscriptions").doc(targetUserId).get();
     const userData = userDoc.data();
     
     if (!userData?.pushSubscription) {
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       title: title || "Notification",
       body: message || "You have a new update.",
       url: url || "/dashboard",
-      icon: "/logo.png"
+      icon: "/public/logos/mzlogo.webp"
     });
 
     await webpush.sendNotification(subscription, payload);

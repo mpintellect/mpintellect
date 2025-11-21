@@ -9,6 +9,9 @@ import LearningHub from '@/components/LearningHub';
 import AiToolsSection from '@/components/AiToolsSection';
 import AIRobotCards from '@/components/AIRobotCards';
 import ContactSection from '@/components/ContactSection';
+// 1. IMPORT YOUR BUTTON HERE
+import NotificationButton from '@/components/NotificationButton'; 
+
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
@@ -16,6 +19,7 @@ export default function Home() {
     <>
       <StickyLogo />
       <Navbar />
+      <NotificationButton />
       <Hero />
       <LiveMarketFeed />
       <MobileMenu />

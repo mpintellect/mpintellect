@@ -1,5 +1,6 @@
 import admin from 'firebase-admin';
-import serviceAccount from '../../firebase-key.json'; // Adjust path if needed
+// Assuming you have "resolveJsonModule": true in tsconfig.json
+import serviceAccount from '../../firebase-key.json'; 
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -7,6 +8,10 @@ if (!admin.apps.length) {
   });
 }
 
+// 1. Firestore (for saving the subscriptions)
 const adminDb = admin.firestore();
 
-export { adminDb };
+// 2. Auth (for verifying the user who is asking to subscribe) -> ADD THIS
+const adminAuth = admin.auth();
+
+export { adminDb, adminAuth };

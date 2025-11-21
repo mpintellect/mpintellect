@@ -2,12 +2,15 @@
 
 export async function fetchLiveMarketFeed() {
   try {
-    const url = "https://storage.googleapis.com/mzprimer-data-store/market_intelligence.json";
+    // Use the API route instead of direct GCS fetch for better caching and error handling
+    const url = "/api/livemarketfeed";
     
     const res = await fetch(url, {
       method: "GET",
       cache: "no-cache",
-      next: { revalidate: 10 }   // optional caching
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
     });
 
     if (!res.ok) {

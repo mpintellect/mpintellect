@@ -7946,6 +7946,40 @@ select {
 /* Fix mobile dashboard width */
 .client-cabinet { max-width: 100vw; overflow-x: hidden; }
 .cabinet-main, .dashboard-view { width: 100%; box-sizing: border-box; }
+/* 📱 MOBILE INFINITE LOOP ANIMATION - HORIZONTAL 2 ROWS */
+@media (max-width: 768px) {
+  .feed-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 columns */
+    grid-template-rows: repeat(2, 1fr);    /* 2 rows */
+    gap: 0.3rem;
+    animation: scrollFeedHorizontal 30s linear infinite; /* ⬅️ SPEED CONTROL */
+    width: 200%; /* Double width for seamless loop */
+  }
+
+  @keyframes scrollFeedHorizontal {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%); /* Move half width to loop */
+    }
+  }
+
+  /* Pause animation on hover for better UX */
+  .feed-grid:hover {
+    animation-play-state: paused;
+  }
+
+  /* Ensure BUY cards in first row, SELL in second row */
+  .feed-card:nth-child(odd) {
+    grid-row: 1; /* BUY cards in first row */
+  }
+  
+  .feed-card:nth-child(even) {
+    grid-row: 2; /* SELL cards in second row */
+  }
+}
 /* ===========================
    PRICING PLANS MODAL (Premium Edition)
 =========================== */

@@ -5,7 +5,7 @@ import { adminDb } from "../../../lib/firebaseAdmin";
 // Init WebPush
 webpush.setVapidDetails(
   process.env.VAPID_SUBJECT!, // e.g., "mailto:admin@yoursite.com"
-  process.env.VAPID_PUBLIC_KEY!,
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 );
 

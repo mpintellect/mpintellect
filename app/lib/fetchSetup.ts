@@ -151,9 +151,9 @@ export async function getAvailableSetupSymbols(): Promise<string[]> {
     const supportedSymbols: string[] = [
       "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD",
       "NZDUSD", "USDCHF", "XAUUSD", "XAUEUR", "XAGUSD",
-      "XPTUSD", "USCRUDE", "BTCUSD", "ETHUSD", "XRPUSD",
-      "DGEUSD", "LTCUSD", "SPX", "NQ", "YM",
-      "SX5E", "CAC", "FDAX", "FTSE", "EURJPY",
+      "PLATINUM", "BRENT", "BTCUSD", "ETHUSD", "XRPUSD",
+      "DOGEUSD", "LTCUSD", "US500", "USTEC", "US30",
+      "HK50", "CAC", "DE40", "UK100", "EURJPY",
       "EURGBP", "GBPJPY", "GBPCHF"
     ];
     

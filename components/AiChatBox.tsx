@@ -20,9 +20,9 @@ import { useOneSetup } from "../app/lib/firebase/useSetup";
 const ALL_SYMBOLS = [
   "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD",
   "NZDUSD", "USDCHF", "XAUUSD", "XAUEUR", "XAGUSD",
-  "XPTUSD", "USCRUDE", "BTCUSD", "ETHUSD", "XRPUSD",
-  "DGEUSD", "LTCUSD", "SPX", "NQ", "YM",
-  "SX5E", "CAC", "FDAX", "FTSE", "EURJPY",
+  "PLATINUM", "BRENT", "BTCUSD", "ETHUSD", "XRPUSD",
+  "DOGEUSD", "LTCUSD", "US500", "USTEC", "US30",
+  "HK50", "FRANCE40", "DE40", "UK100", "EURJPY",
   "EURGBP", "GBPJPY", "GBPCHF"
 ] as const;
 
@@ -43,20 +43,20 @@ const SYMBOL_NAMES: Record<string, string> = {
   XAUUSD: "Gold / US Dollar",
   XAUEUR: "Gold / Euro",
   XAGUSD: "Silver / US Dollar",
-  XPTUSD: "Platinum / US Dollar",
-  USCRUDE: "WTI Crude Oil",
+  PLATINUM: "Platinum / US Dollar",
+  BRENT: "Brent Crude Oil",
   BTCUSD: "Bitcoin / US Dollar",
   ETHUSD: "Ethereum / US Dollar",
   XRPUSD: "Ripple / US Dollar",
   LTCUSD: "Litecoin / US Dollar",
-  DGEUSD: "Dogecoin / US Dollar",
-  SPX: "S&P 500",
-  NQ: "Nasdaq 100",
-  YM: "Dow Jones 30",
-  SX5E: "Euro Stoxx 50",
-  CAC: "CAC 40",
-  FDAX: "DAX 40",
-  FTSE: "FTSE 100"
+  DOGEUSD: "Dogecoin / US Dollar",
+  US500: "S&P 500",
+  USTEC: "Nasdaq 100",
+  US30: "Dow Jones 30",
+  HK50: "Hong Kong 50 stock index",
+  FRANCE40: "FRANCE40",
+  DE40: "DAX 40",
+  UK100: "FTSE 100"
 };
 
 // ✅ EXACT MATCH WITH BACKEND PIP/CONTRACT SETTINGS
@@ -78,26 +78,26 @@ const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: nu
   "XAUUSD": { pip: 0.01, contract: 100, decimals: 2 }, 
   "XAUEUR": { pip: 0.01, contract: 100, decimals: 2 },
   "XAGUSD": { pip: 0.001, contract: 5000, decimals: 3 },
-  "XPTUSD": { pip: 0.01, contract: 100, decimals: 2 },
+  "PLATINUM": { pip: 0.01, contract: 100, decimals: 2 },
 
   // Energy
-  "USCRUDE": { pip: 0.01, contract: 1000, decimals: 2 },
+  "BRENT": { pip: 0.01, contract: 1000, decimals: 2 },
 
   // Crypto - ADJUSTED FOR MT5 CONTRACT SIZES (Standard CFD lots)
   "BTCUSD": { pip: 1.0, contract: 1, decimals: 1 },      // 1 Lot = 1 Bitcoin
   "ETHUSD": { pip: 0.1, contract: 1, decimals: 2 },      // 1 Lot = 1 Ether
   "XRPUSD": { pip: 0.0001, contract: 1000, decimals: 4 }, // ✅ 1 Lot = 1000 XRP (Standard CFD)
   "LTCUSD": { pip: 0.01, contract: 10, decimals: 2 },    // ✅ 1 Lot = 10 LTC
-  "DGEUSD": { pip: 0.0001, contract: 1000, decimals: 4 }, // ✅ 1 Lot = 1000 DOGE
+  "DOGEUSD": { pip: 0.0001, contract: 1000, decimals: 4 }, // ✅ 1 Lot = 1000 DOGE
 
   // Indices (Standard Lot = 1 Contract)
-  "SPX": { pip: 0.1, contract: 1, decimals: 2 },
-  "NQ": { pip: 0.1, contract: 1, decimals: 2 },
-  "YM": { pip: 1.0, contract: 1, decimals: 1 },
-  "SX5E": { pip: 0.1, contract: 1, decimals: 2 },
-  "CAC": { pip: 0.1, contract: 1, decimals: 2 },
-  "FDAX": { pip: 0.1, contract: 1, decimals: 1 },
-  "FTSE": { pip: 0.1, contract: 1, decimals: 1 },
+  "US500": { pip: 0.1, contract: 1, decimals: 2 },
+  "USTEC": { pip: 0.1, contract: 1, decimals: 2 },
+  "US30": { pip: 1.0, contract: 1, decimals: 1 },
+  "HK50": { pip: 0.1, contract: 1, decimals: 2 },
+  "FRANCE40": { pip: 0.1, contract: 1, decimals: 2 },
+  "DE40": { pip: 0.1, contract: 1, decimals: 1 },
+  "UK100": { pip: 0.1, contract: 1, decimals: 1 },
 };
 
 // ==========================================

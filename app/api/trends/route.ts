@@ -11,9 +11,9 @@ const db = getFirestore();
 const SYMBOLS = [
   "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD",
   "NZDUSD", "USDCHF", "XAUUSD", "XAUEUR", "XAGUSD",
-  "XPTUSD", "USCRUDE", "BTCUSD", "ETHUSD", "XRPUSD",
-  "DGEUSD", "LTCUSD", "SPX", "NQ", "YM",
-  "SX5E", "CAC", "FDAX", "FTSE", "EURJPY",
+  "PLATINUM", "BRENT", "BTCUSD", "ETHUSD", "XRPUSD",
+  "DOGEUSD", "LTCUSD", "US500", "USTEC", "US30",
+  "HK50", "CAC", "DE40", "UK100", "EURJPY",
   "EURGBP", "GBPJPY", "GBPCHF"
 ];
 
@@ -82,21 +82,21 @@ function getSymbolName(symbol: string): string {
     XAUUSD: "Gold / USD",
     XAUEUR: "Gold / EUR",
     XAGUSD: "Silver / USD",
-    XPTUSD: "Platinum / USD",
+    PLATINUM: "Platinum / USD",
     BTCUSD: "Bitcoin",
     ETHUSD: "Ethereum",
     XRPUSD: "Ripple",
-    DGEUSD: "Dogecoin",
+    DOGEUSD: "Dogecoin",
     LTCUSD: "Litecoin",
-    USCRUDE: "US Crude Oil",
-    FDAX: "DAX 40 Index",
-    FTSE: "FTSE 100 Index",
-    SPX: "S&P 500 Index (US)",
+    BRENT: "US Crude Oil",
+    DE40: "DAX 40 Index",
+    UK100: "FTSE 100 Index",
+    US500: "S&P 500 Index (US)",
     NASDAQ: "NASDAQ Index",
-    NQ: "NASDAQ 100 Index (US)",
-    YM: "Dow Jones 30 Index (US)",
-    SX5E: "Euro Stoxx 50 Index (Europe)",
-    CAC: "CAC 40 Index (France)",
+    USTEC: "NASDAQ 100 Index (US)",
+    US30: "Dow Jones 30 Index (US)",
+    HK50: "Hong Kong 50 stock index Index (Europe)",
+    FRANCE40: "FRANCE40 Index (France)",
   };
   return names[symbol] || symbol;
 }

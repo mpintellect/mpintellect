@@ -23,10 +23,10 @@ const LEGACY_LIC_KEYS   = ['mz_ai_license'];
 type SymbolKey =
   | 'select' | 'EURUSD' | 'GBPUSD' | 'USDJPY' | 'USDCAD' | 'AUDUSD'
   | 'NZDUSD' | 'USDCHF' | 'XAUUSD' | 'XAUEUR' | 'XAGUSD'
-  | 'XPTUSD' | 'USCRUDE'
-  | 'BTCUSD' | 'ETHUSD' | 'XRPUSD' | 'DGEUSD' | 'LTCUSD'
-  | 'SPX'  | 'NQ'  | 'YM'  | 'SX5E'  | 'CAC'
-  | 'FDAX'   | 'FTSE'
+  | 'PLATINUM' | 'BRENT'
+  | 'BTCUSD' | 'ETHUSD' | 'XRPUSD' | 'DOGEUSD' | 'LTCUSD'
+  | 'US500'  | 'USTEC'  | 'US30'  | 'HK50'  | 'FRANCE40'
+  | 'DE40'   | 'UK100'
   | 'EURJPY' | 'EURGBP' | 'GBPJPY' | 'GBPCHF';
 
 type StyleKey = 'scalper' | 'balanced' | 'aggressive' | 'swing';
@@ -57,20 +57,20 @@ const DISPLAY_NAMES: Record<SymbolKey, string> = {
   XAUUSD: 'XAUUSD (Gold / US Dollar)',
   XAUEUR: 'XAUEUR (Gold / Euro)',
   XAGUSD: 'XAGUSD (Silver / US Dollar)',
-  XPTUSD: 'XPTUSD (Platinum / US Dollar)',
-  USCRUDE: 'USCRUDE (Crude Oil)',
+  PLATINUM: 'PLATINUM (Platinum / US Dollar)',
+  BRENT: 'BRENT (Crude Oil)',
   BTCUSD: 'BTCUSD (Bitcoin)',
   ETHUSD: 'ETHUSD (Ethereum)',
   XRPUSD: 'XRPUSD (Ripple)',
-  DGEUSD: 'DGEUSD (Dogecoin)',
+  DOGEUSD: 'DOGEUSD (Dogecoin)',
   LTCUSD: 'LTCUSD (Litecoin)',
-  SPX: 'SPX (S&P 500 Index (US))',
-  NQ: 'NQ (NASDAQ 100 Index (US))',
-  YM: 'YM (Dow Jones 30 Index (US).com)',
-  SX5E: 'SX5E (Tractor Supply Co)',
-  CAC:  'CAC (CAC 40 Index (France))',
-  FDAX: 'FDAX (German DAX Index)',
-  FTSE: 'FTSE (UK 100 Index)',
+  US500: 'US500 (S&P 500 Index (US))',
+  USTEC: 'USTEC (NASDAQ 100 Index (US))',
+  US30: 'YM (Dow Jones 30 Index (US).com)',
+  HK50: 'HK50 (Hong Kong 50 stock index)',
+  FRANCE40:  'CAC (FRANCE40 Index (France))',
+  DE40: 'FDAX (German DAX Index)',
+  UK100: 'FTSE (UK 100 Index)',
   EURJPY: 'EURJPY (Euro / Japanese Yen)',
   EURGBP: 'EURGBP (Euro / British Pound)',
   GBPJPY: 'GBPJPY (British Pound / Japanese Yen)',
@@ -88,20 +88,20 @@ const CONTRACT: Record<SymbolKey, { contract: number; pip: number }> = {
   XAUUSD:     { contract: 100,     pip: 0.1 },     // Gold
   XAUEUR:     { contract: 100,     pip: 0.1 },     // Gold in EUR
   XAGUSD:     { contract: 5000,    pip: 0.01 },    // Silver
-  XPTUSD:     { contract: 100,     pip: 0.1 },     // Platinum
-  USCRUDE:    { contract: 1000,    pip: 0.01 },    // Crude Oil (XTIUSD renamed)
+  PLATINUM:     { contract: 100,     pip: 0.1 },     // Platinum
+  BRENT:    { contract: 1000,    pip: 0.01 },    // Crude Oil (XTIUSD renamed)
   BTCUSD:     { contract: 1,       pip: 0.5 },
   ETHUSD:     { contract: 1,       pip: 0.1 },
   XRPUSD:     { contract: 1,       pip: 0.0001 },
-  DGEUSD:     { contract: 1,       pip: 0.0001 },  // Dogecoin (renamed)
+  DOGEUSD:     { contract: 1,       pip: 0.0001 },  // Dogecoin (renamed)
   LTCUSD:     { contract: 1,       pip: 0.01 },
-  SPX:    { contract: 1,       pip: 0.1 },
-  NQ:    { contract: 1,       pip: 0.1 },
-  YM:    { contract: 1,       pip: 0.1 },
-  SX5E:    { contract: 1,       pip: 0.1 },
-  CAC:     { contract: 1,       pip: 0.1 },
-  FDAX:       { contract: 1,       pip: 1 },       // DAX (GER40)
-  FTSE:       { contract: 1,       pip: 1 },       // UK100
+  US500:    { contract: 1,       pip: 0.1 },
+  USTEC:    { contract: 1,       pip: 0.1 },
+  US30:    { contract: 1,       pip: 0.1 },
+  HK50:    { contract: 1,       pip: 0.1 },
+  FRANCE40:     { contract: 1,       pip: 0.1 },
+  DE40:       { contract: 1,       pip: 1 },       // DAX (GER40)
+  UK100:       { contract: 1,       pip: 1 },       // UK100
   EURJPY:     { contract: 100000,  pip: 0.01 },
   EURGBP:     { contract: 100000,  pip: 0.0001 },
   GBPJPY:     { contract: 100000,  pip: 0.01 },
@@ -112,10 +112,10 @@ const DECIMALS: Record<SymbolKey, number> = {
   select: 4,
   EURUSD: 5, GBPUSD: 5, USDJPY: 3, USDCAD: 5, AUDUSD: 5,
   NZDUSD: 5, USDCHF: 5,
-  XAUUSD: 2, XAUEUR: 2, XAGUSD: 3, XPTUSD: 2, USCRUDE: 2,
-  BTCUSD: 1, ETHUSD: 2, XRPUSD: 4, DGEUSD: 4, LTCUSD: 2,
-  SPX: 2, NQ: 2, YM: 2, SX5E: 2, CAC: 2,
-  FDAX: 1, FTSE: 1,
+  XAUUSD: 2, XAUEUR: 2, XAGUSD: 3, PLATINUM: 2, BRENT: 2,
+  BTCUSD: 1, ETHUSD: 2, XRPUSD: 4, DOGEUSD: 4, LTCUSD: 2,
+  US500: 2, USTEC: 2, US30: 2, HK50: 2, FRANCE40: 2,
+  DE40: 1, UK100: 1,
   EURJPY: 3, EURGBP: 5, GBPJPY: 3, GBPCHF: 5,
 };
 
@@ -127,9 +127,9 @@ const ASSET_GROUPS: Array<{ key: AssetGroupKey; label: string; symbols: SymbolKe
   { key: 'fx',      label: 'Forex - Major Currency Pairs', symbols: [
     'select','EURUSD','GBPUSD','USDJPY','USDCAD','AUDUSD','NZDUSD','USDCHF',
     'EURJPY','EURGBP','GBPJPY','GBPCHF'] },
-  { key: 'metals',  label: 'Metals & Energy', symbols: ['XAUUSD','XAUEUR','XAGUSD','XPTUSD','USCRUDE'] },
-  { key: 'crypto',  label: 'Cryptocurrencies', symbols: ['BTCUSD','ETHUSD','XRPUSD','DGEUSD','LTCUSD'] },
-  { key: 'indices',  label: 'Indices', symbols: ['SPX','NQ','YM','SX5E','CAC','FDAX','FTSE'] },
+  { key: 'metals',  label: 'Metals & Energy', symbols: ['XAUUSD','XAUEUR','XAGUSD','PLATINUM','BRENT'] },
+  { key: 'crypto',  label: 'Cryptocurrencies', symbols: ['BTCUSD','ETHUSD','XRPUSD','DOGEUSD','LTCUSD'] },
+  { key: 'indices',  label: 'Indices', symbols: ['US500','USTEC','US30','HK50','FRANCE40','DE40','UK100'] },
 ];
 
 function styleParams(style: StyleKey) {
@@ -139,7 +139,7 @@ function styleParams(style: StyleKey) {
   return                         { name: 'Balanced',         slPips: 20, rr: 2.0 };
 }
 
-function fmt(sym: SymbolKey, v: number) {
+function fmt(sUS30: SymbolKey, v: number) {
   return v.toFixed(DECIMALS[sym] ?? 2);
 }
 

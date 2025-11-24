@@ -356,9 +356,9 @@ export default function AiChatWidget() {
           const decimalMap: Record<SymbolKey, number> = {
             "EURUSD": 5, "GBPUSD": 5, "USDJPY": 3, "USDCAD": 5, "AUDUSD": 5,
             "NZDUSD": 5, "USDCHF": 5, "EURJPY": 3, "EURGBP": 5, "GBPJPY": 3, "GBPCHF": 5,
-            "XAUUSD": 2, "XAUEUR": 2, "XAGUSD": 3, "XPTUSD": 2, "USCRUDE": 2,
-            "BTCUSD": 1, "ETHUSD": 2, "XRPUSD": 4, "DGEUSD": 4, "LTCUSD": 2,
-            "SPX": 2, "NQ": 2, "YM": 2, "SX5E": 2, "CAC": 2, "FDAX": 1, "FTSE": 1,
+            "XAUUSD": 2, "XAUEUR": 2, "XAGUSD": 3, "PLATINUM": 2, "BRENT": 2,
+            "BTCUSD": 1, "ETHUSD": 2, "XRPUSD": 4, "DOGEUSD": 4, "LTCUSD": 2,
+            "US500": 2, "USTEC": 2, "US30": 2, "HK50": 2, "FRANCE40": 2, "DE40": 1, "UK100": 1,
           };
           return decimalMap[symbol] || 5;
         };

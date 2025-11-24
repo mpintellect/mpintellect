@@ -11,44 +11,62 @@ export function usePush() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
-      setIsSupported(true);
-      navigator.serviceWorker.ready.then(reg => {
-          reg.pushManager.getSubscription().then(sub => { if (sub) setSubscription(sub); });
-      }).catch(e => console.log(e));
-    }
+    // 1. Robust Feature Detection
+    const checkSupport = () => {
+        if (typeof window === 'undefined') return;
+        // Check for Service Worker & Push API
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            setIsSupported(true);
+            
+            // Try to find existing subscription
+            navigator.serviceWorker.ready.then(reg => {
+                reg.pushManager.getSubscription().then(sub => {
+                    if (sub) setSubscription(sub);
+                });
+            }).catch(e => console.log("SW check error", e));
+        } else {
+            console.log("Push not supported on this device/browser.");
+        }
+    };
+    checkSupport();
   }, []);
 
   const subscribeToPush = async () => {
+    // 2. Allow logic to proceed if supported, otherwise alert
     if (!isSupported) {
-        alert("Not supported on this browser.");
+        alert("Push notifications are not supported on this browser (or need 'Add to Homescreen' on iOS).");
         return;
     }
     setLoading(true);
 
     try {
-        // 1. AUTH
+        // --- A. AUTHENTICATE ---
         let currentUser = user;
         if (!currentUser) {
-            console.log("Creating Anonymous User...");
-            const userCredential = await signInAnonymously(auth);
-            currentUser = userCredential.user;
+            try {
+                const userCredential = await signInAnonymously(auth);
+                currentUser = userCredential.user;
+            } catch (e: any) {
+                throw new Error("Login failed. Check internet connection.");
+            }
         }
 
-        // 2. VAPID KEY
+        // --- B. VALIDATE KEY ---
         const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-        if (!vapidKey) throw new Error("VAPID Key Missing");
+        if (!vapidKey) throw new Error("Server configuration error: VAPID Key missing");
 
-        // 3. REGISTER WORKER
-        console.log("Registering SW...");
+        // --- C. BROWSER PERMISSION ---
+        // Ensure worker is active
         const registration = await navigator.serviceWorker.register('/sw.js');
-        await navigator.serviceWorker.ready;
+        await navigator.serviceWorker.ready; // Wait for active state
+
+        // Prompt User
         const sub = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(vapidKey),
         });
 
-        // 4. SAVE TO DB (THE CRASH POINT)
+        // --- D. DATABASE REGISTER ---
         const idToken = await currentUser.getIdToken();
         const res = await fetch('/api/push/register', {
             method: 'POST',
@@ -56,30 +74,27 @@ export function usePush() {
             body: JSON.stringify({ subscription: sub, idToken }),
         });
 
-        // --- SAFELY READ RESPONSE ---
-        // We get text first, because if it's not JSON, .json() crashes
-        const responseText = await res.text();
-        
+        const textResponse = await res.text(); // Read text to see error HTML if 500/404 happens
         if (!res.ok) {
-            // Throw specific error from server
-            throw new Error(`Server Error (${res.status}): ${responseText.slice(0, 100)}...`);
+            console.error("Backend Error Response:", textResponse);
+            throw new Error(`Server connection failed (${res.status})`);
         }
-        
-        // Parse JSON only if OK
-        const data = responseText ? JSON.parse(responseText) : {};
-        console.log("Register Success:", data);
 
         setSubscription(sub);
 
-        // Welcome Msg
+        // --- E. WELCOME MSG ---
         fetch('/api/push/send', {
             method: 'POST',
-            body: JSON.stringify({ targetUserId: currentUser.uid, title: "Welcome!", message: "Notifications Active." })
-        }).catch(e => console.error("Welcome send skipped"));
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                targetUserId: currentUser.uid, 
+                title: "Notifications Active", 
+                message: "You will receive AI trade signals here." 
+            })
+        }).catch(e => console.log("Welcome msg skipped"));
 
     } catch (error: any) {
-        console.error("DEBUG:", error);
-        // Alert the actual server text
+        console.error("FULL SUBSCRIBE ERROR:", error);
         alert(`Setup Failed: ${error.message}`);
     } finally {
         setLoading(false);

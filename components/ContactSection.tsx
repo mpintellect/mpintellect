@@ -1,11 +1,12 @@
 'use client';
 import React, { useState } from 'react';
+import NotificationButton from './NotificationButton';
 
 export default function ContactSection() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
-  const [hp, setHp] = useState('');        // honeypot (should stay empty)
+  const [hp, setHp] = useState(''); 
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<null | {ok:boolean; error?:string}>(null);
 
@@ -34,7 +35,8 @@ export default function ContactSection() {
   }
 
   return (
-    <section id="contacts" className="bg-black text-white py-24 px-6">
+    // Uses the new class for background gradient
+    <section id="contacts" className="contact-section-wrapper py-24 px-6 text-white">
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-4xl md:text-5xl font-bold mb-6">Get in Touch</h2>
         <p className="text-gray-400 text-lg md:text-xl mb-10">
@@ -42,7 +44,7 @@ export default function ContactSection() {
         </p>
 
         <form onSubmit={onSubmit} className="contact-form space-y-6 text-left">
-          {/* Honeypot (hidden from humans) */}
+          {/* Honeypot */}
           <input
             type="text"
             value={hp}
@@ -58,7 +60,8 @@ export default function ContactSection() {
               type="text"
               id="name"
               placeholder="John Doe"
-              className="w-full bg-zinc-900 border border-zinc-700 text-white text-sm rounded-md p-3 placeholder-gray-400 focus:outline-none focus:border-yellow-500 transition"
+              // Uses CSS class instead of long tailwind strings
+              className="w-full text-sm rounded-md p-3 contact-input" 
               required
               value={name}
               onChange={(e)=>setName(e.target.value)}
@@ -71,7 +74,7 @@ export default function ContactSection() {
               type="email"
               id="email"
               placeholder="you@example.com"
-              className="w-full bg-zinc-900 border border-zinc-700 text-white text-sm rounded-md p-3 placeholder-gray-400 focus:outline-none focus:border-yellow-500 transition"
+              className="w-full text-sm rounded-md p-3 contact-input"
               required
               value={email}
               onChange={(e)=>setEmail(e.target.value)}
@@ -84,7 +87,7 @@ export default function ContactSection() {
               id="message"
               rows={5}
               placeholder="Write your message here..."
-              className="w-full bg-zinc-900 border border-zinc-700 text-white text-sm rounded-md p-3 placeholder-gray-400 focus:outline-none focus:border-yellow-500 transition"
+              className="w-full text-sm rounded-md p-3 contact-input"
               required
               value={message}
               onChange={(e)=>setMessage(e.target.value)}
@@ -95,7 +98,7 @@ export default function ContactSection() {
             <button
               type="submit"
               disabled={sending}
-              className="btn-primary text-sm md:text-base disabled:opacity-60"
+              className="btn-primary text-sm md:text-base disabled:opacity-60 px-8 py-3 bg-yellow-600 hover:bg-yellow-500 rounded text-white font-bold transition-all"
             >
               {sending ? 'Sending…' : 'Send Message'}
             </button>
@@ -108,6 +111,18 @@ export default function ContactSection() {
             <p className="text-red-400 text-center mt-2">{result.error}</p>
           )}
         </form>
+      </div>
+
+      {/* FOOTER SECTION: REORGANIZED */}
+      <div className="max-w-4xl mx-auto border-t border-zinc-800 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
+        
+        
+        
+        {/* Notification Button Container */}
+        <div className="flex items-center gap-4">
+           <NotificationButton />
+        </div>
+
       </div>
     </section>
   );

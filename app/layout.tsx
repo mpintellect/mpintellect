@@ -3,13 +3,17 @@ import './globals.css';
 import { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
 
-// Change 1: Import the new conditional wrapper instead of the direct component
+// Component Imports
 import ConditionalStickyLogo from '@/components/ConditionalStickyLogo';
 import ConditionalMobileMenu from '@/components/ConditionalMobileMenu'; 
 import ConditionalNavbar from '@/components/ConditionalNavbar'; 
-import Script from 'next/script';
 import CtaTracker from '@/components/CTATracker';
 import Footer from '@/components/Footer';
+
+// NEW: Import the custom elegant cookie bar
+import CookieConsent from '@/components/CookieConsent';
+
+import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -21,14 +25,32 @@ export const metadata = {
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} bg-black text-white relative`}>
-      
+    <html lang="en" suppressHydrationWarning> 
+      <body 
+        className={`${inter.className} bg-black text-white relative`}
+        // 2. ADD suppressHydrationWarning HERE ALSO
+        suppressHydrationWarning 
+      >      
+        {/* ---------------- 1. GOOGLE CONSENT MODE DEFAULT ---------------- */}
+        {/* This runs immediately and tells Google to BLOCK cookies by default */}
+        <Script id="consent-mode-defaults" strategy="beforeInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            
+            // Set default consent to 'denied'
+            gtag('consent', 'default', {
+              'ad_storage': 'denied',
+              'ad_user_data': 'denied',
+              'ad_personalization': 'denied',
+              'analytics_storage': 'denied'
+            });
+          `}
+        </Script>
 
-        {/* Change 2: Use the conditional wrapper for Sticky Logo */}
+        {/* ---------------- 2. LAYOUT ELEMENTS ---------------- */}
         <ConditionalStickyLogo />
         <ConditionalNavbar />
-        {/* Conditional Mobile Menu */}
         <ConditionalMobileMenu />
 
         {/* Main content */}
@@ -39,40 +61,11 @@ export default function Layout({ children }: { children: ReactNode }) {
         {/* Footer */}
         <Footer />
 
-        {/* ---------------- AdRoll ---------------- */}
-        <Script id="adroll-loader" strategy="afterInteractive">
-          {`
-            window.addEventListener('load', function () {
-              var adroll_adv_id = "FWX22H4MLNAEJKP7QZIYBD";
-              var adroll_pix_id = "4MT65TY4GVFSXOOPTPEKTF";
-              var adroll_version = "2.0";
 
-              (function(w, d, s) {
-                w.adroll = w.adroll || [];
-                w.adroll.f = ['setProperties','identify','track','identify_email','get_cookie'];
-                w.__adroll_loaded = true;
+        {/* ---------------- 3. ANALYTICS (GTM/GA4/ADS) ---------------- */}
+        {/* These load now, but remain "dumb" (no tracking) until consent is updated via the component */}
 
-                for (var a = 0; a < w.adroll.f.length; a++) {
-                  w.adroll[w.adroll.f[a]] = w.adroll[w.adroll.f[a]] || (function(n) {
-                    return function() { w.adroll.push([n, arguments]); };
-                  })(w.adroll.f[a]);
-                }
-
-                var scr = d.createElement(s);
-                scr.async = true;
-                scr.src = "https://s.adroll.com/j/" + adroll_adv_id + "/roundtrip.js";
-                scr.onload = function () {
-                  if (typeof adroll !== 'undefined' && typeof adroll.track === 'function') {
-                    adroll.track("pageView");
-                  }
-                };
-                (d.head || d.body).appendChild(scr);
-              })(window, document, 'script');
-            });
-          `}
-        </Script>
-
-        {/* ---------------- Google Tag Manager (container only) ---------------- */}
+        {/* Google Tag Manager */}
         <Script id="gtm-loader" strategy="afterInteractive">
           {`
             window.addEventListener('load', function () {
@@ -90,29 +83,34 @@ export default function Layout({ children }: { children: ReactNode }) {
           `}
         </Script>
 
-        {/* ---------------- ONE gtag.js loader ---------------- */}
+        {/* Google Analytics & Ads Base Script */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-Y5VJQCKSQE"
           strategy="afterInteractive"
         />
 
-        {/* ---------------- Unified GA4 + Google Ads init ---------------- */}
+        {/* Init GA4 & Ads */}
         <Script id="gtag-base" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
 
-            // GA4
+            // GA4 Configuration
             gtag('config', 'G-Y5VJQCKSQE', { anonymize_ip: true });
 
-            // Google Ads base
+            // Google Ads Configuration
             gtag('config', 'AW-16927724463');
           `}
         </Script>
 
+        {/* Internal Tracker */}
         <Script src="/cta-tracker.js" strategy="afterInteractive" />
         <CtaTracker />
+
+        {/* ---------------- 4. THE CUSTOM COOKIE UI ---------------- */}
+        {/* This replaces AdRoll Popup. It handles the 'Accept' logic visually */}
+        <CookieConsent />
 
       </body>
     </html>

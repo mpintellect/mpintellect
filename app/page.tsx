@@ -1,16 +1,18 @@
 import StickyLogo from '@/components/StickyLogo';
 import Navbar from '@/components/Navbar';
+import NotificationButton from '@/components/NotificationButton'; 
 import Hero from '@/components/Hero';
 import MobileMenu from '@/components/MobileMenu';
-import LiveMarketFeed from "@/components/LiveMarketFeed"; 
+import LiveMarketFeed from "@/components/LiveMarketFeed";
+import WelcomeTradePopup from '@/components/WelcomeTradePopup';  
 import AiChatSection from "@/components/AiChatSection";
 import TraderAssistantLite from '@/components/TraderAssistantLite';
 import LearningHub from '@/components/LearningHub';
 import AiToolsSection from '@/components/AiToolsSection';
 import AIRobotCards from '@/components/AIRobotCards';
 import ContactSection from '@/components/ContactSection';
-// 1. IMPORT YOUR BUTTON HERE
-import NotificationButton from '@/components/NotificationButton'; 
+
+
 
 export const dynamic = 'force-dynamic';
 
@@ -19,9 +21,10 @@ export default function Home() {
     <>
       <StickyLogo />
       <Navbar />
-      <NotificationButton />
+      <NotificationButton /> 
       <Hero />
       <LiveMarketFeed />
+      <WelcomeTradePopup />
       <MobileMenu />
       <AiChatSection />
       <TraderAssistantLite />

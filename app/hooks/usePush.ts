@@ -11,97 +11,75 @@ export function usePush() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // 1. Initial Check: Does this browser support SW?
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
       setIsSupported(true);
-      
-      // Attempt to restore existing sub
       navigator.serviceWorker.ready.then(reg => {
-          reg.pushManager.getSubscription().then(sub => {
-              if (sub) setSubscription(sub);
-          });
-      }).catch(e => console.log("SW not ready yet"));
-      
-    } else {
-      setIsSupported(false);
-      console.warn("Push Notifications are NOT supported in this browser.");
+          reg.pushManager.getSubscription().then(sub => { if (sub) setSubscription(sub); });
+      }).catch(e => console.log(e));
     }
   }, []);
 
   const subscribeToPush = async () => {
-    // 2. CRASH PROTECTION: Stop if API missing
-    if (!isSupported || !('serviceWorker' in navigator)) {
-        alert("Your browser does not support notifications (or you are in Private/Incognito mode).");
+    if (!isSupported) {
+        alert("Not supported on this browser.");
         return;
     }
-
     setLoading(true);
 
     try {
-        // 3. STEP A: LOGIN (Ghost User)
+        // 1. AUTH
         let currentUser = user;
         if (!currentUser) {
             console.log("Creating Anonymous User...");
-            try {
-                const userCredential = await signInAnonymously(auth);
-                currentUser = userCredential.user;
-            } catch (authError: any) {
-                console.error("Auth Failed:", authError);
-                // Depending on Firebase settings, this might fail on networks with strict firewalls
-                throw new Error("Could not create anonymous ID. Adblocker might be interfering.");
-            }
+            const userCredential = await signInAnonymously(auth);
+            currentUser = userCredential.user;
         }
 
-        // 4. STEP B: VAPID KEY
+        // 2. VAPID KEY
         const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-        if (!vapidKey) throw new Error("Missing VAPID Key");
+        if (!vapidKey) throw new Error("VAPID Key Missing");
 
-        // 5. STEP C: BROWSER PERMISSION
-        console.log("Registering Worker...");
-        // Use '.ready' to ensure we don't race against the browser logic
-        // Try registering, or wait if it's already there
+        // 3. REGISTER WORKER
+        console.log("Registering SW...");
         const registration = await navigator.serviceWorker.register('/sw.js');
-        
-        await navigator.serviceWorker.ready; // Wait until active
-
-        console.log("Asking Permission...");
+        await navigator.serviceWorker.ready;
         const sub = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(vapidKey),
         });
 
-        // 6. STEP D: SAVE TO DB
-        console.log("Saving to DB for UID:", currentUser.uid);
+        // 4. SAVE TO DB (THE CRASH POINT)
         const idToken = await currentUser.getIdToken();
-
         const res = await fetch('/api/push/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ subscription: sub, idToken }),
         });
 
-        if (!res.ok) {
-            const errData = await res.json();
-            throw new Error(errData.error || "Server failed to save subscription");
-        }
-
-        // 7. SUCCESS
-        setSubscription(sub);
+        // --- SAFELY READ RESPONSE ---
+        // We get text first, because if it's not JSON, .json() crashes
+        const responseText = await res.text();
         
-        // Welcome Message (Optional, failures ignored)
+        if (!res.ok) {
+            // Throw specific error from server
+            throw new Error(`Server Error (${res.status}): ${responseText.slice(0, 100)}...`);
+        }
+        
+        // Parse JSON only if OK
+        const data = responseText ? JSON.parse(responseText) : {};
+        console.log("Register Success:", data);
+
+        setSubscription(sub);
+
+        // Welcome Msg
         fetch('/api/push/send', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                targetUserId: currentUser.uid, 
-                title: "Welcome to MZ Primer!", 
-                message: "Notifications are now active.",
-                url: "/" 
-            }),
-        }).catch(e => console.log("Welcome msg skipped"));
+            body: JSON.stringify({ targetUserId: currentUser.uid, title: "Welcome!", message: "Notifications Active." })
+        }).catch(e => console.error("Welcome send skipped"));
 
     } catch (error: any) {
-        console.error("Subscription Flow Failed:", error);
+        console.error("DEBUG:", error);
+        // Alert the actual server text
         alert(`Setup Failed: ${error.message}`);
     } finally {
         setLoading(false);

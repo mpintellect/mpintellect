@@ -21,7 +21,10 @@ export const metadata = {
   title: 'MZPrimer – Your Gateway to Smart Trading',
   description:
     'MZPrimer is a premium trading site built to help traders get started with speed, confidence, and security. Access exclusive insights, AI tools, and global markets.',
-};
+// --- ADD THIS LINE ---
+  manifest: '/manifest.json',
+  };
+
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
@@ -109,7 +112,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <CtaTracker />
 
         {/* ---------------- 4. THE CUSTOM COOKIE UI ---------------- */}
-        {/* This replaces AdRoll Popup. It handles the 'Accept' logic visually */}
+        {/* This replaces A Popup. It handles the 'Accept' logic visually */}
         <CookieConsent />
 
       </body>

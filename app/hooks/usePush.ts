@@ -32,11 +32,13 @@ export function usePush() {
   }, []);
 
   const subscribeToPush = async () => {
-    // 2. Allow logic to proceed if supported, otherwise alert
-    if (!isSupported) {
-        alert("Push notifications are not supported on this browser (or need 'Add to Homescreen' on iOS).");
-        return;
+    // 1. REMOVE THE ALERT. Just log it and return.
+    // The UI component (WelcomeTradePopup) already checks 'isIOSBrowser' to show help text.
+    if (!isSupported || !('serviceWorker' in navigator)) {
+        console.log("Push API not available (Likely iOS browser tab or Private window).");
+        return; 
     }
+
     setLoading(true);
 
     try {

@@ -1,19 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; 
 import { auth, db } from "@/app/lib/firebaseClient";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { doc, getDoc } from "firebase/firestore";
-import { Copy, Share2, Users, Zap, Gift } from "lucide-react";
+import { Copy, Share2, Users, Zap, Gift, ArrowLeft } from "lucide-react"; 
 import toast from "react-hot-toast";
 
 export default function ReferPage() {
+  const router = useRouter();
   const [user] = useAuthState(auth);
   const [referralCode, setReferralCode] = useState("");
   const [stats, setStats] = useState({ count: 0, earned: 0 });
   const [loading, setLoading] = useState(true);
-  
-  // State for entering a code manually
   const [inputCode, setInputCode] = useState("");
   const [redeemLoading, setRedeemLoading] = useState(false);
 
@@ -42,7 +42,6 @@ export default function ReferPage() {
     setLoading(false);
   };
 
-  // Ensure domain matches your environment
   const referralLink = typeof window !== "undefined" 
     ? `${window.location.origin}/register?ref=${referralCode}` 
     : `https://mzprimer.com/register?ref=${referralCode}`;
@@ -82,7 +81,7 @@ export default function ReferPage() {
         const data = await res.json();
         if(res.ok) {
             toast.success("🎉 Referral Redeemed!");
-            fetchStats(); // Refresh stats potentially
+            fetchStats(); 
         } else {
             toast.error(data.error || "Failed to redeem");
         }
@@ -98,10 +97,21 @@ export default function ReferPage() {
   }
 
   return (
-    <div className="referral-container">
+    <div className="referral-container relative">
       
+      {/* BACK BUTTON using Global CSS */}
+      <div className="referral-back-wrapper">
+        <button 
+          onClick={() => router.push('/client/dashboard')}
+          className="btn-referral-back"
+        >
+          <ArrowLeft size={18} />
+          <span className="back-text">Dashboard</span>
+        </button>
+      </div>
+
       {/* HEADER */}
-      <div className="referral-header">
+      <div className="referral-header mt-12 md:mt-0">
         <h1 className="referral-title">
             <Gift className="text-yellow-500" size={32} /> 
             Refer & Earn

@@ -9462,3 +9462,51 @@ select {
 }
 .btn-redeem:hover { background: #52525b; }
 .btn-redeem:disabled { opacity: 0.5; cursor: not-allowed; }
+/* --- 4. NAVIGATION / BACK BUTTON --- */
+.referral-back-wrapper {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 10;
+}
+
+/* On Desktop, align with the main container content */
+@media (min-width: 768px) {
+  .referral-back-wrapper {
+    top: 2rem;
+    left: 0; 
+  }
+}
+
+.btn-referral-back {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  background: transparent;
+  border: 1px solid transparent;
+  color: #a1a1aa; /* zinc-400 */
+  
+  padding: 0.5rem 0.85rem;
+  border-radius: 0.5rem;
+  
+  font-size: 0.875rem; /* 14px */
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-referral-back:hover {
+  color: white;
+  background-color: #18181b; /* zinc-900 */
+  border-color: #27272a; /* zinc-800 */
+  transform: translateX(-2px);
+}
+
+/* Mobile Text Visibility Helper */
+.back-text {
+  display: none;
+}
+@media (min-width: 640px) {
+  .back-text { display: inline; }
+}

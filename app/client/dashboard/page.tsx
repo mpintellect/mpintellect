@@ -427,11 +427,11 @@ function DashboardContent() {
                 <h3>Refer Friends</h3>
                 <p>Get 5 free setups per referral</p>
                 <button 
-                  onClick={() => router.push('/clientDashboard/refer')}
-                  className="action-btn secondary"
-                >
-                  Share Link
-                </button>
+    className="nav-btn"
+    onClick={() => router.push('/client/dashboard/refer')} // Correct path
+>
+  Refer Friends
+</button>
               </div>
 
               <div className="action-card">

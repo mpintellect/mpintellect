@@ -6,7 +6,7 @@ import { usePush } from '@/app/hooks/usePush';
 import { 
   X, TrendingUp, Bot, Zap, Activity, 
   Share, PlusSquare, ArrowDown, ArrowUpRight, 
-  Smartphone, BellRing, MessageCircle 
+  Smartphone, BellRing, MessageCircle, CheckCircle
 } from 'lucide-react'; 
 
 // --- LINKS ---
@@ -35,20 +35,30 @@ export default function WelcomeTradePopup() {
   // 'safari' (bottom) or 'chrome' (top right)
   const [iosBrowserType, setIosBrowserType] = useState<'safari' | 'chrome'>('safari');
 
-  // --- HELPERS ---
+  // --- IMPROVED PWA DETECTION (From Second Code) ---
+  const checkPWA = () => {
+    if (typeof window === 'undefined') return false;
+    
+    // 1. Standard Check
+    const isStandard = window.matchMedia('(display-mode: standalone)').matches;
+    
+    // 2. Apple Legacy Check (Crucial for iPhone)
+    const isApple = (window.navigator as any).standalone === true;
+    
+    return isStandard || isApple;
+  }
+
+  // --- IMPROVED BROWSER OS DETECTION (From Second Code) ---
   const getMobileOS = () => {
     if (typeof window === 'undefined') return 'unknown';
     const ua = navigator.userAgent || navigator.vendor;
     if (/android/i.test(ua)) return 'android';
-    if (/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream) return 'ios';
+    // iOS detection including new iPads (Enhanced from second code)
+    if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
     return 'desktop';
   };
 
-  const checkPWA = () => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(display-mode: standalone)').matches;
-  }
-
+  // --- KEEP ORIGINAL FORMATTING HELPERS ---
   function getTimeAgo(dateString: string) {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -130,30 +140,47 @@ export default function WelcomeTradePopup() {
     sessionStorage.setItem('tradePopupClosed', 'true'); 
   };
 
-  // --- MAIN ACTION HANDLER ---
+  // --- IMPROVED MAIN ACTION HANDLER (From Second Code) ---
   const handleMainClick = async () => {
     const os = getMobileOS();
-    const isInstalled = checkPWA();
+    const isInstalled = checkPWA(); // Re-check state at click moment
 
-    // 1. IOS BROWSER -> OPEN MENU OVERLAY
+    // --- IMPROVED LOGIC FLOW (From Second Code) ---
+    
+    // 1. User is already inside the Installed App -> ALLOW PUSH
+    if (isInstalled) {
+        const el = document.getElementById("aiassistant");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        await subscribeToPush();
+        setIsVisible(false);
+        return;
+    }
+
+    // 2. User is on iPhone Browser -> SHOW MENU
     if (os === 'ios' && !isInstalled) {
         setShowIOSMenu(true);
         return;
     }
 
-    // 2. OTHERS (Android/Desktop/PWA) -> PUSH SUBSCRIBE
+    // 3. Everyone else -> ALLOW PUSH
     const el = document.getElementById("aiassistant");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    
     await subscribeToPush();
     setIsVisible(false);
   };
+
+  // --- NEW: MANUAL BYPASS FEATURE (From Second Code) ---
+  const forceAppMode = async () => {
+      setIsAppMode(true);
+      setShowIOSMenu(false);
+      await subscribeToPush();
+  }
 
   // RENDER SAFEGUARD
   if (!mounted || !isVisible || subscription || !bestTrade) return null;
 
   // ===============================================================
-  // 1. THE IOS "CHOICE MENU" (Native Guide + Telegram)
+  // 1. THE IOS "CHOICE MENU" (Enhanced with Manual Bypass)
   // ===============================================================
   if (showIOSMenu) {
       return (
@@ -173,6 +200,7 @@ export default function WelcomeTradePopup() {
 
                 <div className="p-6">
                     <div className="text-center mb-5">
+                        {/* KEEP ORIGINAL TITLE STYLE BUT WITH IMPROVED TEXT */}
                         <h3 className="text-white font-bold text-xl mb-1">Choose Alert Method</h3>
                         <p className="text-zinc-500 text-xs uppercase tracking-wide font-semibold">
                             {iosBrowserType === 'chrome' ? 'Chrome detected' : 'Instant AI Signals'}
@@ -181,7 +209,7 @@ export default function WelcomeTradePopup() {
 
                     <div className="space-y-4">
                         
-                        {/* OPTION 1: WEB APP (Native) */}
+                        {/* OPTION 1: WEB APP (Native) - KEEP ORIGINAL STYLING */}
                         <div className="ios-pwa-box">
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-[10px] font-bold text-zinc-500 uppercase">Option A: Native Web App</span>
@@ -196,23 +224,31 @@ export default function WelcomeTradePopup() {
                             </div>
                         </div>
 
-                        {/* DIVIDER */}
+                        {/* DIVIDER - KEEP ORIGINAL */}
                         <div className="relative flex items-center opacity-50">
                             <div className="flex-grow border-t border-zinc-800"></div>
                             <span className="flex-shrink mx-2 text-[9px] text-zinc-600 uppercase font-bold">Fast Alternative</span>
                             <div className="flex-grow border-t border-zinc-800"></div>
                         </div>
 
-                        {/* OPTION 2: TELEGRAM */}
+                        {/* OPTION 2: TELEGRAM - KEEP ORIGINAL */}
                         <a href={TELEGRAM_LINK} target="_blank" className="btn-telegram">
                             <MessageCircle size={18} /> Join Telegram Channel
                         </a>
+
+                        {/* NEW: MANUAL BYPASS LINK (From Second Code) */}
+                        <button 
+                            onClick={forceAppMode}
+                            className="w-full text-[10px] text-zinc-600 text-center mt-2 underline hover:text-zinc-400 transition-colors"
+                        >
+                            I am already using the App
+                        </button>
 
                     </div>
                 </div>
             </div>
 
-            {/* SMART POINTER (Context Aware) */}
+            {/* SMART POINTER (Context Aware) - KEEP ORIGINAL */}
             {iosBrowserType === 'chrome' ? (
                 // CHROME: Points Top Right
                 <div className="ios-pointer-container ios-pos-chrome" onClick={e => e.stopPropagation()}>
@@ -232,13 +268,13 @@ export default function WelcomeTradePopup() {
   }
 
   // ===============================================================
-  // 2. STANDARD POPUP (Desktop / Android / PWA)
+  // 2. STANDARD POPUP (Desktop / Android / PWA) - KEEP ALL ORIGINAL FEATURES
   // ===============================================================
   return (
     <div className="popup-container">
       <div className={`popup-card ${isAppMode ? 'ring-2 ring-green-500/50' : ''}`}>
         
-        {/* HEADER */}
+        {/* HEADER - KEEP ORIGINAL STYLING */}
         <div className="popup-header">
           <div className="popup-header-title">
             {isAppMode ? (
@@ -258,9 +294,9 @@ export default function WelcomeTradePopup() {
           </div>
         </div>
 
-        {/* BODY */}
+        {/* BODY - KEEP ALL ORIGINAL FEATURES */}
         <div className="popup-body">
-            {/* SYMBOL */}
+            {/* SYMBOL - KEEP ORIGINAL */}
             <div className="popup-symbol-row">
                 <h3 className="popup-symbol flex items-center gap-2">
                     {bestTrade.symbol}
@@ -271,7 +307,7 @@ export default function WelcomeTradePopup() {
                 </span>
             </div>
             
-            {/* STATS */}
+            {/* STATS - KEEP ORIGINAL WITH ACTIVITY ICON */}
             <div className="grid grid-cols-2 gap-3 mb-4 mt-2">
                 <div className="space-y-2">
                     <div>
@@ -281,7 +317,7 @@ export default function WelcomeTradePopup() {
                         </p>
                     </div>
                     <div>
-                        {/* FIX: Activity used here */}
+                        {/* KEEP ACTIVITY ICON FROM FIRST CODE */}
                         <p className="popup-label">
                             <Activity size={10} /> Trend
                         </p>
@@ -290,6 +326,7 @@ export default function WelcomeTradePopup() {
                 </div>
                 
                 <div className="text-right flex flex-col justify-center bg-slate-800/40 rounded p-2 border border-white/5 shadow-inner">
+                    {/* KEEP FULL "CONFIDENCE" LABEL FROM FIRST CODE */}
                     <p className="popup-label flex justify-end items-center gap-1 text-yellow-500 font-bold">
                         <Zap size={14} fill="currentColor" /> Confidence
                     </p>
@@ -297,7 +334,7 @@ export default function WelcomeTradePopup() {
                 </div>
             </div>
 
-            {/* PRIMARY CTA (Push) */}
+            {/* PRIMARY CTA (Push) - KEEP ORIGINAL BUT WITH IMPROVED TEXT */}
             <button 
                 onClick={handleMainClick}
                 disabled={loading}
@@ -306,12 +343,13 @@ export default function WelcomeTradePopup() {
                 {loading ? 'Loading...' : (
                     <>
                         {isAppMode ? <BellRing size={18} /> : <Bot size={18} />}
+                        {/* KEEP ORIGINAL TEXT OPTIONS */}
                         <span>{isAppMode ? 'Final Step: Enable Alerts' : 'Get AI Trades'}</span>
                     </>
                 )}
             </button>
 
-            {/* SECONDARY CTA (Telegram Link for Non-PWA users) */}
+            {/* SECONDARY CTA (Telegram Link for Non-PWA users) - KEEP FROM FIRST CODE */}
             {!isAppMode && (
                 <a 
                     href={TELEGRAM_LINK} 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import webpush from "web-push";
-import { adminDb } from "../../../lib/pushAdminSafe"; 
+import { adminDb } from "../../../lib/pushAdminSafe";
+import { sendToTelegram } from "../../../lib/telegram";
 
 export const dynamic = 'force-dynamic';
 
@@ -12,45 +13,98 @@ export async function POST(req: Request) {
     }
 
     webpush.setVapidDetails(
-      process.env.VAPID_SUBJECT || "mailto:admin@mzprimer.com",
+      process.env.VAPID_SUBJECT || "mailto:contact@mzprimer.com",
       process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
       process.env.VAPID_PRIVATE_KEY
     );
 
-    const body = await req.json();
-    // TRIM WHITESPACE: This is the #1 cause of "User not found" errors
-    const targetUserId = body.targetUserId ? body.targetUserId.trim() : null;
-    const sendToAll = body.sendToAll;
+    const { targetUserId, title, message, url, sendToAll } = await req.json();
     
+    // TRIM WHITESPACE: This is the #1 cause of "User not found" errors
+    const trimmedUserId = targetUserId ? targetUserId.trim() : null;
+
+    // --- ENHANCE NOTIFICATION FORMAT FOR AI SIGNALS ---
+    let enhancedTitle = title || "Signal";
+    let enhancedBody = message || "Update";
+    
+    // Check if this is an AI Signal (contains "MZPrimer AI Expert" pattern)
+    if (title?.includes("MZPrimer AI Expert")) {
+      // Extract components from the AI signal format
+      const actionMatch = title?.match(/(BUY|SELL)/i);
+      const action = actionMatch ? actionMatch[1].toUpperCase() : 'TRADE';
+      const actionEmoji = action === 'BUY' ? '🟢' : action === 'SELL' ? '🔴' : '⚡';
+      
+      // Extract symbol from title (remove "MZPrimer AI Expert:" and action)
+      const symbol = title
+        ?.replace("MZPrimer AI Expert:", "")
+        .replace(/(BUY|SELL)/i, "")
+        .replace(/🟢|🔴|⚡/g, "")
+        .trim() || 'Unknown Symbol';
+
+      // Parse the message body to extract components
+      const entryMatch = message?.match(/Entry: ([\d.]+)/);
+      const confidenceMatch = message?.match(/Confidence: ([\d.]+)%/);
+      const trendMatch = message?.match(/Trend: ([A-Za-z\s]+)/);
+      
+      const entry = entryMatch ? entryMatch[1] : '';
+      const confidence = confidenceMatch ? confidenceMatch[1] : '';
+      const trend = trendMatch ? trendMatch[1] : '';
+
+      // Build enhanced notification format
+      enhancedTitle = `🚀 ${symbol} ${action} Signal`;
+      
+      enhancedBody = `MZPrimer AI Expert:\n\n${actionEmoji} ${action}\n🎯 Entry: ${entry}\n🧠 Confidence: ${confidence}%\n🌊 Trend: ${trend}`;
+    } else {
+      // For manual/news notifications, use standard formatting
+      enhancedTitle = `🚀 ${enhancedTitle}`;
+      
+      // Enhance manual messages with basic formatting
+      enhancedBody = enhancedBody
+        .replace(/ \| /g, '\n')
+        .replace('Entry:', '🎯 Entry:')
+        .replace('Confidence:', '🧠 Confidence:')
+        .replace('Trend:', 'Trend:');
+    }
+
     const payload = JSON.stringify({
-      title: body.title || "Signal",
-      body: body.message || "Update",
-      url: body.url || "https://mzprimer.com",
-      icon: "/logos/mzlogo.webp"
+      title: enhancedTitle,
+      body: enhancedBody,
+      url: url || "https://mzprimer.com",
+      
+      // VISUALS
+      icon: "/logos/mzlogo.webp",
+      vibrate: [200, 100, 200],
+      tag: "market-signal",
+      
+      // ACTION BUTTONS (Chrome/Android only)
+      actions: [
+        { action: "open", title: "⚡ Execute Trade" },
+        { action: "close", title: "Dismiss" }
+      ]
     });
 
     // =========================================
     // SCENARIO A: SINGLE TARGET (Deep Search)
     // =========================================
-    if (targetUserId) {
-        console.log(`🔍 Searching for ID: [${targetUserId}]`);
+    if (trimmedUserId) {
+        console.log(`🔍 Searching for ID: [${trimmedUserId}]`);
 
         // ATTEMPT 1: Check 'push_subscriptions' collection (New Method)
-        let userDoc = await adminDb.collection("push_subscriptions").doc(targetUserId).get();
+        let userDoc = await adminDb.collection("push_subscriptions").doc(trimmedUserId).get();
         let foundCollection = "push_subscriptions";
 
         // ATTEMPT 2: Check 'users' collection (Old/Legacy Method)
         if (!userDoc.exists) {
             console.log(`❌ Not found in 'push_subscriptions'. Checking 'users'...`);
-            userDoc = await adminDb.collection("users").doc(targetUserId).get();
+            userDoc = await adminDb.collection("users").doc(trimmedUserId).get();
             foundCollection = "users";
         }
 
         // FINAL CHECK
         if (!userDoc.exists) {
-            console.log(`❌ CRITICAL: ID [${targetUserId}] does not exist in ANY collection.`);
+            console.log(`❌ CRITICAL: ID [${trimmedUserId}] does not exist in ANY collection.`);
             return NextResponse.json({ 
-                error: `ID [${targetUserId}] not found in DB. Copy the ID exactly from Firebase > Firestore.` 
+                error: `ID [${trimmedUserId}] not found in DB. Copy the ID exactly from Firebase > Firestore.` 
             }, { status: 404 });
         }
 
@@ -68,7 +122,7 @@ export async function POST(req: Request) {
 
         // Send
         await webpush.sendNotification(subscription, payload);
-        console.log(`🚀 Success! Sent to ${targetUserId}`);
+        console.log(`🚀 Success! Sent to ${trimmedUserId}`);
         
         return NextResponse.json({ success: true, count: 1, mode: `single (${foundCollection})` });
     }
@@ -77,27 +131,37 @@ export async function POST(req: Request) {
     // SCENARIO B: BROADCAST
     // =========================================
     if (sendToAll) {
-        // Note: Broadcast currently only targets the NEW collection to be safe/fast.
+        console.log("📢 STARTING GLOBAL BROADCAST...");
+
+        // 1. FIRE TELEGRAM (Parallel Execution)
+        const telegramPromise = sendToTelegram(title, message, url);
+
+        // 2. FIRE WEB PUSH (Your existing loop)
         const snapshot = await adminDb.collection('push_subscriptions').get();
         
-        if (snapshot.empty) return NextResponse.json({ success: true, count: 0, message: "No subscribers found" });
+        const pushPromise = (async () => {
+            if (snapshot.empty) return 0;
+            const promises = snapshot.docs.map(async (doc) => {
+                const data = doc.data();
+                const sub = data.subscriptionData || data.pushSubscription; 
+                if (sub) {
+                    return webpush.sendNotification(sub, payload)
+                       .catch(err => {
+                           if (err.statusCode === 410 || err.statusCode === 404) {
+                               return doc.ref.delete(); // Clean up
+                           }
+                           return null;
+                       });
+                }
+            });
+            await Promise.all(promises);
+            return snapshot.size;
+        })();
 
-        const promises = snapshot.docs.map(async (doc) => {
-            const data = doc.data();
-            const sub = data.subscriptionData || data.pushSubscription; 
-            if (sub) {
-                return webpush.sendNotification(sub, payload)
-                   .catch(err => {
-                       if (err.statusCode === 410 || err.statusCode === 404) {
-                           return doc.ref.delete(); // Clean up
-                       }
-                       return null;
-                   });
-            }
-        });
+        // Wait for both
+        await Promise.all([telegramPromise, pushPromise]);
 
-        await Promise.all(promises);
-        return NextResponse.json({ success: true, count: snapshot.size });
+        return NextResponse.json({ success: true, count: snapshot.size, mode: 'broadcast_multi_channel' });
     }
 
     return NextResponse.json({ error: "Invalid Payload" }, { status: 400 });

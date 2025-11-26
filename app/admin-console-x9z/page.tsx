@@ -71,8 +71,8 @@ export default function AdminPushDashboard() {
             const trendIcon = bestTrade.action === 'BUY' ? '🟢' : '🔴';
             const trendText = bestTrade.trend?.trend.replace(/_/g, ' ') || 'Neutral';
             
-            const title = `🤖 AI Pick: ${bestTrade.action} ${bestTrade.symbol} ${trendIcon}`;
-            const body = `Entry: ${bestTrade.entry} | ⚡ Conf: ${bestTrade.confidence}% | 📊 Trend: ${trendText.toUpperCase()}`;
+            const title = ` MZP AI Expert: ${bestTrade.action} ${bestTrade.symbol} ${trendIcon}`;
+            const body = `Entry: ${bestTrade.entry} | ⚡ Confidence: ${bestTrade.confidence}% | 📊 Trend: ${trendText.toUpperCase()}`;
             
             setGeneratedPayload({ title, body });
         } else {

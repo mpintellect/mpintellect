@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { urlBase64ToUint8Array } from '../lib/push-utils'; 
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '../lib/firebaseClient'; 
+import { auth, db } from '../lib/firebaseClient'; 
 import { signInAnonymously } from "firebase/auth"; 
+import { doc, setDoc, Timestamp, getDoc } from "firebase/firestore"; 
 
 export function usePush() {
   const [isSupported, setIsSupported] = useState(false);
@@ -10,94 +11,118 @@ export function usePush() {
   const [user] = useAuthState(auth);
   const [loading, setLoading] = useState(false);
 
+  // 1. BROWSER CHECK + RESTORE STATE
   useEffect(() => {
-    // 1. Robust Feature Detection
-    const checkSupport = () => {
-        if (typeof window === 'undefined') return;
-        // Check for Service Worker & Push API
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-            setIsSupported(true);
-            
-            // Try to find existing subscription
-            navigator.serviceWorker.ready.then(reg => {
-                reg.pushManager.getSubscription().then(sub => {
-                    if (sub) setSubscription(sub);
-                });
-            }).catch(e => console.log("SW check error", e));
-        } else {
-            console.log("Push not supported on this device/browser.");
-        }
-    };
-    checkSupport();
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
+      setIsSupported(true);
+      navigator.serviceWorker.ready.then(reg => {
+          reg.pushManager.getSubscription().then(sub => { 
+              if (sub) setSubscription(sub); 
+          });
+      }).catch(e => console.log("SW check error", e));
+    }
   }, []);
 
-  const subscribeToPush = async () => {
-    // 1. REMOVE THE ALERT. Just log it and return.
-    // The UI component (WelcomeTradePopup) already checks 'isIOSBrowser' to show help text.
-    if (!isSupported || !('serviceWorker' in navigator)) {
-        console.log("Push API not available (Likely iOS browser tab or Private window).");
-        return; 
+  // 2. NEW: SILENT MIGRATION / SYNC
+  // Whenever 'user' or 'subscription' changes, ensure DB is synced.
+  useEffect(() => {
+    async function syncUserSubscription() {
+        // Conditions: User exists, Subscription exists, and User is NOT Anonymous (They logged in)
+        if (user && subscription && !user.isAnonymous) {
+            
+            console.log("🔄 Detected Logged In User + Existing Push. Syncing...");
+            
+            // Check if this user already has this saved (Optimize reads)
+            const userPushRef = doc(db, "push_subscriptions", user.uid);
+            
+            // We save cleanly to the NEW Real User ID
+            await setDoc(userPushRef, {
+                userId: user.uid,
+                // Add Personal Data if available
+                email: user.email || null,
+                phoneNumber: user.phoneNumber || null,
+                displayName: user.displayName || null,
+                
+                // Keep the Token
+                subscriptionData: JSON.parse(JSON.stringify(subscription)), 
+                lastSynced: Timestamp.now(),
+                
+                // Update Type
+                type: 'identified_client', // IMPORTANT: Now we know who they are
+                source: 'conversion_sync',
+                deviceInfo: navigator.userAgent
+            }, { merge: true });
+
+            console.log("✅ Push Subscription linked to Email/Phone User:", user.email);
+        }
     }
 
+    syncUserSubscription();
+  }, [user, subscription]); // Runs automatically when user logs in or allows push
+
+  // 3. SUBSCRIBE FUNCTION (Triggered by Buttons)
+  const subscribeToPush = async () => {
+    if (!isSupported) {
+        console.log("Push not supported");
+        return;
+    }
+    
     setLoading(true);
 
     try {
-        // --- A. AUTHENTICATE ---
         let currentUser = user;
         if (!currentUser) {
-            try {
-                const userCredential = await signInAnonymously(auth);
-                currentUser = userCredential.user;
-            } catch (e: any) {
-                throw new Error("Login failed. Check internet connection.");
-            }
+            console.log("Logging in Anonymously...");
+            const userCredential = await signInAnonymously(auth);
+            currentUser = userCredential.user;
         }
+        
+        if (!currentUser) throw new Error("Auth Failed");
 
-        // --- B. VALIDATE KEY ---
         const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-        if (!vapidKey) throw new Error("Server configuration error: VAPID Key missing");
+        if (!vapidKey) throw new Error("VAPID Key Missing");
 
-        // --- C. BROWSER PERMISSION ---
-        // Ensure worker is active
         const registration = await navigator.serviceWorker.register('/sw.js');
-        await navigator.serviceWorker.ready; // Wait for active state
+        await navigator.serviceWorker.ready;
 
-        // Prompt User
         const sub = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(vapidKey),
         });
 
-        // --- D. DATABASE REGISTER ---
-        const idToken = await currentUser.getIdToken();
-        const res = await fetch('/api/push/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ subscription: sub, idToken }),
-        });
+        // Client-Side Save
+        const userPushRef = doc(db, "push_subscriptions", currentUser.uid);
+        const pushData = {
+            userId: currentUser.uid,
+            // Capture email/phone if they happen to be logged in already
+            email: currentUser.email || null,
+            phoneNumber: currentUser.phoneNumber || null,
+            
+            subscriptionData: JSON.parse(JSON.stringify(sub)),
+            createdAt: Timestamp.now(),
+            type: currentUser.isAnonymous ? 'anonymous_lead' : 'identified_client',
+            source: 'welcome_popup',
+            deviceInfo: navigator.userAgent
+        };
 
-        const textResponse = await res.text(); // Read text to see error HTML if 500/404 happens
-        if (!res.ok) {
-            console.error("Backend Error Response:", textResponse);
-            throw new Error(`Server connection failed (${res.status})`);
-        }
-
+        await setDoc(userPushRef, pushData, { merge: true });
         setSubscription(sub);
 
-        // --- E. WELCOME MSG ---
+        // Send Welcome Ping
         fetch('/api/push/send', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 targetUserId: currentUser.uid, 
-                title: "Notifications Active", 
-                message: "You will receive AI trade signals here." 
+                title: "Signal Alert Active", 
+                message: "Monitoring AI feeds...",
+                sendToAll: false 
             })
-        }).catch(e => console.log("Welcome msg skipped"));
+        }).catch(err => {});
 
     } catch (error: any) {
-        console.error("FULL SUBSCRIBE ERROR:", error);
-        alert(`Setup Failed: ${error.message}`);
+        console.error("Subscribe Error:", error);
+        alert("Activation failed: " + error.message);
     } finally {
         setLoading(false);
     }

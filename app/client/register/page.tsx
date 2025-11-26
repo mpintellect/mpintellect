@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { setDoc, doc } from "firebase/firestore";
@@ -8,7 +8,7 @@ import { auth, db } from "../../lib/firebaseClient";
 
 export const dynamic = 'force-dynamic';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -17,9 +17,9 @@ export default function RegisterPage() {
   const [firebaseReady, setFirebaseReady] = useState(false);
   
   const router = useRouter();
+  // access search params inside this suspended component
   const searchParams = useSearchParams();
 
-  // --- PHASE 4: CATCH REFERRAL CODE ---
   useEffect(() => {
     try {
       if (auth && db) {
@@ -28,11 +28,10 @@ export default function RegisterPage() {
         setError("Firebase not properly initialized");
       }
 
-      // Grab "ref" from URL if it exists
+      // --- CATCH REFERRAL CODE ---
       const refCode = searchParams.get('ref');
       if (refCode) {
-        console.log("Capturing referral from:", refCode);
-        // Save it temporarily to local storage (persists if they navigate)
+        // Save temporarily
         localStorage.setItem('mz_referrer_code', refCode);
       }
     } catch (err) {
@@ -76,21 +75,19 @@ export default function RegisterPage() {
 
       await sendEmailVerification(user);
 
-      // Save new user profile
       await setDoc(doc(db, "users", user.uid), {
         email: email.toLowerCase().trim(),
-        setupCount: 1, // New user bonus
-        referredBy: null, // Will be updated by API if valid referral exists
+        setupCount: 1, // Default setup count
+        referredBy: null, // Updated later if redeeming
         emailVerified: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
 
-      // --- CHECK & REDEEM REFERRAL ---
+      // --- REDEEM REFERRAL ---
       const savedRef = localStorage.getItem('mz_referrer_code');
       if (savedRef) {
           try {
-             console.log("Redeeming Referral Code:", savedRef);
              await fetch('/api/referral/redeem', {
                  method: 'POST',
                  headers: { 'Content-Type': 'application/json' },
@@ -99,10 +96,9 @@ export default function RegisterPage() {
                      referralCode: savedRef 
                  })
              });
-             // Clear it so it doesn't run twice
              localStorage.removeItem('mz_referrer_code');
           } catch (referralErr) {
-             console.warn("Referral Redemption failed (silent error):", referralErr);
+             console.warn("Referral Redemption failed silently:", referralErr);
           }
       }
 
@@ -114,8 +110,6 @@ export default function RegisterPage() {
         setError("Invalid email address format.");
       } else if (err.code === 'auth/weak-password') {
         setError("Password is too weak. Please use a stronger password.");
-      } else if (err.code === 'auth/configuration-not-found') {
-        setError("Authentication service not configured. Please contact support.");
       } else {
         setError(err.message || "Registration failed. Please try again.");
       }
@@ -189,5 +183,22 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+// --- MAIN EXPORT WITH SUSPENSE WRAPPER ---
+export default function RegisterPage() {
+  return (
+    <Suspense 
+      fallback={
+        <div className="register-page">
+          <div className="register-card" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+            <div className="loading-spinner" style={{ border: '2px solid #facc15', borderTopColor: 'transparent', width: '30px', height: '30px', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+          </div>
+        </div>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 }

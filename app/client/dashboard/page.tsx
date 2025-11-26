@@ -256,7 +256,7 @@ function DashboardContent() {
               </button>
               <button 
                 className="nav-btn"
-                onClick={() => router.push('/clientDashboard/refer')}
+                onClick={() => router.push('/client/dashboard/refer')}
               >
                 Refer Friends
               </button>
@@ -342,7 +342,7 @@ function DashboardContent() {
                   </button>
                   <button 
                     className="mobile-nav-btn"
-                    onClick={() => handleNavClick(() => router.push('/clientDashboard/refer'))}
+                    onClick={() => handleNavClick(() => router.push('/client/dashboard/refer'))}
                   >
                     Refer Friends
                   </button>

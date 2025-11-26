@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { setDoc, doc } from "firebase/firestore";
 import { auth, db } from "../../lib/firebaseClient";
@@ -15,8 +15,11 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [firebaseReady, setFirebaseReady] = useState(false);
+  
   const router = useRouter();
+  const searchParams = useSearchParams();
 
+  // --- PHASE 4: CATCH REFERRAL CODE ---
   useEffect(() => {
     try {
       if (auth && db) {
@@ -24,11 +27,19 @@ export default function RegisterPage() {
       } else {
         setError("Firebase not properly initialized");
       }
+
+      // Grab "ref" from URL if it exists
+      const refCode = searchParams.get('ref');
+      if (refCode) {
+        console.log("Capturing referral from:", refCode);
+        // Save it temporarily to local storage (persists if they navigate)
+        localStorage.setItem('mz_referrer_code', refCode);
+      }
     } catch (err) {
-      setError("Firebase configuration error");
-      console.error("Firebase init error:", err);
+      setError("System Init Error");
+      console.error(err);
     }
-  }, []);
+  }, [searchParams]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,14 +76,35 @@ export default function RegisterPage() {
 
       await sendEmailVerification(user);
 
+      // Save new user profile
       await setDoc(doc(db, "users", user.uid), {
         email: email.toLowerCase().trim(),
-        setupCount: 1,
-        referredBy: null,
+        setupCount: 1, // New user bonus
+        referredBy: null, // Will be updated by API if valid referral exists
         emailVerified: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
+
+      // --- CHECK & REDEEM REFERRAL ---
+      const savedRef = localStorage.getItem('mz_referrer_code');
+      if (savedRef) {
+          try {
+             console.log("Redeeming Referral Code:", savedRef);
+             await fetch('/api/referral/redeem', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ 
+                     currentUserId: user.uid, 
+                     referralCode: savedRef 
+                 })
+             });
+             // Clear it so it doesn't run twice
+             localStorage.removeItem('mz_referrer_code');
+          } catch (referralErr) {
+             console.warn("Referral Redemption failed (silent error):", referralErr);
+          }
+      }
 
       router.push("/client/verify-email");
     } catch (err: any) {

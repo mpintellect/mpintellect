@@ -30,22 +30,26 @@ export default function ReferPage() {
         const docSnap = await getDoc(doc(db, "users", user.uid));
         if (docSnap.exists()) {
             const data = docSnap.data();
-            // Assuming you add a 'referralsCount' field to user doc in your backend logic
             const count = data.referralsCount || 0;
             setStats({
                 count: count,
                 earned: count * 5
             });
         }
-    } catch(e) {}
+    } catch(e) {
+        console.error(e);
+    }
     setLoading(false);
   };
 
-  const referralLink = `https://mzprimer.com/register?ref=${referralCode}`;
+  // Ensure domain matches your environment
+  const referralLink = typeof window !== "undefined" 
+    ? `${window.location.origin}/register?ref=${referralCode}` 
+    : `https://mzprimer.com/register?ref=${referralCode}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
-    toast.success("Link copied to clipboard!");
+    toast.success("Link copied!");
   };
 
   const handleShare = async () => {
@@ -53,7 +57,7 @@ export default function ReferPage() {
       try {
         await navigator.share({
           title: 'MZ Primer AI Trading',
-          text: 'Join me on MZ Primer and get AI trading signals!',
+          text: 'Join me on MZ Primer and get free AI trading setups!',
           url: referralLink,
         });
       } catch (err) { console.log("Share failed", err); }
@@ -77,8 +81,8 @@ export default function ReferPage() {
         });
         const data = await res.json();
         if(res.ok) {
-            toast.success("🎉 Success! You are linked.");
-            // Optionally refresh user profile to see updated status
+            toast.success("🎉 Referral Redeemed!");
+            fetchStats(); // Refresh stats potentially
         } else {
             toast.error(data.error || "Failed to redeem");
         }
@@ -89,82 +93,83 @@ export default function ReferPage() {
     }
   };
 
-  if (loading) return <div className="p-10 text-center text-gray-500">Loading Referral Hub...</div>;
+  if (loading) {
+      return <div className="min-h-[50vh] flex items-center justify-center text-zinc-500">Loading...</div>;
+  }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="referral-container">
       
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-white mb-2 flex items-center justify-center gap-3">
-            <Gift className="text-yellow-500" /> 
+      {/* HEADER */}
+      <div className="referral-header">
+        <h1 className="referral-title">
+            <Gift className="text-yellow-500" size={32} /> 
             Refer & Earn
         </h1>
-        <p className="text-gray-400">
-            Invite friends to MZ Primer. You get <span className="text-green-400 font-bold">+5 Setups</span> for every friend who joins.
+        <p className="referral-subtitle">
+            Invite friends. Get <span className="text-green-400 font-bold">+5 Setups</span> for each join.
         </p>
       </div>
 
-      {/* --- 1. YOUR UNIQUE LINK CARD --- */}
-      <div className="bg-[#1b1b1b] border border-gray-800 rounded-2xl p-8 mb-8 text-center shadow-lg relative overflow-hidden">
-         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-500 to-yellow-600"></div>
+      {/* 1. UNIQUE LINK CARD */}
+      <div className="referral-hero-card">
+         <h3 className="referral-hero-label">Your Unique Referral Link</h3>
          
-         <h3 className="text-white font-semibold text-lg mb-4">Your Unique Referral Link</h3>
-         
-         <div className="flex flex-col md:flex-row items-center gap-3 max-w-lg mx-auto">
-            <div className="bg-black border border-gray-700 text-gray-300 p-4 rounded-xl w-full font-mono text-sm truncate">
+         <div className="referral-link-box">
+            <div className="referral-input-readonly">
                 {referralLink}
             </div>
             <div className="flex gap-2 w-full md:w-auto">
-                <button onClick={handleCopy} className="bg-yellow-600 hover:bg-yellow-500 text-black font-bold p-4 rounded-xl transition flex-1 flex items-center justify-center gap-2">
-                    <Copy size={18} /> Copy
+                <button onClick={handleCopy} className="btn-referral-copy">
+                    <Copy size={18} /> <span className="hidden md:inline">Copy Link</span><span className="md:hidden">Copy</span>
                 </button>
-                <button onClick={handleShare} className="bg-gray-700 hover:bg-gray-600 text-white font-bold p-4 rounded-xl transition">
+                <button onClick={handleShare} className="btn-referral-share">
                     <Share2 size={18} />
                 </button>
             </div>
          </div>
       </div>
 
-      {/* --- 2. STATS GRID --- */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-[#1b1b1b] p-6 rounded-2xl border border-gray-800 flex items-center justify-between">
+      {/* 2. STATS GRID */}
+      <div className="referral-stats-grid">
+          <div className="stat-card">
               <div>
-                  <p className="text-gray-500 text-xs uppercase font-bold mb-1">Total Referred</p>
-                  <h2 className="text-4xl font-black text-white">{stats.count}</h2>
+                  <p className="stat-label">Friends Joined</p>
+                  <h2 className="stat-value">{stats.count}</h2>
               </div>
-              <div className="bg-blue-900/20 p-4 rounded-full">
-                  <Users className="text-blue-500" size={32} />
+              <div className="stat-icon-circle icon-blue">
+                  <Users size={32} />
               </div>
           </div>
 
-          <div className="bg-[#1b1b1b] p-6 rounded-2xl border border-gray-800 flex items-center justify-between">
+          <div className="stat-card">
               <div>
-                  <p className="text-gray-500 text-xs uppercase font-bold mb-1">Setups Earned</p>
-                  <h2 className="text-4xl font-black text-green-400">+{stats.earned}</h2>
+                  <p className="stat-label">Credits Earned</p>
+                  <h2 className="stat-value highlight">+{stats.earned}</h2>
               </div>
-              <div className="bg-green-900/20 p-4 rounded-full">
-                  <Zap className="text-green-500" size={32} />
+              <div className="stat-icon-circle icon-green">
+                  <Zap size={32} />
               </div>
           </div>
       </div>
 
-      {/* --- 3. HAVE A CODE? (For New Users) --- */}
-      <div className="bg-zinc-900/50 border border-dashed border-zinc-700 rounded-xl p-6">
-          <h3 className="text-gray-400 font-medium mb-4 text-sm">Have a code from a friend?</h3>
-          <div className="flex gap-3">
+      {/* 3. REDEEM SECTION */}
+      <div className="referral-redeem-card">
+          <h3 className="redeem-title">Received a code from a friend?</h3>
+          <div className="redeem-form">
               <input 
                 type="text" 
-                placeholder="Enter Referrer UID Code" 
-                className="bg-black border border-zinc-700 text-white rounded-lg px-4 py-2 flex-1 outline-none focus:border-yellow-500 transition"
+                placeholder="Enter Referral UID" 
+                className="referral-input-field"
                 value={inputCode}
                 onChange={(e) => setInputCode(e.target.value)}
               />
               <button 
                 onClick={handleRedeem}
                 disabled={redeemLoading}
-                className="bg-zinc-700 hover:bg-zinc-600 text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50 transition"
+                className="btn-redeem"
               >
-                {redeemLoading ? 'Verifying...' : 'Redeem'}
+                {redeemLoading ? '...' : 'Redeem'}
               </button>
           </div>
       </div>

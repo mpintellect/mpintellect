@@ -9245,3 +9245,220 @@ select {
   transform: rotate(180deg);
   animation: arrowBounceSmooth 1.5s infinite reverse;
 }
+/* ================================================== */
+/*   REFERRAL & REWARDS HUB STYLES                    */
+/* ================================================== */
+
+.referral-container {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+  color: white;
+}
+
+/* HEADER SECTION */
+.referral-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.referral-title {
+  font-size: 1.875rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.referral-subtitle {
+  color: #a1a1aa; /* zinc-400 */
+  font-size: 1rem;
+}
+
+/* 1. UNIQUE LINK CARD (The Hero) */
+.referral-hero-card {
+  background: #09090b; /* zinc-950 */
+  border: 1px solid #27272a; /* zinc-800 */
+  border-radius: 1rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.referral-hero-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(to right, #ca8a04, #eab308); /* Gold Gradient Top */
+}
+
+.referral-hero-label {
+  font-weight: 600;
+  color: white;
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
+}
+
+.referral-link-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+  max-width: 36rem;
+  margin: 0 auto;
+}
+
+/* Desktop alignment for link box */
+@media (min-width: 768px) {
+  .referral-link-box {
+    flex-direction: row;
+  }
+}
+
+.referral-input-readonly {
+  width: 100%;
+  background-color: #000;
+  border: 1px solid #3f3f46; /* zinc-700 */
+  color: #d4d4d8;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  font-family: monospace;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-referral-copy {
+  background: linear-gradient(135deg, #ca8a04 0%, #eab308 100%);
+  color: black;
+  font-weight: 700;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  width: 100%;
+}
+.btn-referral-copy:hover { filter: brightness(110%); transform: translateY(-1px); }
+
+.btn-referral-share {
+  background-color: #27272a; /* zinc-800 */
+  color: white;
+  font-weight: 700;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-referral-share:hover { background-color: #3f3f46; }
+
+/* 2. STATS GRID */
+.referral-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+@media (min-width: 768px) {
+  .referral-stats-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.stat-card {
+  background: #18181b; /* zinc-900 */
+  border: 1px solid #27272a;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: transform 0.2s;
+}
+.stat-card:hover { border-color: #3f3f46; }
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #71717a; /* zinc-500 */
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  font-size: 2.25rem;
+  font-weight: 900;
+  color: white;
+}
+.stat-value.highlight { color: #4ade80; /* green */ }
+
+.stat-icon-circle {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.icon-green { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
+
+/* 3. REDEEM SECTION */
+.referral-redeem-card {
+  background: rgba(24, 24, 27, 0.6); /* Transparent Zinc */
+  border: 1px dashed #3f3f46;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.redeem-title {
+  color: #9ca3af; /* zinc-400 */
+  font-weight: 500;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.redeem-form {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.referral-input-field {
+  flex: 1;
+  background: #000;
+  border: 1px solid #3f3f46;
+  color: white;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-family: monospace;
+  transition: border-color 0.2s;
+}
+.referral-input-field:focus {
+  border-color: #eab308;
+  outline: none;
+}
+
+.btn-redeem {
+  background: #3f3f46;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-redeem:hover { background: #52525b; }
+.btn-redeem:disabled { opacity: 0.5; cursor: not-allowed; }

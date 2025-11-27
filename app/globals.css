@@ -9664,3 +9664,297 @@ select {
   color: #facc15; /* Yellow-400 */
   text-shadow: 0 0 10px rgba(234, 179, 8, 0.2);
 }
+/* ======================== */
+/*   UNSUBSCRIBE PAGE UI    */
+/* ======================== */
+
+/* Shake Animation for Error State */
+@keyframes shakeX {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.shake {
+  animation: shakeX 0.6s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+.zoom-in {
+  animation: zoomIn 0.4s ease forwards;
+}
+
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+/* ======================================================== */
+/*   UNSUBSCRIBE PAGE STYLES                                */
+/* ======================================================== */
+
+/* General Background Gradient for Unsub Page */
+.unsub-page-bg {
+  background: radial-gradient(circle at center, #1a1a1d 0%, #000000 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* 1. KEYFRAME ANIMATIONS */
+
+/* Soft Fade In */
+@keyframes fadeInSoft {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Success Zoom In */
+@keyframes zoomInBounce {
+  0% { opacity: 0; transform: scale(0.8); }
+  70% { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Error Shake */
+@keyframes shakeHorizontal {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Spinner Rotate */
+@keyframes spinFull {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 2. UTILITY CLASSES (Used by Tailwind component usually, but enforced here) */
+
+.animate-fade-in {
+  animation: fadeInSoft 0.6s ease-out forwards;
+}
+
+.animate-zoom-in {
+  animation: zoomInBounce 0.5s ease-out forwards;
+}
+
+.animate-shake {
+  animation: shakeHorizontal 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+.animate-spin-slow {
+  animation: spinFull 1.5s linear infinite;
+}
+
+/* 3. CARD SPECIFIC STYLING (Optional overrides) */
+.unsub-card {
+  background: #09090b; /* Zinc 950 */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  padding: 2.5rem;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+}
+
+.unsub-icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem auto;
+}
+
+.icon-bg-green { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+.icon-bg-red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.icon-bg-yellow { background: rgba(234, 179, 8, 0.1); color: #eab308; }
+
+.unsub-title {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.unsub-text {
+  color: #a1a1aa; /* Zinc 400 */
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.unsub-button {
+  display: inline-block;
+  background-color: #27272a; /* Zinc 800 */
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.unsub-button:hover {
+  background-color: #3f3f46; /* Zinc 700 */
+  transform: translateY(-1px);
+}
+/* ================================================= */
+/*   UNSUBSCRIBE PAGE (System Notification Style)    */
+/* ================================================= */
+
+/* 1. Page Background (Deep void with gold ambient light) */
+.unsub-page-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  
+  /* Deep Luxury Black */
+  background-color: #050505;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(234, 179, 8, 0.08) 0%, transparent 50%),
+    linear-gradient(to bottom, #050505 0%, #000 100%);
+}
+
+/* 2. The Main Glass Card */
+.unsub-card {
+  width: 100%;
+  max-width: 30rem; /* ~480px */
+  text-align: center;
+  padding: 3rem 2rem;
+  
+  /* Glass Material */
+  background: rgba(18, 18, 18, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  
+  /* Thin Borders */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(234, 179, 8, 0.3); /* Subtle gold top */
+  border-radius: 24px;
+  
+  /* Deep shadow */
+  box-shadow: 
+    0 40px 80px -20px rgba(0, 0, 0, 0.9),
+    0 0 0 1px rgba(0,0,0,1);
+    
+  position: relative;
+  overflow: hidden;
+  
+  /* Entrance Animation */
+  animation: slideUpUnsub 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpUnsub {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 3. Icons Wrapper (Status Circles) */
+.unsub-icon-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin: 0 auto 1.5rem auto;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Glow Effect */
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.2s forwards;
+  opacity: 0; transform: scale(0.5);
+}
+
+@keyframes popIn {
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Status Colors */
+.status-loading { 
+  background: rgba(234, 179, 8, 0.1); 
+  border: 1px solid rgba(234, 179, 8, 0.2); 
+  color: #facc15; 
+}
+.status-success { 
+  background: rgba(34, 197, 94, 0.1); 
+  border: 1px solid rgba(34, 197, 94, 0.2); 
+  color: #4ade80; 
+}
+.status-error { 
+  background: rgba(239, 68, 68, 0.1); 
+  border: 1px solid rgba(239, 68, 68, 0.2); 
+  color: #f87171; 
+}
+
+/* 4. Typography */
+.unsub-title {
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.unsub-text {
+  color: #a1a1aa; /* Zinc 400 */
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.email-highlight {
+  color: #facc15; /* Yellow */
+  background: rgba(234, 179, 8, 0.1);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+  border: 1px solid rgba(234, 179, 8, 0.15);
+}
+
+/* 5. Return Button */
+.unsub-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  
+  background: #ffffff;
+  color: #000000;
+  font-weight: 700;
+  font-size: 0.9rem;
+  
+  padding: 12px 28px;
+  border-radius: 12px;
+  text-decoration: none;
+  
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(255,255,255,0.15);
+}
+
+.unsub-btn-primary:hover {
+  background: #f4f4f5;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255,255,255,0.25);
+}
+
+/* Error Secondary Button */
+.unsub-btn-secondary {
+  color: #a1a1aa;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: 0.2s;
+}
+.unsub-btn-secondary:hover { color: white; }

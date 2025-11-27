@@ -9595,3 +9595,72 @@ select {
     border-radius: 50%;
   }
 }
+/* ========================================= */
+/*   LIVE FEED CARD STATS (Fix for Desktop)  */
+/* ========================================= */
+
+.card-stats-grid {
+  display: grid;
+  /* Mobile: 2 columns standard */
+  grid-template-columns: 1fr 1fr; 
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* 1. LABEL STYLING (Tiny & Sharp) */
+.stat-label {
+  font-size: 0.65rem; /* Fixed small size */
+  color: #a1a1aa;     /* Zinc-400 */
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* 2. VALUE STYLING (The problem area) */
+.stat-value {
+  font-weight: 700;
+  /* Force single line so it doesn't stack awkwardly */
+  white-space: nowrap; 
+  line-height: 1.2;
+}
+
+/* 3. DESKTOP OVERRIDES (The Fix) */
+@media (min-width: 1024px) {
+  .card-stats-grid {
+    /* On large screens, use more columns if needed, or keep compact */
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 0.5rem; /* Tighter gap */
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+  }
+
+  .stat-value {
+    /* Cap the font size on desktop so it doesn't look huge */
+    font-size: 0.85rem !important; 
+    letter-spacing: 0;
+  }
+
+  .stat-label {
+    /* Keep label tiny on desktop */
+    font-size: 0.6rem !important; 
+  }
+  
+  /* Optional: Arrange Trend and Confidence side-by-side more tightly */
+  .stat-item {
+    align-items: flex-start; 
+  }
+}
+
+/* --- COLOR HELPERS --- */
+.stat-value.gold {
+  color: #facc15; /* Yellow-400 */
+  text-shadow: 0 0 10px rgba(234, 179, 8, 0.2);
+}

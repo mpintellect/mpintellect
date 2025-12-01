@@ -1,0 +1,195 @@
+import { getSymbolData } from '@/app/lib/fetchData';
+import { getAvailableSetupSymbols } from '@/app/lib/fetchSetup';
+import { generateCalculatorReport } from '@/app/lib/seo/calculatorGenerator';
+import { notFound } from 'next/navigation';
+import { ShieldAlert, ArrowDown, ArrowUp, Calculator, ArrowRight, Zap, Bot } from 'lucide-react';
+import Link from 'next/link';
+
+export const revalidate = 60; 
+export const dynamicParams = true;
+
+// 1. Static Paths
+export async function generateStaticParams() {
+  const symbols = await getAvailableSetupSymbols();
+  return symbols.map((sym) => ({ symbol: sym.toLowerCase().replace('/', '-') }));
+}
+
+// 2. Metadata
+export async function generateMetadata({ params }: { params: { symbol: string } }) {
+  const data = await getSymbolData(params.symbol);
+  if (!data) return { title: 'Risk Tool Not Found' };
+  
+  const report = generateCalculatorReport(data);
+  return {
+    title: report.title,
+    description: report.description,
+  };
+}
+
+export default async function StopLossPage({ params }: { params: { symbol: string } }) {
+  const data = await getSymbolData(params.symbol);
+  if (!data) notFound();
+
+  // Use the logic helper
+  const { atrString, calculations } = generateCalculatorReport(data);
+
+  return (
+    <div className="min-h-screen bg-black pt-32 pb-20 px-6">
+      
+      {/* HEADER */}
+      <div className="max-w-3xl mx-auto text-center mb-16">
+        <div className="inline-flex items-center gap-2 text-orange-500 font-bold uppercase text-xs tracking-widest mb-4 border border-orange-500/30 px-3 py-1 rounded-full bg-orange-500/10">
+            <Calculator size={14} /> Intelligent Risk
+        </div>
+        <h1 className="text-4xl md:text-6xl font-black text-white mb-6">
+          <span className="text-orange-500">{data.symbol}</span> Safety Stops
+        </h1>
+        <p className="text-zinc-400 max-w-xl mx-auto text-lg">
+            Calculated live using institutional volatility data. Current Market Volatility (ATR): <span className="text-white font-mono font-bold">{atrString}</span>
+        </p>
+      </div>
+
+      <div className="max-w-5xl mx-auto">
+        
+        {/* CALCULATOR DASHBOARD */}
+        <div className="bg-[#0c0c0e] border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl relative">
+            <div className="h-1 w-full bg-gradient-to-r from-green-500 via-orange-500 to-red-500" />
+            
+            <div className="p-8 md:p-12">
+                <div className="grid md:grid-cols-2 gap-12 relative">
+                    
+                    {/* CENTER DIVIDER (Visual Only) */}
+                    <div className="hidden md:block absolute top-0 bottom-0 left-1/2 w-px bg-zinc-800/50 -translate-x-1/2" />
+
+                    {/* LONG (BUY) COLUMN */}
+                    <div>
+                        <div className="flex items-center gap-4 mb-8 pb-4 border-b border-zinc-800/50">
+                            <div className="bg-green-900/20 p-3 rounded-xl text-green-500 border border-green-900/50">
+                                <ArrowUp size={28}/>
+                            </div>
+                            <div>
+                                <h3 className="text-white font-bold text-2xl">Buying {data.symbol}</h3>
+                                <p className="text-xs text-green-400 font-bold uppercase tracking-wider">Stop Loss Below</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <RiskRow type="Scalp" desc="Tight Protection" label={calculations.long.scalp.label} value={calculations.long.scalp.level} />
+                            <RiskRow type="Day Trade" desc="Standard Risk" label={calculations.long.day.label} value={calculations.long.day.level} highlight color="green"/>
+                            <RiskRow type="Swing" desc="Deep Protection" label={calculations.long.swing.label} value={calculations.long.swing.level} />
+                        </div>
+                    </div>
+
+                    {/* SHORT (SELL) COLUMN */}
+                    <div>
+                        <div className="flex items-center gap-4 mb-8 pb-4 border-b border-zinc-800/50">
+                            <div className="bg-red-900/20 p-3 rounded-xl text-red-500 border border-red-900/50">
+                                <ArrowDown size={28}/>
+                            </div>
+                            <div>
+                                <h3 className="text-white font-bold text-2xl">Selling {data.symbol}</h3>
+                                <p className="text-xs text-red-400 font-bold uppercase tracking-wider">Stop Loss Above</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <RiskRow type="Scalp" desc="Tight Protection" label={calculations.short.scalp.label} value={calculations.short.scalp.level} />
+                            <RiskRow type="Day Trade" desc="Standard Risk" label={calculations.short.day.label} value={calculations.short.day.level} highlight color="red"/>
+                            <RiskRow type="Swing" desc="Deep Protection" label={calculations.short.swing.label} value={calculations.short.swing.level} />
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            {/* FOOTER NOTICE */}
+            <div className="bg-zinc-900/40 p-4 text-center border-t border-zinc-800">
+                <p className="text-xs text-zinc-500 font-medium flex justify-center gap-2 items-center">
+                    <ShieldAlert size={12} className="text-orange-500" />
+                    Values update dynamically. Recheck before entering.
+                </p>
+            </div>
+        </div>
+
+        {/* --- FOOTER --- */}
+<section className="mt-24 border-t border-zinc-900 pt-10 pb-20 text-center max-w-4xl mx-auto">
+    
+    <div className="flex flex-wrap justify-center gap-3 my-6">
+        {/* 1. Strategy & Setup */}
+        <a href={`/trade/${params.symbol}`} className="seo-chip-link">
+           Trade Setup <ArrowRight size={14} />
+        </a>
+        
+        <a href={`/trend/${params.symbol}`} className="seo-chip-link">
+           Trend Direction <ArrowRight size={14} />
+        </a>
+
+        <a href={`/forecast/${params.symbol}`} className="seo-chip-link">
+           AI Forecast <ArrowRight size={14} />
+        </a>
+
+        {/* 2. Technical Tools */}
+        <a href={`/calculator/${params.symbol}`} className="seo-chip-link">
+           Trade Calculator <ArrowRight size={14} />
+        </a>
+        
+        <a href={`/indicator/${params.symbol}`} className="seo-chip-link">
+           Indicator RSI Score <ArrowRight size={14} />
+        </a>
+
+        {/* 3. Deep Analysis */}
+        <a href={`/zones/${params.symbol}`} className="seo-chip-link">
+           Liquidity Zones <ArrowRight size={14} />
+        </a>
+
+        <a href={`/momentum/${params.symbol}`} className="seo-chip-link">
+           Momentum Score <ArrowRight size={14} />
+        </a>
+
+        <a href={`/volatility/${params.symbol}`} className="seo-chip-link">
+           Volatility Risk <ArrowRight size={14} />
+        </a>
+
+        <a href={`/analysis/${params.symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
+           Full Analysis <ArrowRight size={14} />
+        </a>
+    </div>
+
+    {/* --- NEW AI CHAT CTA --- */}
+    <div className="mt-12 mb-8">
+        <p className="text-zinc-500 text-xs mb-4">Have specific questions about {params.symbol}?</p>
+        
+        <a href="/AIChat" className="btn-ai-chat-pulse">
+            <Bot size={20} fill="currentColor" className="text-blue-200" /> 
+            Chat with AI Analyst
+        </a>
+    </div>
+
+</section>
+
+      </div>
+    </div>
+  );
+}
+
+// Cleaner Sub-Component for UI
+function RiskRow({ type, desc, label, value, highlight, color }: any) {
+    const activeColor = color === 'green' ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30';
+    
+    return (
+        <div className={`flex items-center justify-between p-4 rounded-xl border transition-all ${highlight ? activeColor : 'bg-white/5 border-transparent hover:bg-white/10'}`}>
+            <div>
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="text-white font-bold text-sm">{type}</span>
+                    <span className="text-[9px] bg-black/40 px-2 py-0.5 rounded text-zinc-400 uppercase font-bold tracking-wide">{desc}</span>
+                </div>
+                <span className="text-xs text-zinc-500 font-mono pl-1">{label}</span>
+            </div>
+            <div className="text-right">
+                <span className="block font-mono text-xl font-black text-white tracking-tighter drop-shadow-md">
+                    {value}
+                </span>
+            </div>
+        </div>
+    )
+}

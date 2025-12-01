@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { getSymbolData } from '../../lib/fetchData'; 
 import { generateTradeReport } from '../../lib/seo/tradeGenerator';
 import NotificationButton from '@/components/NotificationButton'; 
-import { Crosshair, ShieldAlert, Coins, TrendingUp, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Crosshair, ShieldAlert, Coins, TrendingUp, AlertTriangle, ArrowRight, Bot } from 'lucide-react';
 
 type Props = { params: { symbol: string } };
 
@@ -130,61 +130,83 @@ export default async function TradePage({ params }: Props) {
       {/* TEXT REPORT */}
       <section className="analysis-container">
     
-    {/* Heading */}
-    <h3 className="analysis-title">Setup Analysis</h3>
-    
-    <div>
-        {/* Rationale - Clean readable text */}
-        <p className="analysis-rationale">
-            {report.rationale}
-        </p>
+        {/* Heading */}
+        <h3 className="analysis-title">Setup Analysis</h3>
         
-        {/* Execution - Premium Card Box */}
-        <div className="analysis-execution-card">
-            {report.execution}
+        <div>
+            {/* Rationale - Clean readable text */}
+            <p className="analysis-rationale">
+                {report.rationale}
+            </p>
+            
+            {/* Execution - Premium Card Box */}
+            <div className="analysis-execution-card">
+                {report.execution}
+            </div>
+            
+            {/* Risk Disclaimer */}
+            <p className="analysis-risk">
+                Risk Management: {report.risk_manage}
+            </p>
         </div>
-        
-        {/* Risk Disclaimer */}
-        <p className="analysis-risk">
-            Risk Management: {report.risk_manage}
-        </p>
-    </div>
 
-    {/* Interlinking Chips (Styles from previous step) */}
-     {/* 1. Strategy & Setup */}
-    <a href={`/trade/${params.symbol}`} className="seo-chip-link">
-       Trade Setup <ArrowRight size={14} />
-    </a>
-    
-    <a href={`/trend/${params.symbol}`} className="seo-chip-link">
-       Trend Direction <ArrowRight size={14} />
-    </a>
+        {/* --- FOOTER --- */}
+        <div className="mt-24 border-t border-zinc-900 pt-10 pb-20 text-center max-w-4xl mx-auto">
+            
+            <div className="flex flex-wrap justify-center gap-3 my-6">
+                {/* 1. Strategy & Setup */}
+                <a href={`/trade/${params.symbol}`} className="seo-chip-link">
+                   Trade Setup <ArrowRight size={14} />
+                </a>
+                
+                <a href={`/trend/${params.symbol}`} className="seo-chip-link">
+                   Trend Direction <ArrowRight size={14} />
+                </a>
 
-    <a href={`/forecast/${params.symbol}`} className="seo-chip-link">
-       AI Forecast <ArrowRight size={14} />
-    </a>
+                <a href={`/forecast/${params.symbol}`} className="seo-chip-link">
+                   AI Forecast <ArrowRight size={14} />
+                </a>
 
-    {/* 2. Technical Levels */}
-    <a href={`/zones/${params.symbol}`} className="seo-chip-link">
-       Liquidity Zones <ArrowRight size={14} />
-    </a>
+                {/* 2. Technical Tools */}
+                <a href={`/calculator/${params.symbol}`} className="seo-chip-link">
+                   Trade Calculator <ArrowRight size={14} />
+                </a>
+                
+                <a href={`/indicator/${params.symbol}`} className="seo-chip-link">
+                   Indicator RSI Score <ArrowRight size={14} />
+                </a>
 
-    <a href={`/momentum/${params.symbol}`} className="seo-chip-link">
-       Momentum Score <ArrowRight size={14} />
-    </a>
+                {/* 3. Deep Analysis */}
+                <a href={`/zones/${params.symbol}`} className="seo-chip-link">
+                   Liquidity Zones <ArrowRight size={14} />
+                </a>
 
-    {/* 3. Risk & Overview */}
-    <a href={`/volatility/${params.symbol}`} className="seo-chip-link">
-       Volatility Risk <ArrowRight size={14} />
-    </a>
+                <a href={`/momentum/${params.symbol}`} className="seo-chip-link">
+                   Momentum Score <ArrowRight size={14} />
+                </a>
 
-    <a href={`/analysis/${params.symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
-       Full Analysis <ArrowRight size={14} />
-    </a>
+                <a href={`/volatility/${params.symbol}`} className="seo-chip-link">
+                   Volatility Risk <ArrowRight size={14} />
+                </a>
 
-</section>
-        
+                <a href={`/analysis/${params.symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
+                   Full Analysis <ArrowRight size={14} />
+                </a>
+            </div>
 
+            {/* --- NEW AI CHAT CTA --- */}
+            <div className="mt-12 mb-8">
+                <p className="text-zinc-500 text-xs mb-4">Have specific questions about {params.symbol}?</p>
+                
+                <a href="/AIChat" className="btn-ai-chat-pulse">
+                    <Bot size={20} fill="currentColor" className="text-blue-200" /> 
+                    Chat with AI Analyst
+                </a>
+            </div>
+
+        </div>
+
+      </section>
     </div>
   );
 }

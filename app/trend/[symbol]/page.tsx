@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { getSymbolData } from '../../lib/fetchData'; 
 import { generateTrendReport } from '../../lib/seo/trendGenerator';
 import NotificationButton from '@/components/NotificationButton';
-import { TrendingUp, Activity, Layers, ArrowRight, Gauge, Zap } from 'lucide-react';
+import { TrendingUp, Activity, Layers, ArrowRight, Gauge, Zap, Bot } from 'lucide-react';
 
 type Props = { params: { symbol: string } };
 
@@ -191,55 +191,61 @@ export default async function TrendPage({ params }: Props) {
     </div>
 </section>
 
-      {/* --- 5. INTERNAL LINKING (Using 'seo-chip-link') --- */}
-      <section className="mt-24 border-t border-zinc-900 pt-10 text-center max-w-4xl mx-auto">
-         <p className="text-[10px] font-bold text-zinc-600 uppercase mb-5 tracking-widest">
-            More Intelligence for {data.symbol}
-         </p>
-         
-         <div className="flex flex-wrap justify-center gap-3 my-6">
-    {/* 1. Strategy & Setup */}
-    <a href={`/trade/${params.symbol}`} className="seo-chip-link">
-       Trade Setup <ArrowRight size={14} />
-    </a>
+    {/* --- FOOTER --- */}
+<section className="mt-24 border-t border-zinc-900 pt-10 pb-20 text-center max-w-4xl mx-auto">
     
-    <a href={`/trend/${params.symbol}`} className="seo-chip-link">
-       Trend Direction <ArrowRight size={14} />
-    </a>
+    <div className="flex flex-wrap justify-center gap-3 my-6">
+        {/* 1. Strategy & Setup */}
+        <a href={`/trade/${params.symbol}`} className="seo-chip-link">
+           Trade Setup <ArrowRight size={14} />
+        </a>
+        
+        <a href={`/trend/${params.symbol}`} className="seo-chip-link">
+           Trend Direction <ArrowRight size={14} />
+        </a>
 
-    <a href={`/forecast/${params.symbol}`} className="seo-chip-link">
-       AI Forecast <ArrowRight size={14} />
-    </a>
+        <a href={`/forecast/${params.symbol}`} className="seo-chip-link">
+           AI Forecast <ArrowRight size={14} />
+        </a>
 
-    {/* 2. Technical Levels */}
-    <a href={`/zones/${params.symbol}`} className="seo-chip-link">
-       Liquidity Zones <ArrowRight size={14} />
-    </a>
+        {/* 2. Technical Tools */}
+        <a href={`/calculator/${params.symbol}`} className="seo-chip-link">
+           Trade Calculator <ArrowRight size={14} />
+        </a>
+        
+        <a href={`/indicator/${params.symbol}`} className="seo-chip-link">
+           Indicator RSI Score <ArrowRight size={14} />
+        </a>
 
-    <a href={`/momentum/${params.symbol}`} className="seo-chip-link">
-       Momentum Score <ArrowRight size={14} />
-    </a>
+        {/* 3. Deep Analysis */}
+        <a href={`/zones/${params.symbol}`} className="seo-chip-link">
+           Liquidity Zones <ArrowRight size={14} />
+        </a>
 
-    {/* 3. Risk & Overview */}
-    <a href={`/volatility/${params.symbol}`} className="seo-chip-link">
-       Volatility Risk <ArrowRight size={14} />
-    </a>
+        <a href={`/momentum/${params.symbol}`} className="seo-chip-link">
+           Momentum Score <ArrowRight size={14} />
+        </a>
 
-    <a href={`/analysis/${params.symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
-       Full Analysis <ArrowRight size={14} />
-    </a>
-</div>
-<div className="mobile-card-stack">
-  <div className="mobile-card">
-    <div className="trend-gauge-mobile">
-      {/* Your gauge SVG */}
+        <a href={`/volatility/${params.symbol}`} className="seo-chip-link">
+           Volatility Risk <ArrowRight size={14} />
+        </a>
+
+        <a href={`/analysis/${params.symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
+           Full Analysis <ArrowRight size={14} />
+        </a>
     </div>
-    <div className="trend-metrics-mobile grid grid-cols-1 gap-4">
-      {/* Your metrics */}
+
+    {/* --- NEW AI CHAT CTA --- */}
+    <div className="mt-12 mb-8">
+        <p className="text-zinc-500 text-xs mb-4">Have specific questions about {params.symbol}?</p>
+        
+        <a href="/AIChat" className="btn-ai-chat-pulse">
+            <Bot size={20} fill="currentColor" className="text-blue-200" /> 
+            Chat with AI Analyst
+        </a>
     </div>
-  </div>
-</div>
-      </section>
+
+</section>
 
     </div>
   );

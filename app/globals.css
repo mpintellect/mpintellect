@@ -15482,3 +15482,70 @@ a:focus-visible,
   margin-top: 0.8rem;
   letter-spacing: 0.02em;
 }
+/* ================================================= */
+/*   MARKETS HUB (Asset Grid)                        */
+/* ================================================= */
+
+/* The Asset Card */
+.market-asset-card {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1rem;
+  
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* Hover State: Specific Glow based on Category Group handled via utility classes, 
+   but base hover is bright white border */
+.market-asset-card:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -5px rgba(0,0,0,0.5);
+}
+
+.asset-ticker {
+  font-family: 'Menlo', 'Monaco', monospace; /* Code/Ticker font */
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.05em;
+  display: block;
+}
+
+.asset-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #a1a1aa; /* Zinc-400 */
+  margin-top: 2px;
+  display: block;
+  
+  /* Text Truncate */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px; 
+}
+
+/* Category Badge (Mini label top right) */
+.category-header-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  width: 100%;
+}

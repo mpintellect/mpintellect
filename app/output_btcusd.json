@@ -1,0 +1,242 @@
+{
+  "trend": {
+    "trend": "bearish",
+    "trend_strength": "strong",
+    "trend_strength_score": 100,
+    "ema_alignment": "bearish",
+    "price_position": {
+      "vs_ema8": "above",
+      "vs_ema21": "above",
+      "vs_ema50": "below"
+    },
+    "current_emas": {
+      "ema_8": 90998.61029623557,
+      "ema_21": 91020.58801833398,
+      "ema_50": 91127.63602502832
+    },
+    "price_momentum": "neutral",
+    "momentum_strength": "weak",
+    "support_levels": [
+      90696.0,
+      90901.0,
+      90972.0
+    ],
+    "resistance_levels": [
+      91282.5,
+      91281.0,
+      91220.0
+    ],
+    "current_price": 91070.0,
+    "high_24h": 92960.5,
+    "low_24h": 85204.0,
+    "analysis_confidence": 95,
+    "data_quality_score": 87,
+    "trend_consistency": 62,
+    "timestamp": "2025-11-28T22:47:50.423929+00:00",
+    "component_quality": 90
+  },
+  "volatility": {
+    "volatility_level": "low",
+    "avg_atr": 201.82943,
+    "current_atr": 134.41773,
+    "atr_trend": "stable",
+    "avg_range": 138.8732,
+    "atr_vs_range": 1.4533,
+    "volatility_score": 0.1,
+    "atr_percent_of_price": 0.1476,
+    "recent_volatility_change": -34.26,
+    "atr_min": 108.15842,
+    "atr_max": 296.82579,
+    "range_min": 9.0,
+    "range_max": 466.0,
+    "volatility_regime": "calm",
+    "volatility_stability": "low",
+    "optimal_sl_multiplier": 1.87,
+    "optimal_tp_multiplier": 2.0,
+    "order_distance_adjustment": 0.96,
+    "volatility_context": "favorable",
+    "fallback_used": false,
+    "fallback_reason": "",
+    "component_quality": 70,
+    "data_points_used": 100
+  },
+  "momentum": {
+    "momentum_bias": "neutral",
+    "rsi_latest": 52.5,
+    "rsi_trend": "flat",
+    "rsi_momentum": "neutral",
+    "rsi_zone": "neutral_zone",
+    "rsi_slope": -0.1769,
+    "momentum_strength": "weak",
+    "trend_alignment": "neutral",
+    "divergence_detected": "none",
+    "momentum_quality": 0.44,
+    "entry_signal": "pullback_sell",
+    "momentum_confidence": "low",
+    "trend_consistency": 0.7,
+    "component_quality": 60
+  },
+  "zones": {
+    "support_zone": 91452.3,
+    "resistance_zone": 91656.9,
+    "zone_strength": "strong",
+    "support_quality": 1.0,
+    "resistance_quality": 0.8,
+    "zone_width_pips": 204.6,
+    "current_price_position": "near_support",
+    "zone_clarity": "clear",
+    "trend_alignment": "aligned",
+    "order_placement_context": "limit_at_support",
+    "zone_confidence": "high",
+    "component_quality": 90
+  },
+  "pending_orders": {
+    "pending_orders": [
+      {
+        "type": "SELL_LIMIT",
+        "entry_price": 91137.2,
+        "sl_price": 91338.8,
+        "tp_price": 90801.2,
+        "distance_pips": 67.2,
+        "risk_pips": 201.6,
+        "reward_pips": 336.0,
+        "rr_ratio": 1.67,
+        "rationale": "Trend Pullback",
+        "expiry_hours": 24
+      }
+    ],
+    "primary_order": {
+      "type": "SELL_LIMIT",
+      "entry_price": 91137.2,
+      "sl_price": 91338.8,
+      "tp_price": 90801.2,
+      "distance_pips": 67.2,
+      "risk_pips": 201.6,
+      "reward_pips": 336.0,
+      "rr_ratio": 1.67,
+      "rationale": "Trend Pullback",
+      "expiry_hours": 24
+    },
+    "order_confidence": 80,
+    "market_context": "strong_trend",
+    "rationale": "Follow strong trend",
+    "current_price": 91070.0,
+    "is_valid": true
+  },
+  "tp_sl": {
+    "entry_price": 91137.2,
+    "tp_level": 90801.2,
+    "sl_level": 91338.8,
+    "rr_ratio": 1.67,
+    "sl_distance_pips": 201.6,
+    "tp_distance_pips": 336.0,
+    "risk_management": "order_based",
+    "zone_respected": true,
+    "trend_aligned": true,
+    "order_type": "SELL_LIMIT",
+    "notes": "Based on SELL_LIMIT: Trend Pullback",
+    "is_valid": true,
+    "validation_issues": [],
+    "asset_class": "crypto",
+    "rr_validation": "passed_pending_order"
+  },
+  "risk_score": {
+    "confidence_score": 79,
+    "risk_category": "LOW_RISK_HIGH_CONFIDENCE",
+    "position_size_multiplier": 0.79,
+    "analysis_accuracy_used": 79.0,
+    "base_confidence": 100
+  },
+  "final_decision": "SELL",
+  "trade_parameters": {
+    "trade_validation": {
+      "is_valid": true,
+      "original_issues": [],
+      "validation_notes": "Validated",
+      "order_quality": "high",
+      "risk_distance_pips": 201.6,
+      "reward_distance_pips": 336.0
+    },
+    "validated_orders": [
+      {
+        "original_order": {
+          "type": "SELL_LIMIT",
+          "entry_price": 91137.2,
+          "sl_price": 91338.8,
+          "tp_price": 90801.2,
+          "distance_pips": 67.2,
+          "risk_pips": 201.6,
+          "reward_pips": 336.0,
+          "rr_ratio": 1.67,
+          "rationale": "Trend Pullback",
+          "expiry_hours": 24
+        },
+        "validation": {
+          "is_valid": true,
+          "original_issues": [],
+          "validation_notes": "Validated",
+          "order_quality": "high",
+          "risk_distance_pips": 201.6,
+          "reward_distance_pips": 336.0
+        }
+      }
+    ],
+    "primary_validated_order": {
+      "original_order": {
+        "type": "SELL_LIMIT",
+        "entry_price": 91137.2,
+        "sl_price": 91338.8,
+        "tp_price": 90801.2,
+        "distance_pips": 67.2,
+        "risk_pips": 201.6,
+        "reward_pips": 336.0,
+        "rr_ratio": 1.67,
+        "rationale": "Trend Pullback",
+        "expiry_hours": 24
+      },
+      "validation": {
+        "is_valid": true,
+        "original_issues": [],
+        "validation_notes": "Validated",
+        "order_quality": "high",
+        "risk_distance_pips": 201.6,
+        "reward_distance_pips": 336.0
+      }
+    }
+  },
+  "summary": "\ud83d\udcca **MARKET OVERVIEW - BTCUSD**\n\u2022 Trend: Bearish (strong) | Quality: 90%\n\u2022 Momentum: Neutral | Quality: 60%\n\u2022 Volatility: Calm | Quality: 70%\n\u2022 Zones: Strong | Quality: 90%\n\u2022 Market Context: Strong Trend\n\n\ud83c\udfaf **TRADING DECISION**\n\u2022 Action: \ud83d\udcc9 **SELL**\n\u2022 Confidence: 79%\n\u2022 Risk Level: Low Risk High Confidence\n\u2022 Analysis Quality: 77.5% - \u2705 High Quality Analysis\n\n\ud83d\udd04 **PENDING ORDERS**\n\u2022 Primary Order: **SELL_LIMIT**\n\u2022 Entry Price: 91137.2\n\u2022 Stop Loss: 91338.8\n\u2022 Take Profit: 90801.2\n\u2022 Order Confidence: 80%\n\u2022 Risk/Reward: 1.67:1\n\u2022 Order Quality: MEDIUM\n\u2022 \u274c Parameters Invalid - Review Required\n\u2022 Strategy: Trend Pullback\n\n\ud83d\udcb0 **RISK MANAGEMENT**\n\u2022 Risk/Reward Ratio: 1.67:1\n\u2022 \u2705 **GOOD CONFIDENCE** - Reliable trading setup\n\n\ud83d\udccb **FINAL RECOMMENDATION**\n\u274c **REVIEW PARAMETERS** - Orders generated but validation failed\n\n\ud83d\udea8 **CRITICAL WARNING**\n\u2022 Trade parameters failed validation - manual review required\n\u2022 Do not execute without verifying order parameters\n\n\ud83d\udcca ANALYSIS ACCURACY: 79.0%",
+  "warnings": [],
+  "symbol": "BTCUSD",
+  "analysis_accuracy": 79.0,
+  "component_scores": {
+    "trend": 90,
+    "volatility": 70,
+    "momentum": 60,
+    "zones": 90
+  },
+  "component_weights": {
+    "trend": 30,
+    "volatility": 25,
+    "momentum": 20,
+    "zones": 25
+  },
+  "generated_at": "2025-11-28T22:47:50.469896+00:00",
+  "validation": {
+    "symbol": "BTCUSD",
+    "is_valid": true,
+    "validation_score": 88,
+    "issues": [],
+    "warnings": [],
+    "strengths": [
+      "Good RR: 1.7"
+    ],
+    "timestamp": "2025-11-28T22:47:50.470883+00:00",
+    "component_quality": {
+      "trend": 90,
+      "volatility": 70,
+      "momentum": 60,
+      "zones": 90
+    }
+  },
+  "quality_indicator": "\ud83c\udfc6 HIGH QUALITY"
+}

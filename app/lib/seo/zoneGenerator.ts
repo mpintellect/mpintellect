@@ -10,7 +10,7 @@ export const generateZoneReport = (data: SymbolData) => {
   // If 'num' is undefined/null/NaN, return "N/A" instead of crashing
   const fmt = (num: number | undefined | null) => {
     if (num === undefined || num === null || isNaN(num)) return "N/A";
-    return num.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 5 });
+    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 });
   };
 
   // Logic: Interpret current position

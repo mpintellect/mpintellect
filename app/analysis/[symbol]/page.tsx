@@ -63,7 +63,7 @@ export default async function AnalysisPage({ params }: Props) {
             <div className="text-right">
                 <p className="text-xs text-zinc-500 uppercase font-bold tracking-wider mb-1">Current Price Action</p>
                 <p className="text-4xl font-mono font-bold text-white tracking-tight">
-                    {trend.current_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    {trend.current_price}
                 </p>
             </div>
         </div>

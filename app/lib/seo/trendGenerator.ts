@@ -1,18 +1,20 @@
-import { TrendData } from "../../lib/fetchData";
+// app/lib/generators/trendGenerator.ts
 
-export const generateTrendReport = (data: TrendData) => {
+import { SymbolData } from "../../lib/fetchData";
+
+export const generateTrendReport = (data: SymbolData) => {
   const t = data.trend;
   const isBullish = t.trend.toLowerCase().includes("bullish");
-  const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
-  // Format prices nicely (e.g. 1,234.56)
-  const fmt = (num: number) => num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // ✅ FIXED: No forced decimals. 
+  // We allow up to 10 decimal places so Forex (5) and Crypto (2-8) display exactly as fetched.
+  const fmt = (num: number) => num.toLocaleString('en-US', { maximumFractionDigits: 10 });
 
   return {
     // 1. PAGE TITLE (H1)
     title: `${data.symbol} Trend Analysis: ${t.trend.toUpperCase()} Structure Confirmed`,
     
-    // 2. META DESCRIPTION (For Google SERP)
+    // 2. META DESCRIPTION
     metaDesc: `Live trend report for ${data.symbol}. Our AI Trend Score is ${t.trend_strength_score}/100, signaling a ${t.trend_strength} move. Read the full institutional analysis.`,
 
     // 3. SEO CONTENT BLOCKS

@@ -7,7 +7,7 @@ export const generateAnalysisReport = (data: SymbolData) => {
   const v = data.volatility;
 
   // FORMATTER
-  const fmt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 5 });
+  const fmt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 8 });
 
   // 1. STRUCTURE ANALYSIS
   let structure = "Neutral / Ranging";

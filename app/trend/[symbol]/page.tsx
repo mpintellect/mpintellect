@@ -133,15 +133,15 @@ export default async function TrendPage({ params }: Props) {
                     <div className="space-y-2">
                         <div className="flex justify-between items-center bg-white/5 p-2 px-3 rounded-lg border border-white/5">
                             <span className="text-xs font-medium text-emerald-400">EMA 8 (Fast)</span>
-                            <span className="text-sm font-mono text-white font-bold">{t.current_emas.ema_8.toLocaleString(undefined, { maximumFractionDigits: 1})}</span>
+                            <span className="text-sm font-mono text-white font-bold">{t.current_emas.ema_8}</span>
                         </div>
                         <div className="flex justify-between items-center bg-white/5 p-2 px-3 rounded-lg border border-white/5">
                             <span className="text-xs font-medium text-blue-400">EMA 21 (Baseline)</span>
-                            <span className="text-sm font-mono text-white font-bold">{t.current_emas.ema_21.toLocaleString(undefined, { maximumFractionDigits: 1})}</span>
+                            <span className="text-sm font-mono text-white font-bold">{t.current_emas.ema_21}</span>
                         </div>
                         <div className="flex justify-between items-center bg-white/5 p-2 px-3 rounded-lg border border-white/5">
                             <span className="text-xs font-medium text-yellow-500">EMA 50 (Macro)</span>
-                            <span className="text-sm font-mono text-white font-bold">{t.current_emas.ema_50.toLocaleString(undefined, { maximumFractionDigits: 1})}</span>
+                            <span className="text-sm font-mono text-white font-bold">{t.current_emas.ema_50}</span>
                         </div>
                     </div>
                 </div>

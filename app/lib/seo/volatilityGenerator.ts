@@ -4,7 +4,7 @@ export const generateVolatilityReport = (data: any) => {
   const v = data.volatility;
   const isHighVol = v.volatility_level === "high" || v.volatility_score > 0.7;
   
-  const fmt = (num: number) => num.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const fmt = (num: number) => num.toLocaleString(undefined, { maximumFractionDigits: 10 });
 
   return {
     // 1. PAGE TITLE

@@ -37,6 +37,11 @@ export default async function TradePage({ params }: Props) {
   const isBuy = action === 'BUY';
   const colorClass = isBuy ? 'text-emerald-400 border-emerald-500 bg-emerald-900/10' : 'text-rose-400 border-rose-500 bg-rose-900/10';
   const bgGradient = isBuy ? 'from-emerald-950 to-black' : 'from-rose-950 to-black';
+  
+  // Setup data for TP levels
+  const setup = {
+    tp1: activeOrder.tp_price,
+  };
 
   return (
     <div className={`min-h-screen bg-black text-white pb-24 font-sans selection:${isBuy ? 'bg-emerald-500/30' : 'bg-rose-500/30'}`}>
@@ -88,7 +93,49 @@ export default async function TradePage({ params }: Props) {
                     </div>
                 </div>
 
-                {/* 3. EXECUTION BTN (Visual only) */}
+                {/* 3. TP DETAILS - New Section */}
+                <div className="target-levels-container">
+                    <h4 className="target-levels-title">Target Levels</h4>
+                    <div className="space-y-2">
+                        {/* Free TP 1 */}
+                        <div className="target-level-free">
+                            <span>TP 1 (Safe)</span>
+                            <span className="target-level-free-value">{setup.tp1}</span>
+                        </div>
+
+                        {/* Blurred Premium Targets */}
+                        <div className="target-level-premium group">
+                            <span>TP 2 (Swing)</span>
+                            <div className="target-level-blurred">
+                                {Number(setup.tp1) * 1.05} {/* Fake blurred number */}
+                            </div>
+                            
+                            {/* Hover Reveal Overlay */}
+                            <div className="target-level-premium-overlay">
+                                <a href="/client/login" className="target-level-unlock-link">
+                                    UNLOCK PREMIUM
+                                </a>
+                            </div>
+                        </div>
+
+                        {/* Additional Premium TP */}
+                        <div className="target-level-premium group">
+                            <span>TP 3 (Aggressive)</span>
+                            <div className="target-level-blurred">
+                                {Number(setup.tp1) * 1.1} {/* Fake blurred number */}
+                            </div>
+                            
+                            {/* Hover Reveal Overlay */}
+                            <div className="target-level-premium-overlay">
+                                <a href="/client/login" className="target-level-unlock-link">
+                                    UNLOCK PREMIUM
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 4. EXECUTION BTN (Visual only) */}
                 <div className={`w-full py-4 text-center rounded-xl font-black text-lg uppercase tracking-wider border transition-transform hover:scale-[1.01] ${isBuy ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-rose-600 border-rose-400 text-white'}`}>
                     Signal Strength: {(data as any).analysis_accuracy || 80}%
                 </div>

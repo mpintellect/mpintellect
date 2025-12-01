@@ -4,7 +4,8 @@ import { generateAnalysisReport } from '../../lib/seo/analysisGenerator';
 import NotificationButton from '@/components/NotificationButton'; 
 import { 
   Activity, ArrowRight, Gauge, Layers, 
-  Cpu, Thermometer, Box, LineChart, Bot
+  Cpu, Thermometer, Box, LineChart, Bot,
+  Link
 } from 'lucide-react';
 
 type Props = { params: { symbol: string } };
@@ -156,7 +157,24 @@ export default async function AnalysisPage({ params }: Props) {
             </div>
 
         </div>
-
+<div className="ai-validation-box flex items-start gap-4">
+  <div className="ai-icon-container">
+    <Bot size={24} />
+  </div>
+  <div className="ai-validation-content">
+    <h4 className="ai-validation-title">
+      Is this setup confirmed right now?
+    </h4>
+    <p className="ai-validation-description">
+      This report is based on H1/H4 market structure. 
+      For <strong>Scalping entries (M5/M15)</strong> or News validation, 
+      you need real-time confirmation.
+    </p>
+    <a href="/AIChat" className="ai-validation-link">
+      Validate this trade with AI Analyst
+    </a>
+  </div>
+</div>
         {/* --- 3. WRITTEN ANALYSIS & REPORT --- */}
         <div className="dash-grid-container">
     

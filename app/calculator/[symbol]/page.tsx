@@ -3,7 +3,6 @@ import { getAvailableSetupSymbols } from '@/app/lib/fetchSetup';
 import { generateCalculatorReport } from '@/app/lib/seo/calculatorGenerator';
 import { notFound } from 'next/navigation';
 import { ShieldAlert, ArrowDown, ArrowUp, Calculator, ArrowRight, Zap, Bot } from 'lucide-react';
-import Link from 'next/link';
 
 export const revalidate = 60; 
 export const dynamicParams = true;
@@ -74,9 +73,38 @@ export default async function StopLossPage({ params }: { params: { symbol: strin
                         </div>
 
                         <div className="space-y-4">
-                            <RiskRow type="Scalp" desc="Tight Protection" label={calculations.long.scalp.label} value={calculations.long.scalp.level} />
-                            <RiskRow type="Day Trade" desc="Standard Risk" label={calculations.long.day.label} value={calculations.long.day.level} highlight color="green"/>
-                            <RiskRow type="Swing" desc="Deep Protection" label={calculations.long.swing.label} value={calculations.long.swing.level} />
+                            {/* Scalp - Free */}
+                            <RiskRow 
+                              type="Scalp" 
+                              desc="Tight Protection" 
+                              label={calculations.long.scalp.label} 
+                              value={calculations.long.scalp.level} 
+                              isFree={true}
+                            />
+                            
+                            {/* Day Trade - Blurred Premium */}
+                            <PremiumRiskRow 
+                              type="Day Trade" 
+                              desc="Standard Risk" 
+                              label={calculations.long.day.label} 
+                              value={calculations.long.day.level} 
+                              highlight={true}
+                              color="green"
+                              isPremium={true}
+                              originalValue={calculations.long.day.level}
+                            />
+                            
+                            {/* Swing - Blurred Premium */}
+                            <PremiumRiskRow 
+                              type="Swing" 
+                              desc="Deep Protection" 
+                              label={calculations.long.swing.label} 
+                              value={calculations.long.swing.level} 
+                              highlight={false}
+                              color="green"
+                              isPremium={true}
+                              originalValue={calculations.long.swing.level}
+                            />
                         </div>
                     </div>
 
@@ -93,9 +121,38 @@ export default async function StopLossPage({ params }: { params: { symbol: strin
                         </div>
 
                         <div className="space-y-4">
-                            <RiskRow type="Scalp" desc="Tight Protection" label={calculations.short.scalp.label} value={calculations.short.scalp.level} />
-                            <RiskRow type="Day Trade" desc="Standard Risk" label={calculations.short.day.label} value={calculations.short.day.level} highlight color="red"/>
-                            <RiskRow type="Swing" desc="Deep Protection" label={calculations.short.swing.label} value={calculations.short.swing.level} />
+                            {/* Scalp - Free */}
+                            <RiskRow 
+                              type="Scalp" 
+                              desc="Tight Protection" 
+                              label={calculations.short.scalp.label} 
+                              value={calculations.short.scalp.level} 
+                              isFree={true}
+                            />
+                            
+                            {/* Day Trade - Blurred Premium */}
+                            <PremiumRiskRow 
+                              type="Day Trade" 
+                              desc="Standard Risk" 
+                              label={calculations.short.day.label} 
+                              value={calculations.short.day.level} 
+                              highlight={true}
+                              color="red"
+                              isPremium={true}
+                              originalValue={calculations.short.day.level}
+                            />
+                            
+                            {/* Swing - Blurred Premium */}
+                            <PremiumRiskRow 
+                              type="Swing" 
+                              desc="Deep Protection" 
+                              label={calculations.short.swing.label} 
+                              value={calculations.short.swing.level} 
+                              highlight={false}
+                              color="red"
+                              isPremium={true}
+                              originalValue={calculations.short.swing.level}
+                            />
                         </div>
                     </div>
 
@@ -112,7 +169,7 @@ export default async function StopLossPage({ params }: { params: { symbol: strin
         </div>
 
         {/* --- FOOTER --- */}
-<section className="mt-24 border-t border-zinc-900 pt-10 pb-20 text-center max-w-4xl mx-auto">
+        <section className="mt-24 border-t border-zinc-900 pt-10 pb-20 text-center max-w-4xl mx-auto">
     
     <div className="flex flex-wrap justify-center gap-3 my-6">
         {/* 1. Strategy & Setup */}
@@ -172,8 +229,8 @@ export default async function StopLossPage({ params }: { params: { symbol: strin
   );
 }
 
-// Cleaner Sub-Component for UI
-function RiskRow({ type, desc, label, value, highlight, color }: any) {
+// Cleaner Sub-Component for UI - Free version
+function RiskRow({ type, desc, label, value, highlight, color, isFree = true }: any) {
     const activeColor = color === 'green' ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30';
     
     return (
@@ -190,6 +247,39 @@ function RiskRow({ type, desc, label, value, highlight, color }: any) {
                     {value}
                 </span>
             </div>
+        </div>
+    )
+}
+
+// Premium Sub-Component with Blur and Unlock Logic
+function PremiumRiskRow({ type, desc, label, value, highlight, color, isPremium = false, originalValue }: any) {
+    const activeColor = color === 'green' ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30';
+    
+    return (
+        <div className={`target-level-premium group relative p-4 rounded-xl border transition-all cursor-pointer ${highlight ? activeColor : 'bg-white/5 border-transparent hover:bg-white/10'}`}>
+            <div className="flex items-center justify-between z-10 relative">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="text-white font-bold text-sm">{type}</span>
+                        <span className="text-[9px] bg-black/40 px-2 py-0.5 rounded text-zinc-400 uppercase font-bold tracking-wide">{desc}</span>
+                    </div>
+                    <span className="text-xs text-zinc-500 font-mono pl-1">{label}</span>
+                </div>
+                <div className="text-right">
+                    <div className="target-level-blurred font-mono text-xl font-black tracking-tighter drop-shadow-md">
+                        {value}
+                    </div>
+                </div>
+            </div>
+            
+            {/* Hover Reveal Overlay */}
+            <div className="target-level-premium-overlay">
+                <a href="/client/login" className="target-level-unlock-link">
+                    <Zap size={12} className="inline mr-1" />
+                    UNLOCK PREMIUM
+                </a>
+            </div>
+            
         </div>
     )
 }

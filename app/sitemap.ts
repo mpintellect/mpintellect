@@ -32,8 +32,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       dynamicRoutes.push({
         url: `${baseUrl}/${pageType}/${cleanSymbol}`,
         lastModified: new Date(),
-        changeFrequency: 'hourly' as const, // Important: Signals update hourly
-        priority: 0.8, 
+        changeFrequency: 'always' as const, // Important: Signals update each 5 minutes
+        priority: 0.9, 
       });
     });
   });
@@ -46,7 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily', 
       priority: 1.0 
     },
-    { url: `${baseUrl}/client/login`, lastModified: new Date(), priority: 0.9 },
+    { url: `${baseUrl}/client/login`, lastModified: new Date(), priority: 0.8 },
     { url: `${baseUrl}/AIChat`, lastModified: new Date(), priority: 0.8 },
     { url: `${baseUrl}/blog`, lastModified: new Date(), priority: 0.7 },
     { url: `${baseUrl}/about`, lastModified: new Date(), priority: 0.5 },

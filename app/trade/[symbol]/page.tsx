@@ -26,9 +26,9 @@ export default async function TradePage({ params }: Props) {
 
   if (!data || !activeOrder) {
     return (
-        <div className="min-h-screen bg-black flex justify-center items-center text-zinc-500 font-mono">
-            No Active Signals for {params.symbol}. Check back later.
-        </div>
+      <div className="min-h-screen bg-black flex justify-center items-center text-zinc-500 font-mono">
+        No Active Signals for {params.symbol}. Check back later.
+      </div>
     );
   }
 
@@ -46,214 +46,207 @@ export default async function TradePage({ params }: Props) {
   return (
     <div className={`min-h-screen bg-black text-white pb-24 font-sans selection:${isBuy ? 'bg-emerald-500/30' : 'bg-rose-500/30'}`}>
       
+      {/* HEADER SECTION */}
       <div className={`pt-32 pb-16 px-6 text-center border-b border-white/5 bg-gradient-to-b ${bgGradient}`}>
         <div className={`inline-flex items-center gap-2 px-3 py-1.5 mb-6 rounded-full border text-[10px] uppercase font-bold tracking-widest ${colorClass}`}>
-           {isBuy ? <TrendingUp size={12}/> : <TrendingUp size={12} className="rotate-180"/>} 
-           Active Signal Found
+          {isBuy ? <TrendingUp size={12}/> : <TrendingUp size={12} className="rotate-180"/>} 
+          Active Signal Found
         </div>
         
         <h1 className="text-5xl md:text-7xl font-black mb-4 uppercase tracking-tighter text-white">
-           {action} <span className="text-zinc-500">{data.symbol}</span>
+          {action} <span className="text-zinc-500">{data.symbol}</span>
         </h1>
         
         <p className="text-zinc-400 font-mono text-xl max-w-xl mx-auto">
-           Entry @ {activeOrder.entry_price}
+          Entry @ {activeOrder.entry_price}
         </p>
       </div>
 
+      {/* MAIN CONTENT GRID */}
       <div className="max-w-4xl mx-auto px-4 -mt-10 grid md:grid-cols-3 gap-6">
         
         {/* TICKET CARD (Visual Focus) */}
         <div className="md:col-span-2 p-8 rounded-2xl bg-zinc-900 border border-zinc-700 shadow-2xl relative overflow-hidden">
-            {/* Background Texture */}
-            <div className="absolute top-0 right-0 p-32 opacity-10 blur-3xl rounded-full bg-white mix-blend-overlay"></div>
+          {/* Background Texture */}
+          <div className="absolute top-0 right-0 p-32 opacity-10 blur-3xl rounded-full bg-white mix-blend-overlay"></div>
 
-            <div className="flex justify-between items-center mb-8 pb-4 border-b border-zinc-800">
-                <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Order Ticket</span>
-                <span className="text-xs font-mono text-white bg-zinc-800 px-2 py-1 rounded">ID: {params.symbol.toUpperCase()}-AI</span>
+          <div className="flex justify-between items-center mb-8 pb-4 border-b border-zinc-800">
+            <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Order Ticket</span>
+            <span className="text-xs font-mono text-white bg-zinc-800 px-2 py-1 rounded">ID: {params.symbol.toUpperCase()}-AI</span>
+          </div>
+
+          <div className="space-y-6">
+            
+            {/* 1. ENTRY */}
+            <div className="flex justify-between items-end">
+              <div className="text-sm text-zinc-400 uppercase font-bold">Entry Price</div>
+              <div className="text-3xl font-mono font-bold text-white">{activeOrder.entry_price}</div>
             </div>
 
-            <div className="space-y-6">
-                
-                {/* 1. ENTRY */}
-                <div className="flex justify-between items-end">
-                    <div className="text-sm text-zinc-400 uppercase font-bold">Entry Price</div>
-                    <div className="text-3xl font-mono font-bold text-white">{activeOrder.entry_price}</div>
-                </div>
-
-                {/* 2. TP / SL */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl bg-black/40 border border-emerald-900/50">
-                        <span className="block text-emerald-500 text-xs font-bold mb-1">TAKE PROFIT</span>
-                        <span className="block text-xl font-mono text-white">{activeOrder.tp_price}</span>
-                    </div>
-                    <div className="p-4 rounded-xl bg-black/40 border border-rose-900/50">
-                        <span className="block text-rose-500 text-xs font-bold mb-1">STOP LOSS</span>
-                        <span className="block text-xl font-mono text-white">{activeOrder.sl_price}</span>
-                    </div>
-                </div>
-
-                {/* 3. TP DETAILS - New Section */}
-                <div className="target-levels-container">
-                    <h4 className="target-levels-title">Target Levels</h4>
-                    <div className="space-y-2">
-                        {/* Free TP 1 */}
-                        <div className="target-level-free">
-                            <span>TP 1 (Safe)</span>
-                            <span className="target-level-free-value">{setup.tp1}</span>
-                        </div>
-
-                        {/* Blurred Premium Targets */}
-                        <div className="target-level-premium group">
-                            <span>TP 2 (Swing)</span>
-                            <div className="target-level-blurred">
-                                {Number(setup.tp1) * 1.05} {/* Fake blurred number */}
-                            </div>
-                            
-                            {/* Hover Reveal Overlay */}
-                            <div className="target-level-premium-overlay">
-                                <a href="/client/login" className="target-level-unlock-link">
-                                    UNLOCK PREMIUM
-                                </a>
-                            </div>
-                        </div>
-
-                        {/* Additional Premium TP */}
-                        <div className="target-level-premium group">
-                            <span>TP 3 (Aggressive)</span>
-                            <div className="target-level-blurred">
-                                {Number(setup.tp1) * 1.1} {/* Fake blurred number */}
-                            </div>
-                            
-                            {/* Hover Reveal Overlay */}
-                            <div className="target-level-premium-overlay">
-                                <a href="/client/login" className="target-level-unlock-link">
-                                    UNLOCK PREMIUM
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 4. EXECUTION BTN (Visual only) */}
-                <div className={`w-full py-4 text-center rounded-xl font-black text-lg uppercase tracking-wider border transition-transform hover:scale-[1.01] ${isBuy ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-rose-600 border-rose-400 text-white'}`}>
-                    Signal Strength: {(data as any).analysis_accuracy || 80}%
-                </div>
-
+            {/* 2. TP / SL */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl bg-black/40 border border-emerald-900/50">
+                <span className="block text-emerald-500 text-xs font-bold mb-1">TAKE PROFIT</span>
+                <span className="block text-xl font-mono text-white">{activeOrder.tp_price}</span>
+              </div>
+              <div className="p-4 rounded-xl bg-black/40 border border-rose-900/50">
+                <span className="block text-rose-500 text-xs font-bold mb-1">STOP LOSS</span>
+                <span className="block text-xl font-mono text-white">{activeOrder.sl_price}</span>
+              </div>
             </div>
+
+            {/* 3. TP DETAILS */}
+            <section className="target-levels-container">
+              <h4 className="target-levels-title">Target Levels</h4>
+              <div className="space-y-2">
+                {/* Free TP 1 */}
+                <div className="target-level-free">
+                  <span>TP 1 (Safe)</span>
+                  <span className="target-level-free-value">{setup.tp1}</span>
+                </div>
+
+                {/* Blurred Premium Targets */}
+                <div className="target-level-premium group">
+                  <span>TP 2 (Swing)</span>
+                  <div className="target-level-blurred">
+                    {Number(setup.tp1) * 1.05} {/* Fake blurred number */}
+                  </div>
+                  
+                  {/* Hover Reveal Overlay */}
+                  <div className="target-level-premium-overlay">
+                    <a href="/client/login" className="target-level-unlock-link">
+                      UNLOCK PREMIUM
+                    </a>
+                  </div>
+                </div>
+
+                {/* Additional Premium TP */}
+                <div className="target-level-premium group">
+                  <span>TP 3 (Aggressive)</span>
+                  <div className="target-level-blurred">
+                    {Number(setup.tp1) * 1.1} {/* Fake blurred number */}
+                  </div>
+                  
+                  {/* Hover Reveal Overlay */}
+                  <div className="target-level-premium-overlay">
+                    <a href="/client/login" className="target-level-unlock-link">
+                      UNLOCK PREMIUM
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* 4. EXECUTION BTN (Visual only) */}
+            <div className={`w-full py-4 text-center rounded-xl font-black text-lg uppercase tracking-wider border transition-transform hover:scale-[1.01] ${isBuy ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-rose-600 border-rose-400 text-white'}`}>
+              Signal Strength: {(data as any).analysis_accuracy || 80}%
+            </div>
+          </div>
         </div>
 
         {/* RISK PANEL */}
         <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800 flex flex-col justify-between">
-            <div>
-                <div className="flex items-center gap-2 mb-4 text-zinc-400 font-bold text-xs uppercase">
-                    <ShieldAlert size={14}/> Risk Calculator
-                </div>
-                
-                <div className="space-y-4">
-                    <div>
-                        <span className="block text-zinc-500 text-xs">Risk / Reward Ratio</span>
-                        <span className="text-2xl font-bold text-white">1 : {activeOrder.rr_ratio || 2}</span>
-                    </div>
-                    <div>
-                        <span className="block text-zinc-500 text-xs">Pips at Risk</span>
-                        <span className="text-xl font-bold text-rose-400">-{activeOrder.risk_pips || "Unknown"}</span>
-                    </div>
-                    <div>
-                        <span className="block text-zinc-500 text-xs">Target Gain</span>
-                        <span className="text-xl font-bold text-emerald-400">+{activeOrder.reward_pips || "Unknown"}</span>
-                    </div>
-                </div>
+          <div>
+            <div className="flex items-center gap-2 mb-4 text-zinc-400 font-bold text-xs uppercase">
+              <ShieldAlert size={14}/> Risk Calculator
             </div>
+            
+            <div className="space-y-4">
+              <div>
+                <span className="block text-zinc-500 text-xs">Risk / Reward Ratio</span>
+                <span className="text-2xl font-bold text-white">1 : {activeOrder.rr_ratio || 2}</span>
+              </div>
+              <div>
+                <span className="block text-zinc-500 text-xs">Pips at Risk</span>
+                <span className="text-xl font-bold text-rose-400">-{activeOrder.risk_pips || "Unknown"}</span>
+              </div>
+              <div>
+                <span className="block text-zinc-500 text-xs">Target Gain</span>
+                <span className="text-xl font-bold text-emerald-400">+{activeOrder.reward_pips || "Unknown"}</span>
+              </div>
+            </div>
+          </div>
 
-            <div className="mt-8">
-               <NotificationButton />
-               <p className="text-[10px] text-center text-zinc-600 mt-2">Instant Execution Alerts</p>
-            </div>
+          
         </div>
-
       </div>
 
-      {/* TEXT REPORT */}
-      <section className="analysis-container">
+      {/* ANALYSIS SECTION - FIXED */}
+<section className="max-w-2xl mx-auto mt-16 px-6">
+  {/* Heading */}
+  <h3 className="text-xl font-bold text-white mb-6">Setup Analysis</h3>
+  
+  <div className="space-y-6">
+    {/* Rationale - Clean readable text */}
+    <p className="text-white leading-relaxed">
+      {report.rationale}
+    </p>
     
-        {/* Heading */}
-        <h3 className="analysis-title">Setup Analysis</h3>
-        
-        <div>
-            {/* Rationale - Clean readable text */}
-            <p className="analysis-rationale">
-                {report.rationale}
-            </p>
-            
-            {/* Execution - Premium Card Box */}
-            <div className="analysis-execution-card">
-                {report.execution}
-            </div>
-            
-            {/* Risk Disclaimer */}
-            <p className="analysis-risk">
-                Risk Management: {report.risk_manage}
-            </p>
+    {/* Execution - Premium Card Box */}
+    <div className="analysis-execution-card">
+      {report.execution}
+    </div>
+    
+    {/* Risk Disclaimer */}
+    <p className="text-sm text-zinc-400 italic">
+      Risk Management: {report.risk_manage}
+    </p>
+  </div>
+</section>
+
+      {/* FOOTER SECTION */}
+      <div className="mt-24 border-t border-zinc-900 pt-10 pb-20 text-center max-w-4xl mx-auto">
+        <div className="flex flex-wrap justify-center gap-3 my-6">
+          {/* 1. Strategy & Setup */}
+          <a href={`/trade/${params.symbol}`} className="seo-chip-link">
+            Trade Setup <ArrowRight size={14} />
+          </a>
+          
+          <a href={`/trend/${params.symbol}`} className="seo-chip-link">
+            Trend Direction <ArrowRight size={14} />
+          </a>
+
+          <a href={`/forecast/${params.symbol}`} className="seo-chip-link">
+            AI Forecast <ArrowRight size={14} />
+          </a>
+
+          {/* 2. Technical Tools */}
+          <a href={`/calculator/${params.symbol}`} className="seo-chip-link">
+            Trade Calculator <ArrowRight size={14} />
+          </a>
+          
+          <a href={`/indicator/${params.symbol}`} className="seo-chip-link">
+            Indicator RSI Score <ArrowRight size={14} />
+          </a>
+
+          {/* 3. Deep Analysis */}
+          <a href={`/zones/${params.symbol}`} className="seo-chip-link">
+            Liquidity Zones <ArrowRight size={14} />
+          </a>
+
+          <a href={`/momentum/${params.symbol}`} className="seo-chip-link">
+            Momentum Score <ArrowRight size={14} />
+          </a>
+
+          <a href={`/volatility/${params.symbol}`} className="seo-chip-link">
+            Volatility Risk <ArrowRight size={14} />
+          </a>
+
+          <a href={`/analysis/${params.symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
+            Full Analysis <ArrowRight size={14} />
+          </a>
         </div>
 
-        {/* --- FOOTER --- */}
-        <div className="mt-24 border-t border-zinc-900 pt-10 pb-20 text-center max-w-4xl mx-auto">
-            
-            <div className="flex flex-wrap justify-center gap-3 my-6">
-                {/* 1. Strategy & Setup */}
-                <a href={`/trade/${params.symbol}`} className="seo-chip-link">
-                   Trade Setup <ArrowRight size={14} />
-                </a>
-                
-                <a href={`/trend/${params.symbol}`} className="seo-chip-link">
-                   Trend Direction <ArrowRight size={14} />
-                </a>
-
-                <a href={`/forecast/${params.symbol}`} className="seo-chip-link">
-                   AI Forecast <ArrowRight size={14} />
-                </a>
-
-                {/* 2. Technical Tools */}
-                <a href={`/calculator/${params.symbol}`} className="seo-chip-link">
-                   Trade Calculator <ArrowRight size={14} />
-                </a>
-                
-                <a href={`/indicator/${params.symbol}`} className="seo-chip-link">
-                   Indicator RSI Score <ArrowRight size={14} />
-                </a>
-
-                {/* 3. Deep Analysis */}
-                <a href={`/zones/${params.symbol}`} className="seo-chip-link">
-                   Liquidity Zones <ArrowRight size={14} />
-                </a>
-
-                <a href={`/momentum/${params.symbol}`} className="seo-chip-link">
-                   Momentum Score <ArrowRight size={14} />
-                </a>
-
-                <a href={`/volatility/${params.symbol}`} className="seo-chip-link">
-                   Volatility Risk <ArrowRight size={14} />
-                </a>
-
-                <a href={`/analysis/${params.symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
-                   Full Analysis <ArrowRight size={14} />
-                </a>
-            </div>
-
-            {/* --- NEW AI CHAT CTA --- */}
-            <div className="mt-12 mb-8">
-                <p className="text-zinc-500 text-xs mb-4">Have specific questions about {params.symbol}?</p>
-                
-                <a href="/AIChat" className="btn-ai-chat-pulse">
-                    <Bot size={20} fill="currentColor" className="text-blue-200" /> 
-                    Chat with AI Analyst
-                </a>
-            </div>
-
+        {/* AI CHAT CTA */}
+        <div className="mt-12 mb-8">
+          <p className="text-zinc-500 text-xs mb-4">Have specific questions about {params.symbol}?</p>
+          
+          <a href="/AIChat" className="btn-ai-chat-pulse">
+            <Bot size={20} fill="currentColor" className="text-blue-200" /> 
+            Chat with AI Analyst
+          </a>
         </div>
-
-      </section>
+      </div>
     </div>
   );
 }

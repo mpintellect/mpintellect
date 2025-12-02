@@ -14807,96 +14807,7 @@ a:focus-visible,
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
-/* ================================================= */
-/*   SETUP ANALYSIS SECTION (Analyst Report Style)   */
-/* ================================================= */
 
-.analysis-container {
-  max-width: 42rem;
-  margin: 4rem auto;
-  padding: 0 1.5rem;
-  position: relative;
-}
-
-.analysis-title {
-  font-family: 'Inter', sans-serif;
-  font-size: 1.25rem; /* ~20px */
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.analysis-title::before {
-  content: "";
-  display: block;
-  width: 4px;
-  height: 24px;
-  background-color: #eab308; /* Yellow-500 Accent Bar */
-  border-radius: 2px;
-}
-
-/* 1. The Rationale Text */
-.analysis-rationale {
-  font-size: 1.05rem;
-  line-height: 1.75; /* Good spacing for reading */
-  color: #d4d4d8; /* Zinc-300 */
-  margin-bottom: 2rem;
-  font-weight: 400;
-}
-
-/* 2. The Execution Box (The Highlight) */
-.analysis-execution-card {
-  background: linear-gradient(145deg, rgba(39, 39, 42, 0.4), rgba(24, 24, 27, 0.6));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-left: 3px solid #3b82f6; /* Blue Action Line */
-  border-radius: 0 12px 12px 0; /* Squared left, rounded right */
-  
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  
-  color: #ffffff;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  font-weight: 500;
-  
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-  position: relative;
-}
-
-/* Optional subtle "Blueprint" background grid inside the card */
-.analysis-execution-card::after {
-  content: "EXECUTION PLAN";
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  font-size: 0.6rem;
-  font-weight: 900;
-  color: rgba(255, 255, 255, 0.1);
-  letter-spacing: 0.1em;
-  pointer-events: none;
-}
-
-/* 3. The Risk Footer */
-.analysis-risk {
-  font-size: 0.8rem;
-  color: #71717a; /* Zinc-500 */
-  font-style: italic;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  border-top: 1px dashed rgba(255,255,255,0.1);
-  padding-top: 1rem;
-}
-
-.analysis-risk::before {
-  content: "⚠";
-  font-style: normal;
-  font-size: 0.9rem;
-  opacity: 0.7;
-}
 /* ================================================= */
 /*   TECHNICAL REPORT (Executive Summary Style)      */
 /* ================================================= */
@@ -16566,150 +16477,473 @@ a:focus-visible,
 .btn-ai-chat-pulse:hover::before {
   left: 100%;
 }
+/* globals.css - Elegant Trade Page Styles */
 
-/* Target Levels Styling */
+/* Target Levels Container */
 .target-levels-container {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #3f3f46;
-}
-
-.target-levels-title {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #a1a1aa;
-  text-transform: uppercase;
-  margin-bottom: 1rem;
-}
-
-.target-level-free {
-  display: flex;
-  justify-content: space-between;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #3f3f46;
-  font-size: 0.875rem;
-  color: #f4f4f5;
-}
-
-.target-level-free-value {
-  color: #34d399;
-  font-family: ui-monospace, monospace;
-  font-weight: 700;
-}
-
-.target-level-premium {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #3f3f46;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin: 1rem 0;
   position: relative;
-  cursor: pointer;
-  font-size: 0.875rem;
-  color: #71717a;
-}
-
-.target-level-premium:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-.target-level-blurred {
-  filter: blur(0.25rem);
-  user-select: none;
-  color: #52525b;
-  background-color: rgba(255, 255, 255, 0.05);
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-}
-
-.target-level-premium-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.8);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  border-radius: 0.25rem;
-}
-
-.target-level-premium:hover .target-level-premium-overlay {
-  opacity: 1;
-}
-
-.target-level-unlock-link {
-  font-size: 0.625rem;
-  font-weight: 700;
-  color: #fbbf24;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.target-level-unlock-link:hover {
-  color: #fcd34d;
-}
-/* Add these to your existing globals.css file */
-
-/* Premium Risk Row Specific Styles */
-.target-level-premium {
-  position: relative;
-  cursor: pointer;
   overflow: hidden;
 }
 
+.target-levels-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.1), 
+    transparent);
+}
+
+.target-levels-title {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* Target Level Styles */
+.target-level-free {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.target-level-free:hover {
+  background: rgba(16, 185, 129, 0.1);
+  transform: translateX(4px);
+}
+
+.target-level-free span:first-child {
+  color: #a1a1aa;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.target-level-free-value {
+  color: #ffffff;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  font-size: 1.125rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Premium Target Levels */
+.target-level-premium {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
 .target-level-premium:hover {
-  background-color: rgba(255, 255, 255, 0.05) !important;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.target-level-premium span:first-child {
+  color: #a1a1aa;
+  font-size: 0.875rem;
+  font-weight: 500;
+  opacity: 0.7;
 }
 
 .target-level-blurred {
-  filter: blur(0.25rem);
-  user-select: none;
-  color: #52525b;
-  background-color: rgba(255, 255, 255, 0.05);
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.375rem;
-  display: inline-block;
+  color: rgba(255, 255, 255, 0.1);
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  font-size: 1.125rem;
+  filter: blur(4px);
+  position: relative;
+  transition: all 0.3s ease;
 }
 
+.target-level-premium:hover .target-level-blurred {
+  filter: blur(0);
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Premium Overlay */
 .target-level-premium-overlay {
   position: absolute;
   inset: 0;
+  background: rgba(59, 130, 246, 0.9);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.85);
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transform: translateY(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 0.5rem;
-  z-index: 20;
 }
 
 .target-level-premium:hover .target-level-premium-overlay {
   opacity: 1;
+  transform: translateY(0);
 }
 
 .target-level-unlock-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.625rem;
-  font-weight: 700;
-  color: #fbbf24;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   text-decoration: none;
-  transition: color 0.2s ease;
-  padding: 0.5rem 1rem;
-  border: 1px solid rgba(251, 191, 36, 0.3);
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   border-radius: 0.25rem;
-  background-color: rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
 .target-level-unlock-link:hover {
-  color: #fcd34d;
-  border-color: rgba(251, 191, 36, 0.5);
-  background-color: rgba(0, 0, 0, 0.7);
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+
+/* AI Chat Button */
+.btn-ai-chat-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, 
+    rgba(30, 58, 138, 0.8) 0%, 
+    rgba(59, 130, 246, 0.6) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 0.75rem;
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 10px 25px -5px rgba(30, 58, 138, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.btn-ai-chat-pulse::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.1), 
+    transparent);
+  transform: rotate(45deg);
+  animation: ai-chat-glow 3s ease-in-out infinite;
+}
+
+@keyframes ai-chat-glow {
+  0%, 100% {
+    left: -50%;
+  }
+  50% {
+    left: 50%;
+  }
+}
+
+.btn-ai-chat-pulse:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 15px 30px -5px rgba(30, 58, 138, 0.4),
+    0 0 0 1px rgba(59, 130, 246, 0.6);
+  background: linear-gradient(135deg, 
+    rgba(30, 58, 138, 0.9) 0%, 
+    rgba(59, 130, 246, 0.7) 100%);
+}
+
+/* AI Chat Icon */
+.btn-ai-chat-pulse svg {
+  transition: transform 0.3s ease;
+}
+
+.btn-ai-chat-pulse:hover svg {
+  transform: scale(1.1);
+}
+
+/* Footer Navigation Enhancement */
+.seo-chip-link.border-yellow-500\/50 {
+  position: relative;
+  overflow: hidden;
+}
+
+.seo-chip-link.border-yellow-500\/50::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(234, 179, 8, 0.2), 
+    transparent);
+  transition: left 0.5s ease;
+}
+
+.seo-chip-link.border-yellow-500\/50:hover::before {
+  left: 100%;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .target-levels-container {
+    padding: 1rem;
+    margin: 0.5rem 0;
+  }
+  
+  .target-level-free,
+  .target-level-premium {
+    padding: 0.5rem 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .target-level-free-value,
+  .target-level-blurred {
+    font-size: 1rem;
+  }
+  
+  .target-level-unlock-link {
+    font-size: 0.75rem;
+    padding: 0.5rem 1rem;
+  }
+  
+  .analysis-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .analysis-title {
+    font-size: 1.25rem;
+  }
+  
+  .analysis-rationale {
+    font-size: 0.875rem;
+  }
+  
+  .analysis-execution-card {
+    padding: 1rem;
+  }
+  
+  .btn-ai-chat-pulse {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .target-level-premium-overlay {
+    opacity: 0.9;
+    transform: translateY(0);
+    background: rgba(59, 130, 246, 0.95);
+  }
+  
+  .target-level-blurred {
+    filter: blur(2px);
+  }
+  
+  .btn-ai-chat-pulse {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .target-level-free,
+  .target-level-premium,
+  .btn-ai-chat-pulse,
+  .seo-chip-link.border-yellow-500\/50::before {
+    transition: none;
+  }
+  
+  .target-level-premium:hover {
+    transform: none;
+  }
+  
+  .btn-ai-chat-pulse::before {
+    animation: none;
+  }
+  
+  .btn-ai-chat-pulse:hover {
+    transform: none;
+  }
+  
+  .target-level-premium-overlay {
+    transition: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .target-levels-container {
+    border: 2px solid #ffffff;
+  }
+  
+  .target-level-free {
+    border: 2px solid #10b981;
+  }
+  
+  .target-level-premium {
+    border: 2px solid #3b82f6;
+  }
+  
+  .btn-ai-chat-pulse {
+    border: 2px solid #3b82f6;
+    background: #000000;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .target-level-premium,
+  .btn-ai-chat-pulse {
+    display: none;
+  }
+}
+/* globals.css - Fix Analysis Section */
+
+/* Analysis Container - FIXED */
+.analysis-container {
+  max-width: 48rem; /* This is the equivalent of max-w-2xl */
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 4rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  display: block; /* Ensure it's block level */
+}
+
+/* If you want to match your original Tailwind classes exactly, use this instead: */
+.analysis-container-alt {
+  max-width: 42rem; /* max-w-2xl in Tailwind is 42rem */
+  width: 100%;
+  margin: 4rem auto 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Analysis Title */
+.analysis-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+  text-align: left; /* Ensure left alignment */
+  width: 100%;
+}
+
+/* Analysis Rationale */
+.analysis-rationale {
+  color: #ffffff;
+  font-size: 1rem;
+  line-height: 1.625;
+  margin-bottom: 1.5rem;
+  font-weight: 400;
+  width: 100%;
+}
+
+/* Analysis Execution Card */
+.analysis-execution-card {
+  background: rgba(17, 17, 17, 1);
+  padding: 1.5rem;
+  border-left: 4px solid rgba(59, 130, 246, 0.8);
+  border-radius: 0.5rem;
+  margin: 1.5rem 0;
+  color: #a1a1aa;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.analysis-execution-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(59, 130, 246, 0.5), 
+    transparent);
+}
+
+/* Analysis Risk */
+.analysis-risk {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  font-style: italic;
+  margin-top: 1rem;
+  font-weight: 400;
+  width: 100%;
+}
+
+/* Mobile Responsive Fix */
+@media (max-width: 768px) {
+  .analysis-container {
+    max-width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .analysis-title {
+    font-size: 1.25rem;
+    text-align: center;
+  }
+  
+  .analysis-rationale {
+    font-size: 0.875rem;
+    text-align: left;
+  }
+  
+  .analysis-execution-card {
+    padding: 1rem;
+    margin: 1rem 0;
+  }
+}
+
+/* Ensure no conflicting styles */
+@media (max-width: 640px) {
+  .analysis-container {
+    margin-top: 2rem;
+  }
 }

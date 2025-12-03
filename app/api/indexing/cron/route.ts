@@ -1,55 +1,63 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server"; // Use NextRequest!
 import { getAvailableSetupSymbols } from '@/app/lib/fetchSetup';
 import { getSymbolData } from '@/app/lib/fetchData';
 import { processSeoIndexing } from '@/app/lib/seo-state';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // 60 seconds allowed
+export const maxDuration = 60; 
 
-export async function GET(req: Request) {
-  return handleRequest(req, 'GET');
-}
-
-export async function POST(req: Request) {
-  return handleRequest(req, 'POST');
-}
-
-// Unified Logic Handler
-async function handleRequest(req: Request, method: string) {
+// We handle both GET (GitHub Cron) and POST (Admin Panel) in one flow
+async function unifiedHandler(req: NextRequest) {
   try {
     let authorized = false;
+    let authSource = "None";
 
-    // 1. CHECK SECURITY FOR GITHUB (Query Param)
-    const { searchParams } = new URL(req.url);
-    const queryKey = searchParams.get('key');
-    if (queryKey === process.env.CRON_SECRET) {
+    const ENV_CRON_SECRET = process.env.CRON_SECRET;
+    // Hardcoded backup for admin panel just in case Env var fails
+    const ADMIN_BACKUP_PASS = "MZ_Admin_2025!"; 
+
+    // --- DEBUGGING LOGS (Check Vercel Logs for these!) ---
+    // console.log(`Configured Env Secret Exists? ${!!ENV_CRON_SECRET}`);
+
+    // 1. CHECK QUERY PARAM (Method for GitHub/Vercel Cron)
+    const queryKey = req.nextUrl.searchParams.get('key');
+    
+    if (queryKey && (queryKey === ENV_CRON_SECRET || queryKey === ADMIN_BACKUP_PASS)) {
         authorized = true;
+        authSource = "Query Param";
     }
 
-    // 2. CHECK SECURITY FOR ADMIN PANEL (JSON Body)
-    // Only verify if GET failed (because GET has no body)
-    if (!authorized && method === 'POST') {
+    // 2. CHECK JSON BODY (Method for Admin Panel)
+    if (!authorized && req.method === 'POST') {
         try {
-            const body = await req.json();
-            // Accept the Admin Pass OR the Cron Secret
-            if (body.secretKey === "MZ_Admin_2025!" || body.secretKey === process.env.CRON_SECRET) {
+            // Clone request to avoid "Body already read" errors
+            const body = await req.clone().json();
+            const bodyKey = body.secretKey;
+            
+            // console.log(`Received Body Key: ${bodyKey ? '***' : 'undefined'}`);
+
+            if (bodyKey && (bodyKey === ENV_CRON_SECRET || bodyKey === ADMIN_BACKUP_PASS)) {
                 authorized = true;
+                authSource = "JSON Body";
             }
         } catch(e) {
-            // Body parse fail (normal if no body sent)
+            console.log("JSON Parse ignored (Request might have empty body)");
         }
     }
 
-    // 3. FINAL GATE
+    // 3. UNAUTHORIZED EXIT
     if (!authorized) {
-        console.error("SEO API Blocked: Wrong Key.");
+        console.error(`❌ Authorization Failed. Source: ${authSource}.`);
+        // We log what we got vs what we expected (First 3 chars only for security)
+        console.log(`Debug Info -> EnvKeyStart: ${ENV_CRON_SECRET?.slice(0,3)} | QueryGot: ${queryKey}`);
+        
         return NextResponse.json({ error: 'Unauthorized Key' }, { status: 401 });
     }
 
-    // --- MAIN LOGIC STARTS ---
-    const symbols = await getAvailableSetupSymbols();
-    console.log(`🤖 pSEO Running. Scanning ${symbols.length} assets...`);
+    console.log(`✅ SEO Engine Authorized via ${authSource}. Starting scan...`);
 
+    // --- 4. EXECUTE SEO LOGIC ---
+    const symbols = await getAvailableSetupSymbols();
     const logs = [];
 
     for (const sym of symbols) {
@@ -61,17 +69,23 @@ async function handleRequest(req: Request, method: string) {
                     logs.push(result);
                 }
             }
-        } catch (symErr) { console.error(symErr); }
+        } catch (symErr) { 
+            console.error(`Skipping ${sym}:`, symErr);
+        }
     }
 
     return NextResponse.json({
         success: true,
-        method: method,
+        source: authSource,
         scanned: symbols.length,
         actions: logs
     });
 
   } catch (error: any) {
+    console.error("Critical Route Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+// Export both methods pointing to the same handler
+export { unifiedHandler as GET, unifiedHandler as POST };

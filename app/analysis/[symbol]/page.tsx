@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { getSymbolData } from '../../lib/fetchData'; 
 import { generateAnalysisReport } from '../../lib/seo/analysisGenerator';
 import NotificationButton from '@/components/NotificationButton'; 
+import LiveSeoSchema from '@/components/LiveSeoSchema'; // Import the SEO schema component
 import { 
   Activity, ArrowRight, Gauge, Layers, 
   Cpu, Thermometer, Box, LineChart, Bot,
@@ -26,6 +27,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+export const revalidate = 60; // 60 seconds (keeps it fresh)
+
 // --- MAIN PAGE ---
 export default async function AnalysisPage({ params }: Props) {
   const data = await getSymbolData(params.symbol);
@@ -48,7 +51,13 @@ export default async function AnalysisPage({ params }: Props) {
   const isHighRisk = volatility.volatility_level === 'high';
 
   return (
-    <div className="min-h-screen bg-black text-white pb-24 font-sans selection:bg-blue-500/30">
+    <main className="min-h-screen bg-black text-white pb-24 font-sans selection:bg-blue-500/30">
+      
+      {/* 
+        1. INJECT SCHEMA HERE.
+        It renders an invisible <script> tag in the HTML head/body.
+      */}
+      <LiveSeoSchema data={data} />
       
       {/* 1. TICKER TAPE HEADER */}
       <div className="pt-28 pb-8 px-6 border-b border-zinc-900 bg-gradient-to-b from-zinc-900/50 to-black">
@@ -161,24 +170,32 @@ export default async function AnalysisPage({ params }: Props) {
             </div>
 
         </div>
-<div className="ai-validation-box flex items-start gap-4">
-  <div className="ai-icon-container">
-    <Bot size={24} />
-  </div>
-  <div className="ai-validation-content">
-    <h4 className="ai-validation-title">
-      Is this setup confirmed right now?
-    </h4>
-    <p className="ai-validation-description">
-      This report is based on H1/H4 market structure. 
-      For <strong>Scalping entries (M5/M15)</strong> or News validation, 
-      you need real-time confirmation.
-    </p>
-    <a href="/AIChat" className="ai-validation-link">
-      Validate this trade with AI Analyst
-    </a>
-  </div>
-</div>
+
+        {/* Optional: Add speakable summary for Google Voice */}
+        <p className="summary text-zinc-400 mt-6 mb-4 text-center text-sm">
+          Latest analysis: {data.final_decision} signal at {trend.current_price}. 
+          {trend.trend.includes('bull') ? ' Bullish' : ' Bearish'} momentum with {volatility.volatility_level} volatility.
+        </p>
+
+        <div className="ai-validation-box flex items-start gap-4">
+          <div className="ai-icon-container">
+            <Bot size={24} />
+          </div>
+          <div className="ai-validation-content">
+            <h4 className="ai-validation-title">
+              Is this setup confirmed right now?
+            </h4>
+            <p className="ai-validation-description">
+              This report is based on H1/H4 market structure. 
+              For <strong>Scalping entries (M5/M15)</strong> or News validation, 
+              you need real-time confirmation.
+            </p>
+            <a href="/AIChat" className="ai-validation-link">
+              Validate this trade with AI Analyst
+            </a>
+          </div>
+        </div>
+        
         {/* --- 3. WRITTEN ANALYSIS & REPORT --- */}
         <div className="dash-grid-container">
     
@@ -272,7 +289,7 @@ export default async function AnalysisPage({ params }: Props) {
 
 </section>
 
-    </div>
+    </main>
   );
 }
 

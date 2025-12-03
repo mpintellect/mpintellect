@@ -1,47 +1,74 @@
 import { NextResponse } from "next/server";
-import { getAvailableSetupSymbols } from '@/app/lib/fetchSetup'; // Gets your list of symbols
-import { getSymbolData } from '@/app/lib/fetchData';             // Gets Google Storage JSON
-import { processSeoIndexing } from '@/app/lib/seo-state';        // The file above
+import { getAvailableSetupSymbols } from '@/app/lib/fetchSetup';
+import { getSymbolData } from '@/app/lib/fetchData';
+import { processSeoIndexing } from '@/app/lib/seo-state';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; 
+export const maxDuration = 60; // 60 seconds allowed
 
 export async function GET(req: Request) {
+  return handleRequest(req, 'GET');
+}
+
+export async function POST(req: Request) {
+  return handleRequest(req, 'POST');
+}
+
+// Unified Logic Handler
+async function handleRequest(req: Request, method: string) {
   try {
-    // 1. SECURITY CHECK
+    let authorized = false;
+
+    // 1. CHECK SECURITY FOR GITHUB (Query Param)
     const { searchParams } = new URL(req.url);
-    const secret = searchParams.get('key');
-    
-    if (secret !== process.env.CRON_SECRET) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const queryKey = searchParams.get('key');
+    if (queryKey === process.env.CRON_SECRET) {
+        authorized = true;
     }
 
-    // 2. Fetch Symbol List
-    const symbols = await getAvailableSetupSymbols(); 
-    // Example output: ["BTCUSD", "EURUSD", "US30"]
+    // 2. CHECK SECURITY FOR ADMIN PANEL (JSON Body)
+    // Only verify if GET failed (because GET has no body)
+    if (!authorized && method === 'POST') {
+        try {
+            const body = await req.json();
+            // Accept the Admin Pass OR the Cron Secret
+            if (body.secretKey === "MZ_Admin_2025!" || body.secretKey === process.env.CRON_SECRET) {
+                authorized = true;
+            }
+        } catch(e) {
+            // Body parse fail (normal if no body sent)
+        }
+    }
 
-    console.log(`🤖 Starting SEO Cron for ${symbols.length} assets...`);
+    // 3. FINAL GATE
+    if (!authorized) {
+        console.error("SEO API Blocked: Wrong Key.");
+        return NextResponse.json({ error: 'Unauthorized Key' }, { status: 401 });
+    }
+
+    // --- MAIN LOGIC STARTS ---
+    const symbols = await getAvailableSetupSymbols();
+    console.log(`🤖 pSEO Running. Scanning ${symbols.length} assets...`);
 
     const logs = [];
 
-    // 3. Loop symbols (Sequential loop is safer for quotas than Promise.all here)
     for (const sym of symbols) {
-        const data = await getSymbolData(sym);
-        
-        if (data) {
-            const result = await processSeoIndexing(sym, data);
-            
-            // Only log actions/errors to keep response clean
-            if (result.status === 'indexed' || result.status === 'error') {
-                logs.push(result);
+        try {
+            const data = await getSymbolData(sym);
+            if (data) {
+                const result = await processSeoIndexing(sym, data);
+                if (result.status === 'indexed' || result.status === 'error') {
+                    logs.push(result);
+                }
             }
-        }
+        } catch (symErr) { console.error(symErr); }
     }
 
     return NextResponse.json({
         success: true,
+        method: method,
         scanned: symbols.length,
-        actions: logs.length > 0 ? logs : "No significant market changes detected."
+        actions: logs
     });
 
   } catch (error: any) {

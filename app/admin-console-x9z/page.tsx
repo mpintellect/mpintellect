@@ -263,37 +263,46 @@ export default function AdminPushDashboard() {
     return '🌡️';
   };
 
-  // --- SEO LOGIC ---
+  // --- SEO LOGIC (Fixed) ---
   const triggerSeoScan = async () => {
     setSeoLoading(true);
-    setSeoLogs(["🤖 Initializing Bot Scan..."]);
+    setSeoLogs([`🤖 Authenticating with pSEO Engine...`]);
     
     try {
-        // If you set a CRON_SECRET env var, add it: ?key=MY_SECRET
-        const res = await fetch('/api/indexing/cron'); 
+        // FIX: Change to POST and send the secretKey
+        const res = await fetch('/api/indexing/cron', { // Ensure this matches your route path
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                secretKey: password, // Uses the password you typed to login
+                force: true // Optional flag if your API supports forcing updates
+            })
+        });
+
         const data = await res.json();
 
         if(res.ok) {
             const logs = [];
-            logs.push(`✅ Success. Scanned ${data.scanned} assets.`);
+            logs.push(`✅ Success. Engine: ${data.source || 'Active'}`);
+            logs.push(`🔍 Scanned ${data.scanned} assets.`);
             
             if (Array.isArray(data.actions) && data.actions.length > 0) {
                 data.actions.forEach((action: any) => {
-                    if (action.action === 'indexed' || action.status === 'indexed') {
+                    if (action.status === 'indexed') {
                         logs.push(`🚀 INDEXED ${action.symbol}: ${action.reason}`);
                     } else if (action.status === 'error') {
                         logs.push(`⚠️ ERROR ${action.symbol}: ${action.error}`);
                     }
                 });
             } else {
-                logs.push("ℹ️ No significant market changes (Skipped indexing to save quota).");
+                logs.push("ℹ️ Market Stable. No index requests sent (Saving Google Quota).");
             }
             setSeoLogs(logs);
         } else {
-            setSeoLogs(["❌ Server Error: " + data.error]);
+            setSeoLogs([`❌ Server Error: ${data.error || 'Unknown error'}`]);
         }
-    } catch(e) {
-        setSeoLogs(["❌ Network Failure"]);
+    } catch(e: any) {
+        setSeoLogs([`❌ Network Failure: ${e.message}`]);
     } finally {
         setSeoLoading(false);
     }

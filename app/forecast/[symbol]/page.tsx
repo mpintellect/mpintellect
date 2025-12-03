@@ -9,18 +9,34 @@ type Props = { params: { symbol: string } };
 // --- 1. METADATA ---
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const data = await getSymbolData(params.symbol);
+  if (!data) return { title: `${params.symbol} Forecast` };
+
+  const sym = data.symbol.toUpperCase();
+  const decision = data.final_decision; // BUY, SELL, HOLD
+  const volatility = data.volatility.volatility_score;
+
+  // TRICK: NEWS-STYLE HEADLINES
+  // Google picks these up for "Price Prediction" searches
+  let dynamicTitle = `${sym} Price Prediction: Artificial Intelligence Forecast`;
   
-  if (!data || !data.summary) {
-    return { 
-      title: `Price Forecast: ${params.symbol} | MZPrimer `,
-      description: `AI-powered price forecast and trading analysis for ${params.symbol}`
-    };
+  // If market is crazy, pivot to "Crash/Pump" language
+  if (volatility > 0.6) {
+      if (decision === "SELL") dynamicTitle = `⚠️ ${sym} Crash Warning? AI Forecast & Targets`;
+      if (decision === "BUY")  dynamicTitle = `🚀 ${sym} Breakout Alert: AI Price Targets`;
+  } 
+  else if (decision !== "HOLD") {
+      dynamicTitle = `${sym} to ${decision}? AI Projection for Today`;
   }
-  
-  const report = generateForecastReport(data);
+
   return {
-    title: report.title,
-    description: report.metaDesc,
+    title: dynamicTitle,
+    description: `Is ${sym} going up or down? AI model predicts ${decision} trend with ${data.analysis_accuracy}% accuracy. See next price targets.`,
+    keywords: [
+      `${sym} price prediction`,
+      `is ${sym} a buy`,
+      `${sym} outlook`,
+      `${sym} news today`
+    ]
   };
 }
 

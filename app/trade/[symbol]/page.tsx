@@ -8,12 +8,32 @@ type Props = { params: { symbol: string } };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const data = await getSymbolData(params.symbol);
-  if (!data) return { title: `Trade Signal: ${params.symbol}` };
   
-  const report = generateTradeReport(data);
+  if (!data) return { title: `Trade ${params.symbol} - Analysis` };
+
+  const order = (data as any).pending_orders?.primary_order;
+  const action = order?.type.replace('_LIMIT', '').replace('_STOP', '') || "SETUP";
+  const sym = data.symbol.toUpperCase();
+  const conf = data.risk_score?.confidence_score || 0;
+
+  // TRICK: URGENCY TRIGGERS
+  // If High Confidence -> Use "ALERT" or "STRONG"
+  let titlePrefix = `Live Trade:`;
+  if (conf > 85) titlePrefix = `🚨 STRONG ${action}:`;
+  else if (conf > 70) titlePrefix = `${action} Signal:`;
+
   return {
-    title: report.title,
-    description: report.metaDesc,
+    // Ex: "🚨 STRONG BUY: BTCUSD - Entry 98000 (92% Win Prob)"
+    title: `${titlePrefix} ${sym} @ ${order?.entry_price || 'Market'} | MZ Primer AI`,
+    description: `Active trading setup for ${sym}. Entry: ${order?.entry_price}. SL: ${order?.sl_price}. Institutional logic based on Trend & Liquidity. Confidence: ${conf}%.`,
+    
+    // TRICK: CAPTURE INTENT KEYWORDS
+    keywords: [
+      `${sym} trade signal`, 
+      `buy ${sym} now`, 
+      `${sym} entry price today`,
+      `${sym} trading strategy`
+    ]
   };
 }
 

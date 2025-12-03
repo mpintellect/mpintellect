@@ -13,12 +13,16 @@ type Props = { params: { symbol: string } };
 // --- METADATA ---
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const data = await getSymbolData(params.symbol);
-  if (!data) return { title: `Technical Analysis: ${params.symbol} | MZPrimer ` };
-  
-  const report = generateAnalysisReport(data);
+  if (!data) return { title: `${params.symbol} Analysis` };
+
+  const sym = data.symbol.toUpperCase();
+  const bias = data.trend.trend.replace('_', ' ').toUpperCase();
+
   return {
-    title: report.title,
-    description: report.metaDesc,
+    // Authority Style Title
+    title: `${sym} Technical Analysis: ${bias} Structure Confirmed`,
+    description: `Complete technical breakdown for ${sym}. Momentum, Volatility, and Liquidity analysis powered by MZ Primer. Institutional Bias: ${bias}.`,
+    keywords: [`${sym} technical analysis`, `${sym} chart analysis`, `${sym} support resistance`]
   };
 }
 

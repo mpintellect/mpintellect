@@ -1,0 +1,42 @@
+name: 🚀 Site Warmer (Keep Vercel Hot)
+
+on:
+  schedule:
+    # Run every 10 minutes (Vercel lambda timeout is ~15min, this beats it)
+    - cron: '*/10 * * * *'
+  
+  # Allow manual trigger from GitHub Actions dashboard
+  workflow_dispatch:
+
+jobs:
+  warm_up_traffic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5 # Safety limit
+    
+    steps:
+      - name: 🌡️ Warmer Execution
+        run: |
+          # --- USER AGENT ---
+          # Pretend to be an iPhone Safari user so Next.js hydrates fully for mobile view logic
+          UA="Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1"
+          
+          echo "Starting Advanced Cache Warming..."
+
+          # 1. CORE MARKET PAGE (Heavy page)
+          curl -A "$UA" -s -I "https://mzprimer.com/market" > /dev/null
+          
+          # 2. KEY PILLAR ASSETS (High SEO Traffic)
+          # Hitting one dynamic page per type wakes up that specific route logic
+          curl -A "$UA" -s -I "https://mzprimer.com/analysis/btcusd" > /dev/null
+          curl -A "$UA" -s -I "https://mzprimer.com/trade/xauusd" > /dev/null
+          curl -A "$UA" -s -I "https://mzprimer.com/forecast/eurusd" > /dev/null
+          curl -A "$UA" -s -I "https://mzprimer.com/analysis/us30" > /dev/null
+          
+          # 3. BACKEND API LOGIC
+          # Keeps the Google Storage Fetch connection open/warm
+          curl -A "$UA" -s -I "https://mzprimer.com/api/livemarketfeed" > /dev/null
+          
+          # 4. HOME PAGE (Landing)
+          curl -A "$UA" -s -I "https://mzprimer.com/" > /dev/null
+
+          echo "✅ Site is now HOT."

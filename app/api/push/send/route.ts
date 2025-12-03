@@ -1,173 +1,142 @@
 import { NextResponse } from "next/server";
 import webpush from "web-push";
-import { adminDb } from "../../../lib/pushAdminSafe";
-import { sendToTelegram } from "../../../lib/telegram";
+import { adminDb } from "../../../lib/pushAdminSafe"; 
+import { sendToTelegram } from "../../../lib/telegram"; 
+// import { sendToDiscord } from "@/lib/discord"; // Optional: Uncomment if you added Discord logic
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    // 1. SECURITY
-    if (!process.env.VAPID_PRIVATE_KEY || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
-      throw new Error("VAPID Keys are missing in Server Environment Variables");
-    }
-
-    webpush.setVapidDetails(
-      process.env.VAPID_SUBJECT || "mailto:contact@mzprimer.com",
-      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-      process.env.VAPID_PRIVATE_KEY
-    );
-
-    const { targetUserId, title, message, url, sendToAll } = await req.json();
-    
-    // TRIM WHITESPACE: This is the #1 cause of "User not found" errors
-    const trimmedUserId = targetUserId ? targetUserId.trim() : null;
-
-    // --- ENHANCE NOTIFICATION FORMAT FOR AI SIGNALS ---
-    let enhancedTitle = title || "Signal";
-    let enhancedBody = message || "Update";
-    
-    // Check if this is an AI Signal (contains "MZPrimer AI Expert" pattern)
-    if (title?.includes("MZPrimer AI Expert")) {
-      // Extract components from the AI signal format
-      const actionMatch = title?.match(/(BUY|SELL)/i);
-      const action = actionMatch ? actionMatch[1].toUpperCase() : 'TRADE';
-      const actionEmoji = action === 'BUY' ? '🟢' : action === 'SELL' ? '🔴' : '⚡';
-      
-      // Extract symbol from title (remove "MZPrimer AI Expert:" and action)
-      const symbol = title
-        ?.replace("MZPrimer AI Expert:", "")
-        .replace(/(BUY|SELL)/i, "")
-        .replace(/🟢|🔴|⚡/g, "")
-        .trim() || 'Unknown Symbol';
-
-      // Parse the message body to extract components
-      const entryMatch = message?.match(/Entry: ([\d.]+)/);
-      const confidenceMatch = message?.match(/Confidence: ([\d.]+)%/);
-      const trendMatch = message?.match(/Trend: ([A-Za-z\s]+)/);
-      
-      const entry = entryMatch ? entryMatch[1] : '';
-      const confidence = confidenceMatch ? confidenceMatch[1] : '';
-      const trend = trendMatch ? trendMatch[1] : '';
-
-      // Build enhanced notification format
-      enhancedTitle = `🚀 ${symbol} ${action} Signal`;
-      
-      enhancedBody = `MZPrimer AI Expert:\n\n${actionEmoji} ${action}\n🎯 Entry: ${entry}\n🧠 Confidence: ${confidence}%\n🌊 Trend: ${trend}`;
+    // 1. SETUP & VALIDATE KEYS
+    if (process.env.VAPID_PRIVATE_KEY && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+        webpush.setVapidDetails(
+            process.env.VAPID_SUBJECT || "mailto:admin@mzprimer.com",
+            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+            process.env.VAPID_PRIVATE_KEY
+        );
     } else {
-      // For manual/news notifications, use standard formatting
-      enhancedTitle = `🚀 ${enhancedTitle}`;
-      
-      // Enhance manual messages with basic formatting
-      enhancedBody = enhancedBody
-        .replace(/ \| /g, '\n')
-        .replace('Entry:', '🎯 Entry:')
-        .replace('Confidence:', '🧠 Confidence:')
-        .replace('Trend:', 'Trend:');
+        console.error("VAPID Keys missing. Web Push disabled.");
     }
 
-    const payload = JSON.stringify({
-      title: enhancedTitle,
-      body: enhancedBody,
+    const body = await req.json();
+    const { title, message, url, sendToAll } = body;
+    const targetUserId = body.targetUserId ? body.targetUserId.trim() : null;
+
+    // --- PAYLOAD FORMATTER ---
+    // Make the phone notification look structured (vertical list)
+    // Turns "Entry: 100 | Conf: 90" -> 
+    // 🎯 Entry: 100
+    // 🧠 Conf: 90%
+    let enrichedBody = message || "";
+    
+    // Check if it's an AI Signal format or generic update
+    if (enrichedBody.includes("Entry:")) {
+       enrichedBody = enrichedBody
+        .replace(/ \| /g, '\n') // Newlines for stacking
+        .replace('Entry:', '🎯 Entry:')
+        .replace('Confidence:', '🧠 Conf:')
+        .replace('Trend:', '🌊 Trend:')
+        .replace('Conf:', '🧠 Conf:');
+    }
+
+    const pushPayload = JSON.stringify({
+      title: title?.startsWith("🚀") ? title : `🚀 ${title || "Market Update"}`,
+      body: enrichedBody,
       url: url || "https://mzprimer.com",
       
-      // VISUALS
+      // Visuals
       icon: "/logos/mzlogo.webp",
-      vibrate: [200, 100, 200],
-      tag: "market-signal",
+      badge: "/logos/mzlogo.webp", // Small monochome icon for Android status bar
+      vibrate: [200, 100, 200], // Haptic buzz
+      tag: "trade-signal", // Replaces older notifications to reduce spam pileup
       
-      // ACTION BUTTONS (Chrome/Android only)
+      // Interactive Buttons
       actions: [
         { action: "open", title: "⚡ Execute Trade" },
         { action: "close", title: "Dismiss" }
       ]
     });
 
-    // =========================================
-    // SCENARIO A: SINGLE TARGET (Deep Search)
-    // =========================================
-    if (trimmedUserId) {
-        console.log(`🔍 Searching for ID: [${trimmedUserId}]`);
-
-        // ATTEMPT 1: Check 'push_subscriptions' collection (New Method)
-        let userDoc = await adminDb.collection("push_subscriptions").doc(trimmedUserId).get();
-        let foundCollection = "push_subscriptions";
-
-        // ATTEMPT 2: Check 'users' collection (Old/Legacy Method)
-        if (!userDoc.exists) {
-            console.log(`❌ Not found in 'push_subscriptions'. Checking 'users'...`);
-            userDoc = await adminDb.collection("users").doc(trimmedUserId).get();
-            foundCollection = "users";
-        }
-
-        // FINAL CHECK
-        if (!userDoc.exists) {
-            console.log(`❌ CRITICAL: ID [${trimmedUserId}] does not exist in ANY collection.`);
-            return NextResponse.json({ 
-                error: `ID [${trimmedUserId}] not found in DB. Copy the ID exactly from Firebase > Firestore.` 
-            }, { status: 404 });
-        }
-
-        console.log(`✅ Found Document in '${foundCollection}'. Checking keys...`);
-
-        const userData = userDoc.data();
+    // ===========================================
+    // SCENARIO A: SINGLE TARGET (Testing)
+    // ===========================================
+    if (targetUserId) {
+        console.log(`[TEST] Searching for User: ${targetUserId}`);
         
-        // Check all naming variations
-        const subscription = userData?.subscriptionData || userData?.pushSubscription || userData?.subscription;
+        let docSnap = await adminDb.collection("push_subscriptions").doc(targetUserId).get();
+        let sourceColl = "push_subscriptions";
 
-        if (!subscription) {
-            console.log("❌ Doc found, but fields are empty. Data:", JSON.stringify(userData));
-            return NextResponse.json({ error: `User Found in '${foundCollection}', but 'subscriptionData' field is missing.` }, { status: 404 });
+        // Fallback search
+        if (!docSnap.exists) {
+            docSnap = await adminDb.collection("users").doc(targetUserId).get();
+            sourceColl = "users";
         }
 
-        // Send
-        await webpush.sendNotification(subscription, payload);
-        console.log(`🚀 Success! Sent to ${trimmedUserId}`);
-        
-        return NextResponse.json({ success: true, count: 1, mode: `single (${foundCollection})` });
+        if (docSnap.exists) {
+            const data = docSnap.data();
+            const sub = data?.subscriptionData || data?.pushSubscription;
+            
+            if (sub) {
+                await webpush.sendNotification(sub, pushPayload);
+                return NextResponse.json({ success: true, count: 1, mode: `Single (${sourceColl})` });
+            } else {
+                return NextResponse.json({ error: "User found but no Push Token saved." }, { status: 404 });
+            }
+        }
+        return NextResponse.json({ error: "User ID not found in database." }, { status: 404 });
     }
 
-    // =========================================
-    // SCENARIO B: BROADCAST
-    // =========================================
+    // ===========================================
+    // SCENARIO B: BROADCAST ALL (The Main Event)
+    // ===========================================
     if (sendToAll) {
         console.log("📢 STARTING GLOBAL BROADCAST...");
 
-        // 1. FIRE TELEGRAM (Parallel Execution)
+        // 1. TELEGRAM BOT (Parallel Fire)
         const telegramPromise = sendToTelegram(title, message, url);
 
-        // 2. FIRE WEB PUSH (Your existing loop)
-        const snapshot = await adminDb.collection('push_subscriptions').get();
-        
+        // 2. DISCORD WEBHOOK (Optional - uncomment if enabled)
+        // const discordPromise = sendToDiscord(title, message, url);
+
+        // 3. WEB PUSH BLAST (Iterate All Users)
         const pushPromise = (async () => {
+            const snapshot = await adminDb.collection('push_subscriptions').get();
             if (snapshot.empty) return 0;
-            const promises = snapshot.docs.map(async (doc) => {
-                const data = doc.data();
-                const sub = data.subscriptionData || data.pushSubscription; 
+
+            console.log(`Sending to ${snapshot.size} Push Subscribers...`);
+
+            // Send in parallel (Map -> Promise.all)
+            const sendTasks = snapshot.docs.map(async (doc) => {
+                const sub = doc.data().subscriptionData || doc.data().pushSubscription; 
                 if (sub) {
-                    return webpush.sendNotification(sub, payload)
+                    // Try to send. If 410 Gone/404, clean up database
+                    return webpush.sendNotification(sub, pushPayload)
                        .catch(err => {
                            if (err.statusCode === 410 || err.statusCode === 404) {
-                               return doc.ref.delete(); // Clean up
+                               console.log(`Cleanup dead user: ${doc.id}`);
+                               return doc.ref.delete(); 
                            }
                            return null;
                        });
                 }
             });
-            await Promise.all(promises);
+
+            await Promise.all(sendTasks);
             return snapshot.size;
         })();
 
-        // Wait for both
+        // Wait for all channels
+        // await Promise.all([telegramPromise, discordPromise, pushPromise]); // Use this line if Discord enabled
         await Promise.all([telegramPromise, pushPromise]);
-
-        return NextResponse.json({ success: true, count: snapshot.size, mode: 'broadcast_multi_channel' });
+        
+        return NextResponse.json({ success: true, mode: 'Omni-Channel Broadcast' });
     }
 
-    return NextResponse.json({ error: "Invalid Payload" }, { status: 400 });
+    return NextResponse.json({ error: "Bad Request" }, { status: 400 });
 
   } catch (error: any) {
     console.error("SERVER ERROR:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Internal Error" }, { status: 500 });
   }
 }

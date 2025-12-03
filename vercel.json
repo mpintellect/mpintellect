@@ -3,5 +3,11 @@
     "app/download/route.ts": {
       "includeFiles": "private/robots/MZPrimer_Scalper_X_V.1.ex5"
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/indexing/cron",
+      "schedule": "*/15 * * * *" 
+    }
+  ]
 }

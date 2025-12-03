@@ -16947,3 +16947,85 @@ a:focus-visible,
     margin-top: 2rem;
   }
 }
+/* Add to your global CSS */
+.admin-tab-active-ai {
+  background: linear-gradient(135deg, #065f46 0%, #059669 100%);
+  color: white;
+  border-bottom: 2px solid #10b981;
+}
+
+.admin-tab-active-manual {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+  color: white;
+  border-bottom: 2px solid #6366f1;
+}
+
+.admin-preview-box {
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.1) 0%, rgba(55, 48, 163, 0.1) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-preview-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, #6366f1, #8b5cf6);
+}
+
+.admin-log-success {
+  background: rgba(21, 128, 61, 0.2);
+  border-left: 3px solid #22c55e;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.admin-log-error {
+  background: rgba(185, 28, 28, 0.2);
+  border-left: 3px solid #ef4444;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.admin-log-info {
+  background: rgba(30, 64, 175, 0.2);
+  border-left: 3px solid #3b82f6;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.btn-broadcast-test.selected {
+  background: rgba(59, 130, 246, 0.2);
+  border: 2px solid #3b82f6;
+}
+
+.btn-broadcast-all.selected {
+  background: rgba(239, 68, 68, 0.2);
+  border: 2px solid #ef4444;
+}
+
+.admin-input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  color: white;
+  width: 100%;
+  font-size: 14px;
+}
+
+.admin-input:focus {
+  outline: none;
+  border-color: #6366f1;
+}

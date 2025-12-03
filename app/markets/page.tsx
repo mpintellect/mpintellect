@@ -43,7 +43,7 @@ const SYMBOL_NAMES: Record<string, string> = {
   "US30": "Dow Jones 30 Index",
   "HK50": "Hong Kong 50 Index",
   "FRANCE40": "CAC 40 Index (France)",
-  "DE40": "DAX 40 Index (Germany)",
+  "CHINA50": "FTSE China A50 Index",
   "UK100": "FTSE 100 Index (UK)",
 };
 
@@ -52,7 +52,7 @@ const CATEGORIES = {
   CRYPTO: ['BTCUSD', 'ETHUSD', 'XRPUSD', 'SOLUSD', 'DOGEUSD', 'LTCUSD'],
   FOREX_MAJORS: ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCAD', 'AUDUSD', 'USDCHF'],
   CROSSES_METALS: ['EURJPY', 'GBPJPY', 'XAUUSD', 'XAUEUR', 'BRENT', 'PLATINUM'],
-  INDICES: ['US30', 'US500', 'USTEC', 'DE40', 'UK100', 'HK50']
+  INDICES: ['US30', 'US500', 'USTEC', 'CHINA50', 'UK100', 'HK50']
 };
 
 export default function MarketsHub() {

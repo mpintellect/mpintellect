@@ -26,7 +26,7 @@ type SymbolKey =
   | 'PLATINUM' | 'BRENT'
   | 'BTCUSD' | 'ETHUSD' | 'XRPUSD' | 'DOGEUSD' | 'LTCUSD'
   | 'US500'  | 'USTEC'  | 'US30'  | 'HK50'  | 'FRANCE40'
-  | 'DE40'   | 'UK100'
+  | 'CHINA50'   | 'UK100'
   | 'EURJPY' | 'EURGBP' | 'GBPJPY' | 'GBPCHF';
 
 type StyleKey = 'scalper' | 'balanced' | 'aggressive' | 'swing';
@@ -69,7 +69,7 @@ const DISPLAY_NAMES: Record<SymbolKey, string> = {
   US30: 'YM (Dow Jones 30 Index (US).com)',
   HK50: 'HK50 (Hong Kong 50 stock index)',
   FRANCE40:  'CAC (FRANCE40 Index (France))',
-  DE40: 'FDAX (German DAX Index)',
+  CHINA50: 'FDAX (German DAX Index)',
   UK100: 'FTSE (UK 100 Index)',
   EURJPY: 'EURJPY (Euro / Japanese Yen)',
   EURGBP: 'EURGBP (Euro / British Pound)',
@@ -100,7 +100,7 @@ const CONTRACT: Record<SymbolKey, { contract: number; pip: number }> = {
   US30:    { contract: 1,       pip: 0.1 },
   HK50:    { contract: 1,       pip: 0.1 },
   FRANCE40:     { contract: 1,       pip: 0.1 },
-  DE40:       { contract: 1,       pip: 1 },       // DAX (GER40)
+  CHINA50:       { contract: 1,       pip: 1 },       // DAX (GER40)
   UK100:       { contract: 1,       pip: 1 },       // UK100
   EURJPY:     { contract: 100000,  pip: 0.01 },
   EURGBP:     { contract: 100000,  pip: 0.0001 },
@@ -115,7 +115,7 @@ const DECIMALS: Record<SymbolKey, number> = {
   XAUUSD: 2, XAUEUR: 2, XAGUSD: 3, PLATINUM: 2, BRENT: 2,
   BTCUSD: 1, ETHUSD: 2, XRPUSD: 4, DOGEUSD: 4, LTCUSD: 2,
   US500: 2, USTEC: 2, US30: 2, HK50: 2, FRANCE40: 2,
-  DE40: 1, UK100: 1,
+  CHINA50: 1, UK100: 1,
   EURJPY: 3, EURGBP: 5, GBPJPY: 3, GBPCHF: 5,
 };
 
@@ -129,7 +129,7 @@ const ASSET_GROUPS: Array<{ key: AssetGroupKey; label: string; symbols: SymbolKe
     'EURJPY','EURGBP','GBPJPY','GBPCHF'] },
   { key: 'metals',  label: 'Metals & Energy', symbols: ['XAUUSD','XAUEUR','XAGUSD','PLATINUM','BRENT'] },
   { key: 'crypto',  label: 'Cryptocurrencies', symbols: ['BTCUSD','ETHUSD','XRPUSD','DOGEUSD','LTCUSD'] },
-  { key: 'indices',  label: 'Indices', symbols: ['US500','USTEC','US30','HK50','FRANCE40','DE40','UK100'] },
+  { key: 'indices',  label: 'Indices', symbols: ['US500','USTEC','US30','HK50','FRANCE40','CHINA50','UK100'] },
 ];
 
 function styleParams(style: StyleKey) {

@@ -39,7 +39,7 @@ const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: nu
   "US30": { pip: 1.0, contract: 1, decimals: 1 },
   "HK50": { pip: 0.1, contract: 1, decimals: 2 },
   "FRANCE40": { pip: 0.1, contract: 1, decimals: 2 },
-  "DE40": { pip: 0.1, contract: 1, decimals: 1 },
+  "CHINA50": { pip: 0.1, contract: 1, decimals: 1 },
   "UK100": { pip: 0.1, contract: 1, decimals: 1 },
 };
 

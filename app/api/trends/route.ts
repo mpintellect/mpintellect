@@ -13,7 +13,7 @@ const SYMBOLS = [
   "NZDUSD", "USDCHF", "XAUUSD", "XAUEUR", "XAGUSD",
   "PLATINUM", "BRENT", "BTCUSD", "ETHUSD", "XRPUSD",
   "DOGEUSD", "LTCUSD", "US500", "USTEC", "US30",
-  "HK50", "CAC", "DE40", "UK100", "EURJPY",
+  "HK50", "CAC", "CHINA50", "UK100", "EURJPY",
   "EURGBP", "GBPJPY", "GBPCHF"
 ];
 
@@ -89,7 +89,7 @@ function getSymbolName(symbol: string): string {
     DOGEUSD: "Dogecoin",
     LTCUSD: "Litecoin",
     BRENT: "US Crude Oil",
-    DE40: "DAX 40 Index",
+    CHINA50: "CHINA50 Index",
     UK100: "FTSE 100 Index",
     US500: "S&P 500 Index (US)",
     NASDAQ: "NASDAQ Index",

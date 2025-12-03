@@ -22,7 +22,7 @@ const SYMBOL_MAP: Record<string, string> = {
   US30: 'US30',
   HK50: 'HK50',
   FRANCE40: 'FRANCE40',
-  DE40: 'DE40',
+  CHINA50: 'CHINA50',
   UK100: 'UK100',
   EURJPY: 'EURJPY',
   EURGBP: 'EURGBP',

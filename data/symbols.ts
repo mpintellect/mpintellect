@@ -5,7 +5,7 @@ export const SYMBOLS = [
   "XAUUSD", "XAUEUR", "XAGUSD", "PLATINUM", "BRENT",
   "BTCUSD", "ETHUSD", "XRPUSD", "DOGEUSD", "LTCUSD",
   "US500", "USTEC", "US30", "HK50", "FRANCE40",
-  "DE40", "UK100", "EURJPY", "EURGBP", "GBPJPY", "GBPCHF"
+  "CHINA50", "UK100", "EURJPY", "EURGBP", "GBPJPY", "GBPCHF"
 ] as const;
 
 export type SymbolKey = typeof SYMBOLS[number];
@@ -33,7 +33,7 @@ export const DISPLAY_NAMES: Record<SymbolKey, string> = {
   US30: "Dow Jones 30 Index (US).com Inc.",
   HK50: "Hong Kong 50 stock index Index (Europe) PLC",
   FRANCE40: "FRANCE40 Index (France)",
-  DE40: "GER40 Index (DAX)",
+  CHINA50: "GER40 Index (DAX)",
   UK100: "UK100 Index (FTSE)",
   EURJPY: "EUR/JPY (Euro / Japanese Yen)",
   EURGBP: "EUR/GBP (Euro / British Pound)",
@@ -75,6 +75,6 @@ export const CONTRACT_SIZES: Record<SymbolKey, { contract: number; pip: number }
   US30:      { contract: 10, pip: 1 },      // Dow Jones 30
   HK50:    { contract: 10, pip: 1 },      // Hong Kong 50 stock index
   FRANCE40:     { contract: 10, pip: 1 },      // FRANCE40 (France)
-  DE40:    { contract: 10, pip: 1 },      // DAX 40 (Germany)
+  CHINA50:    { contract: 10, pip: 1 },      // CHINA50 (Germany)
   UK100:    { contract: 10, pip: 1 }       // FTSE 100 (UK)
 };

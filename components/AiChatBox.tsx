@@ -22,7 +22,7 @@ const ALL_SYMBOLS = [
   "NZDUSD", "USDCHF", "XAUUSD", "XAUEUR", "XAGUSD",
   "PLATINUM", "BRENT", "BTCUSD", "ETHUSD", "XRPUSD",
   "DOGEUSD", "LTCUSD", "US500", "USTEC", "US30",
-  "HK50", "FRANCE40", "DE40", "UK100", "EURJPY",
+  "HK50", "FRANCE40", "CHINA50", "UK100", "EURJPY",
   "EURGBP", "GBPJPY", "GBPCHF"
 ] as const;
 
@@ -55,7 +55,7 @@ const SYMBOL_NAMES: Record<string, string> = {
   US30: "Dow Jones 30",
   HK50: "Hong Kong 50 stock index",
   FRANCE40: "FRANCE40",
-  DE40: "DAX 40",
+  CHINA50: "CHINA50",
   UK100: "FTSE 100"
 };
 
@@ -96,7 +96,7 @@ const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: nu
   "US30": { pip: 1.0, contract: 1, decimals: 1 },
   "HK50": { pip: 0.1, contract: 1, decimals: 2 },
   "FRANCE40": { pip: 0.1, contract: 1, decimals: 2 },
-  "DE40": { pip: 0.1, contract: 1, decimals: 1 },
+  "CHINA50": { pip: 0.1, contract: 1, decimals: 1 },
   "UK100": { pip: 0.1, contract: 1, decimals: 1 },
 };
 

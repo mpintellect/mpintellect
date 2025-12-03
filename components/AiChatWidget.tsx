@@ -358,7 +358,7 @@ export default function AiChatWidget() {
             "NZDUSD": 5, "USDCHF": 5, "EURJPY": 3, "EURGBP": 5, "GBPJPY": 3, "GBPCHF": 5,
             "XAUUSD": 2, "XAUEUR": 2, "XAGUSD": 3, "PLATINUM": 2, "BRENT": 2,
             "BTCUSD": 1, "ETHUSD": 2, "XRPUSD": 4, "DOGEUSD": 4, "LTCUSD": 2,
-            "US500": 2, "USTEC": 2, "US30": 2, "HK50": 2, "FRANCE40": 2, "DE40": 1, "UK100": 1,
+            "US500": 2, "USTEC": 2, "US30": 2, "HK50": 2, "FRANCE40": 2, "CHINA50": 1, "UK100": 1,
           };
           return decimalMap[symbol] || 5;
         };

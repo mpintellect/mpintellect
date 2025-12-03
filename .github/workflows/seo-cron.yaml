@@ -1,0 +1,15 @@
+name: Trigger pSEO Indexing
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # Allows manual run button in GitHub
+
+jobs:
+  ping_api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call API Route
+        run: |
+          curl -X GET ${{ secrets.PRODUCTION_URL }}/api/indexing/cron?key=${{ secrets.CRON_SECRET }}

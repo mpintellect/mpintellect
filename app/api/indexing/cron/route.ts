@@ -3,13 +3,20 @@ import { getAvailableSetupSymbols } from '@/app/lib/fetchSetup'; // Gets your li
 import { getSymbolData } from '@/app/lib/fetchData';             // Gets Google Storage JSON
 import { processSeoIndexing } from '@/app/lib/seo-state';        // The file above
 
-// Vercel Settings
-export const dynamic = 'force-dynamic'; // Never cache this logic
-export const maxDuration = 60; // Allow 1 minute runtime for batching
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60; 
 
 export async function GET(req: Request) {
   try {
-    // 1. Fetch Symbol List
+    // 1. SECURITY CHECK
+    const { searchParams } = new URL(req.url);
+    const secret = searchParams.get('key');
+    
+    if (secret !== process.env.CRON_SECRET) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // 2. Fetch Symbol List
     const symbols = await getAvailableSetupSymbols(); 
     // Example output: ["BTCUSD", "EURUSD", "US30"]
 
@@ -17,7 +24,7 @@ export async function GET(req: Request) {
 
     const logs = [];
 
-    // 2. Loop symbols (Sequential loop is safer for quotas than Promise.all here)
+    // 3. Loop symbols (Sequential loop is safer for quotas than Promise.all here)
     for (const sym of symbols) {
         const data = await getSymbolData(sym);
         

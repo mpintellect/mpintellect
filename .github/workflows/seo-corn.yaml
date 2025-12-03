@@ -2,14 +2,17 @@ name: Trigger pSEO Indexing
 
 on:
   schedule:
-    # Run every 15 minutes
+    # Run every 15 minutes (Standard tier frequency)
     - cron: '*/15 * * * *'
-  workflow_dispatch: # Allows manual run button in GitHub
+  workflow_dispatch: # Allows manual button click for testing
 
 jobs:
   ping_api:
     runs-on: ubuntu-latest
     steps:
-      - name: Call API Route
+      - name: Call API Route (POST for Cache-Busting)
+        # Using POST forces Vercel to run the function fresh every time
         run: |
-          curl -X GET ${{ secrets.PRODUCTION_URL }}/api/indexing/cron?key=${{ secrets.CRON_SECRET }}
+          curl -X POST "${{ secrets.PRODUCTION_URL }}/api/indexing/cron?key=${{ secrets.CRON_SECRET }}" \
+          -H "Content-Type: application/json" \
+          -d '{}'

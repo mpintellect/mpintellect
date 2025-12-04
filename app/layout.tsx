@@ -8,6 +8,7 @@ import ConditionalStickyLogo from '@/components/ConditionalStickyLogo';
 import ConditionalMobileMenu from '@/components/ConditionalMobileMenu'; 
 import ConditionalNavbar from '@/components/ConditionalNavbar'; 
 import CtaTracker from '@/components/CTATracker';
+import FacebookPixel from "@/components/FacebookPixel";
 import Footer from '@/components/Footer';
 
 // NEW: Import the custom elegant cookie bar
@@ -64,7 +65,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         {/* Footer */}
         <Footer />
 
-
+        <FacebookPixel />
         {/* ---------------- 3. ANALYTICS (GTM/GA4/ADS) ---------------- */}
         {/* These load now, but remain "dumb" (no tracking) until consent is updated via the component */}
 

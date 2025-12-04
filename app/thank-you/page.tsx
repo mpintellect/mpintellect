@@ -1,5 +1,6 @@
 // app/thank-you/page.tsx
 import Link from 'next/link';
+import PurchaseTracker from '../thank-you/PurchaseTracker'; // 👈 Import the tracker
 
 export default async function ThankYouPage({
   searchParams,
@@ -18,6 +19,7 @@ export default async function ThankYouPage({
 
   if (sessionId) {
     try {
+      // Note: Ensure this URL is correct for server-side fetching
       const r = await fetch(
         `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/orders/by-session?session_id=${encodeURIComponent(sessionId)}`,
         { 
@@ -32,7 +34,7 @@ export default async function ThankYouPage({
       if (r.ok) {
         fetched = await r.json();
         if (fetched?.ok && fetched.order) {
-          isBotPurchase = !!fetched.order.filePath; // Check if it's a bot purchase
+          isBotPurchase = !!fetched.order.filePath;
           productName = fetched.order.productName || "";
         }
       }
@@ -42,9 +44,23 @@ export default async function ThankYouPage({
   }
 
   const resolvedOrder = fetched?.ok ? fetched.order : null;
+  
+  // Default amount if order lookup fails (fallback logic)
+  const finalAmount = resolvedOrder?.amountUsd || 0.00;
 
   return (
     <div className="checkout-wrap">
+      
+      {/* 👇 3. INSERT THE TRACKER HERE */}
+      {resolvedOrder && (
+        <PurchaseTracker 
+          amount={finalAmount} 
+          currency="USD" 
+          orderId={orderId || sessionId} 
+          productName={productName}
+        />
+      )}
+
       <h1 className="checkout-title">Thank you for your purchase! 🎉</h1>
 
       <div className="checkout-card">
@@ -65,7 +81,7 @@ export default async function ThankYouPage({
         {resolvedOrder ? (
           <>
             <p><strong>Product:</strong> {productName}</p>
-            <p><strong>Amount:</strong> ${resolvedOrder.amountUsd?.toFixed(2) || "0.00"}</p>
+            <p><strong>Amount:</strong> ${finalAmount.toFixed(2)}</p>
             
             {isBotPurchase ? (
               <div className="download-info">

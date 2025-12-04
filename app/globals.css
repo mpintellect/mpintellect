@@ -17029,3 +17029,33 @@ a:focus-visible,
   outline: none;
   border-color: #6366f1;
 }
+/* Elegant Social Buttons (Dark Mode) */
+.btn-elegant-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background-color: #000000; /* Pure Black */
+  border: 1px solid #333333; /* Dark Gray Border */
+  color: #a1a1aa; /* Muted text */
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-elegant-social:hover {
+  background-color: #111111; /* Slightly lighter black */
+  color: #ffffff;
+  border-color: #ca8a04; /* Yellow-600 (Matches your Send button) */
+  box-shadow: 0 4px 15px rgba(202, 138, 4, 0.15); /* Subtle Gold Glow */
+  transform: translateY(-2px);
+}
+
+.btn-elegant-social svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}

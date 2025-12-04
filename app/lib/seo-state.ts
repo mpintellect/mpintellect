@@ -1,5 +1,6 @@
 import { adminDb } from "../lib/pushAdminSafe"; 
-import { requestIndexingForSymbol } from "@/app/lib/indexing"; 
+import { requestIndexingForSymbol, requestIndexingForUrl } from "@/app/lib/indexing"; 
+import { createNewsEvent } from "../lib/newsStore"; // Import the news creation function
 import * as admin from 'firebase-admin';
 
 // --- QUOTA SAFETY CONFIGURATION ---
@@ -36,12 +37,13 @@ export async function processSeoIndexing(symbol: string, currentData: any) {
     const curTrend = currentData.trend?.trend || "neutral";
     const curPrice = currentData.trend?.current_price || 0;
 
+    // LOGIC CHECK
     if (!docSnap.exists) {
         changeType = "INIT";
     }
-    // MAJOR / URGENT (Signal Flip)
-    else if (curDecision !== prevData.decision || curTrend !== prevData.trend) {
-        changeType = "URGENT_CHANGE"; // The Signal or Trend flipped
+    // MAJOR / URGENT (Signal Flip) - STRICTER: Only trigger news if the decision actually FLIPS
+    else if (curDecision !== prevData.decision) {
+        changeType = "URGENT_CHANGE"; // Signal flip detected
     }
     // MINOR / ROUTINE (Price Movement)
     else if (curPrice > 0 && prevData.price > 0) {
@@ -72,12 +74,24 @@ export async function processSeoIndexing(symbol: string, currentData: any) {
     // --- 5. EXECUTION ---
     if (diffMins >= requiredWait) {
         
-        // --- PAGE SELECTION LOGIC (Your Request) ---
         let pagesToPing = [];
+        let newsSlug = null; // Variable to store the news page slug if created
 
         if (changeType.includes("URGENT") || changeType === "INIT") {
             // MAJOR EVENT: Index the whole Cluster
-            console.log(`📡 [pSEO] ${sym} URGENT UPDATE. Pinging 3 pages...`);
+            console.log(`📡 [pSEO] ${sym} SIGNAL FLIP! Generating News...`);
+            
+            // 1. GENERATE THE NEWS PAGE (only for urgent changes/signal flips)
+            if (changeType === "URGENT_CHANGE") {
+                try {
+                    newsSlug = await createNewsEvent(sym, currentData);
+                } catch (newsError) {
+                    console.error(`Failed to create news event for ${sym}:`, newsError);
+                    // Continue with indexing even if news creation fails
+                }
+            }
+            
+            // 2. Ping the standard cluster pages
             pagesToPing = ['trade', 'analysis', 'forecast'];
         } else {
             // MINOR EVENT (Volatility): Index just the Forecast page
@@ -85,8 +99,19 @@ export async function processSeoIndexing(symbol: string, currentData: any) {
             pagesToPing = ['forecast'];
         }
 
-        // Fire the API
+        // Fire the API for standard pages
         await requestIndexingForSymbol(sym, pagesToPing);
+
+        // Fire API for the NEW News Page (if created)
+        if (newsSlug) {
+            try {
+                const newsUrl = `https://mzprimer.com/news/${newsSlug}`;
+                await requestIndexingForUrl(newsUrl);
+                console.log(`✅ Indexed news page: ${newsUrl}`);
+            } catch (urlError) {
+                console.error(`Failed to index news URL for ${sym}:`, urlError);
+            }
+        }
 
         // Update DB
         await docRef.set({
@@ -98,7 +123,13 @@ export async function processSeoIndexing(symbol: string, currentData: any) {
             lastTrigger: changeType
         });
 
-        return { status: 'indexed', symbol: sym, pages: pagesToPing.length, reason: changeType };
+        return { 
+            status: 'indexed', 
+            symbol: sym, 
+            pages: pagesToPing.length, 
+            reason: changeType,
+            newsSlug: newsSlug // Return news slug if created
+        };
     } else {
         return { 
             status: 'skipped', 

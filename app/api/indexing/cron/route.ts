@@ -15,12 +15,12 @@ async function unifiedHandler(req: NextRequest) {
 
     // 1. DEFINE ACCEPTABLE KEYS
     const ENV_SECRET = process.env.CRON_SECRET;
-    const MASTER_KEY = "MZ_Admin_2025!"; // Hardcoded backup to ensure it works
+    const ADMIN_KEY = process.env.ADMIN_API_KEY; // Hardcoded backup to ensure it works
 
     // 2. CHECK QUERY PARAM (Method for GitHub/Vercel Cron)
     const queryKey = req.nextUrl.searchParams.get('key');
     
-    if (queryKey && (queryKey === ENV_SECRET || queryKey === MASTER_KEY)) {
+    if (queryKey && (queryKey === ENV_SECRET || queryKey === ADMIN_KEY)) {
         authorized = true;
         authSource = "Query Param (GitHub)";
     }
@@ -37,7 +37,7 @@ async function unifiedHandler(req: NextRequest) {
                 // Log logic for debugging (don't log full keys in prod usually, but here helps diagnosis)
                 console.log(`Checking Body Key: '${receivedKey?.substring(0,3)}...'`);
 
-                if (receivedKey === ENV_SECRET || receivedKey === MASTER_KEY) {
+                if (receivedKey === ENV_SECRET || receivedKey === ADMIN_KEY) {
                     authorized = true;
                     authSource = "POST Body (Admin UI)";
                 }
@@ -61,7 +61,7 @@ async function unifiedHandler(req: NextRequest) {
 
     // Safety limit to prevent timeouts
     // (If 60 seconds isn't enough, we only scan 15 assets max per run)
-    const symbolsToScan = symbols.slice(0, 15);
+    const symbolsToScan = symbols.slice(0, 28);
 
     for (const sym of symbolsToScan) {
         try {

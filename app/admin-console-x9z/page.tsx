@@ -210,11 +210,40 @@ export default function AdminPushDashboard() {
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-      // CHANGE THIS PASSWORD!
-      if(password === "MZ_Admin_2025!") setIsAuthenticated(true);
-      else alert("Access Denied");
-  }
+  const handleLogin = async () => {
+    if (!password.trim()) {
+        alert("Please enter a password");
+        return;
+    }
+
+    setLoading(true);
+    
+    try {
+        const res = await fetch('/api/admin/validate', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify({ password })
+        });
+        
+        const data = await res.json();
+        
+        if (data.valid) {
+            setIsAuthenticated(true);
+            setStatus('✅ Authentication successful');
+        } else {
+            alert("Access Denied");
+            setStatus('❌ Invalid credentials');
+        }
+    } catch (error: any) {
+        console.error('Login error:', error);
+        alert("Authentication failed - Server error");
+        setStatus('❌ Server connection failed');
+    } finally {
+        setLoading(false);
+    }
+}
 
   // --- ENHANCED FORMATTING FUNCTIONS ---
   const formatPrice = (price: number, symbol: string = '') => {
@@ -680,11 +709,19 @@ Risk/Reward: ${symbolExtractedData.rrRatio.toFixed(2)}:1
                         onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                     />
                     <button 
-                        onClick={handleLogin} 
-                        className="w-full bg-white hover:bg-zinc-200 text-black font-bold py-3 rounded-lg transition"
-                    >
-                        UNLOCK TERMINAL
-                    </button>
+    onClick={handleLogin} 
+    disabled={loading}
+    className="w-full bg-white hover:bg-zinc-200 text-black font-bold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+>
+    {loading ? (
+        <span className="flex items-center justify-center gap-2">
+            <RefreshCw className="animate-spin" size={18} />
+            VERIFYING...
+        </span>
+    ) : (
+        'UNLOCK TERMINAL'
+    )}
+</button>
                 </div>
               </div>
           </div>

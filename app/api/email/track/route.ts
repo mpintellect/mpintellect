@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from "@/lib/pushAdminSafe"; // Reuse your existing Admin setup
+import { adminDb } from "../../../lib/pushAdminSafe"; // Reuse your existing Admin setup
 import * as admin from 'firebase-admin';
 
 export const dynamic = 'force-dynamic';

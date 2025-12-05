@@ -46,7 +46,7 @@ export default async function NewsArticlePage({ params }: { params: { slug: stri
             "image": [
               `https://mzprimer.com/api/og?sym=${news.symbol}&sig=${news.signal}`
             ],
-            "author": { "@type": "Organization", "name": "MZ Primer AI" }
+            "author": { "@type": "Organization", "name": "MZprimer AI" }
           })
         }}
       />
@@ -59,7 +59,7 @@ export default async function NewsArticlePage({ params }: { params: { slug: stri
 
       <div className="prose prose-invert prose-lg">
         <p>
-          <strong>MZ Primer AI Detection:</strong> At {new Date(news.timestamp).toLocaleTimeString()}, our algorithmic systems detected a significant structure shift on 
+          <strong>MZprimer AI Detection:</strong> At {new Date(news.timestamp).toLocaleTimeString()}, our algorithmic systems detected a significant structure shift on 
           <span className="font-bold text-white"> {news.symbol}</span>.
         </p>
         

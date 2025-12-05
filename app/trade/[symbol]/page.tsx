@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     // Ex: "🚨 STRONG BUY: BTCUSD - Entry 98000 (92% Win Prob)"
-    title: `${titlePrefix} ${sym} @ ${order?.entry_price || 'Market'} | MZ Primer AI`,
+    title: `${titlePrefix} ${sym} @ ${order?.entry_price || 'Market'} | MZprimer AI`,
     description: `Active trading setup for ${sym}. Entry: ${order?.entry_price}. SL: ${order?.sl_price}. Institutional logic based on Trend & Liquidity. Confidence: ${conf}%.`,
     
     // TRICK: CAPTURE INTENT KEYWORDS

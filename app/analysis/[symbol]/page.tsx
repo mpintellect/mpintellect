@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     // Authority Style Title
     title: `${sym} Technical Analysis: ${bias} Structure Confirmed`,
-    description: `Complete technical breakdown for ${sym}. Momentum, Volatility, and Liquidity analysis powered by MZ Primer. Institutional Bias: ${bias}.`,
+    description: `Complete technical breakdown for ${sym}. Momentum, Volatility, and Liquidity analysis powered by MZprimer. Institutional Bias: ${bias}.`,
     keywords: [`${sym} technical analysis`, `${sym} chart analysis`, `${sym} support resistance`]
   };
 }

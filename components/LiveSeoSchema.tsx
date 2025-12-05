@@ -45,12 +45,12 @@ export default function LiveSeoSchema({ data }: Props) {
         "dateModified": timeNow, // Forces Google to re-crawl constantly
         "author": {
           "@type": "Organization",
-          "name": "MZ Primer AI",
+          "name": "MZprimer AI",
           "url": "https://mzprimer.com"
         },
         "publisher": {
           "@type": "Organization",
-          "name": "MZ Primer",
+          "name": "MZprimer",
           "logo": {
             "@type": "ImageObject",
             "url": "https://mzprimer.com/logos/mzlogo.webp"
@@ -87,7 +87,7 @@ export default function LiveSeoSchema({ data }: Props) {
             "name": `Is ${symbolReadable} a Buy or Sell today?`,
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": `According to MZ Primer AI analysis on ${new Date().toLocaleDateString()}, ${symbolReadable} is currently a <strong style="color:${decision==='BUY'?'green': decision==='SELL'?'red':'orange'}">${decision}</strong>. The entry zone is monitored around ${price}.`
+              "text": `According to MZprimer AI analysis on ${new Date().toLocaleDateString()}, ${symbolReadable} is currently a <strong style="color:${decision==='BUY'?'green': decision==='SELL'?'red':'orange'}">${decision}</strong>. The entry zone is monitored around ${price}.`
             }
           },
           {

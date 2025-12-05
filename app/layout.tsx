@@ -1,6 +1,6 @@
 // app/layout.tsx
 import './globals.css';
-import { ReactNode } from 'react';
+import { ReactNode, Suspense } from 'react';
 import { Inter } from 'next/font/google';
 
 // Component Imports
@@ -65,7 +65,9 @@ export default function Layout({ children }: { children: ReactNode }) {
         {/* Footer */}
         <Footer />
 
-        <FacebookPixel />
+        <Suspense fallback={null}>
+          <FacebookPixel />
+        </Suspense>
         {/* ---------------- 3. ANALYTICS (GTM/GA4/ADS) ---------------- */}
         {/* These load now, but remain "dumb" (no tracking) until consent is updated via the component */}
 

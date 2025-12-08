@@ -4,8 +4,8 @@ import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Script from "next/script";
 
-// I added your specific ID here as a fallback in case the ENV var is missing
-const PIXEL_ID = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
+// Using your specific ID directly
+const PIXEL_ID = '719990017371004';
 
 export default function FacebookPixel() {
   const pathname = usePathname();

@@ -7,15 +7,23 @@ import { ShieldAlert, ArrowDown, ArrowUp, Calculator, ArrowRight, Zap, Bot } fro
 export const revalidate = 60; 
 export const dynamicParams = true;
 
+// Update Props type to accept Promise
+type Props = {
+  params: Promise<{ symbol: string }>;
+};
+
 // 1. Static Paths
 export async function generateStaticParams() {
   const symbols = await getAvailableSetupSymbols();
   return symbols.map((sym) => ({ symbol: sym.toLowerCase().replace('/', '-') }));
 }
 
-// 2. Metadata
-export async function generateMetadata({ params }: { params: { symbol: string } }) {
-  const data = await getSymbolData(params.symbol);
+// 2. Metadata - unwrap the Promise
+export async function generateMetadata({ params }: Props) {
+  // Unwrap the Promise
+  const { symbol } = await params;
+  
+  const data = await getSymbolData(symbol);
   if (!data) return { title: 'Risk Tool Not Found' };
   
   const report = generateCalculatorReport(data);
@@ -25,8 +33,11 @@ export async function generateMetadata({ params }: { params: { symbol: string } 
   };
 }
 
-export default async function StopLossPage({ params }: { params: { symbol: string } }) {
-  const data = await getSymbolData(params.symbol);
+export default async function StopLossPage({ params }: Props) {
+  // Unwrap the Promise
+  const { symbol } = await params;
+  
+  const data = await getSymbolData(symbol);
   if (!data) notFound();
 
   // Use the logic helper
@@ -173,48 +184,48 @@ export default async function StopLossPage({ params }: { params: { symbol: strin
     
     <div className="flex flex-wrap justify-center gap-3 my-6">
         {/* 1. Strategy & Setup */}
-        <a href={`/trade/${params.symbol}`} className="seo-chip-link">
+        <a href={`/trade/${symbol}`} className="seo-chip-link">
            Trade Setup <ArrowRight size={14} />
         </a>
         
-        <a href={`/trend/${params.symbol}`} className="seo-chip-link">
+        <a href={`/trend/${symbol}`} className="seo-chip-link">
            Trend Direction <ArrowRight size={14} />
         </a>
 
-        <a href={`/forecast/${params.symbol}`} className="seo-chip-link">
+        <a href={`/forecast/${symbol}`} className="seo-chip-link">
            AI Forecast <ArrowRight size={14} />
         </a>
 
         {/* 2. Technical Tools */}
-        <a href={`/calculator/${params.symbol}`} className="seo-chip-link">
+        <a href={`/calculator/${symbol}`} className="seo-chip-link">
            Trade Calculator <ArrowRight size={14} />
         </a>
         
-        <a href={`/indicator/${params.symbol}`} className="seo-chip-link">
+        <a href={`/indicator/${symbol}`} className="seo-chip-link">
            Indicator RSI Score <ArrowRight size={14} />
         </a>
 
         {/* 3. Deep Analysis */}
-        <a href={`/zones/${params.symbol}`} className="seo-chip-link">
+        <a href={`/zones/${symbol}`} className="seo-chip-link">
            Liquidity Zones <ArrowRight size={14} />
         </a>
 
-        <a href={`/momentum/${params.symbol}`} className="seo-chip-link">
+        <a href={`/momentum/${symbol}`} className="seo-chip-link">
            Momentum Score <ArrowRight size={14} />
         </a>
 
-        <a href={`/volatility/${params.symbol}`} className="seo-chip-link">
+        <a href={`/volatility/${symbol}`} className="seo-chip-link">
            Volatility Risk <ArrowRight size={14} />
         </a>
 
-        <a href={`/analysis/${params.symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
+        <a href={`/analysis/${symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
            Full Analysis <ArrowRight size={14} />
         </a>
     </div>
 
     {/* --- NEW AI CHAT CTA --- */}
     <div className="mt-12 mb-8">
-        <p className="text-zinc-500 text-xs mb-4">Have specific questions about {params.symbol}?</p>
+        <p className="text-zinc-500 text-xs mb-4">Have specific questions about {symbol}?</p>
         
         <a href="/AIChat" className="btn-ai-chat-pulse">
             <Bot size={20} fill="currentColor" className="text-blue-200" /> 

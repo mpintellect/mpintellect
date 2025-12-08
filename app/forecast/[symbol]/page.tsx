@@ -4,12 +4,18 @@ import { generateForecastReport } from '../../lib/seo/forecastGenerator';
 import NotificationButton from '@/components/NotificationButton'; 
 import { BrainCircuit, Radar, ShieldCheck, ArrowRight, TrendingUp, Bot } from 'lucide-react';
 
-type Props = { params: { symbol: string } };
+// Update Props type
+type Props = { 
+  params: Promise<{ symbol: string }>;
+};
 
 // --- 1. METADATA ---
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const data = await getSymbolData(params.symbol);
-  if (!data) return { title: `${params.symbol} Forecast` };
+  // Unwrap the Promise
+  const { symbol } = await params;
+  
+  const data = await getSymbolData(symbol);
+  if (!data) return { title: `${symbol} Forecast` };
 
   const sym = data.symbol.toUpperCase();
   const decision = data.final_decision; // BUY, SELL, HOLD
@@ -42,14 +48,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // --- 2. MAIN COMPONENT ---
 export default async function ForecastPage({ params }: Props) {
-  const data = await getSymbolData(params.symbol);
+  // Unwrap the Promise
+  const { symbol } = await params;
+  
+  const data = await getSymbolData(symbol);
 
   // Safety Check
   if (!data) {
     return (
       <div className="min-h-screen bg-black flex flex-col justify-center items-center text-zinc-500 font-mono gap-4">
         <div className="w-10 h-10 border-t-2 border-purple-500 rounded-full animate-spin"></div>
-        <p>Loading {params.symbol} Forecast...</p>
+        <p>Loading {symbol} Forecast...</p>
       </div>
     );
   }
@@ -231,48 +240,48 @@ export default async function ForecastPage({ params }: Props) {
     
     <div className="flex flex-wrap justify-center gap-3 my-6">
         {/* 1. Strategy & Setup */}
-        <a href={`/trade/${params.symbol}`} className="seo-chip-link">
+        <a href={`/trade/${symbol}`} className="seo-chip-link">
            Trade Setup <ArrowRight size={14} />
         </a>
         
-        <a href={`/trend/${params.symbol}`} className="seo-chip-link">
+        <a href={`/trend/${symbol}`} className="seo-chip-link">
            Trend Direction <ArrowRight size={14} />
         </a>
 
-        <a href={`/forecast/${params.symbol}`} className="seo-chip-link">
+        <a href={`/forecast/${symbol}`} className="seo-chip-link">
            AI Forecast <ArrowRight size={14} />
         </a>
 
         {/* 2. Technical Tools */}
-        <a href={`/calculator/${params.symbol}`} className="seo-chip-link">
+        <a href={`/calculator/${symbol}`} className="seo-chip-link">
            Trade Calculator <ArrowRight size={14} />
         </a>
         
-        <a href={`/indicator/${params.symbol}`} className="seo-chip-link">
+        <a href={`/indicator/${symbol}`} className="seo-chip-link">
            Indicator RSI Score <ArrowRight size={14} />
         </a>
 
         {/* 3. Deep Analysis */}
-        <a href={`/zones/${params.symbol}`} className="seo-chip-link">
+        <a href={`/zones/${symbol}`} className="seo-chip-link">
            Liquidity Zones <ArrowRight size={14} />
         </a>
 
-        <a href={`/momentum/${params.symbol}`} className="seo-chip-link">
+        <a href={`/momentum/${symbol}`} className="seo-chip-link">
            Momentum Score <ArrowRight size={14} />
         </a>
 
-        <a href={`/volatility/${params.symbol}`} className="seo-chip-link">
+        <a href={`/volatility/${symbol}`} className="seo-chip-link">
            Volatility Risk <ArrowRight size={14} />
         </a>
 
-        <a href={`/analysis/${params.symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
+        <a href={`/analysis/${symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
            Full Analysis <ArrowRight size={14} />
         </a>
     </div>
 
     {/* --- NEW AI CHAT CTA --- */}
     <div className="mt-12 mb-8">
-        <p className="text-zinc-500 text-xs mb-4">Have specific questions about {params.symbol}?</p>
+        <p className="text-zinc-500 text-xs mb-4">Have specific questions about {symbol}?</p>
         
         <a href="/AIChat" className="btn-ai-chat-pulse">
             <Bot size={20} fill="currentColor" className="text-blue-200" /> 

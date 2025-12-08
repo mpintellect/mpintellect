@@ -4,14 +4,20 @@ import { generateTrendReport } from '../../lib/seo/trendGenerator';
 import NotificationButton from '@/components/NotificationButton';
 import { TrendingUp, Activity, Layers, ArrowRight, Gauge, Zap, Bot } from 'lucide-react';
 
-type Props = { params: { symbol: string } };
+// Update Props type to accept Promise
+type Props = { 
+  params: Promise<{ symbol: string }>;
+};
 
 // 1. DYNAMIC SEO METADATA
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const data = await getSymbolData(params.symbol);
+  // Unwrap the Promise
+  const { symbol } = await params;
+  
+  const data = await getSymbolData(symbol);
   
   if (!data || !data.trend) {
-    return { title: `Trend Analysis: ${params.symbol.toUpperCase()} | MZPrimer ` };
+    return { title: `Trend Analysis: ${symbol.toUpperCase()} | MZPrimer ` };
   }
 
   const report = generateTrendReport(data);
@@ -22,8 +28,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function TrendPage({ params }: Props) {
+  // Unwrap the Promise
+  const { symbol } = await params;
+  
   // 2. FETCH DATA
-  const data = await getSymbolData(params.symbol);
+  const data = await getSymbolData(symbol);
 
   // Loading/Error State
   if (!data || !data.trend) {
@@ -31,7 +40,7 @@ export default async function TrendPage({ params }: Props) {
         <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
             <div className="text-center">
                 <div className="w-12 h-12 border-t-2 border-yellow-500 border-solid rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="opacity-50 text-sm">Syncing live data for {params.symbol}...</p>
+                <p className="opacity-50 text-sm">Syncing live data for {symbol}...</p>
             </div>
         </div>
     )
@@ -196,48 +205,48 @@ export default async function TrendPage({ params }: Props) {
     
     <div className="flex flex-wrap justify-center gap-3 my-6">
         {/* 1. Strategy & Setup */}
-        <a href={`/trade/${params.symbol}`} className="seo-chip-link">
+        <a href={`/trade/${symbol}`} className="seo-chip-link">
            Trade Setup <ArrowRight size={14} />
         </a>
         
-        <a href={`/trend/${params.symbol}`} className="seo-chip-link">
+        <a href={`/trend/${symbol}`} className="seo-chip-link">
            Trend Direction <ArrowRight size={14} />
         </a>
 
-        <a href={`/forecast/${params.symbol}`} className="seo-chip-link">
+        <a href={`/forecast/${symbol}`} className="seo-chip-link">
            AI Forecast <ArrowRight size={14} />
         </a>
 
         {/* 2. Technical Tools */}
-        <a href={`/calculator/${params.symbol}`} className="seo-chip-link">
+        <a href={`/calculator/${symbol}`} className="seo-chip-link">
            Trade Calculator <ArrowRight size={14} />
         </a>
         
-        <a href={`/indicator/${params.symbol}`} className="seo-chip-link">
+        <a href={`/indicator/${symbol}`} className="seo-chip-link">
            Indicator RSI Score <ArrowRight size={14} />
         </a>
 
         {/* 3. Deep Analysis */}
-        <a href={`/zones/${params.symbol}`} className="seo-chip-link">
+        <a href={`/zones/${symbol}`} className="seo-chip-link">
            Liquidity Zones <ArrowRight size={14} />
         </a>
 
-        <a href={`/momentum/${params.symbol}`} className="seo-chip-link">
+        <a href={`/momentum/${symbol}`} className="seo-chip-link">
            Momentum Score <ArrowRight size={14} />
         </a>
 
-        <a href={`/volatility/${params.symbol}`} className="seo-chip-link">
+        <a href={`/volatility/${symbol}`} className="seo-chip-link">
            Volatility Risk <ArrowRight size={14} />
         </a>
 
-        <a href={`/analysis/${params.symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
+        <a href={`/analysis/${symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
            Full Analysis <ArrowRight size={14} />
         </a>
     </div>
 
     {/* --- NEW AI CHAT CTA --- */}
     <div className="mt-12 mb-8">
-        <p className="text-zinc-500 text-xs mb-4">Have specific questions about {params.symbol}?</p>
+        <p className="text-zinc-500 text-xs mb-4">Have specific questions about {symbol}?</p>
         
         <a href="/AIChat" className="btn-ai-chat-pulse">
             <Bot size={20} fill="currentColor" className="text-blue-200" /> 

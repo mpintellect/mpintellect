@@ -2,22 +2,32 @@ import { Metadata } from 'next';
 import { getSymbolData } from '../../lib/fetchData'; 
 import { generateAnalysisReport } from '../../lib/seo/analysisGenerator';
 import NotificationButton from '@/components/NotificationButton'; 
-import LiveSeoSchema from '@/components/LiveSeoSchema'; // Import the SEO schema component
+import LiveSeoSchema from '@/components/LiveSeoSchema';
 import { 
   Activity, ArrowRight, Gauge, Layers, 
   Cpu, Thermometer, Box, LineChart, Bot,
   Link
 } from 'lucide-react';
 
-type Props = { params: { symbol: string } };
+type Props = {
+  params: Promise<{ symbol: string }>;
+};
 
 // --- METADATA ---
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const data = await getSymbolData(params.symbol);
-  if (!data) return { title: `${params.symbol} Analysis` };
+  // ⬇️ unwrap the params Promise
+  const { symbol } = await params;
+
+  const data = await getSymbolData(symbol);
+
+  if (!data) {
+    return {
+      title: `${symbol?.toUpperCase() || 'Unknown'} Analysis`,
+    };
+  }
 
   const sym = data.symbol.toUpperCase();
-  const bias = data.trend.trend.replace('_', ' ').toUpperCase();
+  const bias = data.trend.trend.replace("_", " ").toUpperCase();
 
   return {
     // Authority Style Title
@@ -31,15 +41,27 @@ export const revalidate = 60; // 60 seconds (keeps it fresh)
 
 // --- MAIN PAGE ---
 export default async function AnalysisPage({ params }: Props) {
-  const data = await getSymbolData(params.symbol);
+  // ⬇️ unwrap the params Promise
+  const { symbol } = await params;
 
-  // Guard
+  const data = await getSymbolData(symbol);
+
+  // Guard if data missing or malformed
   if (!data || !data.trend) {
     return (
-        <div className="min-h-screen bg-black flex justify-center items-center text-zinc-500 font-mono">
-            Loading System Architecture...
-        </div>
-    )
+      <div className="min-h-screen flex flex-col items-center justify-center bg-black text-gray-200">
+        <h1 className="text-2xl font-semibold mb-2">
+          Analysis not available
+        </h1>
+        <p className="text-sm text-gray-400">
+          We couldn&apos;t load analysis data for{" "}
+          <span className="font-mono font-bold">
+            {symbol?.toUpperCase() || "this symbol"}
+          </span>
+          . Please try another symbol or refresh the page.
+        </p>
+      </div>
+    );
   }
 
   const report = generateAnalysisReport(data);
@@ -50,13 +72,13 @@ export default async function AnalysisPage({ params }: Props) {
   const trendPercent = trend.trend_strength_score;
   const isHighRisk = volatility.volatility_level === 'high';
 
+  // Get URL for footer links (need to use the resolved symbol)
+  const resolvedSymbol = symbol;
+
   return (
     <main className="min-h-screen bg-black text-white pb-24 font-sans selection:bg-blue-500/30">
       
-      {/* 
-        1. INJECT SCHEMA HERE.
-        It renders an invisible <script> tag in the HTML head/body.
-      */}
+      {/* SEO Schema */}
       <LiveSeoSchema data={data} />
       
       {/* 1. TICKER TAPE HEADER */}
@@ -238,48 +260,48 @@ export default async function AnalysisPage({ params }: Props) {
     
     <div className="flex flex-wrap justify-center gap-3 my-6">
         {/* 1. Strategy & Setup */}
-        <a href={`/trade/${params.symbol}`} className="seo-chip-link">
+        <a href={`/trade/${resolvedSymbol}`} className="seo-chip-link">
            Trade Setup <ArrowRight size={14} />
         </a>
         
-        <a href={`/trend/${params.symbol}`} className="seo-chip-link">
+        <a href={`/trend/${resolvedSymbol}`} className="seo-chip-link">
            Trend Direction <ArrowRight size={14} />
         </a>
 
-        <a href={`/forecast/${params.symbol}`} className="seo-chip-link">
+        <a href={`/forecast/${resolvedSymbol}`} className="seo-chip-link">
            AI Forecast <ArrowRight size={14} />
         </a>
 
         {/* 2. Technical Tools */}
-        <a href={`/calculator/${params.symbol}`} className="seo-chip-link">
+        <a href={`/calculator/${resolvedSymbol}`} className="seo-chip-link">
            Trade Calculator <ArrowRight size={14} />
         </a>
         
-        <a href={`/indicator/${params.symbol}`} className="seo-chip-link">
+        <a href={`/indicator/${resolvedSymbol}`} className="seo-chip-link">
            Indicator RSI Score <ArrowRight size={14} />
         </a>
 
         {/* 3. Deep Analysis */}
-        <a href={`/zones/${params.symbol}`} className="seo-chip-link">
+        <a href={`/zones/${resolvedSymbol}`} className="seo-chip-link">
            Liquidity Zones <ArrowRight size={14} />
         </a>
 
-        <a href={`/momentum/${params.symbol}`} className="seo-chip-link">
+        <a href={`/momentum/${resolvedSymbol}`} className="seo-chip-link">
            Momentum Score <ArrowRight size={14} />
         </a>
 
-        <a href={`/volatility/${params.symbol}`} className="seo-chip-link">
+        <a href={`/volatility/${resolvedSymbol}`} className="seo-chip-link">
            Volatility Risk <ArrowRight size={14} />
         </a>
 
-        <a href={`/analysis/${params.symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
+        <a href={`/analysis/${resolvedSymbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
            Full Analysis <ArrowRight size={14} />
         </a>
     </div>
 
     {/* --- NEW AI CHAT CTA --- */}
     <div className="mt-12 mb-8">
-        <p className="text-zinc-500 text-xs mb-4">Have specific questions about {params.symbol}?</p>
+        <p className="text-zinc-500 text-xs mb-4">Have specific questions about {resolvedSymbol}?</p>
         
         <a href="/AIChat" className="btn-ai-chat-pulse">
             <Bot size={20} fill="currentColor" className="text-blue-200" /> 

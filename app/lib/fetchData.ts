@@ -168,20 +168,31 @@ export interface SymbolData {
 // ==========================================
 // 4. FETCH AND FORMAT FUNCTION
 // ==========================================
-export async function getSymbolData(symbolParam: string): Promise<SymbolData | null> {
+// ==========================================
+// 4. FETCH AND FORMAT FUNCTION
+// ==========================================
+export async function getSymbolData(
+  symbolParam?: string
+): Promise<SymbolData | null> {
   try {
-    const cleanSymbol = symbolParam.replace(/[-_/]/g, '').toUpperCase();
-    const gcsUrl = `https://storage.googleapis.com/mzprimer-data-store/output_${cleanSymbol}.json`;
-    
-    const res = await fetch(gcsUrl, { 
-      next: { revalidate: 60 } // Revalidate every 60s
-    });
-    
-    if (!res.ok) {
-      console.error(`Failed to fetch ${cleanSymbol}: ${res.status}`);
+    // Guard: if symbol is missing, bail out
+    if (!symbolParam) {
+      console.warn("getSymbolData called without a symbol");
       return null;
     }
-    
+
+    const cleanSymbol = symbolParam.replace(/[-_/]/g, "").toUpperCase();
+    const gcsUrl = `https://storage.googleapis.com/mzprimer-data-store/output_${cleanSymbol}.json`;
+
+    const res = await fetch(gcsUrl, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      console.warn("Failed to fetch symbol data from GCS:", cleanSymbol, res.status);
+      return null;
+    }
+
     const data: SymbolData = await res.json();
     
     // Fallback if symbol key missing in JSON
@@ -214,8 +225,6 @@ export async function getSymbolData(symbolParam: string): Promise<SymbolData | n
       data.volatility.current_atr = normalizePrice(cleanSymbol, data.volatility.current_atr);
       data.volatility.avg_range = normalizePrice(cleanSymbol, data.volatility.avg_range);
     }
-
-    // 4. Note: We do NOT normalize RSI (Momentum) because RSI is always 0-100 regardless of symbol.
 
     return data;
 

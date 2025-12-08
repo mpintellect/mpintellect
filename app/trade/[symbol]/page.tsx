@@ -4,12 +4,18 @@ import { generateTradeReport } from '../../lib/seo/tradeGenerator';
 import NotificationButton from '@/components/NotificationButton'; 
 import { Crosshair, ShieldAlert, Coins, TrendingUp, AlertTriangle, ArrowRight, Bot } from 'lucide-react';
 
-type Props = { params: { symbol: string } };
+// Update Props type to accept Promise
+type Props = { 
+  params: Promise<{ symbol: string }>;
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const data = await getSymbolData(params.symbol);
+  // Unwrap the Promise
+  const { symbol } = await params;
   
-  if (!data) return { title: `Trade ${params.symbol} - Analysis` };
+  const data = await getSymbolData(symbol);
+  
+  if (!data) return { title: `Trade ${symbol} - Analysis` };
 
   const order = (data as any).pending_orders?.primary_order;
   const action = order?.type.replace('_LIMIT', '').replace('_STOP', '') || "SETUP";
@@ -38,7 +44,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function TradePage({ params }: Props) {
-  const data = await getSymbolData(params.symbol);
+  // Unwrap the Promise
+  const { symbol } = await params;
+  
+  const data = await getSymbolData(symbol);
 
   // Safety Check: Are there orders?
   const orderData = (data as any)?.pending_orders;
@@ -47,7 +56,7 @@ export default async function TradePage({ params }: Props) {
   if (!data || !activeOrder) {
     return (
       <div className="min-h-screen bg-black flex justify-center items-center text-zinc-500 font-mono">
-        No Active Signals for {params.symbol}. Check back later.
+        No Active Signals for {symbol}. Check back later.
       </div>
     );
   }
@@ -92,7 +101,7 @@ export default async function TradePage({ params }: Props) {
 
           <div className="flex justify-between items-center mb-8 pb-4 border-b border-zinc-800">
             <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Order Ticket</span>
-            <span className="text-xs font-mono text-white bg-zinc-800 px-2 py-1 rounded">ID: {params.symbol.toUpperCase()}-AI</span>
+            <span className="text-xs font-mono text-white bg-zinc-800 px-2 py-1 rounded">ID: {symbol.toUpperCase()}-AI</span>
           </div>
 
           <div className="space-y-6">
@@ -218,48 +227,48 @@ export default async function TradePage({ params }: Props) {
       <div className="mt-24 border-t border-zinc-900 pt-10 pb-20 text-center max-w-4xl mx-auto">
         <div className="flex flex-wrap justify-center gap-3 my-6">
           {/* 1. Strategy & Setup */}
-          <a href={`/trade/${params.symbol}`} className="seo-chip-link">
+          <a href={`/trade/${symbol}`} className="seo-chip-link">
             Trade Setup <ArrowRight size={14} />
           </a>
           
-          <a href={`/trend/${params.symbol}`} className="seo-chip-link">
+          <a href={`/trend/${symbol}`} className="seo-chip-link">
             Trend Direction <ArrowRight size={14} />
           </a>
 
-          <a href={`/forecast/${params.symbol}`} className="seo-chip-link">
+          <a href={`/forecast/${symbol}`} className="seo-chip-link">
             AI Forecast <ArrowRight size={14} />
           </a>
 
           {/* 2. Technical Tools */}
-          <a href={`/calculator/${params.symbol}`} className="seo-chip-link">
+          <a href={`/calculator/${symbol}`} className="seo-chip-link">
             Trade Calculator <ArrowRight size={14} />
           </a>
           
-          <a href={`/indicator/${params.symbol}`} className="seo-chip-link">
+          <a href={`/indicator/${symbol}`} className="seo-chip-link">
             Indicator RSI Score <ArrowRight size={14} />
           </a>
 
           {/* 3. Deep Analysis */}
-          <a href={`/zones/${params.symbol}`} className="seo-chip-link">
+          <a href={`/zones/${symbol}`} className="seo-chip-link">
             Liquidity Zones <ArrowRight size={14} />
           </a>
 
-          <a href={`/momentum/${params.symbol}`} className="seo-chip-link">
+          <a href={`/momentum/${symbol}`} className="seo-chip-link">
             Momentum Score <ArrowRight size={14} />
           </a>
 
-          <a href={`/volatility/${params.symbol}`} className="seo-chip-link">
+          <a href={`/volatility/${symbol}`} className="seo-chip-link">
             Volatility Risk <ArrowRight size={14} />
           </a>
 
-          <a href={`/analysis/${params.symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
+          <a href={`/analysis/${symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
             Full Analysis <ArrowRight size={14} />
           </a>
         </div>
 
         {/* AI CHAT CTA */}
         <div className="mt-12 mb-8">
-          <p className="text-zinc-500 text-xs mb-4">Have specific questions about {params.symbol}?</p>
+          <p className="text-zinc-500 text-xs mb-4">Have specific questions about {symbol}?</p>
           
           <a href="/AIChat" className="btn-ai-chat-pulse">
             <Bot size={20} fill="currentColor" className="text-blue-200" /> 

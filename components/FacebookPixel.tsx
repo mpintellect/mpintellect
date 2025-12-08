@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import Script from "next/script";
 
 // Using your specific ID directly
-const PIXEL_ID = '719990017371004';
+const PIXEL_ID = '719990012398471004';
 
 export default function FacebookPixel() {
   const pathname = usePathname();

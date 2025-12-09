@@ -17065,3 +17065,9 @@ a:focus-visible,
   height: 18px;
   fill: currentColor;
 }
+/* Telegram Specific Hover Effect (Blue Glow) */
+.btn-tg:hover {
+  border-color: #24A1DE !important; /* Telegram Blue */
+  box-shadow: 0 0 15px rgba(36, 161, 222, 0.25) !important;
+  color: #ffffff;
+}

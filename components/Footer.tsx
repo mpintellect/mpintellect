@@ -6,7 +6,8 @@ import { useState } from 'react';
 // 🛑 UPDATE YOUR LINKS HERE
 const SOCIAL_LINKS = {
   facebook: "https://www.facebook.com/mzprimer", 
-  instagram: "https://www.instagram.com/mzprimer"
+  instagram: "https://www.instagram.com/mzprimer",
+  telegram: "https://t.me/mzprimer" // 👈 Added Telegram
 };
 
 export default function Footer() {
@@ -119,11 +120,24 @@ export default function Footer() {
             <p className="subscribe-error">❌ Try again</p>
           )}
 
-          {/* 👇 NEW SOCIAL SECTION ADDED HERE */}
+          {/* 👇 SOCIAL SECTION */}
           <div className="mt-6 pt-4 border-t border-zinc-800">
             <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide">Follow Us</h4>
             <div className="flex flex-wrap gap-3">
               
+              {/* Telegram Button (New) */}
+              <a 
+                href={SOCIAL_LINKS.telegram}
+                target="_blank" 
+                rel="noreferrer"
+                className="btn-elegant-social btn-tg" // Added btn-tg class
+              >
+                <svg viewBox="0 0 24 24">
+                   <path d="M20.665 3.717l-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42l10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701h-.002l-.002.001l-.314 4.692c.46 0 .663-.211.921-.46l2.211-2.15l4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z"/>
+                </svg>
+                <span>Telegram</span>
+              </a>
+
               {/* Facebook Button */}
               <a 
                 href={SOCIAL_LINKS.facebook}
@@ -152,7 +166,6 @@ export default function Footer() {
 
             </div>
           </div>
-          {/* 👆 END SOCIAL SECTION */}
 
         </div>
       </div>

@@ -87,7 +87,7 @@ export async function GET() {
     rows.push(
       [
         `${sym.id}-CHAT`,
-        `Ask AI: ${sym.name} Analysis`,
+        `${sym.name} Analysis`,
         `Interactive AI Trading Assistant for ${sym.name}. Instant lot size, risk and basic scenario suggestions. Includes 2 free trials.`,
         'in stock',
         'new',
@@ -107,7 +107,7 @@ export async function GET() {
     rows.push(
       [
         `${sym.id}-SETUP`,
-        `Institutional Targets: ${sym.name}`,
+        `${sym.name}`,
         `Structured Entry, Stop Loss and Take Profit zones for ${sym.name}. Designed for disciplined trade planning.`,
         'in stock',
         'new',
@@ -127,7 +127,7 @@ export async function GET() {
     rows.push(
       [
         `${sym.id}-RISK`,
-        `Risk Engine: ${sym.name}`,
+        `${sym.name}`,
         `Volatility-adjusted risk calculator for ${sym.name}. Helps you size positions and place stop loss levels with clear risk visibility.`,
         'in stock',
         'new',

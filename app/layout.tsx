@@ -10,6 +10,7 @@ import ConditionalNavbar from '@/components/ConditionalNavbar';
 import CtaTracker from '@/components/CTATracker';
 import FacebookPixel from "@/components/FacebookPixel";
 import Footer from '@/components/Footer';
+import FBPixelEvents from '@/components/FBPixelEvents'; // ✅ Imported
 
 // NEW: Import the custom elegant cookie bar
 import CookieConsent from '@/components/CookieConsent';
@@ -22,21 +23,17 @@ export const metadata = {
   title: 'MZPrimer – Your Gateway to Smart Trading',
   description:
     'MZPrimer is a premium trading site built to help traders get started with speed, confidence, and security. Access exclusive insights, AI tools, and global markets.',
-// --- ADD THIS LINE ---
   manifest: '/manifest.json',
-  };
-
+};
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning> 
       <body 
         className={`${inter.className} bg-black text-white relative`}
-        // 2. ADD suppressHydrationWarning HERE ALSO
         suppressHydrationWarning 
       >      
         {/* ---------------- 1. GOOGLE CONSENT MODE DEFAULT ---------------- */}
-        {/* This runs immediately and tells Google to BLOCK cookies by default */}
         <Script id="consent-mode-defaults" strategy="beforeInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
@@ -65,11 +62,14 @@ export default function Layout({ children }: { children: ReactNode }) {
         {/* Footer */}
         <Footer />
 
+        {/* ---------------- 3. ANALYTICS & TRACKING ---------------- */}
+        
+        {/* ✅ FIX: Added FBPixelEvents inside Suspense */}
+        {/* Both components use searchParams, so they need Suspense to not break static generation */}
         <Suspense fallback={null}>
           <FacebookPixel />
+          <FBPixelEvents /> 
         </Suspense>
-        {/* ---------------- 3. ANALYTICS (GTM/GA4/ADS) ---------------- */}
-        {/* These load now, but remain "dumb" (no tracking) until consent is updated via the component */}
 
         {/* Google Tag Manager */}
         <Script id="gtm-loader" strategy="afterInteractive">
@@ -115,7 +115,6 @@ export default function Layout({ children }: { children: ReactNode }) {
         <CtaTracker />
 
         {/* ---------------- 4. THE CUSTOM COOKIE UI ---------------- */}
-        {/* This replaces A Popup. It handles the 'Accept' logic visually */}
         <CookieConsent />
 
       </body>

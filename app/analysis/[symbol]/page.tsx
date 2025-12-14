@@ -3,6 +3,7 @@ import { getSymbolData } from '../../lib/fetchData';
 import { generateAnalysisReport } from '../../lib/seo/analysisGenerator';
 import NotificationButton from '@/components/NotificationButton'; 
 import LiveSeoSchema from '@/components/LiveSeoSchema';
+import SymbolNavigation from '@/components/SymbolNavigation'; 
 import { 
   Activity, ArrowRight, Gauge, Layers, 
   Cpu, Thermometer, Box, LineChart, Bot,
@@ -256,60 +257,7 @@ export default async function AnalysisPage({ params }: Props) {
       </div>
 
 {/* --- FOOTER --- */}
-<section className="mt-24 border-t border-zinc-900 pt-10 pb-20 text-center max-w-4xl mx-auto">
-    
-    <div className="flex flex-wrap justify-center gap-3 my-6">
-        {/* 1. Strategy & Setup */}
-        <a href={`/trade/${resolvedSymbol}`} className="seo-chip-link">
-           Trade Setup <ArrowRight size={14} />
-        </a>
-        
-        <a href={`/trend/${resolvedSymbol}`} className="seo-chip-link">
-           Trend Direction <ArrowRight size={14} />
-        </a>
-
-        <a href={`/forecast/${resolvedSymbol}`} className="seo-chip-link">
-           AI Forecast <ArrowRight size={14} />
-        </a>
-
-        {/* 2. Technical Tools */}
-        <a href={`/calculator/${resolvedSymbol}`} className="seo-chip-link">
-           Trade Calculator <ArrowRight size={14} />
-        </a>
-        
-        <a href={`/indicator/${resolvedSymbol}`} className="seo-chip-link">
-           Indicator RSI Score <ArrowRight size={14} />
-        </a>
-
-        {/* 3. Deep Analysis */}
-        <a href={`/zones/${resolvedSymbol}`} className="seo-chip-link">
-           Liquidity Zones <ArrowRight size={14} />
-        </a>
-
-        <a href={`/momentum/${resolvedSymbol}`} className="seo-chip-link">
-           Momentum Score <ArrowRight size={14} />
-        </a>
-
-        <a href={`/volatility/${resolvedSymbol}`} className="seo-chip-link">
-           Volatility Risk <ArrowRight size={14} />
-        </a>
-
-        <a href={`/analysis/${resolvedSymbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
-           Full Analysis <ArrowRight size={14} />
-        </a>
-    </div>
-
-    {/* --- NEW AI CHAT CTA --- */}
-    <div className="mt-12 mb-8">
-        <p className="text-zinc-500 text-xs mb-4">Have specific questions about {resolvedSymbol}?</p>
-        
-        <a href="/AIChat" className="btn-ai-chat-pulse">
-            <Bot size={20} fill="currentColor" className="text-blue-200" /> 
-            Chat with AI Analyst
-        </a>
-    </div>
-
-</section>
+<SymbolNavigation symbol={resolvedSymbol} />
 
     </main>
   );

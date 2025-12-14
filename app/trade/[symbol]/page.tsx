@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
 import { getSymbolData } from '../../lib/fetchData'; 
 import { generateTradeReport } from '../../lib/seo/tradeGenerator';
-import NotificationButton from '@/components/NotificationButton'; 
+import NotificationButton from '@/components/NotificationButton';
+import SymbolNavigation from '@/components/SymbolNavigation';  
 import { Crosshair, ShieldAlert, Coins, TrendingUp, AlertTriangle, ArrowRight, Bot } from 'lucide-react';
 
 // Update Props type to accept Promise
@@ -46,7 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TradePage({ params }: Props) {
   // Unwrap the Promise
   const { symbol } = await params;
-  
+  const resolvedSymbol = symbol;
   const data = await getSymbolData(symbol);
 
   // Safety Check: Are there orders?
@@ -224,58 +225,7 @@ export default async function TradePage({ params }: Props) {
 </section>
 
       {/* FOOTER SECTION */}
-      <div className="mt-24 border-t border-zinc-900 pt-10 pb-20 text-center max-w-4xl mx-auto">
-        <div className="flex flex-wrap justify-center gap-3 my-6">
-          {/* 1. Strategy & Setup */}
-          <a href={`/trade/${symbol}`} className="seo-chip-link">
-            Trade Setup <ArrowRight size={14} />
-          </a>
-          
-          <a href={`/trend/${symbol}`} className="seo-chip-link">
-            Trend Direction <ArrowRight size={14} />
-          </a>
-
-          <a href={`/forecast/${symbol}`} className="seo-chip-link">
-            AI Forecast <ArrowRight size={14} />
-          </a>
-
-          {/* 2. Technical Tools */}
-          <a href={`/calculator/${symbol}`} className="seo-chip-link">
-            Trade Calculator <ArrowRight size={14} />
-          </a>
-          
-          <a href={`/indicator/${symbol}`} className="seo-chip-link">
-            Indicator RSI Score <ArrowRight size={14} />
-          </a>
-
-          {/* 3. Deep Analysis */}
-          <a href={`/zones/${symbol}`} className="seo-chip-link">
-            Liquidity Zones <ArrowRight size={14} />
-          </a>
-
-          <a href={`/momentum/${symbol}`} className="seo-chip-link">
-            Momentum Score <ArrowRight size={14} />
-          </a>
-
-          <a href={`/volatility/${symbol}`} className="seo-chip-link">
-            Volatility Risk <ArrowRight size={14} />
-          </a>
-
-          <a href={`/analysis/${symbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
-            Full Analysis <ArrowRight size={14} />
-          </a>
-        </div>
-
-        {/* AI CHAT CTA */}
-        <div className="mt-12 mb-8">
-          <p className="text-zinc-500 text-xs mb-4">Have specific questions about {symbol}?</p>
-          
-          <a href="/AIChat" className="btn-ai-chat-pulse">
-            <Bot size={20} fill="currentColor" className="text-blue-200" /> 
-            Chat with AI Analyst
-          </a>
-        </div>
-      </div>
+      <SymbolNavigation symbol={resolvedSymbol} />
     </div>
   );
 }

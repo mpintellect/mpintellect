@@ -109,17 +109,75 @@ async function fetchSymbolData(symbolRaw: string) {
   }
 }
 
-function minutesAgo(ts: string) {
-  if (!ts) return null;
-  const d = new Date(ts);
-  if (Number.isNaN(d.getTime())) return null;
-  const diff = Math.floor((Date.now() - d.getTime()) / (1000 * 60));
-  if (diff < 0) return 0;
-  return Math.min(diff, 999);
+/** -----------------------------
+ *  ENHANCED: Smart time calculation
+ *  ----------------------------- */
+function getTimeAgo(timestamp: string): string {
+  if (!timestamp) return 'LIVE NOW';
+  
+  try {
+    const date = new Date(timestamp);
+    const now = new Date();
+    
+    // Check if date is valid
+    if (Number.isNaN(date.getTime())) return 'LIVE NOW';
+    
+    const diffMs = now.getTime() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    
+    // If data is very fresh (< 15 mins), say "LIVE NOW"
+    if (diffMinutes < 15) return 'LIVE NOW';
+    
+    // If data is very old (> 4 hours), show the date
+    if (diffMinutes > 240) {
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
+    
+    // If less than 60 minutes, show minutes
+    if (diffMinutes < 60) {
+      return `${diffMinutes}m ago`;
+    }
+    
+    // If less than 24 hours, show hours
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) {
+      return `${diffHours}h ago`;
+    }
+    
+    // Otherwise show days
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  } catch (e) {
+    return 'LIVE NOW';
+  }
 }
 
 function clamp(n: number, a: number, b: number) {
   return Math.max(a, Math.min(b, n));
+}
+
+/** -----------------------------
+ *  Fetch logo as base64
+ *  ----------------------------- */
+async function fetchLogoAsBase64(requestUrl: string): Promise<string | null> {
+  try {
+    const baseUrl = new URL(requestUrl);
+    const logoUrl = `${baseUrl.origin}/logos/icon.png`;
+    
+    const response = await fetch(logoUrl);
+    if (!response.ok) return null;
+    
+    const buffer = await response.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString('base64');
+    return `data:image/png;base64,${base64}`;
+  } catch (error) {
+    console.error('Failed to fetch logo:', error);
+    return null;
+  }
 }
 
 export async function GET(request: Request) {
@@ -135,32 +193,18 @@ export async function GET(request: Request) {
     // theme optional
     const theme = (searchParams.get("theme") || "dark").toLowerCase();
 
-    const data = await fetchSymbolData(symbol);
-
-    // Fetch logo from public folder
-    const baseUrl = new URL(request.url);
-    baseUrl.pathname = "/logos/icon.png";
-    const logoUrl = baseUrl.toString();
-
-    let logoData = null;
-    try {
-      const logoRes = await fetch(logoUrl);
-      if (logoRes.ok) {
-        const logoBuffer = await logoRes.arrayBuffer();
-        const logoBase64 = Buffer.from(logoBuffer).toString('base64');
-        logoData = `data:image/png;base64,${logoBase64}`;
-      }
-    } catch (error) {
-      // Logo fetch failed, will use fallback
-      console.error('Failed to fetch logo:', error);
-    }
+    // Fetch data in parallel for better performance
+    const [data, logoData] = await Promise.all([
+      fetchSymbolData(symbol),
+      fetchLogoAsBase64(request.url)
+    ]);
 
     // Decide what to show
     const decision = data?.decision || "ANALYZING";
     const isBuy = decision.includes("BUY");
     const isSell = decision.includes("SELL");
 
-    const accent = isBuy ? "#10B981" : isSell ? "#EF4444" : "#F59E0B"; // green/red/amber
+    const accent = isBuy ? "#10B981" : isSell ? "#EF4444" : "#F59E0B";
     const bg = theme === "light" ? "#F8FAFC" : "#050505";
     const card = theme === "light" ? "#FFFFFF" : "#0A0A0A";
     const border = theme === "light" ? "rgba(15,23,42,0.12)" : "rgba(255,255,255,0.10)";
@@ -175,7 +219,7 @@ export async function GET(request: Request) {
     const tp = formatPrice(data?.tp ?? null, symbol);
 
     const conf = clamp(Number(data?.confidence ?? 50), 0, 100);
-    const ago = minutesAgo(data?.ts || "");
+    const timeAgo = getTimeAgo(data?.ts || "");
 
     // Typography scale by size
     const S = cfg.scale;
@@ -280,8 +324,25 @@ export async function GET(request: Request) {
             </div>
 
             <div style={{ display: "flex", flexDirection: "row", gap: 14, alignItems: "center" }}>
-              <div style={{ display: "flex", color: textDim, fontSize: Math.round(16 * S), fontWeight: 700 }}>
-                {ago === null ? "Live" : `Detected ${ago}m ago`}
+              <div style={{ 
+                display: "flex", 
+                alignItems: "center",
+                color: timeAgo === 'LIVE NOW' ? '#10B981' : textDim,
+                fontSize: Math.round(16 * S), 
+                fontWeight: 700 
+              }}>
+                {/* Animated dot for live data */}
+                {timeAgo === 'LIVE NOW' && (
+                  <div style={{ 
+                    width: 8, 
+                    height: 8, 
+                    borderRadius: '50%', 
+                    backgroundColor: '#10B981', 
+                    marginRight: 6,
+                    boxShadow: '0 0 8px #10B981'
+                  }} />
+                )}
+                {timeAgo === 'LIVE NOW' ? 'LIVE MARKET DATA' : `Analysis: ${timeAgo}`}
               </div>
               <div
                 style={{
@@ -290,7 +351,7 @@ export async function GET(request: Request) {
                   borderRadius: 999,
                   border: `1px solid ${border}`,
                   backgroundColor: theme === "light" ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.04)",
-                  color: textDim,
+                  color: timeAgo === 'LIVE NOW' ? '#10B981' : textDim,
                   fontSize: Math.round(16 * S),
                   fontWeight: 800,
                 }}
@@ -380,8 +441,8 @@ export async function GET(request: Request) {
             <div
               style={{
                 display: "flex",
-                flexDirection: "row", // Changed: Always horizontal for all sizes
-                gap: isStory ? 12 : rowGap, // Reduced gap for story
+                flexDirection: isStory ? "column" : "row",
+                gap: rowGap,
                 width: "100%",
                 alignItems: "stretch",
                 justifyContent: "space-between",
@@ -396,25 +457,14 @@ export async function GET(request: Request) {
                   backgroundColor: card,
                   border: `1px solid ${border}`,
                   borderRadius: 18,
-                  padding: isStory ? `${Math.round(16 * S)}px` : `${Math.round(22 * S)}px`, // Reduced padding for story
-                  gap: isStory ? 6 : 10, // Reduced gap for story
+                  padding: `${Math.round(22 * S)}px`,
+                  gap: 10,
                 }}
               >
-                <div style={{ 
-                  display: "flex", 
-                  fontSize: isStory ? Math.round(16 * S) : labelSize, // Smaller font for story
-                  color: textDim, 
-                  fontWeight: 800, 
-                  letterSpacing: isStory ? 1 : 2 
-                }}>
+                <div style={{ display: "flex", fontSize: labelSize, color: textDim, fontWeight: 800, letterSpacing: 2 }}>
                   ENTRY
                 </div>
-                <div style={{ 
-                  display: "flex", 
-                  fontSize: isStory ? Math.round(36 * S) : priceSize, // Smaller font for story
-                  fontWeight: 1000, 
-                  letterSpacing: -1 
-                }}>
+                <div style={{ display: "flex", fontSize: priceSize, fontWeight: 1000, letterSpacing: -1 }}>
                   {entry}
                 </div>
               </div>
@@ -428,26 +478,14 @@ export async function GET(request: Request) {
                   backgroundColor: card,
                   border: `1px solid ${border}`,
                   borderRadius: 18,
-                  padding: isStory ? `${Math.round(16 * S)}px` : `${Math.round(22 * S)}px`, // Reduced padding for story
-                  gap: isStory ? 6 : 10, // Reduced gap for story
+                  padding: `${Math.round(22 * S)}px`,
+                  gap: 10,
                 }}
               >
-                <div style={{ 
-                  display: "flex", 
-                  fontSize: isStory ? Math.round(16 * S) : labelSize, // Smaller font for story
-                  color: "#EF4444", 
-                  fontWeight: 900, 
-                  letterSpacing: isStory ? 1 : 2 
-                }}>
+                <div style={{ display: "flex", fontSize: labelSize, color: "#EF4444", fontWeight: 900, letterSpacing: 2 }}>
                   STOP LOSS
                 </div>
-                <div style={{ 
-                  display: "flex", 
-                  fontSize: isStory ? Math.round(36 * S) : priceSize, // Smaller font for story
-                  fontWeight: 1000, 
-                  letterSpacing: -1, 
-                  color: "#EF4444" 
-                }}>
+                <div style={{ display: "flex", fontSize: priceSize, fontWeight: 1000, letterSpacing: -1, color: "#EF4444" }}>
                   {sl}
                 </div>
               </div>
@@ -461,32 +499,50 @@ export async function GET(request: Request) {
                   backgroundColor: card,
                   border: `1px solid ${border}`,
                   borderRadius: 18,
-                  padding: isStory ? `${Math.round(16 * S)}px` : `${Math.round(22 * S)}px`, // Reduced padding for story
-                  gap: isStory ? 6 : 10, // Reduced gap for story
+                  padding: `${Math.round(22 * S)}px`,
+                  gap: 10,
                 }}
               >
-                <div style={{ 
-                  display: "flex", 
-                  fontSize: isStory ? Math.round(16 * S) : labelSize, // Smaller font for story
-                  color: "#10B981", 
-                  fontWeight: 900, 
-                  letterSpacing: isStory ? 1 : 2 
-                }}>
+                <div style={{ display: "flex", fontSize: labelSize, color: "#10B981", fontWeight: 900, letterSpacing: 2 }}>
                   TAKE PROFIT
                 </div>
-                <div style={{ 
-                  display: "flex", 
-                  fontSize: isStory ? Math.round(36 * S) : priceSize, // Smaller font for story
-                  fontWeight: 1000, 
-                  letterSpacing: -1, 
-                  color: "#10B981" 
-                }}>
+                <div style={{ display: "flex", fontSize: priceSize, fontWeight: 1000, letterSpacing: -1, color: "#10B981" }}>
                   {tp}
                 </div>
               </div>
             </div>
 
-            {/* Minimal footer line (NOT crowded) */}
+            {/* Additional info section for LIVE data */}
+            {timeAgo === 'LIVE NOW' && (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  padding: `${Math.round(16 * S)}px`,
+                  background: "rgba(16, 185, 129, 0.05)",
+                  border: `1px solid rgba(16, 185, 129, 0.2)`,
+                  borderRadius: "12px",
+                  marginTop: `${Math.round(12 * S)}px`,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{
+                    display: "flex",
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    backgroundColor: "#10B981",
+                    animation: "pulse 1.5s infinite",
+                  }} />
+                  <div style={{ display: "flex", fontSize: Math.round(14 * S), color: "#10B981", fontWeight: 600 }}>
+                    🔴 LIVE: This analysis is updating in real-time
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Minimal footer line */}
             <div
               style={{
                 display: "flex",
@@ -516,11 +572,23 @@ export async function GET(request: Request) {
               <div style={{ display: "flex" }}>mzprimer.com</div>
             </div>
           </div>
+
+          {/* Add some CSS for pulse animation */}
+          <style>{`
+            @keyframes pulse {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.5; }
+            }
+          `}</style>
         </div>
       ),
-      { width: cfg.width, height: cfg.height }
+      { 
+        width: cfg.width, 
+        height: cfg.height 
+      }
     );
   } catch (e: any) {
+    console.error("OG Image generation error:", e);
     return new Response(`Failed to generate: ${e?.message || "unknown error"}`, { status: 500 });
   }
 }

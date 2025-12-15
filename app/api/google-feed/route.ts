@@ -1,60 +1,106 @@
+
 import { NextResponse } from 'next/server';
 
-const SYMBOLS = [
-  { id: 'BTCUSD', name: 'Bitcoin', type: 'Crypto' },
-  { id: 'ETHUSD', name: 'Ethereum', type: 'Crypto' },
-  { id: 'XAUUSD', name: 'Gold', type: 'Commodity' },
+type SymbolDef = {
+  id: string;
+  name: string;
+  type: 'Crypto' | 'Commodity' | 'Forex' | 'Indices';
+};
+
+const SYMBOLS: SymbolDef[] = [
   { id: 'EURUSD', name: 'EUR/USD', type: 'Forex' },
   { id: 'GBPUSD', name: 'GBP/USD', type: 'Forex' },
   { id: 'USDJPY', name: 'USD/JPY', type: 'Forex' },
+  { id: 'USDCAD', name: 'USD/CAD', type: 'Forex' },
+  { id: 'AUDUSD', name: 'AUD/USD', type: 'Forex' },
+  { id: 'NZDUSD', name: 'NZD/USD', type: 'Forex' },
+  { id: 'USDCHF', name: 'USD/CHF', type: 'Forex' },
+  { id: 'EURJPY', name: 'EUR/JPY', type: 'Forex' },
+  { id: 'EURGBP', name: 'EUR/GBP', type: 'Forex' },
+  { id: 'GBPJPY', name: 'GBP/JPY', type: 'Forex' },
+  { id: 'GBPCHF', name: 'GBP/CHF', type: 'Forex' },
+  
+  // Metals
+  { id: 'XAUUSD', name: 'Gold (XAU/USD)', type: 'Commodity' },
+  { id: 'XAUEUR', name: 'Gold/EUR', type: 'Commodity' },
+  { id: 'XAGUSD', name: 'Silver (XAG/USD)', type: 'Commodity' },
+  { id: 'PLATINUM', name: 'Platinum', type: 'Commodity' },
+  
+  // Energy
+  { id: 'BRENT', name: 'Crude Oil (Brent)', type: 'Commodity' },
+  
+  // Crypto
+  { id: 'BTCUSD', name: 'Bitcoin (BTC)', type: 'Crypto' },
+  { id: 'ETHUSD', name: 'Ethereum (ETH)', type: 'Crypto' },
+  { id: 'XRPUSD', name: 'Ripple (XRP)', type: 'Crypto' },
+  { id: 'LTCUSD', name: 'Litecoin (LTC)', type: 'Crypto' },
+  { id: 'DOGEUSD', name: 'Dogecoin', type: 'Crypto' },
+  
+  // Indices
   { id: 'US500', name: 'S&P 500', type: 'Indices' },
-  { id: 'USTEC', name: 'Nasdaq', type: 'Indices' },
-  // Add all 28 symbols...
+  { id: 'USTEC', name: 'NASDAQ 100', type: 'Indices' },
+  { id: 'US30', name: 'Dow Jones 30', type: 'Indices' },
+  { id: 'HK50', name: 'Hong Kong 50', type: 'Indices' },
+  { id: 'FRANCE40', name: 'CAC 40', type: 'Indices' },
+  { id: 'CHINA50', name: 'FTSE China A50', type: 'Indices' },
+  { id: 'UK100', name: 'FTSE 100', type: 'Indices' },
 ];
 
+const BASE_URL = 'https://mzprimer.com';
+
+function csvEscape(value: string): string {
+  const v = value ?? '';
+  if (v.includes('"') || v.includes(',') || v.includes('\n')) {
+    return `"${v.replace(/"/g, '""')}"`;
+  }
+  return `"${v}"`;
+}
+
 export async function GET() {
-  const baseUrl = 'https://mzprimer.com'; // 🛑 CHANGE TO PROD DOMAIN
-
-  // 1. CACHE BUSTER (Changes every 4 hours)
-  // Google only updates if the URL changes. This forces the update.
+  // 1. Hourly Cache Buster
   const date = new Date();
-  const timeBlock = Math.floor(date.getHours() / 4); 
-  const cacheKey = `${date.toISOString().split('T')[0]}_H${timeBlock}`; 
+  const cacheKey = `${date.toISOString().split('T')[0]}_H${date.getHours()}`; 
 
-  // Google Custom Feed Headers
+  // 🚀 UPDATED HEADERS: Added "Square Image URL"
   const header = [
     'ID', 
     'Item title', 
     'Final URL', 
-    'Image URL', 
+    'Image URL',          // Landscape (1.91:1)
+    'Square Image URL',   // Square (1:1) <-- NEW
     'Item description', 
     'Price'
-  ].join(',');
+  ].map(csvEscape).join(',');
 
   let rows: string[] = [];
 
-  SYMBOLS.forEach((sym) => {
-    // 2. Generate the Google-Specific Image URL
-    // We add the ?v=cacheKey so Google thinks it's a new file
-    const imageUrl = `${baseUrl}/api/og-google?symbol=${sym.id}&v=${cacheKey}`;
+  for (const sym of SYMBOLS) {
     
-    // 3. Landing Page
-    const landingPage = `${baseUrl}/trade/${sym.id.toLowerCase()}`;
+    // 2. Generate TWO image links
+    // Link A: Standard Landscape (1200x628)
+    const imgLandscape = `${BASE_URL}/api/google-og?symbol=${sym.id}&size=standard&theme=professional&v=${cacheKey}`;
+    
+    // Link B: Square (1080x1080) for Mobile/Gmail/Grid
+    const imgSquare = `${BASE_URL}/api/google-og?symbol=${sym.id}&size=square&theme=professional&v=${cacheKey}`;
+    
+    const landingPage = `${BASE_URL}/trade/${sym.id.toLowerCase()}`;
+    const desc = `Live AI Analysis: ${sym.name}. Entry, SL & TP.`;
 
     rows.push([
-      `${sym.id}`,                                      // ID (Must match pixel)
-      `"${sym.name} AI Analysis"`,                      // Title
-      `${landingPage}`,                                 // URL
-      `${imageUrl}`,                                    // Image
-      `"Live AI Entry & Stop Loss for ${sym.name}"`,    // Description
-      '4.50 EUR'                                        // Price
-    ].join(','));
-  });
+      `${sym.id}`,
+      `"${sym.name} Forecast"`,
+      landingPage,
+      imgLandscape,       // Maps to "Image URL"
+      imgSquare,          // Maps to "Square Image URL"
+      `"${desc}"`,
+      '4.50 EUR'
+    ].map(csvEscape).join(','));
+  }
 
   return new NextResponse(`${header}\n${rows.join('\n')}`, {
     headers: {
-      'Content-Type': 'text/csv',
-      'Content-Disposition': 'attachment; filename="google_ads_live.csv"',
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="google_ads_live_v2.csv"',
     },
   });
 }

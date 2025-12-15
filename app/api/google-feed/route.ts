@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 
 type SymbolDef = {
@@ -7,7 +6,9 @@ type SymbolDef = {
   type: 'Crypto' | 'Commodity' | 'Forex' | 'Indices';
 };
 
+// 1. CONFIG: Your Symbols List
 const SYMBOLS: SymbolDef[] = [
+  // Forex
   { id: 'EURUSD', name: 'EUR/USD', type: 'Forex' },
   { id: 'GBPUSD', name: 'GBP/USD', type: 'Forex' },
   { id: 'USDJPY', name: 'USD/JPY', type: 'Forex' },
@@ -48,6 +49,7 @@ const SYMBOLS: SymbolDef[] = [
 
 const BASE_URL = 'https://mzprimer.com';
 
+// Simple CSV escape helper
 function csvEscape(value: string): string {
   const v = value ?? '';
   if (v.includes('"') || v.includes(',') || v.includes('\n')) {
@@ -57,17 +59,24 @@ function csvEscape(value: string): string {
 }
 
 export async function GET() {
-  // 1. Hourly Cache Buster
-  const date = new Date();
-  const cacheKey = `${date.toISOString().split('T')[0]}_H${date.getHours()}`; 
+  
+  // 🚀 CUSTOM DATE FORMAT: YYYY-DD-MM_HH
+  const now = new Date();
+  
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+  const day = String(now.getDate()).padStart(2, '0');
+  const hour = now.getHours();
 
-  // 🚀 UPDATED HEADERS: Added "Square Image URL"
+  // RESULT: "2025-15-12_H14" (Year-Day-Month)
+  const CACHE_VERSION = `${year}-${day}-${month}_H${hour}`;
+
+  // Google Custom Feed Headers
   const header = [
     'ID', 
     'Item title', 
     'Final URL', 
-    'Image URL',          // Landscape (1.91:1)
-    'Square Image URL',   // Square (1:1) <-- NEW
+    'Image URL', 
     'Item description', 
     'Price'
   ].map(csvEscape).join(',');
@@ -76,31 +85,34 @@ export async function GET() {
 
   for (const sym of SYMBOLS) {
     
-    // 2. Generate TWO image links
-    // Link A: Standard Landscape (1200x628)
-    const imgLandscape = `${BASE_URL}/api/og-google?symbol=${sym.id}&size=standard&theme=professional&v=${cacheKey}`;
+    // 1. Construct Image URL using your Custom Date Format
+    const imageUrl = `${BASE_URL}/api/og-google?symbol=${sym.id}&size=standard&theme=professional&v=${CACHE_VERSION}`;
     
-    // Link B: Square (1080x1080) for Mobile/Gmail/Grid
-    const imgSquare = `${BASE_URL}/api/og-google?symbol=${sym.id}&size=square&theme=professional&v=${cacheKey}`;
-    
+    // 2. Landing Page
     const landingPage = `${BASE_URL}/trade/${sym.id.toLowerCase()}`;
-    const desc = `Live AI Analysis: ${sym.name}. Entry, SL & TP.`;
+
+    // 3. Ad Text
+    const desc = `Live AI Technical Analysis for ${sym.name}. Entry, Stop Loss & Take Profit.`;
 
     rows.push([
-      `${sym.id}`,
-      `"${sym.name} Forecast"`,
-      landingPage,
-      imgLandscape,       // Maps to "Image URL"
-      imgSquare,          // Maps to "Square Image URL"
-      `"${desc}"`,
-      '4.50 EUR'
+      `${sym.id}`,                                      // ID
+      `"${sym.name} Forecast"`,                         // Title
+      landingPage,                                      // Final URL
+      imageUrl,                                         // Image URL (Live)
+      `"${desc}"`,                                      // Description
+      '4.50 EUR'                                        // Price
     ].map(csvEscape).join(','));
   }
 
-  return new NextResponse(`${header}\n${rows.join('\n')}`, {
+  const csvContent = `${header}\n${rows.join('\n')}`;
+
+  return new NextResponse(csvContent, {
+    status: 200,
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="google_ads_live_v2.csv"',
+      'Content-Disposition': 'attachment; filename="google_ads_live.csv"',
+      // Prevent browser caching
+      'Cache-Control': 'no-store, max-age=0',
     },
   });
 }

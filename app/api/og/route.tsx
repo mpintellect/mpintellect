@@ -1,971 +1,1152 @@
-import { ImageResponse } from 'next/og';
+// app/api/google-og/route.tsx
+import { ImageResponse } from "next/og";
 
-export const runtime = 'edge';
+export const runtime = "edge";
 
-// Symbol specifications for proper decimal formatting
-const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: number; fullName: string }> = {
-  // Forex
-  "EURUSD": { pip: 0.0001, contract: 100000, decimals: 5, fullName: "EUR/USD" },
-  "GBPUSD": { pip: 0.0001, contract: 100000, decimals: 5, fullName: "GBP/USD" },
-  "USDJPY": { pip: 0.01, contract: 100000, decimals: 3, fullName: "USD/JPY" },
-  "USDCAD": { pip: 0.0001, contract: 100000, decimals: 5, fullName: "USD/CAD" },
-  "AUDUSD": { pip: 0.0001, contract: 100000, decimals: 5, fullName: "AUD/USD" },
-  "NZDUSD": { pip: 0.0001, contract: 100000, decimals: 5, fullName: "NZD/USD" },
-  "USDCHF": { pip: 0.0001, contract: 100000, decimals: 5, fullName: "USD/CHF" },
-  "EURJPY": { pip: 0.01, contract: 100000, decimals: 3, fullName: "EUR/JPY" },
-  "EURGBP": { pip: 0.0001, contract: 100000, decimals: 5, fullName: "EUR/GBP" },
-  "GBPJPY": { pip: 0.01, contract: 100000, decimals: 3, fullName: "GBP/JPY" },
-  "GBPCHF": { pip: 0.0001, contract: 100000, decimals: 5, fullName: "GBP/CHF" },
-
-  // Metals
-  "XAUUSD": { pip: 0.01, contract: 100, decimals: 2, fullName: "Gold (XAU/USD)" },
-  "XAUEUR": { pip: 0.01, contract: 100, decimals: 2, fullName: "Gold/EUR" },
-  "XAGUSD": { pip: 0.001, contract: 5000, decimals: 3, fullName: "Silver (XAG/USD)" },
-  "PLATINUM": { pip: 0.01, contract: 100, decimals: 2, fullName: "Platinum" },
-
-  // Energy
-  "BRENT": { pip: 0.01, contract: 1000, decimals: 2, fullName: "Crude Oil (Brent)" },
-
-  // Crypto
-  "BTCUSD": { pip: 1.0, contract: 1, decimals: 1, fullName: "Bitcoin (BTC)" },
-  "ETHUSD": { pip: 0.1, contract: 1, decimals: 2, fullName: "Ethereum (ETH)" },
-  "XRPUSD": { pip: 0.0001, contract: 1000, decimals: 4, fullName: "Ripple (XRP)" },
-  "LTCUSD": { pip: 0.01, contract: 10, decimals: 2, fullName: "Litecoin (LTC)" },
-  "DOGEUSD": { pip: 0.0001, contract: 1000, decimals: 4, fullName: "Dogecoin" },
-
-  // Indices
-  "US500": { pip: 0.1, contract: 1, decimals: 2, fullName: "S&P 500" },
-  "USTEC": { pip: 0.1, contract: 1, decimals: 2, fullName: "NASDAQ 100" },
-  "US30": { pip: 1.0, contract: 1, decimals: 1, fullName: "Dow Jones 30" },
-  "HK50": { pip: 0.1, contract: 1, decimals: 2, fullName: "Hong Kong 50" },
-  "FRANCE40": { pip: 0.1, contract: 1, decimals: 2, fullName: "CAC 40" },
-  "CHINA50": { pip: 0.1, contract: 1, decimals: 1, fullName: "FTSE China A50" },
-  "UK100": { pip: 0.1, contract: 1, decimals: 1, fullName: "FTSE 100" },
+const SIZES = {
+  square: { width: 1080, height: 1080, pad: 60, scale: 1.0 },
+  wide: { width: 1200, height: 630, pad: 48, scale: 1.0 },
+  story: { width: 1080, height: 1920, pad: 72, scale: 1.0 },
 };
 
-// Helper to format price with correct decimals
-function formatPrice(price: number | null, symbol: string): string {
-  if (price === null || price === undefined) return '----';
-  
-  const spec = SYMBOL_SPECS[symbol.toUpperCase()] || { decimals: 5, fullName: symbol };
+const SYMBOL_SPECS: Record<string, { decimals: number; fullName: string; category: string }> = {
+  EURUSD: { decimals: 5, fullName: "EUR/USD", category: "Forex" },
+  GBPUSD: { decimals: 5, fullName: "GBP/USD", category: "Forex" },
+  USDJPY: { decimals: 3, fullName: "USD/JPY", category: "Forex" },
+  USDCAD: { decimals: 5, fullName: "USD/CAD", category: "Forex" },
+  AUDUSD: { decimals: 5, fullName: "AUD/USD", category: "Forex" },
+  BTCUSD: { decimals: 1, fullName: "Bitcoin", category: "Crypto" },
+  ETHUSD: { decimals: 2, fullName: "Ethereum", category: "Crypto" },
+  XRPUSD: { decimals: 4, fullName: "Ripple", category: "Crypto" },
+  SOLUSD: { decimals: 2, fullName: "Solana", category: "Crypto" },
+  XAUUSD: { decimals: 2, fullName: "Gold", category: "Metals" },
+  XAGUSD: { decimals: 3, fullName: "Silver", category: "Metals" },
+};
+
+function formatPrice(price: number | null | undefined, symbol: string) {
+  if (price === null || price === undefined || Number.isNaN(price)) return "----";
+  const spec = SYMBOL_SPECS[symbol] ?? { decimals: 5, fullName: symbol };
   return price.toFixed(spec.decimals);
 }
 
-// Helper to format stop loss/take profit
-function formatLevel(level: number | null, symbol: string): string {
-  if (level === null || level === undefined) return '----';
-  
-  const spec = SYMBOL_SPECS[symbol.toUpperCase()] || { decimals: 5, fullName: symbol };
-  return level.toFixed(spec.decimals);
+function safeUpper(s: string) {
+  return (s || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 }
 
-// Helper: Fetch Real Data from your existing GCS Pipeline
-async function fetchSymbolData(symbol: string) {
-  const cleanSymbol = symbol.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-  const url = `https://storage.googleapis.com/mzprimer-data-store/output_${cleanSymbol}.json`;
+async function fetchSymbolData(symbolRaw: string) {
+  const symbol = safeUpper(symbolRaw);
+  const url = `https://storage.googleapis.com/mzprimer-data-store/output_${symbol}.json`;
 
   try {
     const res = await fetch(url, { next: { revalidate: 300 } });
-    
     if (!res.ok) return null;
-    
+
     const data = await res.json();
+
+    const decision = (data.final_decision || "HOLD").toString().toUpperCase();
+    const trend = data.trend?.trend?.replace("_", " ").toUpperCase() || "NEUTRAL";
     
-    // Get trend from "trend.trend" (bullish/bearish)
-    const trendData = data.trend || {};
-    const trend = trendData.trend || 'neutral';
-    
-    // Get current_price from trend section
-    const currentPrice = trendData.current_price || data.current_price;
-    
-    // Get final_decision
-    const decision = data.final_decision || 'WAIT';
-    
-    // Get confidence from risk_score
-    const confidence = data.risk_score?.confidence_score || 
-                      data.analysis_confidence || 
-                      trendData.analysis_confidence || 50;
-    
-    // Get stop loss and take profit from tp_sl
-    const tpSlData = data.tp_sl || {};
-    const sl = tpSlData.sl_level;
-    const tp = tpSlData.tp_level;
-    
-    // Get entry price
-    const entry = tpSlData.entry_price;
-    
-    // Get lot size
-    const lot = data.risk_management?.lot_size || '0.10';
-    
-    // Get timestamp for "detected X min ago"
-    const timestamp = trendData.timestamp || data.generated_at;
-    
-    return {
-      price: currentPrice,
-      trend: trend.replace('_', ' ').toUpperCase(),
-      decision: decision.toUpperCase(),
-      confidence: confidence,
-      sl: sl,
-      tp: tp,
-      entry: entry,
-      lot: lot,
-      timestamp: timestamp,
-      rawData: data
+    const tpSl = data.tp_sl || {};
+    const entry = tpSl.entry_price ?? null;
+    const tp = tpSl.tp_level ?? null;
+    const sl = tpSl.sl_level ?? null;
+    const lotSize = data.risk_management?.lot_size || "0.10";
+    const rrRatio = tpSl.rr_ratio || 1.5;
+    const slPips = tpSl.sl_distance_pips || 0;
+    const tpPips = tpSl.tp_distance_pips || 0;
+
+    const confidence = 
+      data.risk_score?.confidence_score ??
+      data.trend?.analysis_confidence ??
+      data.analysis_confidence ??
+      50;
+
+    const currentPrice = data.trend?.current_price ?? data.current_price ?? null;
+
+    return { 
+      symbol, 
+      decision, 
+      trend, 
+      entry, 
+      tp, 
+      sl, 
+      confidence, 
+      currentPrice, 
+      lotSize,
+      rrRatio,
+      slPips,
+      tpPips
     };
-  } catch (e) {
-    console.error(`Failed to fetch data for ${symbol}:`, e);
+  } catch {
     return null;
   }
 }
 
-// Helper to calculate minutes ago from timestamp
-function getMinutesAgo(timestamp: string): number {
-  if (!timestamp) return 4; // Default
-  
-  try {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    
-    // Return at least 1 minute, max 60 minutes
-    return Math.max(1, Math.min(diffMinutes, 60));
-  } catch (e) {
-    return 4; // Default fallback
-  }
+function minutesAgo(ts: string) {
+  if (!ts) return null;
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return null;
+  const diff = Math.floor((Date.now() - d.getTime()) / (1000 * 60));
+  if (diff < 0) return 0;
+  return Math.min(diff, 999);
 }
 
-// Generate random viewer count (for demo purposes)
-function getRandomViewerCount(): number {
-  return Math.floor(Math.random() * (350 - 150 + 1)) + 150;
+function clamp(n: number, a: number, b: number) {
+  return Math.max(a, Math.min(b, n));
 }
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const symbol = (searchParams.get('symbol') || 'EURUSD').toUpperCase();
-    const type = (searchParams.get('type') || 'CHAT').toUpperCase();
+    const symbolParam = searchParams.get("symbol") || "BTCUSD";
+    const symbol = safeUpper(symbolParam);
+    const type = (searchParams.get("type") || "CHAT").toUpperCase();
+    const sizeKey = (searchParams.get("size") || "square") as keyof typeof SIZES;
+    const cfg = SIZES[sizeKey] || SIZES.square;
+    
+    const data = await fetchSymbolData(symbol);
+    const spec = SYMBOL_SPECS[symbol] ?? { decimals: 5, fullName: symbol, category: "Trading" };
+    
+    // Colors based on type
+    const isBuy = data?.decision.includes("BUY");
+    const isSell = data?.decision.includes("SELL");
+    
+    let signalColor, primaryColor, secondaryColor, accentColor;
+    
+    if (type === "CHAT") {
+      signalColor = isBuy ? "#00FF88" : isSell ? "#FF4757" : "#94A3B8";
+      primaryColor = "#0084FF"; // Messenger blue
+      secondaryColor = "#0066CC";
+      accentColor = "#E3F2FD";
+    } else if (type === "RISK") {
+      signalColor = isBuy ? "#00FF88" : isSell ? "#FF4757" : "#94A3B8";
+      primaryColor = "#EF4444"; // Red for risk
+      secondaryColor = "#DC2626";
+      accentColor = "#FEE2E2";
+    } else { // TARGETS
+      signalColor = isBuy ? "#00FF88" : isSell ? "#FF4757" : "#94A3B8";
+      primaryColor = "#10B981"; // Green for targets
+      secondaryColor = "#059669";
+      accentColor = "#D1FAE5";
+    }
+    
+    // Format prices
+    const currentPrice = formatPrice(data?.currentPrice ?? null, symbol);
+    const entry = formatPrice(data?.entry ?? null, symbol);
+    const sl = formatPrice(data?.sl ?? null, symbol);
+    const tp = formatPrice(data?.tp ?? null, symbol);
+    const confidence = Math.round(data?.confidence ?? 50);
+    const trend = data?.trend || "NEUTRAL";
+    const lotSize = data?.lotSize || "0.10";
+    const decision = data?.decision || "ANALYZING";
+    const rrRatio = data?.rrRatio ? data.rrRatio.toFixed(2) : "1.50";
+    const slPips = Math.round(data?.slPips || 0);
+    const tpPips = Math.round(data?.tpPips || 0);
 
-    // FETCH LIVE DATA
-    const liveData = await fetchSymbolData(symbol);
-    
-    // Format values with correct decimals
-    const formattedPrice = formatPrice(liveData?.price || null, symbol);
-    const formattedSL = formatLevel(liveData?.sl || null, symbol);
-    const formattedTP = formatLevel(liveData?.tp || null, symbol);
-    const formattedEntry = formatLevel(liveData?.entry || null, symbol);
-    
-    // Other values
-    const decision = liveData?.decision || 'ANALYZING';
-    const trend = liveData?.trend || 'NEUTRAL';
-    const confidence = liveData?.confidence || 50;
-    const lotSize = liveData?.lot || '0.10';
-    
-    // Calculate minutes ago
-    const minutesAgo = getMinutesAgo(liveData?.timestamp || '');
-    
-    // Get viewer count
-    const viewerCount = getRandomViewerCount();
-    
-    // Get full symbol name
-    const symbolSpec = SYMBOL_SPECS[symbol] || { fullName: symbol, decimals: 5 };
-    const fullSymbolName = symbolSpec.fullName;
+    // Elegant color scheme
+    const bgColor = "#000000";
+    const surfaceColor = "#111111";
+    const surfaceElevated = "#1A1A1A";
+    const borderColor = "rgba(255,255,255,0.08)";
+    const borderHover = "rgba(255,255,255,0.12)";
+    const textPrimary = "#FFFFFF";
+    const textSecondary = "#A3A3A3";
+    const textTertiary = "#737373";
 
-    // COLORS
-    const isBuy = decision.includes('BUY');
-    const isSell = decision.includes('SELL');
-    const signalColor = isBuy ? '#10B981' : isSell ? '#EF4444' : '#F59E0B';
-    
-    const isTarget = type === 'TARGETS';
-    const isRisk = type === 'RISK';
-    const accentColor = isTarget ? '#F59E0B' : isRisk ? '#3B82F6' : signalColor; 
-    const title = isTarget ? 'TRADE SETUP' : isRisk ? 'RISK ENGINE' : 'AI ASSISTANT';
+    // Logo URL
+    const baseUrl = new URL(request.url);
+    const logoUrl = `${baseUrl.origin}/logos/icon.png`;
+
+    // Common header component
+    const Header = () => (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: `${cfg.pad * 0.7}px ${cfg.pad}px`,
+          borderBottom: `1px solid ${borderColor}`,
+          backgroundColor: "rgba(0,0,0,0.8)",
+          backdropFilter: "blur(20px)",
+          zIndex: 1,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div
+            style={{
+              display: "flex",
+              width: "36px",
+              height: "36px",
+              borderRadius: "9px",
+              background: surfaceElevated,
+              border: `1px solid ${borderColor}`,
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
+          >
+            <img
+              src={logoUrl}
+              style={{
+                width: "20px",
+                height: "20px",
+              }}
+              onError={(e: any) => {
+                e.target.style.display = 'none';
+                e.target.parentNode.innerHTML = '<div style="display: flex; width: 20px; height: 20px; background: linear-gradient(135deg, #7877C6, #6366F1); border-radius: 4px; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: white;">MZ</div>';
+              }}
+            />
+          </div>
+          <div style={{ 
+            display: "flex", 
+            fontSize: "18px", 
+            fontWeight: "300", 
+            letterSpacing: "-0.3px",
+            color: textSecondary 
+          }}>
+            MZPrimer
+          </div>
+        </div>
+        
+        <div style={{ 
+          display: "flex", 
+          flexDirection: "column", 
+          alignItems: "center",
+        }}>
+          <div style={{ 
+            display: "flex", 
+            fontSize: "36px", 
+            fontWeight: "700", 
+            color: textPrimary,
+            letterSpacing: "-0.5px",
+          }}>
+            {symbol}
+          </div>
+          <div style={{ 
+            display: "flex", 
+            fontSize: "14px", 
+            color: signalColor, 
+            fontWeight: "500",
+            marginTop: "2px",
+          }}>
+            {spec.fullName}
+          </div>
+        </div>
+        
+        <div style={{ 
+          display: "flex", 
+          alignItems: "center", 
+          gap: "8px",
+          padding: "6px 14px",
+          borderRadius: "20px",
+          background: surfaceElevated,
+          border: `1px solid ${borderColor}`,
+        }}>
+          <div style={{
+            display: "flex",
+            width: "8px",
+            height: "8px",
+            borderRadius: "50%",
+            backgroundColor: signalColor,
+            boxShadow: `0 0 12px ${signalColor}`,
+          }} />
+          <div style={{ 
+            display: "flex", 
+            fontSize: "16px", 
+            fontWeight: "600", 
+            color: signalColor,
+          }}>
+            {decision}
+          </div>
+        </div>
+      </div>
+    );
+
+    // Common footer component
+    const Footer = () => (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "24px 48px",
+          borderTop: `1px solid ${borderColor}`,
+          backgroundColor: "rgba(0,0,0,0.9)",
+          backdropFilter: "blur(20px)",
+        }}
+      >
+        <div style={{ 
+          display: "flex", 
+          alignItems: "center", 
+          gap: "12px",
+        }}>
+          <div
+            style={{
+              display: "flex",
+              width: "24px",
+              height: "24px",
+              borderRadius: "6px",
+              background: surfaceElevated,
+              border: `1px solid ${borderColor}`,
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
+          >
+            <img
+              src={logoUrl}
+              style={{
+                width: "14px",
+                height: "14px",
+              }}
+              onError={(e: any) => {
+                e.target.style.display = 'none';
+                e.target.parentNode.innerHTML = '<div style="display: flex; width: 20px; height: 20px; background: linear-gradient(135deg, #7877C6, #6366F1); border-radius: 4px; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: white;">MZ</div>';
+              }}
+            />
+          </div>
+          <div style={{ 
+            display: "flex", 
+            fontSize: "15px", 
+            color: textSecondary, 
+            fontWeight: "300",
+          }}>
+            MZPrimer • AI Trading Intelligence
+          </div>
+        </div>
+        
+        <div style={{ 
+          display: "flex", 
+          fontSize: "14px", 
+          color: textTertiary,
+          fontWeight: "300",
+        }}>
+          mzprimer.com
+        </div>
+      </div>
+    );
+
+    // CHAT TYPE - Messenger Style
+    const ChatView = () => (
+      <div
+        style={{
+          display: "flex",
+          flex: 1,
+          flexDirection: "column",
+          padding: `${cfg.pad}px`,
+          gap: "24px",
+          backgroundColor: bgColor,
+        }}
+      >
+        {/* User Message - Messenger Style */}
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "flex-start", gap: "12px" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
+            <div style={{ display: "flex", fontSize: "12px", color: textSecondary, marginBottom: "4px" }}>
+              You • Just now
+            </div>
+            <div
+              style={{
+                display: "flex",
+                background: primaryColor,
+                color: "white",
+                padding: "16px 24px",
+                borderRadius: "24px 24px 4px 24px",
+                fontSize: "24px",
+                fontWeight: "500",
+                maxWidth: "600px",
+                boxShadow: `0 4px 20px ${primaryColor}40`,
+                position: "relative",
+              }}
+            >
+              Analyze {symbol} trading setup now
+              {/* Messenger bubble tail */}
+              <div
+                style={{
+                  position: "absolute",
+                  right: "-8px",
+                  bottom: "0",
+                  width: "16px",
+                  height: "16px",
+                  backgroundColor: primaryColor,
+                  clipPath: "polygon(0 0, 100% 0, 0 100%)",
+                }}
+              />
+            </div>
+          </div>
+          
+          {/* User Avatar */}
+          <div style={{
+            display: "flex",
+            width: "48px",
+            height: "48px",
+            borderRadius: "50%",
+            background: primaryColor,
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "20px",
+            fontWeight: "bold",
+            color: "white",
+            flexShrink: 0,
+            marginTop: "28px",
+          }}>
+            👤
+          </div>
+        </div>
+
+        {/* AI Response Card */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
+          {/* AI Avatar */}
+          <div style={{
+            display: "flex",
+            width: "48px",
+            height: "48px",
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, rgba(0, 132, 255, 0.2), rgba(0, 132, 255, 0.1))",
+            border: `1px solid rgba(0, 132, 255, 0.3)`,
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            marginTop: "8px",
+          }}>
+            <img
+              src={logoUrl}
+              style={{
+                width: "24px",
+                height: "24px",
+              }}
+              onError={(e: any) => {
+                e.target.style.display = 'none';
+                e.target.parentNode.innerHTML = '<div style="display: flex; width: 20px; height: 20px; background: linear-gradient(135deg, #0084FF, #0066CC); border-radius: 4px; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: white;">AI</div>';
+              }}
+            />
+          </div>
+
+          {/* AI Message Card */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              flex: 1,
+              background: surfaceElevated,
+              border: `1px solid rgba(0, 132, 255, 0.2)`,
+              borderRadius: "4px 24px 24px 24px",
+              padding: "32px",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
+              position: "relative",
+              maxWidth: "900px",
+            }}
+          >
+            {/* AI bubble tail */}
+            <div
+              style={{
+                position: "absolute",
+                left: "-8px",
+                top: "20px",
+                width: "16px",
+                height: "16px",
+                backgroundColor: surfaceElevated,
+                borderLeft: `1px solid rgba(0, 132, 255, 0.2)`,
+                borderBottom: `1px solid rgba(0, 132, 255, 0.2)`,
+                clipPath: "polygon(0 0, 100% 100%, 0 100%)",
+                transform: "rotate(45deg)",
+              }}
+            />
+
+            {/* Signal header */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "24px",
+                paddingBottom: "20px",
+                borderBottom: `1px solid ${borderColor}`,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <div style={{
+                  display: "flex",
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "12px",
+                  background: `linear-gradient(135deg, ${signalColor}20, ${signalColor}10)`,
+                  border: `1px solid ${signalColor}30`,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  <div style={{ display: "flex", fontSize: "22px", color: signalColor }}>
+                    {isBuy ? "↗" : isSell ? "↘" : "↔"}
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <div style={{ display: "flex", fontSize: "28px", fontWeight: "600", color: signalColor }}>
+                    {decision} SIGNAL
+                  </div>
+                  <div style={{ display: "flex", fontSize: "16px", color: textSecondary, fontWeight: "400" }}>
+                    AI Analysis • {confidence}% confidence
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "flex", fontSize: "16px", color: textSecondary }}>
+                Just now
+              </div>
+            </div>
+
+            {/* Price Levels */}
+            <div
+              style={{
+                display: "flex",
+                gap: "16px",
+                marginBottom: "28px",
+              }}
+            >
+              {[
+                { label: "ENTRY", value: entry, color: textPrimary, icon: "📍" },
+                { label: "STOP LOSS", value: sl, color: "#FF4757", icon: "🛡️" },
+                { label: "TAKE PROFIT", value: tp, color: "#00FF88", icon: "🎯" },
+              ].map((item, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: 1,
+                    padding: "20px",
+                    border: `1px solid ${borderColor}`,
+                    borderRadius: "16px",
+                    background: "rgba(255,255,255,0.03)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                    <div style={{ display: "flex", fontSize: "20px" }}>{item.icon}</div>
+                    <div style={{ display: "flex", fontSize: "14px", color: item.color, fontWeight: "600" }}>
+                      {item.label}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", fontSize: "28px", fontWeight: "600", fontFamily: "monospace", color: item.color }}>
+                    {item.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Current Price Highlight */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "20px",
+                background: "rgba(0, 132, 255, 0.1)",
+                border: `1px solid rgba(0, 132, 255, 0.2)`,
+                borderRadius: "16px",
+                marginBottom: "20px",
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <div style={{ display: "flex", fontSize: "14px", color: "rgba(255,255,255,0.7)", marginBottom: "8px" }}>
+                  CURRENT {symbol} PRICE
+                </div>
+                <div style={{ display: "flex", fontSize: "36px", fontWeight: "600", color: textPrimary, fontFamily: "monospace" }}>
+                  {currentPrice}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ display: "flex", fontSize: "16px", color: textSecondary }}>
+                  Trend: <span style={{ color: signalColor, marginLeft: "8px", fontWeight: "600" }}>{trend}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    // RISK TYPE - Risk Management Focus (WITH ADDED "STOP LOSS" TEXT)
+    const RiskView = () => (
+      <div
+        style={{
+          display: "flex",
+          flex: 1,
+          flexDirection: "column",
+          padding: `${cfg.pad}px`,
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "40px",
+          backgroundColor: bgColor,
+        }}
+      >
+        {/* Risk Header - WITH ADDED "STOP LOSS" */}
+        <div style={{ 
+          display: "flex", 
+          flexDirection: "column", 
+          alignItems: "center",
+          gap: "16px",
+          width: "100%",
+        }}>
+          <div style={{ 
+            display: "flex", 
+            fontSize: "14px", 
+            color: primaryColor, 
+            fontWeight: "600",
+            padding: "8px 24px",
+            background: `rgba(239, 68, 68, 0.1)`,
+            border: `1px solid rgba(239, 68, 68, 0.3)`,
+            borderRadius: "20px",
+            letterSpacing: "1px",
+          }}>
+            RISK MANAGEMENT • STOP LOSS
+          </div>
+          
+          {/* Symbol Focus */}
+          <div style={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            alignItems: "center",
+            gap: "8px",
+            marginTop: "12px",
+          }}>
+            <div style={{ 
+              display: "flex", 
+              fontSize: "72px", 
+              fontWeight: "800", 
+              color: textPrimary,
+              letterSpacing: "-2px",
+              textShadow: `0 4px 30px ${primaryColor}30`,
+            }}>
+              {symbol}
+            </div>
+            <div style={{ 
+              display: "flex", 
+              fontSize: "20px", 
+              color: textSecondary,
+              fontWeight: "400",
+            }}>
+              Stop Loss Protection Level
+            </div>
+          </div>
+        </div>
+
+        {/* Stop Loss Focus - WITH ADDED "STOP LOSS" HEADER */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "12px",
+            padding: "40px 48px",
+            border: `2px solid rgba(239, 68, 68, 0.4)`,
+            borderRadius: "24px",
+            background: `linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))`,
+            width: "70%",
+            backdropFilter: "blur(10px)",
+          }}
+        >
+          <div style={{ 
+            display: "flex", 
+            fontSize: "16px", 
+            color: textSecondary, 
+            fontWeight: "600",
+            letterSpacing: "1px",
+          }}>
+            STOP LOSS PROTECTION AT
+          </div>
+          <div style={{ 
+            display: "flex", 
+            fontSize: "64px", 
+            fontWeight: "700", 
+            color: "#EF4444", 
+            fontFamily: "monospace",
+            textShadow: `0 4px 20px rgba(239, 68, 68, 0.3)`,
+          }}>
+            {sl}
+          </div>
+          <div style={{ 
+            display: "flex", 
+            fontSize: "18px", 
+            color: textTertiary,
+            fontWeight: "400",
+            marginTop: "8px",
+          }}>
+            {slPips}p risk distance • {rrRatio} R/R Ratio
+          </div>
+        </div>
+
+        {/* Price Progression */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "60px",
+            padding: "32px",
+            width: "90%",
+            background: surfaceElevated,
+            border: `1px solid ${borderColor}`,
+            borderRadius: "20px",
+          }}
+        >
+          {[
+            { label: "ENTRY", value: entry, color: textPrimary, position: "start" },
+            { label: "CURRENT", value: currentPrice, color: signalColor, position: "center" },
+            { label: "STOP LOSS", value: sl, color: "#EF4444", position: "end" }, // CHANGED: Added "LOSS" to make it "STOP LOSS"
+          ].map((item, index) => (
+            <div 
+              key={index} 
+              style={{ 
+                display: "flex", 
+                flexDirection: "column", 
+                alignItems: item.position === "start" ? "flex-start" : item.position === "end" ? "flex-end" : "center",
+                flex: 1,
+              }}
+            >
+              <div style={{ 
+                display: "flex", 
+                fontSize: "14px", 
+                color: textTertiary, 
+                marginBottom: "8px",
+                fontWeight: "500",
+              }}>
+                {item.label}
+              </div>
+              <div style={{ 
+                display: "flex", 
+                fontSize: "32px", 
+                fontWeight: "600", 
+                fontFamily: "monospace", 
+                color: item.color,
+              }}>
+                {item.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Risk Metrics */}
+        <div
+          style={{
+            display: "flex",
+            gap: "20px",
+            width: "90%",
+          }}
+        >
+          {[
+            { 
+              label: "AI SIGNAL", 
+              value: decision, 
+              desc: `${confidence}% confidence`,
+              gradient: `linear-gradient(135deg, ${signalColor}15, ${signalColor}08)`,
+              border: `${signalColor}30`,
+              color: signalColor
+            },
+            { 
+              label: "POSITION SIZE", 
+              value: lotSize, 
+              desc: "Standard lots",
+              gradient: "linear-gradient(135deg, rgba(120, 119, 198, 0.1), rgba(120, 119, 198, 0.05))",
+              border: "rgba(120, 119, 198, 0.2)",
+              color: "#7877C6"
+            },
+            { 
+              label: "STOP LOSS", // CHANGED: Now says "STOP LOSS" instead of "RISK/REWARD"
+              value: `${slPips}p`, 
+              desc: "Risk distance",
+              gradient: "linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))",
+              border: "rgba(239, 68, 68, 0.2)",
+              color: "#EF4444"
+            },
+          ].map((item, index) => (
+            <div
+              key={index}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                flex: 1,
+                padding: "24px",
+                background: item.gradient,
+                border: `1px solid ${item.border}`,
+                borderRadius: "16px",
+              }}
+            >
+              <div style={{ 
+                display: "flex", 
+                fontSize: "13px", 
+                color: textTertiary, 
+                marginBottom: "12px", 
+                fontWeight: "600",
+                letterSpacing: "0.5px",
+              }}>
+                {item.label}
+              </div>
+              <div style={{ 
+                display: "flex", 
+                fontSize: "32px", 
+                fontWeight: "700", 
+                color: item.color,
+                marginBottom: "4px",
+              }}>
+                {item.value}
+              </div>
+              <div style={{ 
+                display: "flex", 
+                fontSize: "13px", 
+                color: textTertiary,
+              }}>
+                {item.desc}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+  // TARGETS TYPE - SIMPLE SQUARE VERSION (from provided code)
+const TargetsView = () => {
+  // Using the simple square version from the provided code
+  const S = 1.0; // Scale for square
+  const pad = 64; // Square padding
+  const isSquare = true;
+  
+  // Colors for dark theme
+  const accent = isBuy ? "#10B981" : isSell ? "#EF4444" : "#F59E0B";
+  const bg = "#050505";
+  const card = "#0A0A0A";
+  const border = "rgba(255,255,255,0.10)";
+  const textMain = "#FFFFFF";
+  const textDim = "#A3A3A3";
+  
+  // Font sizes for square
+  const symbolSize = Math.round(110 * S);
+  const signalSize = Math.round(72 * S);
+  const labelSize = Math.round(18 * S);
+  const priceSize = Math.round(44 * S);
+  const rowGap = 16;
+  
+  // Fetch logo - removed await since we can't use async here
+  // Instead, we'll use the logoUrl directly
+  const logoData = logoUrl; // Use the URL directly
+
+  return (
+    <div
+      style={{
+        height: "100%",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: bg,
+        fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial",
+        color: textMain,
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Subtle grid */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.08) 1px, transparent 0)",
+          backgroundSize: "40px 40px",
+          opacity: 0.6,
+          zIndex: 0,
+        }}
+      />
+
+      {/* Top bar */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: `${Math.round(pad * 0.75)}px ${pad}px`,
+          borderBottom: `1px solid ${border}`,
+          backgroundColor: bg,
+          zIndex: 1,
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 14 }}>
+          <img
+            src={logoData}
+            width={32}
+            height={32}
+            style={{
+              borderRadius: 8,
+              objectFit: "contain",
+            }}
+            onError={(e: any) => {
+              // Fallback if image fails to load
+              e.target.style.display = 'none';
+              const parent = e.target.parentNode;
+              const fallback = document.createElement('div');
+              fallback.style.cssText = 'display: flex; width: 32px; height: 32px; border-radius: 8px; background-color: ' + accent + '; box-shadow: 0 0 18px ' + accent + ';';
+              parent.appendChild(fallback);
+            }}
+          />
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "baseline", gap: 10 }}>
+            <div style={{ display: "flex", fontWeight: 900, letterSpacing: 1, fontSize: Math.round(22 * S) }}>
+              MZPRIMER
+            </div>
+            <div style={{ display: "flex", color: accent, fontWeight: 800, fontSize: Math.round(18 * S) }}>
+              // TRADE SETUP
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "row", gap: 14, alignItems: "center" }}>
+          <div style={{ display: "flex", color: textDim, fontSize: Math.round(16 * S), fontWeight: 700 }}>
+            Live
+          </div>
+          <div
+            style={{
+              display: "flex",
+              padding: "8px 12px",
+              borderRadius: 999,
+              border: `1px solid ${border}`,
+              backgroundColor: "rgba(255,255,255,0.04)",
+              color: textDim,
+              fontSize: Math.round(16 * S),
+              fontWeight: 800,
+            }}
+          >
+            {confidence}% Confidence
+          </div>
+        </div>
+      </div>
+
+      {/* Main */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          padding: `${pad}px ${pad}px`,
+          gap: 34,
+          zIndex: 1,
+          alignItems: "stretch",
+          justifyContent: "center",
+        }}
+      >
+        {/* HERO: Symbol BIG + Name */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              fontSize: symbolSize,
+              fontWeight: 1000,
+              letterSpacing: -2,
+              lineHeight: 1,
+              color: textMain,
+              textAlign: "center",
+            }}
+          >
+            {symbol}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              fontSize: Math.round(22 * S),
+              fontWeight: 700,
+              color: textDim,
+              textAlign: "center",
+            }}
+          >
+            {spec.fullName}
+          </div>
+        </div>
+
+        {/* SIGNAL BIG */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 16,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              padding: `${Math.round(18 * S)}px ${Math.round(26 * S)}px`,
+              borderRadius: 18,
+              border: `2px solid ${accent}55`,
+              backgroundColor: "rgba(255,255,255,0.03)",
+              boxShadow: `0 18px 40px ${accent}18`,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                fontSize: signalSize,
+                fontWeight: 1000,
+                letterSpacing: 2,
+                color: accent,
+                lineHeight: 1,
+              }}
+            >
+              {isBuy ? "BUY" : isSell ? "SELL" : "WAIT"}
+            </div>
+          </div>
+        </div>
+
+        {/* SETUP: Entry / SL / TP */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            gap: rowGap,
+            width: "100%",
+            alignItems: "stretch",
+            justifyContent: "space-between",
+          }}
+        >
+          {/* ENTRY */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              flex: 1,
+              backgroundColor: card,
+              border: `1px solid ${border}`,
+              borderRadius: 18,
+              padding: `${Math.round(22 * S)}px`,
+              gap: 10,
+            }}
+          >
+            <div style={{ display: "flex", fontSize: labelSize, color: textDim, fontWeight: 800, letterSpacing: 2 }}>
+              ENTRY
+            </div>
+            <div style={{ display: "flex", fontSize: priceSize, fontWeight: 1000, letterSpacing: -1 }}>
+              {entry}
+            </div>
+          </div>
+
+          {/* STOP LOSS */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              flex: 1,
+              backgroundColor: card,
+              border: `1px solid ${border}`,
+              borderRadius: 18,
+              padding: `${Math.round(22 * S)}px`,
+              gap: 10,
+            }}
+          >
+            <div style={{ display: "flex", fontSize: labelSize, color: "#EF4444", fontWeight: 900, letterSpacing: 2 }}>
+              STOP LOSS
+            </div>
+            <div style={{ display: "flex", fontSize: priceSize, fontWeight: 1000, letterSpacing: -1, color: "#EF4444" }}>
+              {sl}
+            </div>
+          </div>
+
+          {/* TAKE PROFIT */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              flex: 1,
+              backgroundColor: card,
+              border: `1px solid ${border}`,
+              borderRadius: 18,
+              padding: `${Math.round(22 * S)}px`,
+              gap: 10,
+            }}
+          >
+            <div style={{ display: "flex", fontSize: labelSize, color: "#10B981", fontWeight: 900, letterSpacing: 2 }}>
+              TAKE PROFIT
+            </div>
+            <div style={{ display: "flex", fontSize: priceSize, fontWeight: 1000, letterSpacing: -1, color: "#10B981" }}>
+              {tp}
+            </div>
+          </div>
+        </div>
+
+        {/* Minimal footer line */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingTop: 6,
+            color: textDim,
+            fontSize: Math.round(16 * S),
+            fontWeight: 700,
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "row", gap: 10, alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                width: 8,
+                height: 8,
+                borderRadius: 999,
+                backgroundColor: accent,
+                boxShadow: `0 0 12px ${accent}`,
+              }}
+            />
+            <div style={{ display: "flex" }}>MZPrimer • AI Trade Setup</div>
+          </div>
+
+          <div style={{ display: "flex" }}>mzprimer.com</div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
     return new ImageResponse(
       (
         <div
           style={{
-            height: '100%',
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            backgroundColor: '#0F172A',
-            background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)',
-            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            color: 'white',
-            position: 'relative',
-            overflow: 'hidden',
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            width: "100%",
+            backgroundColor: bgColor,
+            fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'SF Pro Display', sans-serif",
+            color: textPrimary,
+            position: "relative",
           }}
         >
-          {/* Background Pattern */}
-          <div style={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(245, 158, 11, 0.1) 0%, transparent 50%)',
-            opacity: 0.5,
-          }} />
+          {/* Background gradient based on type */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: type === "CHAT" 
+                ? `radial-gradient(ellipse at 20% 30%, ${primaryColor}05 0%, transparent 60%)`
+                : type === "RISK"
+                ? `radial-gradient(ellipse at 80% 20%, ${primaryColor}05 0%, transparent 60%)`
+                : `radial-gradient(ellipse at 50% 50%, ${primaryColor}05 0%, transparent 60%)`,
+              opacity: 0.3,
+            }}
+          />
 
-          {/* HEADER - Reduced padding */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '30px 40px', // REDUCED from 50px 60px
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-            width: '100%',
-            position: 'relative',
-            zIndex: 1,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                display: 'flex',
-                width: '28px', // Slightly smaller
-                height: '28px',
-                borderRadius: '50%',
-                background: `linear-gradient(135deg, ${accentColor}, ${signalColor})`,
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '16px', // Smaller font
-                fontWeight: 'bold',
-              }}>
-                MZ
-              </div>
-              <div style={{ 
-                display: 'flex', 
-                fontSize: '32px', // Smaller
-                fontWeight: '900', 
-                letterSpacing: '-0.5px',
-                background: 'linear-gradient(90deg, #FFFFFF, #94A3B8)',
-                backgroundClip: 'text',
-                color: 'transparent',
-                WebkitBackgroundClip: 'text',
-              }}>
-                MZPRIMER
-              </div>
-              <div style={{
-                display: 'flex',
-                fontSize: '20px', // Smaller
-                color: accentColor,
-                fontWeight: '700',
-                marginLeft: '12px',
-                opacity: 0.9,
-              }}>
-                // {title}
-              </div>
-            </div>
-            
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'flex-end',
-              gap: '6px', // Reduced gap
-            }}>
-              <div style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: '4px',
-              }}>
-                <div style={{ 
-                  display: 'flex',
-                  width: '8px', // Smaller
-                  height: '8px', 
-                  borderRadius: '50%', 
-                  backgroundColor: '#10B981' 
-                }} />
-                <div style={{ 
-                  display: 'flex',
-                  fontSize: '16px', // Smaller
-                  color: '#94A3B8',
-                  fontWeight: '600',
-                }}>
-                  Detected {minutesAgo}m ago
-                </div>
-              </div>
-              
-              <div style={{ 
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-end',
-                gap: '2px',
-              }}>
-                <div style={{ 
-                  display: 'flex',
-                  fontSize: '28px', // Smaller
-                  color: '#E2E8F0', 
-                  fontWeight: '800',
-                  letterSpacing: '0.5px',
-                }}>
-                  {symbol}
-                </div>
-                <div style={{ 
-                  display: 'flex',
-                  fontSize: '16px', // Smaller
-                  color: '#94A3B8',
-                  fontWeight: '600',
-                  fontStyle: 'italic',
-                }}>
-                  {fullSymbolName}
-                </div>
-              </div>
-              
-              <div style={{ 
-                display: 'flex',
-                fontSize: '24px', // Smaller
-                color: signalColor,
-                fontWeight: '700',
-                fontFamily: 'monospace',
-                marginTop: '4px',
-              }}>
-                {formattedPrice}
-              </div>
-            </div>
-          </div>
-
-          {/* MAIN CONTENT - Increased height */}
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            padding: '40px', // REDUCED from 60px
-            gap: '30px', // Reduced gap
-            width: '100%',
-            position: 'relative',
-            zIndex: 1,
-          }}>
-
-            {/* CHAT VIEW */}
-            {type === 'CHAT' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
-                {/* User Message */}
-                <div style={{
-                  display: 'flex',
-                  alignSelf: 'flex-end',
-                  background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
-                  color: 'white',
-                  padding: '20px 40px', // Smaller
-                  borderRadius: '20px 20px 0 20px',
-                  fontSize: '28px', // Smaller
-                  fontWeight: '700',
-                  boxShadow: '0 10px 30px rgba(37, 99, 235, 0.3)',
-                  maxWidth: '80%',
-                }}>
-                  "Analyze {symbol} Now"
-                </div>
-                
-                {/* AI Response */}
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  padding: '30px', // Smaller
-                  borderRadius: '20px',
-                  gap: '20px',
-                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
-                }}>
-                  {/* Header */}
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    paddingBottom: '16px',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{
-                        display: 'flex',
-                        width: '10px',
-                        height: '10px',
-                        borderRadius: '50%',
-                        background: signalColor,
-                        boxShadow: `0 0 15px ${signalColor}`,
-                      }} />
-                      <div style={{ 
-                        display: 'flex', 
-                        fontSize: '24px', // Smaller
-                        color: signalColor, 
-                        fontWeight: '800',
-                        letterSpacing: '0.3px',
-                      }}>
-                        ⚡ LIVE MARKET SCAN
-                      </div>
-                    </div>
-                    <div style={{
-                      display: 'flex',
-                      padding: '8px 16px',
-                      borderRadius: '16px',
-                      background: `linear-gradient(135deg, ${signalColor}20, ${accentColor}20)`,
-                      border: `1px solid ${signalColor}40`,
-                      fontSize: '18px', // Smaller
-                      color: signalColor,
-                      fontWeight: '700',
-                    }}>
-                      {confidence}% CONFIDENCE
-                    </div>
-                  </div>
-                  
-                  {/* Data Points */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {[
-                      { label: 'Decision', value: decision, color: signalColor, icon: '🎯' },
-                      { label: 'Trend', value: trend, color: '#60A5FA', icon: '📈' },
-                      { label: 'Lot Size', value: lotSize, color: '#F59E0B', icon: '⚖️' },
-                      { label: 'Current Price', value: formattedPrice, color: '#8B5CF6', icon: '💰' },
-                    ].map((item, index) => (
-                      <div key={index} style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'space-between',
-                        padding: '16px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                        borderRadius: '12px',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ display: 'flex', fontSize: '24px' }}>{item.icon}</div>
-                          <div style={{ 
-                            display: 'flex', 
-                            fontSize: '24px', 
-                            color: '#CBD5E1',
-                            fontWeight: '600',
-                          }}>
-                            {item.label}:
-                          </div>
-                        </div>
-                        <div style={{ 
-                          display: 'flex',
-                          fontSize: '28px', // Smaller
-                          color: item.color,
-                          fontWeight: '800',
-                          textTransform: index === 3 ? 'none' : 'uppercase',
-                          fontFamily: index === 3 ? 'monospace' : 'inherit',
-                        }}>
-                          {item.value}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* CTA */}
-                  <div style={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '10px',
-                    padding: '20px',
-                    marginTop: '16px',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
-                    borderRadius: '12px',
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      width: '10px',
-                      height: '10px',
-                      borderRadius: '50%',
-                      background: accentColor,
-                      boxShadow: `0 0 12px ${accentColor}`,
-                    }} />
-                    <div style={{ 
-                      display: 'flex',
-                      fontSize: '22px', // Smaller
-                      color: '#CBD5E1',
-                      fontWeight: '600',
-                      textAlign: 'center',
-                    }}>
-                      Tap to see Entry & Targets • 2 Free Trials
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TARGETS VIEW */}
-            {type === 'TARGETS' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '30px', width: '100%' }}>
-                {/* Symbol Display */}
-                <div style={{ 
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}>
-                  <div style={{ 
-                    display: 'flex',
-                    fontSize: '80px', // Smaller
-                    fontWeight: '900', 
-                    lineHeight: 1,
-                    background: `linear-gradient(135deg, ${signalColor}, ${accentColor})`,
-                    backgroundClip: 'text',
-                    color: 'transparent',
-                    WebkitBackgroundClip: 'text',
-                    letterSpacing: '-1px',
-                    textTransform: 'uppercase',
-                  }}>
-                    {symbol}
-                  </div>
-                  <div style={{ 
-                    display: 'flex',
-                    fontSize: '22px', // Smaller
-                    color: '#94A3B8',
-                    fontWeight: '600',
-                    fontStyle: 'italic',
-                  }}>
-                    {fullSymbolName}
-                  </div>
-                </div>
-                
-                {/* Cards Container */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
-                  
-                  {/* Trend Card */}
-                  <div style={{ 
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    padding: '30px', // Smaller
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: `2px solid ${signalColor}30`,
-                    borderRadius: '20px',
-                    backdropFilter: 'blur(10px)',
-                    boxShadow: `0 15px 35px ${signalColor}15`,
-                  }}>
-                    <div style={{ 
-                      display: 'flex',
-                      color: signalColor, 
-                      fontSize: '24px', // Smaller
-                      fontWeight: '800',
-                      marginBottom: '12px',
-                      letterSpacing: '0.3px',
-                    }}>
-                      📊 AI TREND ANALYSIS
-                    </div>
-                    <div style={{ 
-                      display: 'flex',
-                      fontSize: '60px', // Smaller
-                      fontWeight: '900', 
-                      color: signalColor,
-                      textTransform: 'uppercase',
-                      marginBottom: '8px',
-                      letterSpacing: '0.5px',
-                    }}>
-                      {trend}
-                    </div>
-                    <div style={{ 
-                      display: 'flex',
-                      color: '#94A3B8', 
-                      fontSize: '20px', // Smaller
-                      fontWeight: '600',
-                      padding: '10px 20px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      borderRadius: '10px',
-                    }}>
-                      Confidence: <span style={{ display: 'flex', color: '#FFFFFF', marginLeft: '6px' }}>{confidence}%</span>
-                    </div>
-                  </div>
-
-                  {/* Targets Card */}
-                  <div style={{ 
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    padding: '30px', // Smaller
-                    background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))',
-                    border: '2px solid rgba(245, 158, 11, 0.3)',
-                    borderRadius: '20px',
-                    backdropFilter: 'blur(10px)',
-                    boxShadow: '0 15px 35px rgba(245, 158, 11, 0.15)',
-                  }}>
-                    <div style={{ 
-                      display: 'flex',
-                      color: '#F59E0B', 
-                      fontSize: '24px', // Smaller
-                      fontWeight: '800',
-                      marginBottom: '20px',
-                      letterSpacing: '0.3px',
-                      textAlign: 'center',
-                    }}>
-                      🔒 INSTITUTIONAL TARGETS LOCKED
-                    </div>
-                    
-                    <div style={{ 
-                      display: 'flex', 
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '24px',
-                      width: '100%',
-                      marginBottom: '24px',
-                    }}>
-                      <div style={{ 
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        width: '100%',
-                        padding: '0 16px',
-                      }}>
-                        <div style={{ 
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '6px',
-                          flex: 1,
-                        }}>
-                          <div style={{ 
-                            display: 'flex',
-                            fontSize: '18px', // Smaller
-                            color: '#94A3B8',
-                            fontWeight: '600',
-                          }}>
-                            Current Price
-                          </div>
-                          <div style={{ 
-                            display: 'flex',
-                            fontSize: '40px', // Smaller
-                            fontWeight: '900', 
-                            color: signalColor, 
-                            fontFamily: 'monospace',
-                          }}>
-                            {formattedPrice}
-                          </div>
-                        </div>
-                        
-                        <div style={{ 
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '6px',
-                          flex: 1,
-                        }}>
-                          <div style={{ 
-                            display: 'flex',
-                            fontSize: '18px', // Smaller
-                            color: '#94A3B8',
-                            fontWeight: '600',
-                          }}>
-                            Take Profit
-                          </div>
-                          <div style={{ 
-                            display: 'flex',
-                            fontSize: '40px', // Smaller
-                            fontWeight: '900', 
-                            color: '#10B981', 
-                            fontFamily: 'monospace',
-                          }}>
-                            {formattedTP}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div style={{ 
-                      display: 'flex',
-                      padding: '16px 32px', // Smaller
-                      background: 'linear-gradient(135deg, #F59E0B, #D97706)',
-                      borderRadius: '12px', 
-                      color: '#FFFFFF', 
-                      fontSize: '22px', // Smaller
-                      fontWeight: '800',
-                      boxShadow: '0 10px 25px rgba(245, 158, 11, 0.3)',
-                    }}>
-                      VIEW FULL ANALYSIS →
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* RISK VIEW */}
-            {type === 'RISK' && (
-               <div style={{ 
-                 display: 'flex', 
-                 flexDirection: 'column', 
-                 alignItems: 'center', 
-                 width: '100%', 
-                 gap: '30px' 
-               }}>
-                  {/* Title & Symbol */}
-                  <div style={{ 
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}>
-                    <div style={{ 
-                      display: 'flex',
-                      fontSize: '36px', // Smaller
-                      color: '#3B82F6', 
-                      fontWeight: '900',
-                      letterSpacing: '0.5px',
-                      textTransform: 'uppercase',
-                      alignItems: 'center',
-                      gap: '16px',
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        width: '14px',
-                        height: '14px',
-                        borderRadius: '50%',
-                        background: '#3B82F6',
-                        boxShadow: '0 0 20px #3B82F6',
-                      }} />
-                      <div style={{ display: 'flex' }}>OPTIMIZED RISK MANAGEMENT</div>
-                    </div>
-                    <div style={{ 
-                      display: 'flex',
-                      fontSize: '20px', // Smaller
-                      color: '#94A3B8',
-                      fontWeight: '600',
-                      fontStyle: 'italic',
-                    }}>
-                      {fullSymbolName}
-                    </div>
-                  </div>
-                  
-                  {/* Stop Loss Display */}
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '20px',
-                  }}>
-                    <div style={{ 
-                      display: 'flex',
-                      fontSize: '80px', // Smaller
-                      fontWeight: '900', 
-                      color: '#3B82F6', 
-                      fontFamily: 'monospace',
-                      textShadow: '0 0 30px rgba(59, 130, 246, 0.5)',
-                      lineHeight: 1,
-                    }}>
-                      {formattedSL}
-                    </div>
-                    
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '16px 30px',
-                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                      border: '1px solid rgba(59, 130, 246, 0.3)',
-                      borderRadius: '16px',
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        width: '14px',
-                        height: '14px',
-                        borderRadius: '50%',
-                        background: '#3B82F6',
-                        boxShadow: '0 0 15px #3B82F6',
-                      }} />
-                      <div style={{
-                        display: 'flex',
-                        fontSize: '24px', // Smaller
-                        color: '#94A3B8',
-                        fontWeight: '600',
-                      }}>
-                        AI-Calculated Stop Loss
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Current Price and Confidence */}
-                  <div style={{ 
-                    display: 'flex',
-                    gap: '30px',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    width: '80%',
-                  }}>
-                    <div style={{ 
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '24px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                      borderRadius: '20px',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      flex: 1,
-                    }}>
-                      <div style={{ 
-                        display: 'flex',
-                        color: '#94A3B8', 
-                        fontSize: '22px', // Smaller
-                        fontWeight: '600',
-                      }}>
-                        Current Price
-                      </div>
-                      <div style={{ 
-                        display: 'flex',
-                        color: signalColor, 
-                        fontSize: '40px', // Smaller
-                        fontWeight: '800',
-                        fontFamily: 'monospace',
-                      }}>
-                        {formattedPrice}
-                      </div>
-                    </div>
-                    
-                    <div style={{ 
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '24px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                      borderRadius: '20px',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      flex: 1,
-                    }}>
-                      <div style={{ 
-                        display: 'flex',
-                        color: '#94A3B8', 
-                        fontSize: '22px', // Smaller
-                        fontWeight: '600',
-                      }}>
-                        AI Confidence
-                      </div>
-                      <div style={{ 
-                        display: 'flex',
-                        color: signalColor, 
-                        fontSize: '40px', // Smaller
-                        fontWeight: '800',
-                        fontFamily: 'monospace',
-                      }}>
-                        {confidence}%
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Risk Metrics */}
-                  <div style={{
-                    display: 'flex',
-                    gap: '24px',
-                    marginTop: '16px',
-                  }}>
-                    {[
-                      { label: 'Risk/Trade', value: '2.0%', color: '#EF4444' },
-                      { label: 'Lot Size', value: lotSize, color: '#10B981' },
-                      { label: 'Entry Price', value: formattedEntry, color: '#8B5CF6' },
-                    ].map((item, index) => (
-                      <div key={index} style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        padding: '20px 28px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '16px',
-                        minWidth: '160px',
-                        gap: '8px',
-                      }}>
-                        <div style={{ 
-                          display: 'flex', 
-                          color: '#94A3B8', 
-                          fontSize: '18px', // Smaller
-                          fontWeight: '600',
-                        }}>
-                          {item.label}
-                        </div>
-                        <div style={{ 
-                          display: 'flex', 
-                          color: item.color, 
-                          fontSize: '28px', // Smaller
-                          fontWeight: '800',
-                          textShadow: `0 0 15px ${item.color}40`,
-                          fontFamily: index === 2 ? 'monospace' : 'inherit',
-                        }}>
-                          {item.value}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-               </div>
-            )}
-
-          </div>
-
-          {/* FOOTER - Smaller and compact */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '20px 40px', // MUCH SMALLER - was 40px 60px
-            backgroundColor: 'rgba(15, 23, 42, 0.8)',
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            width: '100%',
-            position: 'relative',
-            zIndex: 1,
-            backdropFilter: 'blur(10px)',
-            minHeight: '80px', // Fixed height
-          }}>
-            <div style={{ 
-              display: 'flex',
-              fontSize: '18px', // Smaller
-              color: '#64748B',
-              alignItems: 'center',
-              gap: '8px',
-              fontWeight: '600',
-            }}>
-              <div style={{
-                display: 'flex',
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: accentColor,
-                boxShadow: `0 0 10px ${accentColor}`,
-              }} />
-              <div style={{ display: 'flex' }}>MZPrimer Data Systems</div>
-            </div>
-            <div style={{ 
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-end',
-              gap: '2px', // Very small gap
-            }}>
-              <div style={{ 
-                display: 'flex',
-                fontSize: '18px', // Smaller
-                color: accentColor, 
-                fontWeight: '800',
-                letterSpacing: '0.3px',
-                textTransform: 'uppercase',
-                opacity: 0.9,
-              }}>
-                PROFESSIONAL TRADING ACCESS
-              </div>
-              <div style={{ 
-                display: 'flex',
-                fontSize: '14px', // Smaller
-                color: '#94A3B8',
-                fontWeight: '600',
-                alignItems: 'center',
-                gap: '6px',
-              }}>
-                <div style={{
-                  display: 'flex',
-                  width: '5px',
-                  height: '5px',
-                  borderRadius: '50%',
-                  backgroundColor: '#10B981',
-                }} />
-                {viewerCount} traders online
-              </div>
-            </div>
-          </div>
+          <Header />
+          
+          {type === "CHAT" ? <ChatView /> : 
+           type === "RISK" ? <RiskView /> : 
+           <TargetsView />}
+          
+          <Footer />
         </div>
       ),
-      {
-        width: 1080,
-        height: 1080,
+      { 
+        width: cfg.width, 
+        height: cfg.height,
+        headers: {
+          'Cache-Control': 'public, immutable, no-transform, max-age=86400',
+        }
       }
     );
   } catch (e: any) {
-    console.log(e.message);
-    return new Response(`Failed to generate: ${e.message}`, { status: 500 });
+    console.error("OG Image generation error:", e);
+    return new Response(`Failed to generate: ${e?.message || "unknown error"}`, { status: 500 });
   }
 }

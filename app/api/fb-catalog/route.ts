@@ -47,19 +47,27 @@ const SYMBOLS: SymbolDef[] = [
   { id: 'UK100', name: 'FTSE 100', type: 'Indices' },
 ];
 
-const BASE_URL = 'https://mzprimer.com'; // ✅ use your live domain
+const BASE_URL = 'https://mzprimer.com'; 
 
-// Simple CSV escape: wrap in quotes and escape inner quotes
+// Simple CSV escape
 function csvEscape(value: string): string {
   const v = value ?? '';
   if (v.includes('"') || v.includes(',') || v.includes('\n')) {
     return `"${v.replace(/"/g, '""')}"`;
   }
-  // Still wrap everything in quotes for safety & consistency
   return `"${v}"`;
 }
 
 export async function GET() {
+  
+  // 🚀 CACHE BUSTER LOGIC (Hourly)
+  // This creates a unique string like "v_2023-10-27_h14"
+  // When the hour changes, the URL changes, forcing Facebook to re-fetch the image.
+  const now = new Date();
+  const dateKey = now.toISOString().split('T')[0]; 
+  const hourKey = now.getHours(); 
+  const LIVE_VERSION = `v_${dateKey}_h${hourKey}`;
+
   // Facebook Catalog CSV header
   const header = [
     'id',
@@ -92,8 +100,9 @@ export async function GET() {
         'in stock',
         'new',
         '0.00 EUR',
-        `${BASE_URL}/AIChat?symbol=${sym.id}&source=fb_ad`,
-        `${BASE_URL}/api/og?symbol=${sym.id}&type=CHAT`,
+        `${BASE_URL}/AIChat?symbol=${sym.id}&source=fb_ad&auto_start=true`, // Direct link to chat logic
+        // 👇 Uses LIVE_VERSION to update image every hour
+        `${BASE_URL}/api/og?symbol=${sym.id}&type=CHAT&v=${LIVE_VERSION}`, 
         'MZPrimer AI',
         'Software > Business & Productivity',
         sym.type,
@@ -113,7 +122,8 @@ export async function GET() {
         'new',
         '4.50 EUR',
         `${BASE_URL}/trade/${symbolLower}`,
-        `${BASE_URL}/api/og?symbol=${sym.id}&type=TARGETS`,
+        // 👇 Uses LIVE_VERSION
+        `${BASE_URL}/api/og?symbol=${sym.id}&type=TARGETS&v=${LIVE_VERSION}`,
         'MZPrimer Data',
         'Software > Business & Productivity',
         sym.type,
@@ -133,7 +143,8 @@ export async function GET() {
         'new',
         '4.50 EUR',
         `${BASE_URL}/calculator/${symbolLower}`,
-        `${BASE_URL}/api/og?symbol=${sym.id}&type=RISK`,
+        // 👇 Uses LIVE_VERSION
+        `${BASE_URL}/api/og?symbol=${sym.id}&type=RISK&v=${LIVE_VERSION}`,
         'MZPrimer Tools',
         'Software > Business & Productivity',
         sym.type,

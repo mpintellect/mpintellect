@@ -155,7 +155,7 @@ export async function GET(request: Request) {
 
     // Logo URL
     const baseUrl = new URL(request.url);
-    const logoUrl = `${baseUrl.origin}/logos/icon.png`;
+    const logoUrl = `https://mzprimer.com/logos/icon.png`;
 
     // Common header component
     const Header = () => (

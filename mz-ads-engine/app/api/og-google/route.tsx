@@ -573,15 +573,14 @@ export async function GET(request: Request) {
             </div>
           </div>
 
-          {/* Add some CSS for pulse animation */}
-          <style>{`
-            
-          `}</style>
         </div>
       ),
       { 
         width: cfg.width, 
-        height: cfg.height 
+        height: cfg.height,
+        headers: {
+          'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=600',
+      },
       }
     );
   } catch (e: any) {

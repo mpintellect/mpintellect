@@ -1141,7 +1141,7 @@ const TargetsView = () => {
         width: cfg.width, 
         height: cfg.height,
         headers: {
-          'Cache-Control': 'public, immutable, no-transform, max-age=86400',
+          'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=600',
         }
       }
     );

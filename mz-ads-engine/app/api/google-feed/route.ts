@@ -112,7 +112,7 @@ export async function GET() {
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': 'attachment; filename="google_ads_live.csv"',
       // Prevent browser caching
-      'Cache-Control': 'no-store, max-age=0',
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
     },
   });
 }

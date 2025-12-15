@@ -575,10 +575,7 @@ export async function GET(request: Request) {
 
           {/* Add some CSS for pulse animation */}
           <style>{`
-            @keyframes pulse {
-              0%, 100% { opacity: 1; }
-              50% { opacity: 0.5; }
-            }
+            
           `}</style>
         </div>
       ),

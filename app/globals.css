@@ -17071,3 +17071,7 @@ a:focus-visible,
   box-shadow: 0 0 15px rgba(36, 161, 222, 0.25) !important;
   color: #ffffff;
 }
+@keyframes pulse {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.5; }
+            }

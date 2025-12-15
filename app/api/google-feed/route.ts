@@ -78,10 +78,10 @@ export async function GET() {
     
     // 2. Generate TWO image links
     // Link A: Standard Landscape (1200x628)
-    const imgLandscape = `${BASE_URL}/api/google-og?symbol=${sym.id}&size=standard&theme=professional&v=${cacheKey}`;
+    const imgLandscape = `${BASE_URL}/api/og-google?symbol=${sym.id}&size=standard&theme=professional&v=${cacheKey}`;
     
     // Link B: Square (1080x1080) for Mobile/Gmail/Grid
-    const imgSquare = `${BASE_URL}/api/google-og?symbol=${sym.id}&size=square&theme=professional&v=${cacheKey}`;
+    const imgSquare = `${BASE_URL}/api/og-google?symbol=${sym.id}&size=square&theme=professional&v=${cacheKey}`;
     
     const landingPage = `${BASE_URL}/trade/${sym.id.toLowerCase()}`;
     const desc = `Live AI Analysis: ${sym.name}. Entry, SL & TP.`;

@@ -1,4 +1,4 @@
-// app/api/google-og/route.tsx
+// app/api/og-google/route.tsx
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";

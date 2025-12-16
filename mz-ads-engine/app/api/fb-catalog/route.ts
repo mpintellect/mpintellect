@@ -12,12 +12,13 @@ const SYMBOLS: SymbolDef[] = [
   { id: 'EURUSD', name: 'EUR/USD', type: 'Forex' },
   { id: 'GBPUSD', name: 'GBP/USD', type: 'Forex' },
   { id: 'USDJPY', name: 'USD/JPY', type: 'Forex' },
-  
+  { id: 'EURJPY', name: 'EUR/JPY', type: 'Forex' },
+  { id: 'EURGBP', name: 'EUR/GBP', type: 'Forex' },
+  { id: 'GBPJPY', name: 'GBP/JPY', type: 'Forex' },
   
   // Metals
   { id: 'XAUUSD', name: 'Gold (XAU/USD)', type: 'Commodity' },
   { id: 'XAUEUR', name: 'Gold/EUR', type: 'Commodity' },
-  
   
   // Energy
   { id: 'BRENT', name: 'Crude Oil (Brent)', type: 'Commodity' },
@@ -27,12 +28,10 @@ const SYMBOLS: SymbolDef[] = [
   { id: 'ETHUSD', name: 'Ethereum (ETH)', type: 'Crypto' },
   { id: 'XRPUSD', name: 'Ripple (XRP)', type: 'Crypto' },
   
-  
   // Indices
   { id: 'US500', name: 'S&P 500', type: 'Indices' },
   { id: 'USTEC', name: 'NASDAQ 100', type: 'Indices' },
   { id: 'US30', name: 'Dow Jones 30', type: 'Indices' },
-  
 ];
 
 // 🛑 CONFIG: SEPARATE HOSTS
@@ -48,7 +47,6 @@ function csvEscape(value: string): string {
 }
 
 export async function GET() {
-  
   // 🚀 CACHE BUSTER: Updates every hour
   const now = Date.now();
   const HOURLY_ID = Math.floor(now / 3600000); 
@@ -99,13 +97,37 @@ export async function GET() {
     ].map(csvEscape).join(','));
   }
 
-  return new NextResponse(`${header}\n${rows.join('\n')}`, {
+  const csvContent = `${header}\n${rows.join('\n')}`;
+
+  return new NextResponse(csvContent, {
     status: 200,
     headers: {
-      'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="mzprimer_catalog.csv"',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      // CSV
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": 'attachment; filename="google_ads_live.csv"',
+
+      // CORS
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "*",
+
+      // 🔥 CRITICAL: Disable caching everywhere
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      "Pragma": "no-cache",
+      "Expires": "0",
+      "Netlify-CDN-Cache-Control": "no-store",
+    },
+  });
+}
+
+// Preflight support (VERY IMPORTANT for ads crawlers)
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "*",
     },
   });
 }

@@ -38,9 +38,10 @@ const SYMBOLS: SymbolDef[] = [
   
 ];
 
-const BASE_URL = 'https://mz-ads-engine.netlify.app';
+// 🛑 CONFIG: SEPARATE HOSTS
+const IMAGE_HOST = 'https://mz-ads-engine.netlify.app'; // Netlify
+const LANDING_HOST = 'https://mzprimer.com';            // Vercel
 
-// Simple CSV escape helper
 function csvEscape(value: string): string {
   const v = value ?? '';
   if (v.includes('"') || v.includes(',') || v.includes('\n')) {
@@ -50,15 +51,11 @@ function csvEscape(value: string): string {
 }
 
 export async function GET() {
-  // 🚀 FIXED DATE FORMAT: YYYY-MM-DD_HH
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hour = now.getHours();
-
-  // RESULT: "2025-12-16_H12" (Correct Year-Month-Day format)
-  const DATE_PREFIX = `${year}-${month}-${day}_H${hour}`;
+  
+  // 🚀 CACHE BUSTER: Updates every hour
+  const now = Date.now();
+  const HOURLY_ID = Math.floor(now / 3600000); 
+  const CACHE_VERSION = `v${HOURLY_ID}`;
 
   // Google Custom Feed Headers
   const header = [
@@ -73,26 +70,23 @@ export async function GET() {
   let rows: string[] = [];
 
   for (const sym of SYMBOLS) {
-    // 1. Create UNIQUE cache-buster for EACH symbol
-    // Using timestamp ensures every symbol has different URL
-    const uniqueCache = `${DATE_PREFIX}_${Date.now()}_${sym.id}`;
     
-    // 2. Construct Image URL with unique cache-buster
-    const imageUrl = `${BASE_URL}/api/og-google?symbol=${sym.id}&size=standard&theme=dark&v=${uniqueCache}`;
+    // 1. Construct Image URL using Netlify + Dynamic Version
+    const imageUrl = `${IMAGE_HOST}/api/og-google?symbol=${sym.id}&s=${CACHE_VERSION}`;
     
-    // 3. Landing Page
-    const landingPage = `https://mzprimer.com/trade/${sym.id.toLowerCase()}`;
+    // 2. Landing Page (Main Site)
+    const landingPage = `${LANDING_HOST}/trade/${sym.id.toLowerCase()}`;
 
-    // 4. Ad Text
+    // 3. Ad Text
     const desc = `Live AI Technical Analysis for ${sym.name}. Entry, Stop Loss & Take Profit.`;
 
     rows.push([
-      `${sym.id}`,
-      `${sym.name} Forecast`,
-      landingPage,
-      imageUrl,
-      desc,
-      '4.50 EUR'
+      `${sym.id}`,                                      // ID
+      `"${sym.name} Forecast"`,                         // Title
+      landingPage,                                      // Final URL
+      imageUrl,                                         // Image URL (Live)
+      `"${desc}"`,                                      // Description
+      '4.50 EUR'                                        // Price
     ].map(csvEscape).join(','));
   }
 
@@ -105,7 +99,6 @@ export async function GET() {
       'Content-Disposition': 'attachment; filename="google_ads_live.csv"',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
     },
   });
 }

@@ -35,9 +35,10 @@ const SYMBOLS: SymbolDef[] = [
   
 ];
 
-const BASE_URL = 'https://mzprimer.com'; 
+// 🛑 CONFIG: SEPARATE HOSTS
+const IMAGE_HOST = 'https://mz-ads-engine.netlify.app'; // Netlify (Images)
+const LANDING_HOST = 'https://mzprimer.com';            // Vercel (Links)
 
-// Simple CSV escape
 function csvEscape(value: string): string {
   const v = value ?? '';
   if (v.includes('"') || v.includes(',') || v.includes('\n')) {
@@ -48,115 +49,63 @@ function csvEscape(value: string): string {
 
 export async function GET() {
   
-  // 🚀 CACHE BUSTER LOGIC (Hourly)
-  // This creates a unique string like "v_2023-10-27_h14"
-  // When the hour changes, the URL changes, forcing Facebook to re-fetch the image.
-  const now = new Date();
-  const dateKey = now.toISOString().split('T')[0]; 
-  const hourKey = now.getHours(); 
-  const LIVE_VERSION = `v_${dateKey}_h${hourKey}`;
+  // 🚀 CACHE BUSTER: Updates every hour
+  const now = Date.now();
+  const HOURLY_ID = Math.floor(now / 3600000); 
+  const LIVE_VERSION = `v${HOURLY_ID}`;
 
-  // Facebook Catalog CSV header
   const header = [
-    'id',
-    'title',
-    'description',
-    'availability',
-    'condition',
-    'price',
-    'link',
-    'image_link',
-    'brand',
-    'google_product_category',
-    'custom_label_0',
-    'custom_label_1',
-  ]
-    .map(csvEscape)
-    .join(',');
+    'id', 'title', 'description', 'availability', 'condition', 
+    'price', 'link', 'image_link', 'brand', 
+    'google_product_category', 'custom_label_0', 'custom_label_1',
+  ].map(csvEscape).join(',');
 
   const rows: string[] = [];
 
   for (const sym of SYMBOLS) {
     const symbolLower = sym.id.toLowerCase();
 
-    // --- PRODUCT 1: AI CHAT (Lead Gen / Free Trial) ---
-    rows.push(
-      [
-        `${sym.id}-CHAT`,
-        `${sym.name} Analysis`,
-        `Interactive AI Trading Assistant for ${sym.name}. Instant lot size, risk and basic scenario suggestions. Includes 2 free trials.`,
-        'in stock',
-        'new',
-        '0.00 EUR',
-        `${BASE_URL}/AIChat?symbol=${sym.id}&source=fb_ad&auto_start=true`, // Direct link to chat logic
-        // 👇 Uses LIVE_VERSION to update image every hour
-        `https://mz-ads-engine.netlify.app/api/og?symbol=${sym.id}&type=CHAT&v=${LIVE_VERSION}`, 
-        'MZPrimer AI',
-        'Software > Business & Productivity',
-        sym.type,
-        'Lead_Gen',
-      ]
-        .map(csvEscape)
-        .join(',')
-    );
+    // 1. CHAT PRODUCT
+    rows.push([
+      `${sym.id}-CHAT`,
+      `${sym.name} Analysis`,
+      `Interactive AI Trading Assistant for ${sym.name}.`,
+      'in stock', 'new', '0.00 EUR',
+      `${LANDING_HOST}/AIChat?symbol=${sym.id}&source=fb_ad&auto_start=true`,
+      `${IMAGE_HOST}/api/og?symbol=${sym.id}&type=CHAT&v=${LIVE_VERSION}`,
+      'MZPrimer AI', 'Software > Business & Productivity', sym.type, 'Lead_Gen'
+    ].map(csvEscape).join(','));
 
-    // --- PRODUCT 2: TARGETS / SETUP (Upsell / Strategy Tool) ---
-    rows.push(
-      [
-        `${sym.id}-SETUP`,
-        `${sym.name}`,
-        `Structured Entry, Stop Loss and Take Profit zones for ${sym.name}. Designed for disciplined trade planning.`,
-        'in stock',
-        'new',
-        '4.50 EUR',
-        `${BASE_URL}/trade/${symbolLower}`,
-        // 👇 Uses LIVE_VERSION
-        `https://mz-ads-engine.netlify.app/api/og?symbol=${sym.id}&type=TARGETS&v=${LIVE_VERSION}`,
-        'MZPrimer Data',
-        'Software > Business & Productivity',
-        sym.type,
-        'Strategy_Tool',
-      ]
-        .map(csvEscape)
-        .join(',')
-    );
+    // 2. TARGETS PRODUCT
+    rows.push([
+      `${sym.id}-SETUP`,
+      `${sym.name}`,
+      `Structured Entry, Stop Loss and Take Profit zones for ${sym.name}.`,
+      'in stock', 'new', '4.50 EUR',
+      `${LANDING_HOST}/trade/${symbolLower}`,
+      `${IMAGE_HOST}/api/og?symbol=${sym.id}&type=TARGETS&v=${LIVE_VERSION}`,
+      'MZPrimer Data', 'Software > Business & Productivity', sym.type, 'Strategy_Tool'
+    ].map(csvEscape).join(','));
 
-    // --- PRODUCT 3: RISK ENGINE (Utility / Calculator) ---
-    rows.push(
-      [
-        `${sym.id}-RISK`,
-        `${sym.name}`,
-        `Volatility-adjusted risk calculator for ${sym.name}. Helps you size positions and place stop loss levels with clear risk visibility.`,
-        'in stock',
-        'new',
-        '4.50 EUR',
-        `${BASE_URL}/calculator/${symbolLower}`,
-        // 👇 Uses LIVE_VERSION
-        `https://mz-ads-engine.netlify.app/api/og?symbol=${sym.id}&type=RISK&v=${LIVE_VERSION}`,
-        'MZPrimer Tools',
-        'Software > Business & Productivity',
-        sym.type,
-        'Utility_Tool',
-      ]
-        .map(csvEscape)
-        .join(',')
-    );
+    // 3. RISK PRODUCT
+    rows.push([
+      `${sym.id}-RISK`,
+      `${sym.name}`,
+      `Volatility-adjusted risk calculator for ${sym.name}.`,
+      'in stock', 'new', '4.50 EUR',
+      `${LANDING_HOST}/calculator/${symbolLower}`,
+      `${IMAGE_HOST}/api/og?symbol=${sym.id}&type=RISK&v=${LIVE_VERSION}`,
+      'MZPrimer Tools', 'Software > Business & Productivity', sym.type, 'Utility_Tool'
+    ].map(csvEscape).join(','));
   }
 
-  const csvContent = `${header}\n${rows.join('\n')}`;
-
-  return new NextResponse(csvContent, {
+  return new NextResponse(`${header}\n${rows.join('\n')}`, {
     status: 200,
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': 'attachment; filename="mzprimer_catalog.csv"',
-      // ✅ CORS (Allows access from anywhere)
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      
-      // ✅ SMART CACHING (Saves your Netlify CPU Limits)
-      // Cache for 1 hour (3600s). If expired, serve old version while generating new one.
-      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600', 
     },
   });
 }

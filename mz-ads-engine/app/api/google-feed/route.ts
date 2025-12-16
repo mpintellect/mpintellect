@@ -28,7 +28,7 @@ const SYMBOLS: SymbolDef[] = [
   // Crypto
   { id: 'BTCUSD', name: 'Bitcoin (BTC)', type: 'Crypto' },
   { id: 'ETHUSD', name: 'Ethereum (ETH)', type: 'Crypto' },
-  { id: 'XRPUSD', name: 'Ripple (XRP)', type: 'Crypto' },
+  
   
   
   // Indices

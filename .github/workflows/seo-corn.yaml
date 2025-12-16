@@ -3,7 +3,7 @@ name: Trigger pSEO Indexing
 on:
   schedule:
     # Run every 15 minutes (Standard tier frequency)
-    - cron: '*/15 * * * *'
+    - cron: '*/60 * * * *'
   workflow_dispatch: # Allows manual button click for testing
 
 jobs:

@@ -27,37 +27,24 @@ const SYMBOL_SPECS: Record<string, { decimals: number; fullName: string }> = {
   EURUSD: { decimals: 5, fullName: "EUR/USD" },
   GBPUSD: { decimals: 5, fullName: "GBP/USD" },
   USDJPY: { decimals: 3, fullName: "USD/JPY" },
-  USDCAD: { decimals: 5, fullName: "USD/CAD" },
-  AUDUSD: { decimals: 5, fullName: "AUD/USD" },
-  NZDUSD: { decimals: 5, fullName: "NZD/USD" },
-  USDCHF: { decimals: 5, fullName: "USD/CHF" },
-  EURJPY: { decimals: 3, fullName: "EUR/JPY" },
-  EURGBP: { decimals: 5, fullName: "EUR/GBP" },
-  GBPJPY: { decimals: 3, fullName: "GBP/JPY" },
-  GBPCHF: { decimals: 5, fullName: "GBP/CHF" },
+  
 
-  // Metals / Energy
+  // Metals
   XAUUSD: { decimals: 2, fullName: "Gold (XAU/USD)" },
   XAUEUR: { decimals: 2, fullName: "Gold/EUR" },
-  XAGUSD: { decimals: 3, fullName: "Silver (XAG/USD)" },
-  PLATINUM: { decimals: 2, fullName: "Platinum" },
-  BRENT: { decimals: 2, fullName: "Brent Oil" },
+
+  // Energy
+  BRENT: { decimals: 2, fullName: "Crude Oil (Brent)" },
 
   // Crypto
   BTCUSD: { decimals: 1, fullName: "Bitcoin (BTC)" },
   ETHUSD: { decimals: 2, fullName: "Ethereum (ETH)" },
   XRPUSD: { decimals: 4, fullName: "Ripple (XRP)" },
-  LTCUSD: { decimals: 2, fullName: "Litecoin (LTC)" },
-  DOGEUSD: { decimals: 4, fullName: "Dogecoin" },
 
   // Indices
   US500: { decimals: 2, fullName: "S&P 500" },
   USTEC: { decimals: 2, fullName: "NASDAQ 100" },
   US30: { decimals: 1, fullName: "Dow Jones 30" },
-  HK50: { decimals: 2, fullName: "Hong Kong 50" },
-  FRANCE40: { decimals: 2, fullName: "CAC 40" },
-  CHINA50: { decimals: 1, fullName: "China A50" },
-  UK100: { decimals: 1, fullName: "FTSE 100" },
 };
 
 function formatPrice(price: number | null | undefined, symbol: string) {

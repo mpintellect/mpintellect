@@ -12,20 +12,15 @@ const SYMBOLS: SymbolDef[] = [
   { id: 'EURUSD', name: 'EUR/USD', type: 'Forex' },
   { id: 'GBPUSD', name: 'GBP/USD', type: 'Forex' },
   { id: 'USDJPY', name: 'USD/JPY', type: 'Forex' },
-  { id: 'USDCAD', name: 'USD/CAD', type: 'Forex' },
-  { id: 'AUDUSD', name: 'AUD/USD', type: 'Forex' },
-  { id: 'NZDUSD', name: 'NZD/USD', type: 'Forex' },
-  { id: 'USDCHF', name: 'USD/CHF', type: 'Forex' },
-  { id: 'EURJPY', name: 'EUR/JPY', type: 'Forex' },
-  { id: 'EURGBP', name: 'EUR/GBP', type: 'Forex' },
-  { id: 'GBPJPY', name: 'GBP/JPY', type: 'Forex' },
-  { id: 'GBPCHF', name: 'GBP/CHF', type: 'Forex' },
+  
+  
+  
+  
   
   // Metals
   { id: 'XAUUSD', name: 'Gold (XAU/USD)', type: 'Commodity' },
   { id: 'XAUEUR', name: 'Gold/EUR', type: 'Commodity' },
-  { id: 'XAGUSD', name: 'Silver (XAG/USD)', type: 'Commodity' },
-  { id: 'PLATINUM', name: 'Platinum', type: 'Commodity' },
+  
   
   // Energy
   { id: 'BRENT', name: 'Crude Oil (Brent)', type: 'Commodity' },
@@ -34,17 +29,13 @@ const SYMBOLS: SymbolDef[] = [
   { id: 'BTCUSD', name: 'Bitcoin (BTC)', type: 'Crypto' },
   { id: 'ETHUSD', name: 'Ethereum (ETH)', type: 'Crypto' },
   { id: 'XRPUSD', name: 'Ripple (XRP)', type: 'Crypto' },
-  { id: 'LTCUSD', name: 'Litecoin (LTC)', type: 'Crypto' },
-  { id: 'DOGEUSD', name: 'Dogecoin', type: 'Crypto' },
+  
   
   // Indices
   { id: 'US500', name: 'S&P 500', type: 'Indices' },
   { id: 'USTEC', name: 'NASDAQ 100', type: 'Indices' },
   { id: 'US30', name: 'Dow Jones 30', type: 'Indices' },
-  { id: 'HK50', name: 'Hong Kong 50', type: 'Indices' },
-  { id: 'FRANCE40', name: 'CAC 40', type: 'Indices' },
-  { id: 'CHINA50', name: 'FTSE China A50', type: 'Indices' },
-  { id: 'UK100', name: 'FTSE 100', type: 'Indices' },
+  
 ];
 
 const BASE_URL = 'https://mz-ads-engine.netlify.app';

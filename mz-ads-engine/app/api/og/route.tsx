@@ -10,17 +10,28 @@ const SIZES = {
 };
 
 const SYMBOL_SPECS: Record<string, { decimals: number; fullName: string; category: string }> = {
+  // Forex
   EURUSD: { decimals: 5, fullName: "EUR/USD", category: "Forex" },
   GBPUSD: { decimals: 5, fullName: "GBP/USD", category: "Forex" },
   USDJPY: { decimals: 3, fullName: "USD/JPY", category: "Forex" },
-  USDCAD: { decimals: 5, fullName: "USD/CAD", category: "Forex" },
-  AUDUSD: { decimals: 5, fullName: "AUD/USD", category: "Forex" },
-  BTCUSD: { decimals: 1, fullName: "Bitcoin", category: "Crypto" },
-  ETHUSD: { decimals: 2, fullName: "Ethereum", category: "Crypto" },
-  XRPUSD: { decimals: 4, fullName: "Ripple", category: "Crypto" },
-  SOLUSD: { decimals: 2, fullName: "Solana", category: "Crypto" },
-  XAUUSD: { decimals: 2, fullName: "Gold", category: "Metals" },
-  XAGUSD: { decimals: 3, fullName: "Silver", category: "Metals" },
+  
+  
+  // Metals/Commodity
+  XAUUSD: { decimals: 2, fullName: "Gold (XAU/USD)", category: "Commodity" },
+  XAUEUR: { decimals: 2, fullName: "Gold/EUR", category: "Commodity" },
+  
+  // Energy/Commodity
+  BRENT: { decimals: 2, fullName: "Crude Oil (Brent)", category: "Commodity" },
+  
+  // Crypto
+  BTCUSD: { decimals: 1, fullName: "Bitcoin (BTC)", category: "Crypto" },
+  ETHUSD: { decimals: 2, fullName: "Ethereum (ETH)", category: "Crypto" },
+  XRPUSD: { decimals: 4, fullName: "Ripple (XRP)", category: "Crypto" },
+  
+  // Indices
+  US500: { decimals: 2, fullName: "S&P 500", category: "Indices" },
+  USTEC: { decimals: 2, fullName: "NASDAQ 100", category: "Indices" },
+  US30: { decimals: 1, fullName: "Dow Jones 30", category: "Indices" },
 };
 
 function formatPrice(price: number | null | undefined, symbol: string) {

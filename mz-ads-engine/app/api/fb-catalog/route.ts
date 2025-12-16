@@ -150,7 +150,13 @@ export async function GET() {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': 'attachment; filename="mzprimer_catalog.csv"',
+      // ✅ CORS (Allows access from anywhere)
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
       
+      // ✅ SMART CACHING (Saves your Netlify CPU Limits)
+      // Cache for 1 hour (3600s). If expired, serve old version while generating new one.
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600', 
     },
   });
 }

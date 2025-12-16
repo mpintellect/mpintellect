@@ -103,7 +103,12 @@ export async function GET() {
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': 'attachment; filename="google_ads_live.csv"',
       // Prevent browser caching
+      // ✅ CORS
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
       
+      // ✅ SMART CACHING
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
     },
   });
 }

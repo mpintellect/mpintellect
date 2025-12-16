@@ -50,17 +50,15 @@ function csvEscape(value: string): string {
 }
 
 export async function GET() {
-  
-  // 🚀 CUSTOM DATE FORMAT: YYYY-DD-MM_HH
+  // 🚀 FIXED DATE FORMAT: YYYY-MM-DD_HH
   const now = new Date();
-  
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+  const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
   const hour = now.getHours();
 
-  // RESULT: "2025-15-12_H14" (Year-Day-Month)
-  const CACHE_VERSION = `${year}-${day}-${month}_H${hour}`;
+  // RESULT: "2025-12-16_H12" (Correct Year-Month-Day format)
+  const DATE_PREFIX = `${year}-${month}-${day}_H${hour}`;
 
   // Google Custom Feed Headers
   const header = [
@@ -75,23 +73,26 @@ export async function GET() {
   let rows: string[] = [];
 
   for (const sym of SYMBOLS) {
+    // 1. Create UNIQUE cache-buster for EACH symbol
+    // Using timestamp ensures every symbol has different URL
+    const uniqueCache = `${DATE_PREFIX}_${Date.now()}_${sym.id}`;
     
-    // 1. Construct Image URL using your Custom Date Format
-    const imageUrl = `${BASE_URL}/api/og-google?symbol=${sym.id}&size=standard&theme=professional&v=${CACHE_VERSION}`;
+    // 2. Construct Image URL with unique cache-buster
+    const imageUrl = `${BASE_URL}/api/og-google?symbol=${sym.id}&size=standard&theme=dark&v=${uniqueCache}`;
     
-    // 2. Landing Page
+    // 3. Landing Page
     const landingPage = `https://mzprimer.com/trade/${sym.id.toLowerCase()}`;
 
-    // 3. Ad Text
+    // 4. Ad Text
     const desc = `Live AI Technical Analysis for ${sym.name}. Entry, Stop Loss & Take Profit.`;
 
     rows.push([
-      `${sym.id}`,                                      // ID
-      `"${sym.name} Forecast"`,                         // Title
-      landingPage,                                      // Final URL
-      imageUrl,                                         // Image URL (Live)
-      `"${desc}"`,                                      // Description
-      '4.50 EUR'                                        // Price
+      `${sym.id}`,
+      `${sym.name} Forecast`,
+      landingPage,
+      imageUrl,
+      desc,
+      '4.50 EUR'
     ].map(csvEscape).join(','));
   }
 
@@ -102,12 +103,8 @@ export async function GET() {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': 'attachment; filename="google_ads_live.csv"',
-      // Prevent browser caching
-      // ✅ CORS
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      
-      // ✅ SMART CACHING
       'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
     },
   });

@@ -3,7 +3,7 @@ name: 🚀 Site Warmer (Keep Vercel Hot)
 on:
   schedule:
     # Run every 10 minutes (Vercel lambda timeout is ~15min, this beats it)
-    - cron: '*/10 * * * *'
+    - cron: '*/60 * * * *'
   
   # Allow manual trigger from GitHub Actions dashboard
   workflow_dispatch:

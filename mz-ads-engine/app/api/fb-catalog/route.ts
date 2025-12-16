@@ -102,7 +102,7 @@ export async function GET() {
         '0.00 EUR',
         `${BASE_URL}/AIChat?symbol=${sym.id}&source=fb_ad&auto_start=true`, // Direct link to chat logic
         // 👇 Uses LIVE_VERSION to update image every hour
-        `${BASE_URL}/api/og?symbol=${sym.id}&type=CHAT&v=${LIVE_VERSION}`, 
+        `https://mz-ads-engine.netlify.app/api/og?symbol=${sym.id}&type=CHAT&v=${LIVE_VERSION}`, 
         'MZPrimer AI',
         'Software > Business & Productivity',
         sym.type,
@@ -123,7 +123,7 @@ export async function GET() {
         '4.50 EUR',
         `${BASE_URL}/trade/${symbolLower}`,
         // 👇 Uses LIVE_VERSION
-        `${BASE_URL}/api/og?symbol=${sym.id}&type=TARGETS&v=${LIVE_VERSION}`,
+        `https://mz-ads-engine.netlify.app/api/og?symbol=${sym.id}&type=TARGETS&v=${LIVE_VERSION}`,
         'MZPrimer Data',
         'Software > Business & Productivity',
         sym.type,
@@ -144,7 +144,7 @@ export async function GET() {
         '4.50 EUR',
         `${BASE_URL}/calculator/${symbolLower}`,
         // 👇 Uses LIVE_VERSION
-        `${BASE_URL}/api/og?symbol=${sym.id}&type=RISK&v=${LIVE_VERSION}`,
+        `https://mz-ads-engine.netlify.app/api/og?symbol=${sym.id}&type=RISK&v=${LIVE_VERSION}`,
         'MZPrimer Tools',
         'Software > Business & Productivity',
         sym.type,

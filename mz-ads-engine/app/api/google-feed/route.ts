@@ -47,7 +47,7 @@ const SYMBOLS: SymbolDef[] = [
   { id: 'UK100', name: 'FTSE 100', type: 'Indices' },
 ];
 
-const BASE_URL = 'https://mzprimer.com';
+const BASE_URL = 'https://mz-ads-engine.netlify.app';
 
 // Simple CSV escape helper
 function csvEscape(value: string): string {
@@ -89,7 +89,7 @@ export async function GET() {
     const imageUrl = `${BASE_URL}/api/og-google?symbol=${sym.id}&size=standard&theme=professional&v=${CACHE_VERSION}`;
     
     // 2. Landing Page
-    const landingPage = `${BASE_URL}/trade/${sym.id.toLowerCase()}`;
+    const landingPage = `https://mzprimer.com/trade/${sym.id.toLowerCase()}`;
 
     // 3. Ad Text
     const desc = `Live AI Technical Analysis for ${sym.name}. Entry, Stop Loss & Take Profit.`;

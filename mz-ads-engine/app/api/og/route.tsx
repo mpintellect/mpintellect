@@ -1,4 +1,4 @@
-// app/api/og-google/route.tsx
+// app/api/og/route.tsx
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
@@ -153,9 +153,8 @@ export async function GET(request: Request) {
     const textSecondary = "#A3A3A3";
     const textTertiary = "#737373";
 
-    // Logo URL
-    const baseUrl = new URL(request.url);
-    const logoUrl = `https://mzprimer.com/logos/icon.png`;
+    // Logo URL - Fixed absolute URL for Netlify
+    const logoUrl = "https://mzprimer.com/logos/icon.png";
 
     // Common header component
     const Header = () => (
@@ -187,13 +186,10 @@ export async function GET(request: Request) {
           >
             <img
               src={logoUrl}
+              width={20}
+              height={20}
               style={{
-                width: "20px",
-                height: "20px",
-              }}
-              onError={(e: any) => {
-                e.target.style.display = 'none';
-                e.target.parentNode.innerHTML = '<div style="display: flex; width: 20px; height: 20px; background: linear-gradient(135deg, #7877C6, #6366F1); border-radius: 4px; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: white;">MZ</div>';
+                display: "flex",
               }}
             />
           </div>
@@ -295,13 +291,10 @@ export async function GET(request: Request) {
           >
             <img
               src={logoUrl}
+              width={14}
+              height={14}
               style={{
-                width: "14px",
-                height: "14px",
-              }}
-              onError={(e: any) => {
-                e.target.style.display = 'none';
-                e.target.parentNode.innerHTML = '<div style="display: flex; width: 20px; height: 20px; background: linear-gradient(135deg, #7877C6, #6366F1); border-radius: 4px; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: white;">MZ</div>';
+                display: "flex",
               }}
             />
           </div>
@@ -410,13 +403,10 @@ export async function GET(request: Request) {
           }}>
             <img
               src={logoUrl}
+              width={24}
+              height={24}
               style={{
-                width: "24px",
-                height: "24px",
-              }}
-              onError={(e: any) => {
-                e.target.style.display = 'none';
-                e.target.parentNode.innerHTML = '<div style="display: flex; width: 20px; height: 20px; background: linear-gradient(135deg, #0084FF, #0066CC); border-radius: 4px; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: white;">AI</div>';
+                display: "flex",
               }}
             />
           </div>
@@ -689,7 +679,7 @@ export async function GET(request: Request) {
           {[
             { label: "ENTRY", value: entry, color: textPrimary, position: "start" },
             { label: "CURRENT", value: currentPrice, color: signalColor, position: "center" },
-            { label: "STOP LOSS", value: sl, color: "#EF4444", position: "end" }, // CHANGED: Added "LOSS" to make it "STOP LOSS"
+            { label: "STOP LOSS", value: sl, color: "#EF4444", position: "end" },
           ].map((item, index) => (
             <div 
               key={index} 
@@ -748,7 +738,7 @@ export async function GET(request: Request) {
               color: "#7877C6"
             },
             { 
-              label: "STOP LOSS", // CHANGED: Now says "STOP LOSS" instead of "RISK/REWARD"
+              label: "STOP LOSS",
               value: `${slPips}p`, 
               desc: "Risk distance",
               gradient: "linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))",
@@ -800,305 +790,293 @@ export async function GET(request: Request) {
       </div>
     );
 
-  // TARGETS TYPE - SIMPLE SQUARE VERSION (from provided code)
-const TargetsView = () => {
-  // Using the simple square version from the provided code
-  const S = 1.0; // Scale for square
-  const pad = 64; // Square padding
-  const isSquare = true;
-  
-  // Colors for dark theme
-  const accent = isBuy ? "#10B981" : isSell ? "#EF4444" : "#F59E0B";
-  const bg = "#050505";
-  const card = "#0A0A0A";
-  const border = "rgba(255,255,255,0.10)";
-  const textMain = "#FFFFFF";
-  const textDim = "#A3A3A3";
-  
-  // Font sizes for square
-  const symbolSize = Math.round(110 * S);
-  const signalSize = Math.round(72 * S);
-  const labelSize = Math.round(18 * S);
-  const priceSize = Math.round(44 * S);
-  const rowGap = 16;
-  
-  // Fetch logo - removed await since we can't use async here
-  // Instead, we'll use the logoUrl directly
-  const logoData = logoUrl; // Use the URL directly
+    // TARGETS TYPE - Simple Square Version (UPDATED TO USE DYNAMIC SCALING)
+    const TargetsView = () => {
+      // Use dynamic scaling from cfg
+      const S = cfg.scale;
+      const pad = cfg.pad;
+      
+      // Colors for dark theme
+      const accent = isBuy ? "#10B981" : isSell ? "#EF4444" : "#F59E0B";
+      const bg = "#050505";
+      const card = "#0A0A0A";
+      const border = "rgba(255,255,255,0.10)";
+      const textMain = "#FFFFFF";
+      const textDim = "#A3A3A3";
+      
+      // Dynamic font sizes based on scale
+      const symbolSize = Math.round(110 * S);
+      const signalSize = Math.round(72 * S);
+      const labelSize = Math.round(18 * S);
+      const priceSize = Math.round(44 * S);
+      const rowGap = 16;
 
-  return (
-    <div
-      style={{
-        height: "100%",
-        width: "100%",
-        display: "flex",
-        flexDirection: "column",
-        backgroundColor: bg,
-        fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial",
-        color: textMain,
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* Subtle grid */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.08) 1px, transparent 0)",
-          backgroundSize: "40px 40px",
-          opacity: 0.6,
-          zIndex: 0,
-        }}
-      />
-
-      {/* Top bar */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: `${Math.round(pad * 0.75)}px ${pad}px`,
-          borderBottom: `1px solid ${border}`,
-          backgroundColor: bg,
-          zIndex: 1,
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 14 }}>
-          <img
-            src={logoData}
-            width={32}
-            height={32}
+      return (
+        <div
+          style={{
+            display: "flex",
+            height: "100%",
+            width: "100%",
+            flexDirection: "column",
+            backgroundColor: bg,
+            fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial",
+            color: textMain,
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          {/* Subtle grid */}
+          <div
             style={{
-              borderRadius: 8,
-              objectFit: "contain",
-            }}
-            onError={(e: any) => {
-              // Fallback if image fails to load
-              e.target.style.display = 'none';
-              const parent = e.target.parentNode;
-              const fallback = document.createElement('div');
-              fallback.style.cssText = 'display: flex; width: 32px; height: 32px; border-radius: 8px; background-color: ' + accent + '; box-shadow: 0 0 18px ' + accent + ';';
-              parent.appendChild(fallback);
+              display: "flex",
+              position: "absolute",
+              inset: 0,
+              backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.08) 1px, transparent 0)",
+              backgroundSize: "40px 40px",
+              opacity: 0.6,
+              zIndex: 0,
             }}
           />
-          <div style={{ display: "flex", flexDirection: "row", alignItems: "baseline", gap: 10 }}>
-            <div style={{ display: "flex", fontWeight: 900, letterSpacing: 1, fontSize: Math.round(22 * S) }}>
-              MZPRIMER
+
+          {/* Top bar */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: `${Math.round(pad * 0.75)}px ${pad}px`,
+              borderBottom: `1px solid ${border}`,
+              backgroundColor: bg,
+              zIndex: 1,
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 14 }}>
+              <img
+                src={logoUrl}
+                width={32}
+                height={32}
+                style={{
+                  display: "flex",
+                  borderRadius: 8,
+                  objectFit: "contain",
+                }}
+              />
+              <div style={{ display: "flex", flexDirection: "row", alignItems: "baseline", gap: 10 }}>
+                <div style={{ display: "flex", fontWeight: 900, letterSpacing: 1, fontSize: Math.round(22 * S) }}>
+                  MZPRIMER
+                </div>
+                <div style={{ display: "flex", color: accent, fontWeight: 800, fontSize: Math.round(18 * S) }}>
+                  // TRADE SETUP
+                </div>
+              </div>
             </div>
-            <div style={{ display: "flex", color: accent, fontWeight: 800, fontSize: Math.round(18 * S) }}>
-              // TRADE SETUP
+
+            <div style={{ display: "flex", flexDirection: "row", gap: 14, alignItems: "center" }}>
+              <div style={{ display: "flex", color: textDim, fontSize: Math.round(16 * S), fontWeight: 700 }}>
+                Live
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  padding: "8px 12px",
+                  borderRadius: 999,
+                  border: `1px solid ${border}`,
+                  backgroundColor: "rgba(255,255,255,0.04)",
+                  color: textDim,
+                  fontSize: Math.round(16 * S),
+                  fontWeight: 800,
+                }}
+              >
+                {confidence}% Confidence
+              </div>
             </div>
           </div>
-        </div>
 
-        <div style={{ display: "flex", flexDirection: "row", gap: 14, alignItems: "center" }}>
-          <div style={{ display: "flex", color: textDim, fontSize: Math.round(16 * S), fontWeight: 700 }}>
-            Live
-          </div>
+          {/* Main */}
           <div
             style={{
               display: "flex",
-              padding: "8px 12px",
-              borderRadius: 999,
-              border: `1px solid ${border}`,
-              backgroundColor: "rgba(255,255,255,0.04)",
-              color: textDim,
-              fontSize: Math.round(16 * S),
-              fontWeight: 800,
+              flex: 1,
+              flexDirection: "column",
+              padding: `${pad}px ${pad}px`,
+              gap: 34,
+              zIndex: 1,
+              alignItems: "stretch",
+              justifyContent: "center",
             }}
           >
-            {confidence}% Confidence
-          </div>
-        </div>
-      </div>
+            {/* HERO: Symbol BIG + Name */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: symbolSize,
+                  fontWeight: 1000,
+                  letterSpacing: -2,
+                  lineHeight: 1,
+                  color: textMain,
+                  textAlign: "center",
+                }}
+              >
+                {symbol}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: Math.round(22 * S),
+                  fontWeight: 700,
+                  color: textDim,
+                  textAlign: "center",
+                }}
+              >
+                {spec.fullName}
+              </div>
+            </div>
 
-      {/* Main */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          padding: `${pad}px ${pad}px`,
-          gap: 34,
-          zIndex: 1,
-          alignItems: "stretch",
-          justifyContent: "center",
-        }}
-      >
-        {/* HERO: Symbol BIG + Name */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
-          <div
-            style={{
-              display: "flex",
-              fontSize: symbolSize,
-              fontWeight: 1000,
-              letterSpacing: -2,
-              lineHeight: 1,
-              color: textMain,
-              textAlign: "center",
-            }}
-          >
-            {symbol}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              fontSize: Math.round(22 * S),
-              fontWeight: 700,
-              color: textDim,
-              textAlign: "center",
-            }}
-          >
-            {spec.fullName}
-          </div>
-        </div>
-
-        {/* SIGNAL BIG */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 16,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              padding: `${Math.round(18 * S)}px ${Math.round(26 * S)}px`,
-              borderRadius: 18,
-              border: `2px solid ${accent}55`,
-              backgroundColor: "rgba(255,255,255,0.03)",
-              boxShadow: `0 18px 40px ${accent}18`,
-            }}
-          >
+            {/* SIGNAL BIG */}
             <div
               style={{
                 display: "flex",
-                fontSize: signalSize,
-                fontWeight: 1000,
-                letterSpacing: 2,
-                color: accent,
-                lineHeight: 1,
+                flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 16,
               }}
             >
-              {isBuy ? "BUY" : isSell ? "SELL" : "WAIT"}
+              <div
+                style={{
+                  display: "flex",
+                  padding: `${Math.round(18 * S)}px ${Math.round(26 * S)}px`,
+                  borderRadius: 18,
+                  border: `2px solid ${accent}55`,
+                  backgroundColor: "rgba(255,255,255,0.03)",
+                  boxShadow: `0 18px 40px ${accent}18`,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    fontSize: signalSize,
+                    fontWeight: 1000,
+                    letterSpacing: 2,
+                    color: accent,
+                    lineHeight: 1,
+                  }}
+                >
+                  {isBuy ? "BUY" : isSell ? "SELL" : "WAIT"}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* SETUP: Entry / SL / TP */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            gap: rowGap,
-            width: "100%",
-            alignItems: "stretch",
-            justifyContent: "space-between",
-          }}
-        >
-          {/* ENTRY */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              flex: 1,
-              backgroundColor: card,
-              border: `1px solid ${border}`,
-              borderRadius: 18,
-              padding: `${Math.round(22 * S)}px`,
-              gap: 10,
-            }}
-          >
-            <div style={{ display: "flex", fontSize: labelSize, color: textDim, fontWeight: 800, letterSpacing: 2 }}>
-              ENTRY
-            </div>
-            <div style={{ display: "flex", fontSize: priceSize, fontWeight: 1000, letterSpacing: -1 }}>
-              {entry}
-            </div>
-          </div>
-
-          {/* STOP LOSS */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              flex: 1,
-              backgroundColor: card,
-              border: `1px solid ${border}`,
-              borderRadius: 18,
-              padding: `${Math.round(22 * S)}px`,
-              gap: 10,
-            }}
-          >
-            <div style={{ display: "flex", fontSize: labelSize, color: "#EF4444", fontWeight: 900, letterSpacing: 2 }}>
-              STOP LOSS
-            </div>
-            <div style={{ display: "flex", fontSize: priceSize, fontWeight: 1000, letterSpacing: -1, color: "#EF4444" }}>
-              {sl}
-            </div>
-          </div>
-
-          {/* TAKE PROFIT */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              flex: 1,
-              backgroundColor: card,
-              border: `1px solid ${border}`,
-              borderRadius: 18,
-              padding: `${Math.round(22 * S)}px`,
-              gap: 10,
-            }}
-          >
-            <div style={{ display: "flex", fontSize: labelSize, color: "#10B981", fontWeight: 900, letterSpacing: 2 }}>
-              TAKE PROFIT
-            </div>
-            <div style={{ display: "flex", fontSize: priceSize, fontWeight: 1000, letterSpacing: -1, color: "#10B981" }}>
-              {tp}
-            </div>
-          </div>
-        </div>
-
-        {/* Minimal footer line */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            paddingTop: 6,
-            color: textDim,
-            fontSize: Math.round(16 * S),
-            fontWeight: 700,
-          }}
-        >
-          <div style={{ display: "flex", flexDirection: "row", gap: 10, alignItems: "center" }}>
+            {/* SETUP: Entry / SL / TP */}
             <div
               style={{
                 display: "flex",
-                width: 8,
-                height: 8,
-                borderRadius: 999,
-                backgroundColor: accent,
-                boxShadow: `0 0 12px ${accent}`,
+                flexDirection: "row",
+                gap: rowGap,
+                width: "100%",
+                alignItems: "stretch",
+                justifyContent: "space-between",
               }}
-            />
-            <div style={{ display: "flex" }}>MZPrimer • AI Trade Setup</div>
-          </div>
+            >
+              {/* ENTRY */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  flex: 1,
+                  backgroundColor: card,
+                  border: `1px solid ${border}`,
+                  borderRadius: 18,
+                  padding: `${Math.round(22 * S)}px`,
+                  gap: 10,
+                }}
+              >
+                <div style={{ display: "flex", fontSize: labelSize, color: textDim, fontWeight: 800, letterSpacing: 2 }}>
+                  ENTRY
+                </div>
+                <div style={{ display: "flex", fontSize: priceSize, fontWeight: 1000, letterSpacing: -1 }}>
+                  {entry}
+                </div>
+              </div>
 
-          <div style={{ display: "flex" }}>mzprimer.com</div>
+              {/* STOP LOSS */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  flex: 1,
+                  backgroundColor: card,
+                  border: `1px solid ${border}`,
+                  borderRadius: 18,
+                  padding: `${Math.round(22 * S)}px`,
+                  gap: 10,
+                }}
+              >
+                <div style={{ display: "flex", fontSize: labelSize, color: "#EF4444", fontWeight: 900, letterSpacing: 2 }}>
+                  STOP LOSS
+                </div>
+                <div style={{ display: "flex", fontSize: priceSize, fontWeight: 1000, letterSpacing: -1, color: "#EF4444" }}>
+                  {sl}
+                </div>
+              </div>
+
+              {/* TAKE PROFIT */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  flex: 1,
+                  backgroundColor: card,
+                  border: `1px solid ${border}`,
+                  borderRadius: 18,
+                  padding: `${Math.round(22 * S)}px`,
+                  gap: 10,
+                }}
+              >
+                <div style={{ display: "flex", fontSize: labelSize, color: "#10B981", fontWeight: 900, letterSpacing: 2 }}>
+                  TAKE PROFIT
+                </div>
+                <div style={{ display: "flex", fontSize: priceSize, fontWeight: 1000, letterSpacing: -1, color: "#10B981" }}>
+                  {tp}
+                </div>
+              </div>
+            </div>
+
+            {/* Minimal footer line */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingTop: 6,
+                color: textDim,
+                fontSize: Math.round(16 * S),
+                fontWeight: 700,
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "row", gap: 10, alignItems: "center" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    width: 8,
+                    height: 8,
+                    borderRadius: 999,
+                    backgroundColor: accent,
+                    boxShadow: `0 0 12px ${accent}`,
+                  }}
+                />
+                <div style={{ display: "flex" }}>MZPrimer • AI Trade Setup</div>
+              </div>
+
+              <div style={{ display: "flex" }}>mzprimer.com</div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  );
-};
+      );
+    };
 
     return new ImageResponse(
       (
@@ -1117,6 +1095,7 @@ const TargetsView = () => {
           {/* Background gradient based on type */}
           <div
             style={{
+              display: "flex",
               position: "absolute",
               inset: 0,
               background: type === "CHAT" 
@@ -1140,6 +1119,10 @@ const TargetsView = () => {
       { 
         width: cfg.width, 
         height: cfg.height,
+        headers: {
+          'Cache-Control': 'public, immutable, no-transform, max-age=86400',
+          'CDN-Cache-Control': 'max-age=86400',
+        }
       }
     );
   } catch (e: any) {

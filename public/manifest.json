@@ -1,21 +1,36 @@
 {
   "name": "MZPrimer",
-  "short_name": "MZ AI Trading Insights",
-  "description": "AI Trading Intelligence",
+  "short_name": "MZ AI Trading",
+  "description": "AI Trading Intelligence Platform",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "categories": ["finance", "productivity", "education"],
   "icons": [
     {
-      "src": "/logos/mzlogo.webp", 
+      "src": "/logos/icon-192.png",
       "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logos/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logos/icon-512.webp",
+      "sizes": "512x512",
       "type": "image/webp"
     },
     {
-      "src": "/logos/mzlogo.webp",
-      "sizes": "512x512",
-      "type": "image/webp"
+      "src": "/logos/icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "apple touch icon"
     }
   ]
 }

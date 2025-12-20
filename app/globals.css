@@ -368,8 +368,8 @@ nav a:hover {
 
 .sticky-logo-img {
   width: 100%;
-  height: 60px;
-  margin-top: -28px;
+  height: 80px;
+  margin-top: -10px;
   object-fit: contain;
 }
 /* === AI Robot Section Styling === */
@@ -17075,3 +17075,136 @@ a:focus-visible,
               0%, 100% { opacity: 1; }
               50% { opacity: 0.5; }
             }
+/* ===== LOGO FIXES ===== */
+
+/* Fix for all logo images - maintain aspect ratio */
+img[src*="logo"],
+.logo-img,
+.footer-logo,
+.sticky-logo-img,
+.hero-logo {
+  object-fit: contain !important; /* Prevents stretching */
+  height: auto !important; /* Maintain natural height */
+  max-width: 100% !important; /* Prevent overflow */
+}
+
+/* Specific fix for mzlogo.webp */
+img[src*="mzlogo"] {
+  aspect-ratio: 1 / 1 !important; /* Force square aspect ratio */
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+/* Hero logo specific fixes */
+#hero img[src*="mzlogo"] {
+  width: 160px !important; /* Fixed width for mobile */
+  height: 160px !important; /* Fixed height to match */
+  margin: 0 auto; /* Center if needed */
+}
+
+@media (min-width: 768px) {
+  #hero img[src*="mzlogo"] {
+    width: 224px !important; /* Desktop size */
+    height: 224px !important;
+  }
+}
+
+/* Footer logo fix */
+.footer-logo {
+  width: 120px !important;
+  height: 120px !important;
+  min-width: 120px !important; /* Prevent shrinking */
+  min-height: 120px !important;
+}
+
+/* Payment badges - ensure consistent sizing */
+.payment-badges img.trust-logo {
+  width: 40px !important;
+  height: 25px !important;
+  object-fit: contain !important;
+  margin: 0 8px !important;
+}
+
+/* Sticky logo fix */
+.sticky-logo-img {
+  width: 60px !important;
+  height: 60px !important;
+  border-radius: 8px !important; /* Optional: add slight rounding */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Prevent any parent container from distorting logos */
+.footer-logo-badges,
+.footer-content,
+.footer-grid,
+.sticky-logo,
+#hero > div {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Mobile-specific logo fixes */
+@media (max-width: 768px) {
+  /* Fix logo containers on mobile */
+  .footer-logo-badges {
+    flex-direction: column !important;
+    gap: 20px !important;
+  }
+  
+  .payment-badges {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 12px !important;
+  }
+  
+  /* Ensure hero logo stays centered */
+  #hero {
+    text-align: center !important;
+  }
+  
+  #hero img[src*="mzlogo"] {
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+/* Fix for Next.js Image component wrapper */
+span[style*="display: inline-block"] > img,
+.image-wrapper > img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+/* Fix for any logo inside flex containers */
+.flex img[src*="logo"],
+.grid img[src*="logo"] {
+  align-self: center !important;
+  justify-self: center !important;
+}
+
+/* PWA/Manifest icon sizing fix */
+link[rel="icon"],
+link[rel="apple-touch-icon"] {
+  /* These don't need CSS fixes, but ensure proper HTML sizing */
+}
+
+/* Optional: Add loading animation for logos */
+img[src*="logo"] {
+  transition: transform 0.3s ease !important;
+}
+
+img[src*="logo"]:hover {
+  transform: scale(1.05) !important;
+}
+
+/* Print styles for logos */
+@media print {
+  img[src*="logo"] {
+    max-width: 100px !important;
+    filter: grayscale(100%) !important;
+  }
+}

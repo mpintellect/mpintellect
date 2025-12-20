@@ -1,185 +1,130 @@
-import { Metadata } from 'next';
-import { getSymbolData } from '../../lib/fetchData'; 
-import { generateMomentumReport } from '../../lib/seo/momentumGenerator';
-import NotificationButton from '@/components/NotificationButton'; 
-import SymbolNavigation from '@/components/SymbolNavigation'; 
-import { Zap, Activity, Waves, ArrowRight, GaugeCircle, Bot } from 'lucide-react';
+// app/momentum/[symbol]/page.tsx
+'use client';
 
-// Update Props type
-type Props = { 
-  params: Promise<{ symbol: string }>;
-};
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import MomentumClientView from '@/components/MomentumClientView';
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  // Unwrap the Promise
-  const { symbol } = await params;
-  
-  const data = await getSymbolData(symbol);
-  
-  if (!data || !data.momentum) {
-      return { title: `Momentum: ${symbol} | MZPrimer ` };
-  }
-  
-  const report = generateMomentumReport(data);
-  return {
-    title: report.title,
-    description: report.metaDesc,
-  };
-}
+export default function MomentumPage() {
+  const params = useParams();
+  const symbol = params.symbol as string;
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export default async function MomentumPage({ params }: Props) {
-  // Unwrap the Promise
-  const { symbol } = await params;
-  const resolvedSymbol = symbol;
-  const data = await getSymbolData(symbol);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch(`/api/data-proxy?symbol=${symbol}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.error) {
+          throw new Error(result.error);
+        }
+        
+        setData(result);
+      } catch (err) {
+        console.error(`Error loading ${symbol} momentum data:`, err);
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Guard Clause for Loading/Error
-  if (!data || !data.momentum) {
-    return <div className="min-h-screen bg-black flex items-center justify-center text-white">Syncing Market Data...</div>;
-  }
+    fetchData();
+  }, [symbol]);
 
-  const m = data.momentum;
-  const text = generateMomentumReport(data);
-  const rsiVal = m.rsi_latest; // 0-100 range
-
-  // Visual Logic
-  const isHot = rsiVal > 65; // Overbought territory
-  const isCold = rsiVal < 35; // Oversold territory
-  
-  // Dynamic Coloring
-  const rsiColor = isHot ? "text-rose-400" : isCold ? "text-emerald-400" : "text-purple-400";
-  const glowClass = isHot 
-    ? "shadow-[0_0_20px_-5px_rgba(244,63,94,0.6)]" // Red glow
-    : isCold 
-      ? "shadow-[0_0_20px_-5px_rgba(16,185,129,0.6)]" // Green glow
-      : "shadow-[0_0_20px_-5px_rgba(168,85,247,0.4)]"; // Purple glow
-
-  return (
-    <div className="min-h-screen bg-black text-white pb-24 font-sans selection:bg-purple-500/30">
+  // Update metadata client-side
+  useEffect(() => {
+    if (data?.momentum) {
+      const m = data.momentum;
+      const rsi = m.rsi_latest || 50;
+      const bias = (m.momentum_bias || 'NEUTRAL').toUpperCase();
+      const symbolName = data.symbol || symbol;
       
-      {/* HEADER SECTION */}
-      <div className="pt-28 pb-10 px-6 text-center max-w-4xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-6 rounded-full border border-purple-500/30 bg-purple-900/10 text-purple-300 text-[10px] uppercase font-bold tracking-widest">
-           <Zap size={12} className="fill-current" /> Kinetic Energy
+      // Generate report for state
+      let state = "Equilibrium";
+      if (rsi > 70) state = "Overbought";
+      if (rsi < 30) state = "Oversold";
+      
+      // Dynamic title
+      let title = `${symbolName} Momentum Analysis: ${bias} | RSI ${rsi.toFixed(1)}`;
+      if (rsi > 70) title = `⚠️ ${symbolName} Momentum Overbought Alert: RSI ${rsi.toFixed(1)}`;
+      if (rsi < 30) title = `💎 ${symbolName} Momentum Oversold Opportunity: RSI ${rsi.toFixed(1)}`;
+      
+      document.title = title;
+      
+      // Dynamic description
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) {
+        const velocity = (m.rsi_slope || 0) > 0.05 ? "Accelerating" : (m.rsi_slope || 0) < -0.05 ? "Decelerating" : "Stable";
+        metaDesc.setAttribute('content', 
+          `Live Momentum oscillator check for ${symbolName}. RSI at ${rsi.toFixed(1)} (${state}). Velocity: ${velocity}. Strength: ${m.momentum_strength || 'neutral'}.`
+        );
+      }
+      
+      // Add keywords
+      const metaKeywords = document.querySelector('meta[name="keywords"]');
+      if (metaKeywords) {
+        metaKeywords.setAttribute('content', 
+          `${symbolName} momentum, ${symbolName} RSI, ${symbolName} oscillator, ${symbolName} velocity, momentum trading`
+        );
+      }
+    }
+  }, [data, symbol]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-purple-500 border-r-transparent"></div>
+          <p className="mt-4 text-zinc-400">Analyzing momentum for {symbol.toUpperCase()}...</p>
         </div>
-        
-        <h1 className="text-4xl md:text-6xl font-black mb-4 uppercase tracking-tighter text-white">
-           {data.symbol} <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">Momentum</span>
-        </h1>
-        
-        <p className="text-zinc-400 text-lg max-w-xl mx-auto">
-           Oscillator Health & Buying Velocity Analysis
-        </p>
       </div>
+    );
+  }
 
-      <div className="max-w-5xl mx-auto px-4 grid md:grid-cols-12 gap-8">
-        
-        {/* --- THE MAIN DASHBOARD (Glass Card) --- */}
-        <div className="md:col-span-8 p-8 rounded-3xl relative overflow-hidden glass-momentum-card">
-            
-            <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-8">
-                <span className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
-                    <Waves size={14} /> RSI Heatmap
-                </span>
-                <span className={`text-xs font-mono font-bold px-2 py-1 rounded bg-white/5 border border-white/10 ${rsiColor}`}>
-                    READING: {rsiVal.toFixed(2)}
-                </span>
-            </div>
-
-            <div className="flex flex-col gap-10">
-                
-                {/* 1. RSI LINEAR METER */}
-                <div className="relative pt-4 pb-2">
-                    <div className="flex justify-between text-[10px] font-bold text-zinc-500 mb-2 tracking-widest uppercase">
-                        <span>Oversold (30)</span>
-                        <span>Equilibrium (50)</span>
-                        <span>Overbought (70)</span>
-                    </div>
-                    
-                    {/* The Meter Track */}
-                    <div className="w-full h-8 bg-zinc-900 rounded-lg border border-zinc-800 relative overflow-hidden">
-                        {/* Zone Markers */}
-                        <div className="absolute left-0 w-[30%] h-full bg-emerald-900/20 border-r border-dashed border-white/10"></div>
-                        <div className="absolute right-0 w-[30%] h-full bg-rose-900/20 border-l border-dashed border-white/10"></div>
-                        
-                        {/* The Indicator Needle */}
-                        <div 
-                            className={`absolute top-0 bottom-0 w-1.5 h-full bg-white transition-all duration-700 ease-out z-10 ${glowClass}`}
-                            style={{ left: `${Math.min(Math.max(rsiVal, 0), 100)}%` }}
-                        >
-                            {/* Floating Bubble Value */}
-                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-zinc-800 text-white text-[10px] font-bold px-3 py-1.5 rounded border border-white/10 whitespace-nowrap shadow-lg">
-                                {Math.round(rsiVal)}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 2. KEY METRICS GRID */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-purple-900/10 border border-purple-500/20 p-4 rounded-2xl flex flex-col justify-center">
-                        <div className="flex items-center gap-2 mb-1">
-                            <Activity size={14} className="text-purple-400" />
-                            <span className="text-[10px] uppercase text-zinc-400 font-bold">Trend Alignment</span>
-                        </div>
-                        <p className="text-lg font-bold text-white capitalize">{m.trend_alignment.replace(/_/g, " ")}</p>
-                    </div>
-
-                    <div className="bg-cyan-900/10 border border-cyan-500/20 p-4 rounded-2xl flex flex-col justify-center">
-                        <div className="flex items-center gap-2 mb-1">
-                            <GaugeCircle size={14} className="text-cyan-400" />
-                            <span className="text-[10px] uppercase text-zinc-400 font-bold">Slope Velocity</span>
-                        </div>
-                        <p className="text-lg font-bold text-white font-mono">{m.rsi_slope.toFixed(4)}</p>
-                    </div>
-                </div>
-            </div>
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="text-red-400 text-4xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold mb-2">Momentum Data Unavailable</h1>
+          <p className="text-zinc-400 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-md"
+          >
+            Try Again
+          </button>
         </div>
-
-        {/* --- SIDEBAR ACTION --- */}
-        <div className="md:col-span-4 flex flex-col gap-6">
-            <div className="p-6 rounded-3xl border border-zinc-800 bg-zinc-900/30 flex flex-col items-center justify-center text-center h-full">
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 ${isHot ? 'bg-rose-500/20 text-rose-500' : 'bg-emerald-500/20 text-emerald-500'}`}>
-                    <Zap size={24} fill="currentColor" />
-                </div>
-                <h4 className="text-white font-bold text-lg mb-2">{isHot ? "Hot" : isCold ? "Cool" : "Neutral"}</h4>
-                <p className="text-xs text-zinc-400 mb-6 leading-relaxed px-2">
-                    Current momentum implies a <strong>{m.momentum_strength}</strong> strength rating. 
-                    {m.divergence_detected !== 'none' && <span className="text-yellow-500 block mt-2">⚠️ Divergence Spotted</span>}
-                </p>
-                <NotificationButton />
-            </div>
-        </div>
-
       </div>
+    );
+  }
 
-      {/* --- WRITTEN CONTENT (SEO) --- */}
-      <section className="velo-container">
-    <h2 className="velo-header">Velocity Analysis Report</h2>
-    
-    <div>
-       {/* 1. Context */}
-       <p className="velo-context">
-          {text.context}
-       </p>
-       
-       {/* 2. Stats (The Terminal Card) */}
-       <div className="velo-terminal-card">
-          <p className="velo-terminal-text">
-              {text.stats}
-          </p>
-       </div>
-       
-       {/* 3. Verdict (The Kinetic Summary) */}
-       <p className="velo-verdict">
-           "{text.verdict}"
-       </p>
-    </div>
-</section>
+  // No data state
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-zinc-400">No momentum data available for {symbol.toUpperCase()}</p>
+        </div>
+      </div>
+    );
+  }
 
-      {/* --- FOOTER --- */}
-  <SymbolNavigation symbol={resolvedSymbol} />
-
-    </div>
-  );
+  // Success - render the client view
+  return <MomentumClientView data={data} symbol={symbol} />;
 }
+
+// ⚠️ NO EXPORTS - This is a client component

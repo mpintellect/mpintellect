@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 
 export default function Hero() {
   useEffect(() => {}, []);
@@ -14,11 +15,18 @@ export default function Hero() {
 
   return (
     <section id="hero">
-      {/* Logo Image */}
-      <img
+      {/* Logo Image - Optimized with Next.js Image */}
+      <Image
         src="/logos/mzlogo.webp"
         alt="MZPrimer Logo"
+        width={224}
+        height={224}
         className="w-40 md:w-56"
+        priority={true}
+        quality={85}
+        loading="eager"
+        fetchPriority="high"
+        sizes="(max-width: 768px) 160px, 224px"
       />
 
       {/* Headline */}
@@ -29,7 +37,8 @@ export default function Hero() {
 
       {/* Subtitle */}
       <p>
-        Unlock insights, test strategies, and grow your edge with advanced AI solutions tailored for traders.
+        Unlock insights, test strategies, and grow your edge with advanced AI
+        solutions tailored for traders.
       </p>
 
       {/* CTA Button */}
@@ -42,6 +51,7 @@ export default function Hero() {
           padding: "16px 32px",
           marginTop: "1rem",
         }}
+        aria-label="Start using AI assistant for trading"
       >
         Start Now
       </button>

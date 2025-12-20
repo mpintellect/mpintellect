@@ -1,273 +1,121 @@
-import { Metadata } from 'next';
-import { getSymbolData } from '../../lib/fetchData'; 
-import { generateForecastReport } from '../../lib/seo/forecastGenerator';
-import NotificationButton from '@/components/NotificationButton'; 
-import SymbolNavigation from '@/components/SymbolNavigation'; 
-import { BrainCircuit, Radar, ShieldCheck, ArrowRight, TrendingUp, Bot } from 'lucide-react';
+// app/forecast/[symbol]/page.tsx
+'use client';
 
-// Update Props type
-type Props = { 
-  params: Promise<{ symbol: string }>;
-};
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import ForecastClientView from '@/components/ForecastClientView';
 
-// --- 1. METADATA ---
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  // Unwrap the Promise
-  const { symbol } = await params;
-  
-  const data = await getSymbolData(symbol);
-  if (!data) return { title: `${symbol} Forecast` };
+export default function ForecastPage() {
+  const params = useParams();
+  const symbol = params.symbol as string;
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const sym = data.symbol.toUpperCase();
-  const decision = data.final_decision; // BUY, SELL, HOLD
-  const volatility = data.volatility.volatility_score;
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch(`/api/data-proxy?symbol=${symbol}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.error) {
+          throw new Error(result.error);
+        }
+        
+        setData(result);
+      } catch (err) {
+        console.error(`Error loading ${symbol} forecast data:`, err);
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // TRICK: NEWS-STYLE HEADLINES
-  // Google picks these up for "Price Prediction" searches
-  let dynamicTitle = `${sym} Price Prediction: Artificial Intelligence Forecast`;
-  
-  // If market is crazy, pivot to "Crash/Pump" language
-  if (volatility > 0.6) {
-      if (decision === "SELL") dynamicTitle = `⚠️ ${sym} Crash Warning? AI Forecast & Targets`;
-      if (decision === "BUY")  dynamicTitle = `🚀 ${sym} Breakout Alert: AI Price Targets`;
-  } 
-  else if (decision !== "HOLD") {
-      dynamicTitle = `${sym} to ${decision}? AI Projection for Today`;
-  }
+    fetchData();
+  }, [symbol]);
 
-  return {
-    title: dynamicTitle,
-    description: `Is ${sym} going up or down? AI model predicts ${decision} trend with ${data.analysis_accuracy}% accuracy. See next price targets.`,
-    keywords: [
-      `${sym} price prediction`,
-      `is ${sym} a buy`,
-      `${sym} outlook`,
-      `${sym} news today`
-    ]
-  };
-}
+  // Update metadata client-side
+  useEffect(() => {
+    if (data) {
+      const sym = data.symbol?.toUpperCase() || symbol;
+      const volatility = data.volatility?.volatility_score || 0;
+      const decision = data.final_decision || "HOLD";
+      const accuracy = data.analysis_accuracy || 0;
+      
+      // News-style headlines
+      let dynamicTitle = `${sym} Price Prediction: Artificial Intelligence Forecast`;
+      
+      if (volatility > 0.6) {
+        if (decision === "SELL") dynamicTitle = `⚠️ ${sym} Crash Warning? AI Forecast & Targets`;
+        if (decision === "BUY") dynamicTitle = `🚀 ${sym} Breakout Alert: AI Price Targets`;
+      } else if (decision !== "HOLD") {
+        dynamicTitle = `${sym} to ${decision}? AI Projection for Today`;
+      }
+      
+      document.title = dynamicTitle;
+      
+      // Update meta description
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) {
+        metaDesc.setAttribute('content', 
+          `Is ${sym} going up or down? AI model predicts ${decision} trend with ${accuracy}% accuracy. See next price targets.`
+        );
+      }
+    }
+  }, [data, symbol]);
 
-// --- 2. MAIN COMPONENT ---
-export default async function ForecastPage({ params }: Props) {
-  // Unwrap the Promise first (Next.js 15 requirement)
-  const { symbol } = await params;
-  
-  // ✅ DEFINE THE VARIABLE HERE to fix the footer error
-  const resolvedSymbol = symbol;
-  
-  const data = await getSymbolData(symbol);
-
-  // Safety Check
-  if (!data) {
+  // Loading state
+  if (loading) {
     return (
-      <div className="min-h-screen bg-black flex flex-col justify-center items-center text-zinc-500 font-mono gap-4">
-        <div className="w-10 h-10 border-t-2 border-purple-500 rounded-full animate-spin"></div>
-        <p>Loading {symbol} Forecast...</p>
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-purple-500 border-r-transparent"></div>
+          <p className="mt-4 text-zinc-400">Generating {symbol.toUpperCase()} forecast...</p>
+        </div>
       </div>
     );
   }
 
-  const report = generateForecastReport(data);
-  
-  // EXTRACT DATA WITH PROPER FALLBACKS
-  const accuracy = data.analysis_accuracy || 75;
-  const qualityScores = data.component_scores || {
-    trend: data.trend.component_quality || 50,
-    volatility: data.volatility.component_quality || 50,
-    momentum: data.momentum.component_quality || 50,
-    zones: data.zones.component_quality || 50
-  };
-
-  const qualityLabel = data.quality_indicator || "Standard Grade";
-  const finalDecision = data.final_decision || "HOLD";
-  const confidence = data.risk_score?.confidence_score || 50;
-
-  // Date Formatting
-  const rawDate = data.generated_at || data.trend.timestamp;
-  const dateObj = new Date(rawDate);
-  const formattedDate = dateObj.toLocaleDateString('en-US', { 
-    day: 'numeric', 
-    month: 'long',
-    year: 'numeric'
-  });
-
-  // Grade Color Logic
-  let gradeColor = "text-amber-500";
-  let gradeBg = "from-amber-900/20";
-  if (accuracy > 70) { 
-    gradeColor = "text-purple-400"; 
-    gradeBg = "from-purple-900/20"; 
-  }
-  if (accuracy > 85) { 
-    gradeColor = "text-emerald-400"; 
-    gradeBg = "from-emerald-900/20"; 
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="text-red-400 text-4xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold mb-2">Forecast Unavailable</h1>
+          <p className="text-zinc-400 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-md"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  // Decision Color
-  let decisionColor = "text-amber-400";
-  if (finalDecision === "BUY") decisionColor = "text-emerald-400";
-  if (finalDecision === "SELL") decisionColor = "text-red-400";
-
-  return (
-    <div className="min-h-screen bg-black text-white pb-24 font-sans selection:bg-purple-500/30">
-      
-      {/* HEADER */}
-      <div className="pt-28 pb-10 px-6 text-center max-w-4xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-6 rounded-full border border-purple-500/20 bg-purple-900/10 text-purple-300 text-[10px] uppercase font-bold tracking-widest">
-          <BrainCircuit size={12} className="text-purple-400" /> AI Predictive Model
-        </div>
-        
-        <h1 className="text-4xl md:text-6xl font-black mb-4 uppercase tracking-tighter text-white">
-          {data.symbol} <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">Forecast</span>
-        </h1>
-        
-        <p className="text-zinc-400 text-sm md:text-base max-w-lg mx-auto opacity-70">
-          Price Prediction for {formattedDate}
-        </p>
-      </div>
-
-      <div className="max-w-5xl mx-auto px-4 grid md:grid-cols-12 gap-8">
-        
-        {/* MAIN CARD */}
-        <div className={`md:col-span-8 p-8 rounded-3xl relative overflow-hidden glass-trend-card bg-gradient-to-br ${gradeBg} to-black`}>
-            
-          <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-10">
-            <span className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
-              <Radar size={14} /> Probability Matrix
-            </span>
-            <span className={`text-[10px] font-bold px-3 py-1 rounded-full border border-white/10 bg-white/5 uppercase ${gradeColor}`}>
-              {qualityLabel}
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-10">
-            {/* CONFIDENCE & DECISION */}
-            <div className="flex items-center gap-6 justify-center md:justify-start">
-              <div className="relative w-32 h-32 flex items-center justify-center border-[6px] border-zinc-800 rounded-full shrink-0">
-                <svg className="absolute w-full h-full -rotate-90 transform">
-                  <circle 
-                    cx="64" cy="64" r="58" 
-                    fill="transparent" 
-                    stroke="currentColor" 
-                    strokeWidth="6"
-                    className={gradeColor}
-                    strokeDasharray={`${accuracy * 3.65}, 1000`} 
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span className={`text-3xl font-black tracking-tight ${gradeColor}`}>
-                  {accuracy.toFixed(0)}<span className="text-sm">%</span>
-                </span>
-              </div>
-              
-              <div>
-                <h2 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">AI Decision</h2>
-                <p className={`text-2xl md:text-3xl font-black mb-2 ${decisionColor}`}>
-                  {finalDecision}
-                </p>
-                <p className="text-sm text-zinc-400">
-                  Confidence: <span className="text-white font-semibold">{confidence}%</span>
-                </p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  {data.risk_score?.risk_category || "Medium Risk"}
-                </p>
-              </div>
-            </div>
-
-            {/* TEXT REPORT */}
-            <div className="space-y-6 text-lg text-zinc-300 font-light leading-relaxed">
-              <p>{report.executive}</p>
-              <p className="border-l-4 border-purple-500 pl-4 py-2 bg-purple-500/5 text-sm rounded-r-lg text-zinc-400">
-                {report.risk_analysis}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* SIDEBAR - QUALITY METRICS */}
-        <div className="md:col-span-4 flex flex-col gap-6">
-          <div className="p-6 rounded-3xl border border-zinc-800 bg-zinc-900/30 h-full flex flex-col gap-4">
-            <h4 className="text-white font-bold text-sm flex items-center gap-2 mb-2">
-              <ShieldCheck size={16} className="text-zinc-500" /> Data Integrity
-            </h4>
-            
-            <div className="space-y-4">
-              <QualityRow label="Trend Quality" score={qualityScores.trend} />
-              <QualityRow label="Volatility" score={qualityScores.volatility} />
-              <QualityRow label="Momentum Bias" score={qualityScores.momentum} />
-              <QualityRow label="Zone Clarity" score={qualityScores.zones} />
-            </div>
-
-            <div className="validation-container">
-  <h5 className="validation-header">Validation</h5>
-  <div className="validation-status">
-    <div className={`status-indicator ${data.validation?.is_valid ? 'valid' : 'invalid'}`}></div>
-    <span className="status-text">
-      {data.validation?.is_valid ? 'Validated' : 'Needs Review'}
-    </span>
-  </div>
-  <p className="validation-score">
-    Score: <span className="score-value">{data.validation?.validation_score || 'N/A'}%</span>
-  </p>
-  
-  {/* Optional Score Bar */}
-  <div className="validation-score-bar" 
-       style={{ '--score': `${data.validation?.validation_score || 0}%` } as React.CSSProperties}>
-    <div className="score-bar-fill"></div>
-  </div>
-</div>
-
-            <div className="mt-auto border-t border-zinc-800 pt-6">
-              <NotificationButton />
-            </div>
-          </div>
+  // No data state
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-zinc-400">No forecast data available for {symbol.toUpperCase()}</p>
         </div>
       </div>
+    );
+  }
 
-      {/* FINAL VERDICT */}
-      <section className="algo-section">
-    <div className="algo-card">
-        {/* Label with deco lines */}
-        <span className="algo-label">
-            Final Algorithm Decision
-        </span>
-        
-        {/* The Main Content */}
-        <p className="algo-text">
-            "{report.conclusion}"
-        </p>
-    </div>
-</section>
-
-      
-{/* --- FOOTER --- */}
-<SymbolNavigation symbol={resolvedSymbol} />
-    </div>
-  );
+  // Success - render the client view
+  return <ForecastClientView data={data} symbol={symbol} />;
 }
 
-// --- 3. QUALITY ROW COMPONENT ---
-function QualityRow({ label, score }: { label: string, score: number }) {
-  const s = score || 0;
-  const w = Math.min(100, Math.max(5, s));
-  
-  let bg = 'bg-zinc-700'; 
-  if (s > 80) bg = 'bg-emerald-500';
-  else if (s > 60) bg = 'bg-purple-500';
-  else if (s > 40) bg = 'bg-amber-500';
-
-  return (
-    <div>
-      <div className="flex justify-between text-[10px] font-bold text-zinc-500 mb-1 uppercase">
-        <span>{label}</span>
-        <span>{s}%</span>
-      </div>
-      <div className="w-full h-1.5 bg-black rounded-full overflow-hidden border border-zinc-800/50">
-        <div 
-          className={`h-full ${bg} rounded-full transition-all duration-1000 ease-out`} 
-          style={{ width: `${w}%` }}
-        ></div>
-      </div>
-    </div>
-  );
-}
+// ⚠️ NO EXPORTS - This is a client component

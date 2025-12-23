@@ -17208,3 +17208,218 @@ img[src*="logo"]:hover {
     filter: grayscale(100%) !important;
   }
 }
+/* =========================================
+   COMPACT LUXURY GATEWAY (Black & Gold)
+   ========================================= */
+
+.gateway-container {
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #000000 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Tighter Content Wrapper */
+.gateway-content-wrapper {
+  max-width: 850px; /* Reduced from 1100px */
+  width: 100%;
+  z-index: 10;
+  position: relative;
+}
+
+/* Compact Header */
+.gateway-header {
+  text-align: center;
+  margin-bottom: 2rem; /* Reduced from 3.5rem */
+}
+
+.gateway-h1 {
+  font-size: 2rem; /* Reduced from 3rem */
+  font-weight: 800;
+  color: white;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.03em;
+}
+
+.gateway-h1 span {
+  background: linear-gradient(135deg, #d4af37, #fcefa1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gateway-subtitle {
+  color: #888;
+  font-size: 0.9rem;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* Compact Grid */
+.choice-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem; /* Tighter gap */
+}
+
+@media (min-width: 768px) {
+  .choice-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+}
+
+/* Compact Cards */
+.choice-card {
+  background: rgba(20, 20, 20, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px; /* Smaller radius */
+  padding: 1.5rem; /* Reduced from 3rem */
+  height: 100%;
+  position: relative;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.choice-card:hover {
+  background: rgba(30, 30, 30, 0.8);
+  transform: translateY(-4px);
+  border-color: rgba(212, 175, 55, 0.3);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.choice-card-blue:hover { border-color: rgba(59, 130, 246, 0.5); }
+.choice-card-green:hover { border-color: rgba(16, 185, 129, 0.5); }
+
+/* Compact Icon */
+.choice-icon-box {
+  width: 48px; /* Reduced from 72px */
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Compact Typography */
+.choice-title {
+  font-size: 1.25rem; /* Reduced from 1.75rem */
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.choice-desc {
+  color: #999;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+  min-height: 2.5em; /* Keeps cards aligned */
+}
+
+/* Compact List */
+.feature-list {
+  list-style: none;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #ccc;
+  font-size: 0.8rem; /* Smaller text */
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.feature-item:last-child { border-bottom: none; }
+
+/* Compact Button */
+.choice-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem; /* Smaller button */
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  margin-top: auto; /* Pushes button to bottom */
+}
+
+.choice-btn-primary {
+  background: #2563eb;
+  color: white;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+}
+.choice-btn-primary:hover { background: #1d4ed8; }
+
+.choice-btn-secondary {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.choice-btn-secondary:hover { 
+  border-color: #fff;
+  background: rgba(255,255,255,0.05);
+}
+
+/* Tiny Badge */
+.badge-new {
+  position: absolute; top: 1.5rem; right: 1.5rem;
+  background: rgba(212, 175, 55, 0.2);
+  color: #ffd700;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 99px;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+}
+
+/* Footer */
+.gateway-footer {
+  margin-top: 2rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding-top: 1rem;
+  text-align: center;
+}
+.gateway-disclaimer {
+  color: #555;
+  font-size: 0.65rem;
+  line-height: 1.4;
+}
+
+/* Background Glows (Subtler) */
+.gateway-glow {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.15;
+  pointer-events: none;
+}
+.glow-top { top: -100px; left: 50%; transform: translateX(-50%); background: #2563eb; }
+.glow-bottom { bottom: -100px; right: -50px; background: #d4af37; }
+/* Remove default link underline & color inside cards */
+.choice-grid a {
+  text-decoration: none;
+  color: inherit;
+}

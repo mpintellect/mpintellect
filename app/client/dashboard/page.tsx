@@ -1,18 +1,60 @@
-// app/client/dashboard/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { onAuthStateChanged, signOut, User, sendEmailVerification } from "firebase/auth";
 import { auth, db } from "@/app/lib/firebaseClient";
 import { doc, getDoc } from "firebase/firestore";
 import toast from "react-hot-toast";
 import AiChatBox from "@/components/AiChatBox";
 import { useOneSetup } from "@/app/lib/firebase/useSetup";
 import UserAnalytics from "./components/AnalyticsSection";
-import { Suspense } from "react";
+import { Globe, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export const dynamic = "force-dynamic";
+
+// SIMPLE Email Verification Message (inline component)
+function EmailVerificationMessage() {
+  const [sending, setSending] = useState(false);
+
+  const handleResend = async () => {
+    if (!auth.currentUser) return;
+    
+    setSending(true);
+    try {
+      await sendEmailVerification(auth.currentUser);
+      toast.success("Verification email sent! Check your inbox.");
+    } catch (error) {
+      console.error("Error sending verification:", error);
+      toast.error("Failed to send verification email");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Don't show if email is already verified
+  if (auth.currentUser?.emailVerified) {
+    return null;
+  }
+
+  return (
+    <div className="verify-message">
+      <div className="verify-content">
+        <span>📧</span>
+        <div>
+          <strong>Verify your email</strong> - Check your inbox for the verification link.
+        </div>
+        <button 
+          onClick={handleResend}
+          disabled={sending}
+          className="verify-resend-btn"
+        >
+          {sending ? "Sending..." : "Resend"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function DashboardContent() {
   const [user, setUser] = useState<User | null>(null);
@@ -29,7 +71,7 @@ function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();  
 
-  // ✅ Step 2 — Detect the query param showPlans=true
+  // Detect query param showPlans=true
   useEffect(() => {
     if (searchParams.get("showPlans") === "true") {
       setShowPlanModal(true);
@@ -40,57 +82,43 @@ function DashboardContent() {
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY;
-      if (scrollTop > 50 && !isScrolled) {
-        setIsScrolled(true);
-      } else if (scrollTop <= 50 && isScrolled) {
-        setIsScrolled(false);
-      }
+      if (scrollTop > 50 && !isScrolled) setIsScrolled(true);
+      else if (scrollTop <= 50 && isScrolled) setIsScrolled(false);
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isScrolled]);
 
-  // ✅ Auto-center PRO card on mobile
+  // Auto-center PRO card on mobile
   useEffect(() => {
     const grid = document.querySelector(".purchase-grid");
-
     if (!grid || window.innerWidth > 520) return;
-
     const middleCard = grid.querySelector(".popular-plan");
     if (middleCard) {
       const gridWidth = grid.scrollWidth;
       const middleCardOffset = (middleCard as HTMLElement).offsetLeft;
       const gridVisibleWidth = grid.clientWidth;
-
       const scrollTo = middleCardOffset - (gridVisibleWidth / 2) + ((middleCard as HTMLElement).offsetWidth / 2);
-
-      grid.scrollTo({
-        left: scrollTo,
-        behavior: "smooth",
-      });
+      grid.scrollTo({ left: scrollTo, behavior: "smooth" });
     }
   }, []);
 
-  // Auto-collapse nav when clicking any navigation button
   const handleNavClick = (action: () => void) => {
     setIsNavExpanded(false);
     action();
   };
 
-  // Toggle navigation expansion - user controlled
   const toggleNav = () => {
     setIsNavExpanded(!isNavExpanded);
   };
 
-  // === 🔐 Firebase Auth State & Setup Count Check ===
+  // Auth & Setup Count
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
         router.push("/client/login");
       } else {
         setUser(firebaseUser);
-
         try {
           const userDocRef = doc(db, "users", firebaseUser.uid);
           const userSnap = await getDoc(userDocRef);
@@ -98,28 +126,22 @@ function DashboardContent() {
             const data = userSnap.data();
             setSetupCount(data.setupCount ?? 0);
           }
-
           if (searchParams.get("success") === "true") {
             toast.success("✅ Payment successful! Setup credits added.");
-
             const updatedSnap = await getDoc(userDocRef);
             if (updatedSnap.exists()) {
               setSetupCount(updatedSnap.data().setupCount ?? 0);
             }
-
             const url = new URL(window.location.href);
             url.searchParams.delete("success");
             window.history.replaceState({}, "", url.toString());
           }
-
         } catch (error) {
           console.error("Error fetching user data:", error);
         }
-
         setLoading(false);
       }
     });
-
     return () => unsubscribe();
   }, [router, searchParams]);
 
@@ -137,30 +159,17 @@ function DashboardContent() {
       alert("Please log in to purchase setups.");
       return;
     }
-
     setBuyLoading(true);
     try {
       const res = await fetch("/api/checkout/create-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          uid: user.uid, 
-          plan: plan,
-          email: user.email 
-        }),
+        body: JSON.stringify({ uid: user.uid, plan: plan, email: user.email }),
       });
-
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("Checkout URL not received.");
-      }
+      if (data.url) window.location.href = data.url;
+      else throw new Error("Checkout URL not received.");
     } catch (error) {
       console.error("Buy setup error:", error);
       alert("Failed to start checkout session. Please try again.");
@@ -174,10 +183,8 @@ function DashboardContent() {
       alert("No setups available. Please purchase more setups.");
       return;
     }
-
     try {
       const result = await useOneSetup();
-      
       if (result === "ok") {
         setSetupCount(prev => prev - 1);
         setShowAiChat(true);
@@ -211,6 +218,12 @@ function DashboardContent() {
   const handleAiChatClose = () => {
     setShowAiChat(false);
     refreshSetupCount();
+  };
+
+  // Track broker gateway click for analytics
+  const handleBrokerGatewayClick = () => {
+    if ((window as any).fbq) (window as any).fbq('track', 'Lead');
+    router.push('/start');
   };
 
   if (loading) {
@@ -305,7 +318,6 @@ function DashboardContent() {
             
             {/* Collapsible Navigation Section - Starts collapsed */}
             <div className={`mobile-nav-section ${isNavExpanded ? 'expanded' : 'collapsed'}`}>
-              {/* Navigation Toggle Button - Always visible */}
               <button 
                 className="nav-toggle-btn"
                 onClick={toggleNav}
@@ -313,7 +325,6 @@ function DashboardContent() {
                 {isNavExpanded ? '−' : '☰'}
               </button>
               
-              {/* Navigation Buttons - Only visible when expanded */}
               {isNavExpanded && (
                 <div className="mobile-nav-buttons">
                   <button 
@@ -375,6 +386,9 @@ function DashboardContent() {
               <p>Ready to analyze the markets with AI-powered insights</p>
             </div>
 
+            {/* SIMPLE Email Verification Message */}
+            <EmailVerificationMessage />
+
             {/* Setup Credits */}
             <div className="status-card">
               <div className="status-header">
@@ -394,8 +408,9 @@ function DashboardContent() {
               )}
             </div>
 
-            {/* Actions */}
-            <div className="actions-grid two-column">
+            {/* Actions Grid - Now with Broker Card */}
+            <div className="actions-grid">
+              {/* 1. Use Setup */}
               <div className="action-card primary-action">
                 <div className="action-icon">🎯</div>
                 <h3>Use Setup</h3> 
@@ -409,6 +424,7 @@ function DashboardContent() {
                 </button>
               </div>
 
+              {/* 2. Buy Setups */}
               <div className="action-card">
                 <div className="action-icon">💳</div>
                 <h3>Buy Setups</h3>
@@ -416,24 +432,59 @@ function DashboardContent() {
                 <button 
                   onClick={() => {
                     document.getElementById('purchase-section')?.scrollIntoView({ behavior: 'smooth' });
-                 }}
-              className="action-btn secondary"
+                  }}
+                  className="action-btn secondary"
                 >
                   View Plans
                 </button>
               </div>
+
+              {/* Broker Gateway Card */}
+              <div className="action-card broker-card">
+                <div className="choice-icon-box icon-box-blue">
+                  <Globe size={24} />
+                </div>
+                <div className="badge-new">NEW</div>
+                
+                <h3 className="choice-title title-blue">Broker Gateway</h3>
+                <p className="choice-desc">
+                  Access authorized brokers to execute your AI trading signals
+                </p>
+                
+                <ul className="feature-list">
+                  <li className="feature-item">
+                    <ShieldCheck size={16} /> Regulated Partners
+                  </li>
+                  <li className="feature-item">
+                    <ShieldCheck size={16} /> Fast Execution
+                  </li>
+                  <li className="feature-item">
+                    <ShieldCheck size={16} /> Secure Integration
+                  </li>
+                </ul>
+                
+                <button 
+                  onClick={handleBrokerGatewayClick}
+                  className="choice-btn choice-btn-primary"
+                >
+                  Launch Gateway <ArrowRight size={16} />
+                </button>
+              </div>
+
+              {/* 3. Refer Friends */}
               <div className="action-card">
                 <div className="action-icon">👥</div>
                 <h3>Refer Friends</h3>
                 <p>Get 5 free setups per referral</p>
                 <button 
-    className="nav-btn"
-    onClick={() => router.push('/client/dashboard/refer')} // Correct path
->
-  Refer Friends
-</button>
+                  className="action-btn secondary"
+                  onClick={() => router.push('/client/dashboard/refer')}
+                >
+                  Refer Friends
+                </button>
               </div>
 
+              {/* 4. Analytics */}
               <div className="action-card">
                 <div className="action-icon">📊</div>
                 <h3>Analytics</h3>
@@ -450,7 +501,6 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* ✅ Show Analytics Here */}
             {showAnalytics && (
               <div className="analytics-section mt-8">
                 <UserAnalytics />
@@ -506,7 +556,7 @@ function DashboardContent() {
         )}
       </main>
 
-      {/* PRICING MODAL - Scroll-style Cards */}
+      {/* PRICING MODAL */}
       {showPlanModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -523,7 +573,6 @@ function DashboardContent() {
               </button>
             </div>
 
-            {/* Scroll-style Plan Cards - Same as purchase section */}
             <div className="purchase-grid modal-plans-grid">
               <div className={`purchase-option ${selectedPlan === "10" ? "selected" : ""}`}>
                 <div className="plan-name">Basic Plan</div>
@@ -563,7 +612,6 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Footer Actions */}
             <div className="modal-footer">
               <button
                 className="confirm-purchase-btn"
@@ -588,6 +636,8 @@ function DashboardContent() {
           </div>
         </div>
       )}
+
+      
     </div>
   );
 }

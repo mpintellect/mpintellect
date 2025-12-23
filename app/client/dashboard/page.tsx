@@ -222,9 +222,12 @@ function DashboardContent() {
 
   // Track broker gateway click for analytics
   const handleBrokerGatewayClick = () => {
-    if ((window as any).fbq) (window as any).fbq('track', 'Lead');
-    router.push('/start');
-  };
+  // Track event if needed
+  if ((window as any).fbq) (window as any).fbq('track', 'Lead');
+  
+  // Redirect directly to the broker link in new tab
+  window.open('https://www.litefinance.org/fr/?uid=967798214', '_blank', 'noopener,noreferrer');
+};
 
   if (loading) {
     return (

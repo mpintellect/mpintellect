@@ -9,27 +9,22 @@
   box-sizing: border-box;
 }
 
-html, body {
+html {
   height: 100%;
   width: 100%;
-  max-width: 100vw;           /* ✅ Prevent layout shift */
-  overflow-x: hidden;         /* ✅ Fix horizontal scroll */
+  overflow-x: hidden; /* Keep this on HTML */
+}
+
+body {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   font-family: 'Inter', sans-serif;
   background-color: #000;
   color: #fff;
   line-height: 1.6;
-  scroll-behavior: smooth;
-}
-
-/* === Layout === */
-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  text-align: center;
   padding-top: 80px;
-  overflow-x: hidden;
 }
 
 /* === Typography === */
@@ -17422,4 +17417,57 @@ img[src*="logo"]:hover {
 .choice-grid a {
   text-decoration: none;
   color: inherit;
+}
+
+/* 🚀 MOBILE VIEWPORT FIX */
+html, body {
+  position: relative;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Fix Flex Containers expanding */
+.footer-grid, .footer-content {
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+/* Fix Image overflow */
+img, svg {
+  max-width: 100%;
+  height: auto;
+}
+/* 🚀 FORCE FOOTER MOBILE STACKING */
+@media (max-width: 768px) {
+  /* 1. Force the grid to be vertical */
+  .footer-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    padding: 0 1rem !important; /* Add breathing room */
+  }
+  
+  /* 2. Make columns full width but centered */
+  .footer-column {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 2rem !important;
+    text-align: center !important;
+  }
+
+  /* 3. Fix the Subscribe box width */
+  .footer-subscribe, .subscribe-column {
+    width: 100% !important;
+    min-width: 0 !important; /* Prevents flex item refusing to shrink */
+  }
+  
+  /* 4. Ensure inputs shrink */
+  .subscribe-input {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
 }

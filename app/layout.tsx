@@ -29,6 +29,14 @@ export const metadata = {
 export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning> 
+      <head>
+        {/* 🔥 MOBILE FIX: Add viewport meta tag to prevent zoom and ensure proper scaling */}
+        <meta 
+          name="viewport" 
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, shrink-to-fit=no" 
+        />
+      </head>
+      
       <body 
         className={`${inter.className} bg-black text-white relative`}
         suppressHydrationWarning 

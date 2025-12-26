@@ -11,6 +11,8 @@ import CtaTracker from '@/components/CTATracker';
 import FacebookPixel from "@/components/FacebookPixel";
 import Footer from '@/components/Footer';
 import FBPixelEvents from '@/components/FBPixelEvents'; // ✅ Imported
+import PresenceTracker from '@/components/PresenceTracker';
+
 
 // NEW: Import the custom elegant cookie bar
 import CookieConsent from '@/components/CookieConsent';
@@ -124,6 +126,10 @@ export default function Layout({ children }: { children: ReactNode }) {
 
         {/* ---------------- 4. THE CUSTOM COOKIE UI ---------------- */}
         <CookieConsent />
+        
+        <Suspense fallback={null}>
+           <PresenceTracker /> {/* 👈 Add this here */}
+         </Suspense>
 
       </body>
     </html>

@@ -613,8 +613,10 @@ AI detects strong momentum opportunity
 🎯 ${fetchedSymbolData.symbol} ANALYSIS
 💰 Price: ${symbolExtractedData.formattedPrice}
 ${symbolExtractedData.finalDecision === 'BUY' ? '🟢 **BUY SIGNAL**' : symbolExtractedData.finalDecision === 'SELL' ? '🔴 **SELL SIGNAL**' : '🟡 **HOLD**'}
-✅ Take Profit: ${symbolExtractedData.takeProfit}%
-❌  Stop Loss: ${symbolExtractedData.stopLoss}%
+
+✅ Take Profit: ${symbolExtractedData.takeProfit}
+❌  Stop Loss: ${symbolExtractedData.stopLoss}
+
 📈 Trend: ${symbolExtractedData.trend.replace('_', ' ')} ${getEmojiForTrend(symbolExtractedData.trend)}
 ⚡ Confidence: ${symbolExtractedData.confidence}%
 ${getEmojiForVolatility(symbolExtractedData.volatilityLevel)} Volatility: ${symbolExtractedData.volatilityLevel}
@@ -677,8 +679,9 @@ ${fetchedSymbolData.symbol} ANALYSIS
 💰 PRICE: ${symbolExtractedData.formattedPrice}
 ${symbolExtractedData.finalDecision === 'BUY' ? '🟢 **BUY SIGNAL**' : symbolExtractedData.finalDecision === 'SELL' ? '🔴 **SELL SIGNAL**' : '🟡 **HOLD**'}
 
-✅ Take Profit: ${symbolExtractedData.takeProfit}%
-❌  Stop Loss: ${symbolExtractedData.stopLoss}%
+✅ Take Profit: ${symbolExtractedData.takeProfit}
+❌  Stop Loss: ${symbolExtractedData.stopLoss}
+
 📈 Trend: ${symbolExtractedData.trend.replace('_', ' ')} ${getEmojiForTrend(symbolExtractedData.trend)}
 ⚡ Confidence: ${symbolExtractedData.confidence}%
 ${getEmojiForVolatility(symbolExtractedData.volatilityLevel)} Volatility: ${symbolExtractedData.volatilityLevel}

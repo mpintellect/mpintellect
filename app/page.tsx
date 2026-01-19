@@ -11,6 +11,7 @@ import LearningHub from '@/components/LearningHub';
 import AiToolsSection from '@/components/AiToolsSection';
 import AIRobotCards from '@/components/AIRobotCards';
 import ContactSection from '@/components/ContactSection';
+import FundamentalTicker from '@/components/news/FundamentalTicker'
 
 
 
@@ -21,6 +22,7 @@ export default function Home() {
     <>
       <StickyLogo />
       <Navbar />
+      <FundamentalTicker />
       <NotificationButton /> 
       <Hero />
       <LiveMarketFeed />

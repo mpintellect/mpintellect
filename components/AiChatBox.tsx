@@ -12,6 +12,12 @@ import { setDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { saveSetup } from "@/app/lib/firebase/saveSetup";
 import { useOneSetup } from "../app/lib/firebase/useSetup";
+import SignalTicket from "./SignalTicket";
+
+// ==========================================
+// 🚀 QUICK ACTION BUTTONS CONFIGURATION
+// ==========================================
+const QUICK_SYMBOLS = ["XAUUSD", "BTCUSD", "EURUSD", "USDJPY"];
 
 // ==========================================
 // 📊 EMBEDDED SYMBOL CONFIGURATION
@@ -383,12 +389,315 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
   const [showQuickRegister, setShowQuickRegister] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>("");
 
+  // Signal Ticket State
+  const [ticketData, setTicketData] = useState<{
+    symbol: string;
+    action: string;
+    entry: string;
+    sl: string;
+    tp: string;
+    lot: string;
+    slDistanceUSD: number;
+    tpDistanceUSD: number;
+  } | null>(null);
+
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
   useEffect(() => {
     const count = getTrialCount();
     setTrialCount(count);
   }, [userId]);
+
+  // ==========================================
+  // ⚡ QUICK ANALYSIS FUNCTION
+  // ==========================================
+  const executeQuickAnalysis = async (targetSymbol: SymbolKey) => {
+    // Check access first
+    if (!user && trialCount >= 2) {
+      setShowPricingModal(true);
+      return;
+    }
+
+    let proceed = false;
+    let newTrialCount = trialCount;
+
+    // Access Control Logic
+    if (user) {
+      const result = await useOneSetup(); 
+      if (result === "ok") {
+        proceed = true;
+      } else if (result === "no-credits") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: [
+              {
+                title: "❌ No Setups Left",
+                content: "You've used all your setup credits. Please buy more to continue.",
+              },
+            ],
+          },
+        ]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: [
+              {
+                title: "🛒 Buy More Setups",
+                content: `<button onclick="window.location.href='/client/dashboard?showPlans=true'" style="background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                  View Pricing Plans
+                </button>`,
+              },
+            ],
+          },
+        ]);
+        return;
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { sender: "ai", text: "⚠️ Error verifying account. Try again." },
+        ]);
+        return;
+      }
+    } else {
+      if (trialCount < 2) {
+        newTrialCount = await incrementTrial();
+        proceed = true;
+      } else {
+        setShowPricingModal(true);
+        return;
+      }
+    }
+
+    // Set $1,000 as default capital for quick analysis
+    const quickCapital = 1000;
+    
+    // Show user message
+    setMessages((prev) => [
+      ...prev,
+      { sender: "user", text: `Quick Setup: ${targetSymbol} ($${quickCapital})` }
+    ]);
+    
+    setIsTyping(true);
+    setStep(3); // Skip to result state
+
+    try {
+      const setup = await fetchSetup(targetSymbol) as ExtendedTradeSetupData;
+      
+      if (!setup) {
+        setMessages((prev) => [
+          ...prev,
+          { sender: "ai", text: "⚠️ Setup not available. Try again later." },
+        ]);
+        setIsTyping(false);
+        return;
+      }
+
+      // ✅ SAFE confidence access
+      const confidenceScore = setup.risk_score?.confidence_score ?? (setup as any).confidence?.confidence_score ?? 50;
+      
+      // ✅ SAFE EMBEDDED SYMBOL SPECS
+      const symbolSpec = SYMBOL_SPECS[targetSymbol] || { pip: 0.0001, contract: 100000, decimals: 5 };
+      const contract = symbolSpec.contract;
+      const decimalPlaces = symbolSpec.decimals;
+
+      // ✅ EXTRACT ORDER DATA
+      const hasValidOrders = hasValidPendingOrders(setup);
+      const primaryOrder = getPrimaryOrder(setup);
+      const allOrders = getAllPendingOrders(setup);
+      const orderConfidence = getOrderConfidence(setup);
+      const marketContext = getMarketContext(setup);
+      
+      let entryPrice = 0;
+      let slPrice = 0;
+      let tpPrice = 0;
+      let rrRatio = 1.0;
+      let orderType = "MARKET";
+      let orderRationale = "No specific order generated";
+
+      if (hasValidOrders && primaryOrder) {
+        entryPrice = Number(primaryOrder.entry_price) || 0;
+        slPrice = Number(primaryOrder.sl_price) || 0;
+        tpPrice = Number(primaryOrder.tp_price) || 0;
+        rrRatio = Number(primaryOrder.rr_ratio) || 1.0;
+        orderType = primaryOrder.type || "LIMIT";
+        orderRationale = primaryOrder.rationale || "Algorithm generated";
+      } else {
+        // Fallback
+        const currentPrice = setup.pending_orders?.current_price || 0;
+        entryPrice = currentPrice;
+        slPrice = entryPrice * 0.99;
+        tpPrice = entryPrice * 1.01;
+        orderRationale = "Fallback estimation";
+      }
+
+      // ✅ CORRECTED RISK CALCULATION
+      const priceDifference = Math.abs(entryPrice - slPrice);
+      
+      // Calculate Dollar Risk per 1 Lot traded
+      const riskPerTradePerLot = priceDifference * contract;
+
+      const maxRiskAmount = quickCapital * 0.02; // 2% Risk Rule
+
+      // ✅ FIX: Prevent division by zero & enforce min 0.01 lot
+      let lotSize = 0;
+      if (riskPerTradePerLot > 0.00000001) {
+        const rawLots = maxRiskAmount / riskPerTradePerLot;
+        lotSize = parseFloat(rawLots.toFixed(2)); // Round to 2 decimals
+        
+        // Enforce minimum 0.01 lot if valid trade
+        if (lotSize < 0.01) lotSize = 0.01;
+      } else {
+          lotSize = 0.0; // Invalid trade parameters
+      }
+
+      const actualRiskAmount = riskPerTradePerLot * lotSize;
+      const riskPercentage = quickCapital > 0 ? (actualRiskAmount / quickCapital) * 100 : 0;
+      
+      // Calculate distances for display
+      const slDistanceUSD = Math.abs(slPrice - entryPrice) * contract * lotSize;
+      const tpDistanceUSD = Math.abs(tpPrice - entryPrice) * contract * lotSize;
+
+      const starRating = Math.min(5, Math.max(1, Math.floor(confidenceScore / 20)));
+      const stars = "⭐".repeat(starRating) + "☆".repeat(5 - starRating);
+      const signalStrength = confidenceScore < 60 ? "WEAK" : confidenceScore < 80 ? "MODERATE" : "STRONG";
+      const signalWarning = confidenceScore < 60
+        ? "⚠️ **LOW CONFIDENCE** – Consider waiting for better setup."
+        : "✅ **CONFIRMED SETUP** – Trade looks promising.";
+
+      const decision = setup.final_decision || "WAIT";
+
+      // 🚀 SHOW SIGNAL TICKET POPUP
+      setTicketData({
+        symbol: targetSymbol,
+        action: decision,
+        entry: entryPrice.toFixed(decimalPlaces),
+        sl: slPrice.toFixed(decimalPlaces),
+        tp: tpPrice.toFixed(decimalPlaces),
+        lot: lotSize.toFixed(2),
+        slDistanceUSD,
+        tpDistanceUSD
+      });
+
+      // Create summary blocks in the format you requested
+      const summary: SummaryBlock[] = [
+        {
+          title: "🎯 Trade Signal",
+          content:
+            `• Symbol: <strong>${targetSymbol} (${SYMBOL_NAMES[targetSymbol] || targetSymbol})</strong>\n` +
+            `• Decision: ${
+              setup.final_decision === "BUY"
+                ? '<span class="buy"><strong>BUY</strong></span> 📈'
+                : setup.final_decision === "SELL"
+                ? '<span class="sell"><strong>SELL</strong></span> 📉'
+                : '<span class="wait"><strong>WAIT</strong></span> ⏳'
+            }\n` +
+            `• Order Type: <strong>${orderType}</strong>\n` +
+            `• Confidence: <strong>${confidenceScore}%</strong> ${stars}\n` +
+            `• Signal: <strong>${signalStrength}</strong>\n` +
+            `• Market Context: <strong>${marketContext}</strong>`,
+        },
+        {
+          title: "⚡ Trade Parameters",
+          content:
+            `• Entry Price: <strong>${entryPrice.toFixed(decimalPlaces)}</strong>\n` +
+            `• Stop Loss: <strong>${slPrice.toFixed(decimalPlaces)}</strong> (<span style="color:red;">-$${slDistanceUSD.toFixed(2)}</span>)\n` +
+            `• Take Profit: <strong>${tpPrice.toFixed(decimalPlaces)}</strong> (<span style="color:green;">$${tpDistanceUSD.toFixed(2)}</span>)\n` +
+            `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>\n` +
+            `• Strategy: ${orderRationale}`,
+        },
+        {
+          title: "💰 Risk Management",
+          content:
+            `• Capital: <strong>$${quickCapital.toLocaleString()}</strong>\n` +
+            `• Risk/Trade: <strong>$${actualRiskAmount.toFixed(2)}</strong> (${riskPercentage.toFixed(1)}%)\n` +
+            `• Lot Size: <strong>${lotSize.toFixed(2)}</strong>\n` +
+            `• Position: ${setup.risk_score?.position_size_multiplier ?? 0.5}x`,
+        },
+        {
+          title: signalStrength === "WEAK" ? "⚠️ Caution" : "✅ Final Signal",
+          content: `<strong>${signalWarning}</strong>`,
+        },
+      ];
+
+      // Convert summary blocks to chat messages
+      const summaryCards: ChatMessage[] = summary.map(block => ({
+        sender: "ai" as const,
+        text: [{ title: block.title, content: block.content }]
+      }));
+
+      // Add additional order information card if available
+      if (hasValidOrders) {
+        summaryCards.push({
+          sender: "ai" as const,
+          text: [{ 
+            title: "📋 ORDER DETAILS", 
+            content: `• Total Pending Orders: <strong>${allOrders.length}</strong>\n` +
+                    `• Order Confidence: <strong>${orderConfidence}%</strong>\n` +
+                    `• Primary Order Rationale: ${orderRationale}` 
+          }]
+        });
+      }
+
+      scrollLocked.current = true;
+      setMessages((prev) => [...prev, ...summaryCards]);
+
+      if (!user && newTrialCount >= 2) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: [
+              {
+                title: "🚫 Trial Limit Reached",
+                content: "You've used all 2 free trials. Register and buy setups to continue using MZPrimer AI.",
+              },
+            ],
+          },
+        ]);
+      }
+
+      // ✅ Saving logic
+      if (userId) {
+        try {
+          console.log("🔄 Saving quick setup for user:", userId);
+          
+          const finalRR = (tpPrice && slPrice && entryPrice) ? 
+            Math.abs(tpPrice - entryPrice) / Math.abs(entryPrice - slPrice) : 1.0;
+          
+          await saveSetup({
+            userId,
+            symbol: targetSymbol,
+            entryPrice,
+            takeProfit: tpPrice,
+            stopLoss: slPrice,
+            capital: quickCapital,      
+            lotSize: lotSize,            
+            riskReward: finalRR  
+          });
+          
+          console.log("✅ Quick setup saved successfully");
+        } catch (err) {
+          console.error("❌ Failed to save quick setup:", err);
+          setMessages((prev) => [
+            ...prev,
+            { sender: "ai", text: "⚠️ Analysis complete, but failed to save to history." },
+          ]);
+        }
+      }
+
+    } catch (error: any) {
+      console.error("❌ Error processing quick setup:", error?.message || error);
+      setMessages((prev) => [
+        ...prev,
+        { sender: "ai", text: "❌ Error processing trade setup. Please try again." },
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
 
   const handleBuySetups = async (plan: string, userEmail?: string) => {
     if (!user) {
@@ -456,7 +765,7 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
     return newCount;
   };
 
-  // Welcome message
+  // Welcome message with QUICK ACTION BUTTONS
   useEffect(() => {
     const hasAccess = user || trialCount < 2;
     
@@ -484,6 +793,12 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
         welcomeMessages.push({
           sender: "ai" as const, 
           text: "2️⃣ 🔍 Choose a Trading Symbol to begin:"
+        });
+
+        // Add Quick Action Buttons as a separate message
+        welcomeMessages.push({
+          sender: "ai" as const, 
+          text: "🚀 **Quick Setup:** Click any asset below for instant $1,000 analysis:"
         });
 
         setMessages(welcomeMessages);
@@ -702,7 +1017,21 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
           ? "⚠️ **LOW CONFIDENCE** – Consider waiting for better setup."
           : "✅ **CONFIRMED SETUP** – Trade looks promising.";
 
-        // Build Summary
+        const decision = setup.final_decision || "WAIT";
+
+        // 🚀 SHOW SIGNAL TICKET POPUP
+        setTicketData({
+          symbol: symbol,
+          action: decision,
+          entry: entryPrice.toFixed(decimalPlaces),
+          sl: slPrice.toFixed(decimalPlaces),
+          tp: tpPrice.toFixed(decimalPlaces),
+          lot: lotSize.toFixed(2),
+          slDistanceUSD,
+          tpDistanceUSD
+        });
+
+        // Create summary blocks in the format you requested
         const summary: SummaryBlock[] = [
           {
             title: "🎯 Trade Signal",
@@ -717,7 +1046,8 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
               }\n` +
               `• Order Type: <strong>${orderType}</strong>\n` +
               `• Confidence: <strong>${confidenceScore}%</strong> ${stars}\n` +
-              `• Signal: <strong>${signalStrength}</strong>`,
+              `• Signal: <strong>${signalStrength}</strong>\n` +
+              `• Market Context: <strong>${marketContext}</strong>`,
           },
           {
             title: "⚡ Trade Parameters",
@@ -742,28 +1072,24 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
           },
         ];
 
+        // Convert summary blocks to chat messages
+        const summaryCards: ChatMessage[] = summary.map(block => ({
+          sender: "ai" as const,
+          text: [{ title: block.title, content: block.content }]
+        }));
+
+        // Add additional order information card if available
         if (hasValidOrders) {
-          const ordersCount = allOrders.length;
-          summary.splice(1, 0, {
-            title: "📋 Pending Orders Available",
-            content:
-              `• Total Orders: <strong>${ordersCount}</strong>\n` +
-              `• Market Context: <strong>${marketContext}</strong>\n` +
-              `• Order Confidence: <strong>${orderConfidence}%</strong>\n` +
-              `• Primary Order: <strong>${orderType}</strong>\n` +
-              `• Order Rationale: ${orderRationale}`
-          });
-        } else {
-          summary.splice(1, 0, {
-            title: "📋 Order Status",
-            content: "• <strong>No valid pending orders</strong>\n• Consider waiting or manual entry"
+          summaryCards.push({
+            sender: "ai" as const,
+            text: [{ 
+              title: "📋 ORDER DETAILS", 
+              content: `• Total Pending Orders: <strong>${allOrders.length}</strong>\n` +
+                      `• Order Confidence: <strong>${orderConfidence}%</strong>\n` +
+                      `• Primary Order Rationale: ${orderRationale}` 
+            }]
           });
         }
-
-        const summaryCards: ChatMessage[] = summary.map((block) => ({ 
-          sender: "ai" as const, 
-          text: [block] 
-        }));
 
         scrollLocked.current = true;
         setMessages((prev) => [...prev, ...summaryCards]);
@@ -911,6 +1237,14 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
         />
       )}
 
+      {/* 🚀 SIGNAL TICKET POPUP */}
+      {ticketData && (
+        <SignalTicket 
+          data={ticketData} 
+          onClose={() => setTicketData(null)} 
+        />
+      )}
+
       {mode === "popup" && (
         <div className="chatbox-header">
           <div>MZPrimer AI Assistant</div>
@@ -942,6 +1276,22 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
                     __html: msg.text.replace(/\n/g, "<br/>"),
                   }}
                 />
+              </div>
+            )}
+            
+            {/* Quick Action Buttons for Popular Symbols */}
+            {msg.text === "🚀 **Quick Setup:** Click any asset below for instant $1,000 analysis:" && (
+              <div className="quick-action-buttons">
+                {QUICK_SYMBOLS.map((sym) => (
+                  <button
+                    key={sym}
+                    onClick={() => executeQuickAnalysis(sym as SymbolKey)}
+                    className="quick-action-btn"
+                    disabled={isTyping}
+                  >
+                    {sym}
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -1005,6 +1355,7 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
               setCapital("");
               setMessages([]);
               scrollLocked.current = false;
+              setTicketData(null);
             }} 
             className="chatbox-reset"
           >

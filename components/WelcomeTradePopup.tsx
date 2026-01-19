@@ -122,7 +122,7 @@ export default function WelcomeTradePopup() {
       
       if (activeSignal) {
           setBestTrade(activeSignal);
-          const delay = inApp ? 50 : 4000; 
+          const delay = inApp ? 50 : 10000; 
           setTimeout(() => setIsVisible(true), delay);
       }
     };

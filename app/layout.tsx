@@ -14,6 +14,7 @@ import FBPixelEvents from '@/components/FBPixelEvents'; // ✅ Imported
 import PresenceTracker from '@/components/PresenceTracker';
 
 
+
 // NEW: Import the custom elegant cookie bar
 import CookieConsent from '@/components/CookieConsent';
 
@@ -63,6 +64,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <ConditionalStickyLogo />
         <ConditionalNavbar />
         <ConditionalMobileMenu />
+        
 
         {/* Main content */}
         <main className="flex-grow">

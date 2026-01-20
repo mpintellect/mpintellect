@@ -28,11 +28,12 @@ export default function SignalTicket({ data, onClose }: Props) {
       navigator.clipboard.writeText(text);
       toast.success('Copied to clipboard');
     } else if (platform === 'whatsapp') {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     } else if (platform === 'telegram') {
-      window.open(`https://t.me/share/url?url=${url}&text=${encodeURIComponent(text)}`);
-    } else if (platform === 'email') {
-      window.open(`mailto:?subject=Trade Signal&body=${encodeURIComponent(text)}`);
+      window.open(`https://t.me/share/url?url=${url}&text=${encodeURIComponent(text)}`, '_blank');
+    } else if (platform === 'website') {
+      // Open LiteFinance in new tab
+      window.open('https://www.litefinance.org/?uid=967798214', '_blank');
     }
   };
 
@@ -82,7 +83,8 @@ export default function SignalTicket({ data, onClose }: Props) {
             <button className="share-btn" onClick={() => handleShare('copy')}><Copy size={18}/></button>
             <button className="share-btn" onClick={() => handleShare('telegram')}><Send size={18}/></button>
             <button className="share-btn" onClick={() => handleShare('whatsapp')}><span className="wa-text">WA</span></button>
-            <button className="share-btn" onClick={() => handleShare('email')}><Mail size={18}/></button>
+            {/* Add website/share button */}
+            <button className="share-btn" onClick={() => handleShare('website')}><Share2 size={18}/></button>
           </div>
         </div>
 

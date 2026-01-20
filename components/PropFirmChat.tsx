@@ -1,0 +1,1071 @@
+// components/PropFirmChat.tsx
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { fetchCurrentPrice } from "../app/lib/fetchPrice";
+import { useUser } from "../app/hooks/useUser";
+import { fetchSetup, hasValidPendingOrders, getPrimaryOrder, getAllPendingOrders, getOrderConfidence, getMarketContext, type ExtendedTradeSetupData } from "../app/lib/fetchSetup";
+import { saveSetup } from "@/app/lib/firebase/saveSetup";
+import { useOneSetup } from "../app/lib/firebase/useSetup";
+import { loadStripe } from "@stripe/stripe-js";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { auth, db } from "../app/lib/firebaseClient";
+import { setDoc, doc } from "firebase/firestore";
+import { useRouter } from "next/navigation";
+import SignalTicket from "./SignalTicket";
+
+// ==========================================
+// 🏆 PROP FIRM CONFIGURATION
+// ==========================================
+const PROP_STAGES = [
+  { id: "step1", name: "Step 1: Challenge Phase", target: 0.10, dailyLoss: 0.05, maxLoss: 0.10, description: "Reach 10% profit target within 30 days" },
+  { id: "step2", name: "Step 2: Verification Phase", target: 0.05, dailyLoss: 0.05, maxLoss: 0.10, description: "Reach 5% profit target within 60 days" },
+  { id: "funded", name: "Funded Account", target: 0, dailyLoss: 0.05, maxLoss: 0.10, description: "No target - focus on consistent profits" },
+];
+
+const QUICK_SYMBOLS = ["XAUUSD", "BTCUSD", "US30", "USTEC", "EURUSD", "GBPUSD"];
+
+const ALL_SYMBOLS = [
+  "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD",
+  "NZDUSD", "USDCHF", "XAUUSD", "XAUEUR", "XAGUSD",
+  "PLATINUM", "BRENT", "BTCUSD", "ETHUSD", "XRPUSD",
+  "DOGEUSD", "LTCUSD", "US500", "USTEC", "US30",
+  "HK50", "FRANCE40", "CHINA50", "UK100", "EURJPY",
+  "EURGBP", "GBPJPY", "GBPCHF"
+] as const;
+
+type SymbolKey = typeof ALL_SYMBOLS[number];
+
+const SYMBOL_NAMES: Record<string, string> = {
+  EURUSD: "Euro / US Dollar",
+  GBPUSD: "British Pound / US Dollar",
+  USDJPY: "US Dollar / Japanese Yen",
+  USDCAD: "US Dollar / Canadian Dollar",
+  AUDUSD: "Australian Dollar / US Dollar",
+  NZDUSD: "New Zealand Dollar / US Dollar",
+  USDCHF: "US Dollar / Swiss Franc",
+  EURJPY: "Euro / Japanese Yen",
+  EURGBP: "Euro / British Pound",
+  GBPJPY: "British Pound / Japanese Yen",
+  GBPCHF: "British Pound / Swiss Franc",
+  XAUUSD: "Gold / US Dollar",
+  XAUEUR: "Gold / Euro",
+  XAGUSD: "Silver / US Dollar",
+  PLATINUM: "Platinum / US Dollar",
+  BRENT: "Brent Crude Oil",
+  BTCUSD: "Bitcoin / US Dollar",
+  ETHUSD: "Ethereum / US Dollar",
+  XRPUSD: "Ripple / US Dollar",
+  LTCUSD: "Litecoin / US Dollar",
+  DOGEUSD: "Dogecoin / US Dollar",
+  US500: "S&P 500",
+  USTEC: "Nasdaq 100",
+  US30: "Dow Jones 30",
+  HK50: "Hong Kong 50 stock index",
+  FRANCE40: "FRANCE40",
+  CHINA50: "CHINA50",
+  UK100: "FTSE 100"
+};
+
+const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: number }> = {
+  "EURUSD": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "GBPUSD": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "USDJPY": { pip: 0.01, contract: 100000, decimals: 3 },
+  "USDCAD": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "AUDUSD": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "NZDUSD": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "USDCHF": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "EURJPY": { pip: 0.01, contract: 100000, decimals: 3 },
+  "EURGBP": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "GBPJPY": { pip: 0.01, contract: 100000, decimals: 3 },
+  "GBPCHF": { pip: 0.0001, contract: 100000, decimals: 5 },
+  "XAUUSD": { pip: 0.01, contract: 100, decimals: 2 },
+  "XAUEUR": { pip: 0.01, contract: 100, decimals: 2 },
+  "XAGUSD": { pip: 0.001, contract: 5000, decimals: 3 },
+  "PLATINUM": { pip: 0.01, contract: 100, decimals: 2 },
+  "BRENT": { pip: 0.01, contract: 1000, decimals: 2 },
+  "BTCUSD": { pip: 1.0, contract: 1, decimals: 1 },
+  "ETHUSD": { pip: 0.1, contract: 1, decimals: 2 },
+  "XRPUSD": { pip: 0.0001, contract: 1000, decimals: 4 },
+  "LTCUSD": { pip: 0.01, contract: 10, decimals: 2 },
+  "DOGEUSD": { pip: 0.0001, contract: 1000, decimals: 4 },
+  "US500": { pip: 0.1, contract: 1, decimals: 2 },
+  "USTEC": { pip: 0.1, contract: 1, decimals: 2 },
+  "US30": { pip: 1.0, contract: 1, decimals: 1 },
+  "HK50": { pip: 0.1, contract: 1, decimals: 2 },
+  "FRANCE40": { pip: 0.1, contract: 1, decimals: 2 },
+  "CHINA50": { pip: 0.1, contract: 1, decimals: 1 },
+  "UK100": { pip: 0.1, contract: 1, decimals: 1 },
+};
+
+// ==========================================
+// 💾 TRIAL FUNCTIONS
+// ==========================================
+const getTrialCount = (): number => {
+  if (typeof window === 'undefined') return 0;
+  const saved = localStorage.getItem("MZP_PROP_TRIAL_COUNT");
+  return saved ? parseInt(saved) : 0;
+};
+
+const incrementTrialCount = (): number => {
+  if (typeof window === 'undefined') return 0;
+  const current = getTrialCount();
+  const newCount = current + 1;
+  localStorage.setItem("MZP_PROP_TRIAL_COUNT", newCount.toString());
+  return newCount;
+};
+
+// ==========================================
+// 🧩 TYPES
+// ==========================================
+type ChatMessage = {
+  sender: "ai" | "user";
+  text: string | Array<{ title: string; content: string }>;
+  actions?: Array<{ label: string; value: string }>;
+};
+
+type SummaryBlock = {
+  title: string;
+  content: string;
+};
+
+// ==========================================
+// 🖼️ MODAL COMPONENTS (From Code2)
+// ==========================================
+
+// Quick Registration Modal
+function QuickRegisterModal({ 
+  onClose, 
+  onSuccess,
+  selectedPlan 
+}: { 
+  onClose: () => void; 
+  onSuccess: (user: any, plan: string) => void;
+  selectedPlan: string;
+}) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleQuickRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    if (!email || !password || !confirmPassword) {
+      setError("Please fill in all fields");
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      await sendEmailVerification(user);
+
+      await setDoc(doc(db, "users", user.uid), {
+        email: email.toLowerCase().trim(),
+        setupCount: 1, // 🎁 1 free setup for registration
+        referredBy: null,
+        emailVerified: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      onSuccess(user, selectedPlan);
+      
+    } catch (err: any) {
+      if (err.code === 'auth/email-already-in-use') {
+        setError("This email is already registered. Please login instead.");
+      } else if (err.code === 'auth/invalid-email') {
+        setError("Invalid email address format.");
+      } else if (err.code === 'auth/weak-password') {
+        setError("Password is too weak. Please use a stronger password.");
+      } else {
+        setError(err.message || "Registration failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h3>🎯 Quick Registration</h3>
+          <p>Create your account to purchase the {selectedPlan} Setup Plan</p>
+          <button onClick={onClose} className="close-modal">✕</button>
+        </div>
+
+        <form onSubmit={handleQuickRegister} className="quick-register-form">
+          <div className="form-group">
+            <label>Email Address</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Password (min 6 characters)</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Confirm Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
+
+          <div className="modal-actions">
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="primary-btn"
+            >
+              {loading ? "Creating Account..." : `Register & Continue to Payment`}
+            </button>
+            <button 
+              type="button" 
+              onClick={onClose}
+              className="secondary-btn"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+          </div>
+
+          <div className="registration-note">
+            <p>📧 We'll send a verification email. You can verify later and start using your setups immediately.</p>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Pricing Plans Modal
+function PricingPlansModal({ 
+  onClose, 
+  onPlanSelect,
+  onRegisterClick 
+}: { 
+  onClose: () => void; 
+  onPlanSelect: (plan: string) => void;
+  onRegisterClick: () => void;
+}) {
+  const plans = [
+    { id: "10", name: "Basic Plan", setups: "10 Setups", price: "€4.50", popular: false },
+    { id: "20", name: "Pro Plan", setups: "20 Setups", price: "€8.00", popular: true },
+    { id: "30", name: "Elite Plan", setups: "30 Setups", price: "€12.00", popular: false }
+  ];
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content pricing-modal">
+        <div className="modal-header">
+          <h3>🎯 Choose Your Setup Plan</h3>
+          <p>Select a plan that fits your trading needs</p>
+          <button onClick={onClose} className="close-modal">✕</button>
+        </div>
+
+        <div className="pricing-options">
+          {plans.map((plan) => (
+            <div 
+              key={plan.id} 
+              className={`pricing-card ${plan.popular ? 'popular' : ''}`}
+            >
+              {plan.popular && <div className="popular-badge">MOST POPULAR</div>}
+              
+              <div className="plan-header">
+                <h4>{plan.name}</h4>
+                <div className="setups-count">{plan.setups}</div>
+              </div>
+              
+              <div className="plan-price">
+                {plan.price}
+              </div>
+              
+              <button 
+                onClick={() => onPlanSelect(plan.id)}
+                className="select-plan-btn"
+              >
+                Select Plan
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="pricing-footer">
+          <div className="register-option">
+            <h4>🔑 Create Account First</h4>
+            <p>Register to get 1 free setup and manage your credits</p>
+            <button 
+              onClick={onRegisterClick}
+              className="register-first-btn"
+            >
+              Register Now (Get 1 Free Setup)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 🚀 MAIN COMPONENT
+// ==========================================
+
+export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [step, setStep] = useState(0); // 0=Init, 1=Stage, 2=Balance, 3=Symbol, 4=Result
+  const [stage, setStage] = useState<typeof PROP_STAGES[0] | null>(null);
+  const [capital, setCapital] = useState("");
+  const [symbol, setSymbol] = useState<SymbolKey | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
+  
+  const { userId, setupCount, user, isLoading: userLoading } = useUser();
+  const router = useRouter();
+  
+  const chatRef = useRef<HTMLDivElement>(null);
+  const [trialCount, setTrialCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Modal states (from code2)
+  const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showQuickRegister, setShowQuickRegister] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string>("");
+
+  // Signal Ticket State
+  const [ticketData, setTicketData] = useState<{
+    symbol: string;
+    action: string;
+    entry: string;
+    sl: string;
+    tp: string;
+    lot: string;
+    slDistanceUSD: number;
+    tpDistanceUSD: number;
+  } | null>(null);
+
+  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+
+  useEffect(() => {
+    const count = getTrialCount();
+    setTrialCount(count);
+  }, [userId]);
+
+  // ==========================================
+  // 💳 PAYMENT & REGISTRATION HANDLERS (From Code2)
+  // ==========================================
+  const handleBuySetups = async (plan: string, userEmail?: string) => {
+    if (!user) {
+      console.error("No user found for purchase");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/checkout/create-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          uid: user.uid, 
+          plan: plan,
+          email: user.email || userEmail
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("Checkout URL not received.");
+      }
+    } catch (error: any) {
+      console.error("Buy setup error:", error);
+      alert(`Failed to start checkout: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePlanSelect = (plan: string) => {
+    setSelectedPlan(plan);
+    if (user) {
+      handleBuySetups(plan);
+      setShowPricingModal(false);
+    } else {
+      setShowPricingModal(false);
+      setShowQuickRegister(true);
+    }
+  };
+
+  const handleQuickRegisterSuccess = (newUser: any, plan: string) => {
+    setShowQuickRegister(false);
+    handleBuySetups(plan, newUser.email);
+  };
+
+  const handleRegisterFirst = () => {
+    setShowPricingModal(false);
+    setShowQuickRegister(true);
+    setSelectedPlan("10");
+  };
+
+  const incrementTrial = async () => {
+    const newCount = incrementTrialCount();
+    setTrialCount(newCount);
+    return newCount;
+  };
+
+  // ==========================================
+  // ⚡ WELCOME MESSAGE
+  // ==========================================
+  useEffect(() => {
+    if (messages.length === 0 && !userLoading) {
+      setTimeout(() => {
+        setMessages([{
+          sender: "ai",
+          text: "🏆 **Prop Firm AI Assistant**\n\nI'm calibrated for FTMO, FundedNext, MyForexFunds & The5%ers rules.\n\nWhich challenge stage are you currently in?",
+          actions: PROP_STAGES.map(s => ({ label: s.name, value: s.id }))
+        }]);
+        setStep(1);
+      }, 500);
+    }
+  }, [messages.length, userLoading]);
+
+  // ==========================================
+  // 🔄 SCROLL HANDLING
+  // ==========================================
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  // ==========================================
+  // 🎯 STEP 1: STAGE SELECTION
+  // ==========================================
+  const handleStageSelect = (stageId: string) => {
+    const selected = PROP_STAGES.find(s => s.id === stageId);
+    if (!selected) return;
+    
+    setStage(selected);
+    setMessages(prev => [
+      ...prev,
+      { sender: "user", text: selected.name },
+      { 
+        sender: "ai", 
+        text: `✅ **${selected.name} Rules Loaded**\n\n🎯 Profit Target: ${selected.target > 0 ? `${(selected.target * 100).toFixed(0)}%` : 'No target (Consistency Focus)'}\n⚠️ Max Daily Loss: ${(selected.dailyLoss * 100).toFixed(1)}%\n⛔ Max Overall Loss: ${(selected.maxLoss * 100).toFixed(1)}%\n\n${selected.description}\n\n💰 **What is your account balance?**`
+      }
+    ]);
+    setStep(2);
+  };
+
+  // ==========================================
+  // 💰 STEP 2: CAPITAL INPUT
+  // ==========================================
+  const handleCapitalInput = (val: string) => {
+    const balance = parseFloat(val);
+    if (isNaN(balance) || balance <= 0 || balance > 10000000) {
+      setMessages(prev => [
+        ...prev,
+        { sender: "ai", text: "⚠️ Please enter a valid account balance (1 - 10,000,000 USD)." }
+      ]);
+      return;
+    }
+
+    setCapital(val);
+    setMessages(prev => [
+      ...prev,
+      { sender: "user", text: `$${balance.toLocaleString()}` },
+      { 
+        sender: "ai", 
+        text: `📊 Account: $${balance.toLocaleString()}\n💵 Daily Loss Limit: **$${(balance * (stage?.dailyLoss || 0.05)).toLocaleString()}**\n\nSelect an asset to analyze. I will calculate lot sizes that keep you safe from drawdown violations:`,
+        actions: QUICK_SYMBOLS.map(s => ({ label: s, value: s }))
+      }
+    ]);
+    setStep(3);
+  };
+
+  // ==========================================
+  // 📈 STEP 3: SYMBOL ANALYSIS (Prop Firm Version)
+  // ==========================================
+  const executePropAnalysis = async (targetSymbol: SymbolKey) => {
+    if (!stage || !capital) return;
+    
+    const balance = parseFloat(capital);
+    const dailyLimit = balance * stage.dailyLoss;
+    const maxRiskPerTrade = dailyLimit * 0.25; // Only risk 25% of daily limit per trade
+
+    // Check access first
+    if (!user && trialCount >= 2) {
+      setShowPricingModal(true);
+      return;
+    }
+
+    let proceed = false;
+    let newTrialCount = trialCount;
+
+    // Access Control Logic
+    if (user) {
+      const result = await useOneSetup();
+      if (result === "ok") {
+        proceed = true;
+      } else if (result === "no-credits") {
+        setMessages(prev => [
+          ...prev,
+          {
+            sender: "ai",
+            text: [
+              {
+                title: "❌ No Setups Left",
+                content: "You've used all your setup credits. Please buy more to continue.",
+              },
+            ],
+          },
+        ]);
+        
+        // Add buy more setups button
+        setMessages(prev => [
+          ...prev,
+          {
+            sender: "ai",
+            text: [
+              {
+                title: "🛒 Buy More Setups",
+                content: `<button onclick="window.location.href='/client/dashboard?showPlans=true'" style="background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                  View Pricing Plans
+                </button>`,
+              },
+            ],
+          },
+        ]);
+        return;
+      } else {
+        setMessages(prev => [
+          ...prev,
+          { sender: "ai", text: "⚠️ Error verifying account. Try again." },
+        ]);
+        return;
+      }
+    } else {
+      if (trialCount < 2) {
+        newTrialCount = await incrementTrial();
+        proceed = true;
+      } else {
+        setShowPricingModal(true);
+        return;
+      }
+    }
+
+    setSymbol(targetSymbol);
+    setMessages(prev => [
+      ...prev,
+      { sender: "user", text: `Analyze ${targetSymbol}` }
+    ]);
+    setIsTyping(true);
+
+    try {
+      const setup = await fetchSetup(targetSymbol) as ExtendedTradeSetupData;
+      
+      if (!setup) {
+        setMessages(prev => [
+          ...prev,
+          { sender: "ai", text: "⚠️ Setup not available. Try again later." },
+        ]);
+        setIsTyping(false);
+        return;
+      }
+
+      // ✅ SAFE confidence access
+      const confidenceScore = setup.risk_score?.confidence_score ?? (setup as any).confidence?.confidence_score ?? 50;
+      
+      // ✅ SAFE EMBEDDED SYMBOL SPECS
+      const symbolSpec = SYMBOL_SPECS[targetSymbol] || { pip: 0.0001, contract: 100000, decimals: 5 };
+      const contract = symbolSpec.contract;
+      const decimalPlaces = symbolSpec.decimals;
+
+      // ✅ EXTRACT ORDER DATA
+      const hasValidOrders = hasValidPendingOrders(setup);
+      const primaryOrder = getPrimaryOrder(setup);
+      const allOrders = getAllPendingOrders(setup);
+      const orderConfidence = getOrderConfidence(setup);
+      const marketContext = getMarketContext(setup);
+      
+      let entryPrice = 0;
+      let slPrice = 0;
+      let tpPrice = 0;
+      let rrRatio = 1.0;
+      let orderType = "MARKET";
+      let orderRationale = "No specific order generated";
+
+      if (hasValidOrders && primaryOrder) {
+        entryPrice = Number(primaryOrder.entry_price) || 0;
+        slPrice = Number(primaryOrder.sl_price) || 0;
+        tpPrice = Number(primaryOrder.tp_price) || 0;
+        rrRatio = Number(primaryOrder.rr_ratio) || 1.0;
+        orderType = primaryOrder.type || "LIMIT";
+        orderRationale = primaryOrder.rationale || "Algorithm generated";
+      } else {
+        // Fallback
+        const currentPrice = setup.pending_orders?.current_price || 0;
+        entryPrice = currentPrice;
+        slPrice = entryPrice * 0.99;
+        tpPrice = entryPrice * 1.01;
+        orderRationale = "Fallback estimation";
+      }
+
+      // ✅ PROP FIRM RISK CALCULATION
+      const priceDifference = Math.abs(entryPrice - slPrice);
+      const riskPerTradePerLot = priceDifference * contract;
+
+      // Use maxRiskPerTrade (25% of daily limit) instead of 2% of balance
+      const maxRiskAmount = Math.min(maxRiskPerTrade, balance * 0.02); // Cap at 2% of balance
+
+      // ✅ FIX: Prevent division by zero & enforce min 0.01 lot
+      let lotSize = 0;
+      if (riskPerTradePerLot > 0.00000001) {
+        const rawLots = maxRiskAmount / riskPerTradePerLot;
+        lotSize = parseFloat(rawLots.toFixed(2)); // Round to 2 decimals
+        
+        // Enforce minimum 0.01 lot if valid trade
+        if (lotSize < 0.01) lotSize = 0.01;
+      } else {
+          lotSize = 0.0; // Invalid trade parameters
+      }
+
+      const actualRiskAmount = riskPerTradePerLot * lotSize;
+      const riskPercentageOfBalance = balance > 0 ? (actualRiskAmount / balance) * 100 : 0;
+      const riskPercentageOfDailyLimit = dailyLimit > 0 ? (actualRiskAmount / dailyLimit) * 100 : 0;
+      
+      // Calculate distances for display
+      const slDistanceUSD = Math.abs(slPrice - entryPrice) * contract * lotSize;
+      const tpDistanceUSD = Math.abs(tpPrice - entryPrice) * contract * lotSize;
+
+      const starRating = Math.min(5, Math.max(1, Math.floor(confidenceScore / 20)));
+      const stars = "⭐".repeat(starRating) + "☆".repeat(5 - starRating);
+      const signalStrength = confidenceScore < 60 ? "WEAK" : confidenceScore < 80 ? "MODERATE" : "STRONG";
+      const signalWarning = confidenceScore < 60
+        ? "⚠️ **LOW CONFIDENCE** – Consider waiting for better setup to protect your challenge."
+        : "✅ **PROP-FRIENDLY SETUP** – Trade aligns with challenge rules.";
+
+      const decision = setup.final_decision || "WAIT";
+
+      // Calculate progress towards target
+      const targetProfitUSD = stage.target > 0 ? balance * stage.target : 0;
+      const tradeProfitRatio = tpDistanceUSD / targetProfitUSD;
+      const tradesNeeded = stage.target > 0 ? Math.ceil(targetProfitUSD / tpDistanceUSD) : 0;
+
+      // 🚀 SHOW SIGNAL TICKET POPUP
+      setTicketData({
+        symbol: targetSymbol,
+        action: decision,
+        entry: entryPrice.toFixed(decimalPlaces),
+        sl: slPrice.toFixed(decimalPlaces),
+        tp: tpPrice.toFixed(decimalPlaces),
+        lot: lotSize.toFixed(2),
+        slDistanceUSD,
+        tpDistanceUSD
+      });
+
+      // Create PROP FIRM specific summary blocks
+      const summary: SummaryBlock[] = [
+        {
+          title: "🛡️ RISK COMPLIANCE",
+          content:
+            `• Daily Cap: <strong>$${dailyLimit.toFixed(0)}</strong>\n` +
+            `• Trade Risk: <span style="color:#3b82f6;"><strong>$${actualRiskAmount.toFixed(2)} (${riskPercentageOfDailyLimit.toFixed(1)}% of limit)</strong></span>\n` +
+            `• Balance Risk: <span style="color:${riskPercentageOfBalance > 2 ? '#ef4444' : '#10b981'}"><strong>${riskPercentageOfBalance.toFixed(2)}%</strong></span>\n` +
+            `• Status: <span style="color:${riskPercentageOfDailyLimit <= 25 ? '#10b981' : '#f59e0b'}"><strong>${riskPercentageOfDailyLimit <= 25 ? '✓ SAFE' : '⚠ WARNING'}</strong></span> • Uses ${riskPercentageOfDailyLimit.toFixed(1)}% of daily allowance`,
+        },
+        {
+          title: "🎯 TRADE SIGNAL",
+          content:
+            `• Symbol: <strong>${targetSymbol} (${SYMBOL_NAMES[targetSymbol] || targetSymbol})</strong>\n` +
+            `• Decision: ${
+              decision === "BUY"
+                ? '<span class="buy"><strong>BUY</strong></span> 📈'
+                : decision === "SELL"
+                ? '<span class="sell"><strong>SELL</strong></span> 📉'
+                : '<span class="wait"><strong>WAIT</strong></span> ⏳'
+            }\n` +
+            `• Order Type: <strong>${orderType}</strong>\n` +
+            `• Confidence: <strong>${confidenceScore}%</strong> ${stars}\n` +
+            `• Signal: <strong>${signalStrength}</strong>\n` +
+            `• Market Context: <strong>${marketContext}</strong>`,
+        },
+        {
+          title: "⚡ TRADE PARAMETERS",
+          content:
+            `• Entry Price: <strong>${entryPrice.toFixed(decimalPlaces)}</strong>\n` +
+            `• Stop Loss: <strong>${slPrice.toFixed(decimalPlaces)}</strong> (<span style="color:red;">-$${slDistanceUSD.toFixed(2)}</span>)\n` +
+            `• Take Profit: <strong>${tpPrice.toFixed(decimalPlaces)}</strong> (<span style="color:green;">$${tpDistanceUSD.toFixed(2)}</span>)\n` +
+            `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>\n` +
+            `• Strategy: ${orderRationale}`,
+        },
+        {
+          title: stage.target > 0 ? "📊 TARGET PROGRESS" : "💰 PROFIT POTENTIAL",
+          content: stage.target > 0
+            ? `• Target Profit: <strong>$${targetProfitUSD.toFixed(2)}</strong> (${(stage.target * 100).toFixed(1)}%)\n` +
+              `• This Trade: <strong>$${tpDistanceUSD.toFixed(2)}</strong> (${(tradeProfitRatio * 100).toFixed(1)}% of target)\n` +
+              `• Trades Needed: <strong>${tradesNeeded}</strong> to complete challenge\n` +
+              `• Completion Time: <strong>${Math.ceil(tradesNeeded / 2)} days</strong> (at 2 trades/day)`
+            : `• Trade Profit: <strong>$${tpDistanceUSD.toFixed(2)}</strong>\n` +
+              `• Monthly Potential: <strong>$${(tpDistanceUSD * 20).toFixed(2)}</strong> (20 trades/month)\n` +
+              `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong> (Prop Firm Approved)`,
+        },
+      ];
+
+      // Add order details if available
+      if (hasValidOrders) {
+        summary.push({
+          title: "📋 ORDER DETAILS",
+          content: `• Total Pending Orders: <strong>${allOrders.length}</strong>\n` +
+                  `• Order Confidence: <strong>${orderConfidence}%</strong>\n` +
+                  `• Primary Order Rationale: ${orderRationale}`
+        });
+      }
+
+      // Convert summary blocks to chat messages
+      const summaryCards: ChatMessage[] = summary.map(block => ({
+        sender: "ai" as const,
+        text: [{ title: block.title, content: block.content }]
+      }));
+
+      setMessages((prev) => [...prev, ...summaryCards]);
+
+      // ✅ Saving logic
+      if (userId) {
+        try {
+          console.log("🔄 Saving prop firm setup for user:", userId);
+          
+          const finalRR = (tpPrice && slPrice && entryPrice) ? 
+            Math.abs(tpPrice - entryPrice) / Math.abs(entryPrice - slPrice) : 1.0;
+          
+          await saveSetup({
+            userId,
+            symbol: targetSymbol,
+            entryPrice,
+            takeProfit: tpPrice,
+            stopLoss: slPrice,
+            capital: balance,
+            lotSize: lotSize,
+            riskReward: finalRR,
+          });
+          
+          console.log("✅ Prop firm setup saved successfully");
+        } catch (err) {
+          console.error("❌ Failed to save prop firm setup:", err);
+        }
+      }
+
+      if (!user && newTrialCount >= 2) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: [
+              {
+                title: "🚫 TRIAL LIMIT REACHED",
+                content: "You've used all 2 free trials. Register and buy setups to continue using Prop Firm AI Assistant.",
+              },
+            ],
+          },
+        ]);
+      }
+
+    } catch (error: any) {
+      console.error("❌ Error processing prop firm setup:", error?.message || error);
+      setMessages(prev => [
+        ...prev,
+        { sender: "ai", text: "❌ Error processing trade setup. Please try again." },
+      ]);
+    } finally {
+      setIsTyping(false);
+      setStep(4);
+    }
+  };
+
+  // ==========================================
+  // 🎨 RENDER - WITH PAYWALL SUPPORT
+  // ==========================================
+  const showPaywall = (!user && trialCount >= 2) || (user && setupCount <= 0);
+
+  if (showPaywall && !userLoading) {
+    return (
+      <div className="chatbox-wrapper section">
+        <div className="license-header">
+          <h3>🔐 Prop Firm AI Assistant</h3>
+          <p>
+            {user 
+              ? "You've used all your setup credits. Buy more setups to continue using prop firm analysis."
+              : "You've used all 2 free trials. Register or buy setups to continue using prop firm analysis."
+            }
+          </p>
+        </div>
+        
+        <div className="license-options">
+          <div className="license-option">
+            <h4>🎯 Buy Setups</h4>
+            <p>Get more setup credits to continue using prop firm AI analysis</p>
+            <button 
+              onClick={() => setShowPricingModal(true)} 
+              className="subscribe-button primary"
+              disabled={isLoading}
+            >
+              {isLoading ? "Loading..." : "Buy Setups"}
+            </button>
+          </div>
+          
+          {!user && (
+            <div className="license-option">
+              <h4>🔑 Create Account</h4>
+              <p>Register to get 1 free setup and manage your credits</p>
+              <button 
+                onClick={handleRegisterFirst}
+                className="register-button secondary"
+              >
+                Register Now
+              </button>
+            </div>
+          )}
+        </div>
+
+        {showPricingModal && (
+          <PricingPlansModal
+            onClose={() => setShowPricingModal(false)}
+            onPlanSelect={handlePlanSelect}
+            onRegisterClick={handleRegisterFirst}
+          />
+        )}
+
+        {showQuickRegister && (
+          <QuickRegisterModal
+            onClose={() => setShowQuickRegister(false)}
+            onSuccess={handleQuickRegisterSuccess}
+            selectedPlan={selectedPlan || "10"}
+          />
+        )}
+      </div>
+    );
+  }
+
+  if (userLoading) {
+    return (
+      <div className="chatbox-wrapper section">
+        <div className="chatbot-loading">Loading Prop Firm Assistant...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="chatbox-wrapper section">
+      {/* MODALS */}
+      {showPricingModal && (
+        <PricingPlansModal
+          onClose={() => setShowPricingModal(false)}
+          onPlanSelect={handlePlanSelect}
+          onRegisterClick={handleRegisterFirst}
+        />
+      )}
+
+      {showQuickRegister && (
+        <QuickRegisterModal
+          onClose={() => setShowQuickRegister(false)}
+          onSuccess={handleQuickRegisterSuccess}
+          selectedPlan={selectedPlan || "10"}
+        />
+      )}
+
+      {/* 🚀 SIGNAL TICKET POPUP */}
+      {ticketData && (
+        <SignalTicket 
+          data={ticketData} 
+          onClose={() => setTicketData(null)} 
+        />
+      )}
+
+      {onClose && (
+        <div className="chatbox-header">
+          <div>🏆 Prop Firm AI Assistant</div>
+          <button onClick={onClose} className="chatbox-close">
+            ✕
+          </button>
+        </div>
+      )}
+
+      <div className="chatbox-body" ref={chatRef}>
+        {messages.map((msg, idx) => (
+          <div key={idx} className={`chat-msg ${msg.sender === "ai" ? "ai" : "user"}`}>
+            {Array.isArray(msg.text) ? (
+              msg.text.map((block: any, i: number) => (
+                <div className="ai-card" key={i}>
+                  <div className="ai-card-title">{block.title}</div>
+                  <div
+                    className="ai-card-content"
+                    dangerouslySetInnerHTML={{
+                      __html: block.content.replace(/\n/g, "<br/>"),
+                    }}
+                  />
+                </div>
+              ))
+            ) : (
+              <div className={msg.sender === "user" ? "user-bubble" : "ai-bubble"}>
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: typeof msg.text === 'string' ? msg.text.replace(/\n/g, "<br/>") : '',
+                  }}
+                />
+                
+                {/* Render action buttons */}
+                {msg.actions && (
+                  <div className="chat-actions-grid">
+                    {msg.actions.map(action => (
+                      <button
+                        key={action.value}
+                        onClick={() => {
+                          if (step === 1) {
+                            handleStageSelect(action.value);
+                          } else if (step === 3) {
+                            executePropAnalysis(action.value as SymbolKey);
+                          }
+                        }}
+                        className="chat-action-btn"
+                        disabled={isTyping}
+                      >
+                        {action.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+        
+        {isTyping && (
+          <div className="chat-msg ai-msg">
+            <div className="ai-bubble">
+              ⏳ Calculating prop firm compliant lot sizes...
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* STEP 2: CAPITAL INPUT */}
+      {step === 2 && (
+        <form
+          className="chatbox-input-group"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCapitalInput(capital.trim());
+          }}
+        >
+          <input
+            type="number"
+            value={capital}
+            onChange={(e) => setCapital(e.target.value)}
+            placeholder="Enter account balance in USD…"
+            autoComplete="off"
+            inputMode="decimal"
+            step="0.01"
+            min="1"
+            max="10000000"
+            className="chatbox-input"
+            autoFocus
+          />
+          <button type="submit" className="chatbox-submit">
+            Next
+          </button>
+        </form>
+      )}
+
+      {/* STEP 3: SYMBOL SELECTION (Full List) */}
+      {step === 3 && !isTyping && (
+        <div className="chatbox-input-group">
+          <select
+            value={symbol || ""}
+            onChange={(e) => {
+              const selected = e.target.value as SymbolKey;
+              if (selected) executePropAnalysis(selected);
+            }}
+            className="chatbox-select"
+          >
+            <option value="">Or select any symbol…</option>
+            {ALL_SYMBOLS.map((sym) => (
+              <option key={sym} value={sym}>
+                {SYMBOL_NAMES[sym]} ({sym})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* STEP 4: RESET BUTTON */}
+      {step === 4 && (
+        <div className="chatbot-input">
+          <button 
+            onClick={() => {
+              setStep(1);
+              setStage(null);
+              setCapital("");
+              setSymbol(null);
+              setMessages([]);
+              setTicketData(null);
+            }} 
+            className="chatbox-reset"
+          >
+            {showPaywall ? "Buy More Setups" : "Start New Prop Firm Analysis"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

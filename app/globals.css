@@ -18751,3 +18751,288 @@ img, svg {
 
 .buy { color: var(--emerald); }
 .sell { color: var(--ruby); }
+/* ================================================= */
+/*   TWO CTA BUTTONS STYLING                         */
+/* ================================================= */
+
+/* Base Button Styles */
+.btn-cta {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-cta:active {
+  transform: translateY(0);
+}
+
+.btn-cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Content Wrapper */
+.btn-cta .btn-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+/* Icon Container */
+.btn-cta .icon-container {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Text Container */
+.btn-cta .text-container {
+  text-align: left;
+  flex: 1;
+}
+
+.btn-cta .btn-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.btn-cta .btn-subtitle {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* Checkmark (shown on hover) */
+.btn-cta .checkmark {
+  opacity: 0;
+  color: white;
+  transition: opacity 0.2s ease;
+}
+
+.btn-cta:hover .checkmark {
+  opacity: 1;
+}
+
+/* Specific Button Styles */
+
+/* PROP FIRM BUTTON (Blue Gradient) */
+.btn-cta-prop {
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  margin-bottom: 8px;
+}
+
+.btn-cta-prop:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.btn-cta-prop .icon-container {
+  background: rgba(37, 99, 235, 0.3);
+}
+
+/* TRADER BUTTON (Green Gradient) */
+.btn-cta-trader {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+.btn-cta-trader:hover {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.btn-cta-trader .icon-container {
+  background: rgba(5, 150, 105, 0.3);
+}
+
+/* Desktop Overrides */
+@media (min-width: 768px) {
+  .btn-cta {
+    padding: 16px 20px;
+    border-radius: 14px;
+    font-size: 14px;
+  }
+  
+  .btn-cta .btn-title {
+    font-size: 16px;
+  }
+  
+  .btn-cta .btn-subtitle {
+    font-size: 11px;
+  }
+  
+  .btn-cta .icon-container {
+    padding: 10px;
+    border-radius: 10px;
+  }
+  
+  .btn-cta .icon-container svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Animation for button click */
+@keyframes btnClick {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+.btn-cta:active {
+  animation: btnClick 0.2s ease;
+}
+/* MINIMAL REDUCTION STYLES - Add these to override current sizes */
+
+/* Make container and card smaller */
+.popup-container {
+  padding: 12px;
+}
+
+.popup-card {
+  max-width: 220px; /* Reduced from 250px */
+}
+
+/* Make header smaller */
+.popup-header {
+  padding: 5px 10px;
+}
+
+.popup-header-title {
+  font-size: 7px; /* Reduced from 8px */
+}
+
+/* Make body content smaller */
+.popup-body {
+  padding: 10px 12px; /* Reduced padding */
+}
+
+/* Make symbol smaller */
+.popup-symbol {
+  font-size: 16px; /* Reduced from 18px */
+}
+
+.popup-badge {
+  font-size: 8px; /* Reduced from 9px */
+  padding: 1px 6px; /* Reduced padding */
+}
+
+/* Make price display smaller */
+.effect-price-glow {
+  font-size: 13px; /* Reduced from 14px */
+  padding: 2px 4px;
+}
+
+/* Make question text smaller */
+.popup-body h3 {
+  font-size: 14px; /* Reduced */
+  margin-bottom: 4px;
+}
+
+.popup-body .text-zinc-400 {
+  font-size: 10px; /* Reduced */
+}
+
+/* Make CTA buttons smaller - ADD THESE STYLES */
+.btn-cta {
+  padding: 8px 12px; /* Smaller padding */
+  border-radius: 10px;
+  min-height: auto;
+}
+
+.btn-cta .btn-content {
+  gap: 8px; /* Reduced gap */
+}
+
+.btn-cta .icon-container {
+  padding: 6px; /* Smaller icon container */
+  border-radius: 6px;
+}
+
+.btn-cta .icon-container svg {
+  width: 14px; /* Smaller icons */
+  height: 14px;
+}
+
+.btn-cta .btn-title {
+  font-size: 11px; /* Smaller text */
+  margin-bottom: 1px;
+}
+
+.btn-cta .btn-subtitle {
+  font-size: 8px; /* Smaller subtitle */
+}
+
+.btn-cta .checkmark svg {
+  width: 14px; /* Smaller checkmark */
+  height: 14px;
+}
+
+/* Reduce spacing between elements */
+.popup-symbol-row {
+  margin-bottom: 4px; /* Reduced */
+}
+
+.grid.grid-cols-2 {
+  margin-bottom: 10px !important; /* Reduced */
+}
+
+/* Reduce margins */
+.mb-6 {
+  margin-bottom: 12px !important; /* Reduced from 24px */
+}
+
+.mt-4 {
+  margin-top: 8px !important; /* Reduced */
+}
+
+.space-y-3 {
+  gap: 6px !important; /* Reduced gap between buttons */
+}
+
+/* Desktop overrides */
+@media (min-width: 768px) {
+  .popup-card {
+    max-width: 320px; /* Smaller desktop width */
+  }
+  
+  .popup-body {
+    padding: 14px 16px;
+  }
+  
+  .btn-cta {
+    padding: 12px 16px; /* Smaller desktop padding */
+  }
+  
+  .btn-cta .btn-title {
+    font-size: 14px; /* Smaller desktop title */
+  }
+  
+  .btn-cta .btn-subtitle {
+    font-size: 10px; /* Smaller desktop subtitle */
+  }
+}

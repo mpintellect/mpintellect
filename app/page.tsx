@@ -12,6 +12,7 @@ import AiToolsSection from '@/components/AiToolsSection';
 import AIRobotCards from '@/components/AIRobotCards';
 import ContactSection from '@/components/ContactSection';
 import FundamentalTicker from '@/components/news/FundamentalTicker'
+import PropFirmChatSection from '@/components/PropFirmChatSection';
 
 
 
@@ -29,6 +30,7 @@ export default function Home() {
       <WelcomeTradePopup />
       <MobileMenu />
       <AiChatSection />
+      <PropFirmChatSection />
       <TraderAssistantLite />
       <LearningHub />
       <AiToolsSection />

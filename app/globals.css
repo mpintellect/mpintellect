@@ -19036,3 +19036,370 @@ img, svg {
     font-size: 10px; /* Smaller desktop subtitle */
   }
 }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================
+   1. THEME VARIABLES (Luxury Black & Gold)
+   ========================================= */
+:root {
+  /* Base Colors */
+  --obsidian: #050505;
+  --matte-black: #0d0d0d;
+  --panel-black: #111111;
+  
+  /* Gold Accents */
+  --gold-metallic: #d4af37;
+  --gold-soft: #f1d592;
+  --gold-border: rgba(212, 175, 55, 0.2);
+  --gold-glow: rgba(212, 175, 55, 0.1);
+
+  /* Text Colors */
+  --text-silk: #f8fafc;
+  --text-dim: #64748b;
+  
+  /* Indicators */
+  --emerald-lux: #10b981;
+  --ruby-lux: #ef4444;
+  
+  /* Borders */
+  --border-white: rgba(255, 255, 255, 0.08);
+}
+
+/* =========================================
+   2. GLOBAL RESETS
+   ========================================= */
+html, body {
+  height: 100%;
+  width: 100%;
+  background-color: var(--obsidian);
+  color: var(--text-silk);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Gold Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--obsidian);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--gold-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-metallic);
+}
+
+/* =========================================
+   3. SIGNAL TICKET MODAL STYLES
+   ========================================= */
+
+/* The Dark Overlay */
+.ticket-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* The Main Card */
+.ticket-modal {
+  width: 100%;
+  max-width: 380px;
+  background: var(--obsidian);
+  border: 1px solid var(--gold-border);
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5), 
+    0 0 20px rgba(212, 175, 55, 0.05);
+  animation: zoomIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Top Decorative Bar */
+.ticket-accent-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, var(--gold-metallic), transparent);
+  box-shadow: 0 0 15px var(--gold-metallic);
+}
+
+/* Close Button */
+.ticket-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: var(--text-dim);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  transition: color 0.2s;
+  z-index: 10;
+}
+.ticket-close-btn:hover {
+  color: var(--gold-soft);
+}
+
+/* Inner Content Padding */
+.ticket-content {
+  padding: 40px 32px 32px;
+  text-align: center;
+}
+
+/* Symbol Text (e.g. XAUUSD) */
+.ticket-symbol {
+  font-size: 32px;
+  font-weight: 900;
+  color: white;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 20px rgba(255,255,255,0.1);
+}
+
+/* Buy/Sell Badge */
+.ticket-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-white);
+  margin-bottom: 32px;
+  backdrop-filter: blur(4px);
+}
+
+/* Color logic for Buy/Sell */
+.buy-mode .ticket-badge { 
+  color: var(--emerald-lux); 
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.05);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+}
+.sell-mode .ticket-badge { 
+  color: var(--ruby-lux); 
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.05);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.1);
+}
+
+/* Data Grid (Entry, SL, TP) */
+.ticket-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.ticket-item {
+  background: var(--matte-black);
+  padding: 12px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border-white);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: transform 0.2s;
+}
+.ticket-item:hover {
+  border-color: var(--gold-border);
+  transform: translateY(-2px);
+}
+
+.ticket-item .label {
+  font-size: 9px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+.ticket-item .value {
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Specific Colors for Grid Items */
+.ticket-item.stop .value { color: var(--ruby-lux); }
+.ticket-item.target .value { color: var(--emerald-lux); }
+
+/* Distance/Profit Values */
+.ticket-item.stop .distance-value {
+  color: rgba(239, 68, 68, 0.7);
+  font-size: 10px;
+  font-weight: 600;
+}
+.ticket-item.target .distance-value {
+  color: rgba(16, 185, 129, 0.7);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Lot Size Hero Section */
+.ticket-lot-hero {
+  background: linear-gradient(135deg, var(--gold-glow) 0%, transparent 100%);
+  border: 1px solid var(--gold-border);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.lot-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--gold-metallic);
+}
+
+.lot-value {
+  font-size: 24px;
+  font-weight: 900;
+  color: white;
+}
+
+.lot-value .unit {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+/* Share Buttons Grid */
+.ticket-share-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.share-btn {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--matte-black);
+  border: 1px solid var(--border-white);
+  border-radius: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.share-btn:hover {
+  background: var(--gold-metallic);
+  color: var(--obsidian);
+  border-color: var(--gold-metallic);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px var(--gold-glow);
+}
+
+.wa-text { font-weight: 900; font-size: 12px; }
+
+/* Bottom Action Button */
+.ticket-footer-btn {
+  width: 100%;
+  padding: 20px;
+  background: var(--panel-black);
+  border: none;
+  border-top: 1px solid var(--border-white);
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ticket-footer-btn:hover {
+  color: white;
+  background: #1a1a1a;
+}
+
+/* =========================================
+   4. ANIMATIONS
+   ========================================= */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+/* =========================================
+   5. MOBILE RESPONSIVENESS (Advanced)
+   ========================================= */
+@media (max-width: 480px) {
+  .ticket-modal {
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    margin-top: auto; /* Bottom sheet effect */
+    border-bottom: none;
+    animation: slideUpMobile 0.3s ease-out;
+  }
+  
+  @keyframes slideUpMobile { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+  .ticket-content {
+    padding: 32px 20px 24px;
+  }
+
+  .ticket-symbol {
+    font-size: 28px;
+  }
+
+  .ticket-badge {
+    margin-bottom: 24px;
+    padding: 4px 14px;
+    font-size: 10px;
+  }
+
+  .ticket-grid {
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .ticket-item {
+    padding: 10px 6px;
+  }
+
+  .ticket-item .value {
+    font-size: 14px;
+  }
+
+  .ticket-lot-hero {
+    padding: 14px 16px;
+    margin-bottom: 24px;
+  }
+
+  .lot-value {
+    font-size: 20px;
+  }
+
+  .share-btn {
+    height: 44px;
+  }
+
+  .ticket-footer-btn {
+    padding: 24px; /* Larger tap area */
+    padding-bottom: max(24px, env(safe-area-inset-bottom)); /* iPhone X fix */
+  }
+}

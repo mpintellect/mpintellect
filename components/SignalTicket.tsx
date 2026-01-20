@@ -26,51 +26,43 @@ export default function SignalTicket({ data, onClose }: Props) {
     
     if (platform === 'copy') {
       try {
-        // Method A: Modern API (Needs Secure Context)
-        if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(text);
-          toast.success('Copied to clipboard');
-        } else {
-          // Method B: Fallback for HTTP/WebViews
-          const textArea = document.createElement("textarea");
-          textArea.value = text;
-          
-          // Avoid scrolling to bottom
-          textArea.style.top = "0";
-          textArea.style.left = "0";
-          textArea.style.position = "fixed";
-          textArea.style.opacity = "0";
-          
-          document.body.appendChild(textArea);
-          textArea.focus();
-          textArea.select();
-          
-          try {
-            document.execCommand('copy');
-            toast.success('Copied to clipboard');
-          } catch (err) {
-            console.error('Fallback copy failed', err);
-            toast.error('Copy failed');
-          }
-          
-          document.body.removeChild(textArea);
-        }
+        await navigator.clipboard.writeText(text);
+        toast.success('Copied to clipboard');
       } catch (err) {
-        console.error('Share failed', err);
-        toast.error('Share failed');
+        // Fallback
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        toast.success('Copied to clipboard');
       }
     } else if (platform === 'whatsapp') {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     } else if (platform === 'telegram') {
-      window.open(`https://t.me/share/url?url=${url}&text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+      window.open(`https://t.me/share/url?url=${url}&text=${encodeURIComponent(text)}`, '_blank');
     } else if (platform === 'website') {
-      window.open('https://www.litefinance.org/?uid=967798214', '_blank', 'noopener,noreferrer');
+      window.open('https://www.litefinance.org/?uid=967798214', '_blank');
+    }
+  };
+
+  // Handle overlay click (close only when clicking the overlay itself)
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
     }
   };
 
   return (
-    <div className="ticket-overlay">
-      <div className={`ticket-modal ${isBuy ? 'buy-mode' : 'sell-mode'}`}>
+    <div 
+      className="ticket-overlay" 
+      onClick={handleOverlayClick}
+    >
+      <div 
+        className={`ticket-modal ${isBuy ? 'buy-mode' : 'sell-mode'}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Decorative Top Accent */}
         <div className="ticket-accent-bar" />
@@ -111,10 +103,30 @@ export default function SignalTicket({ data, onClose }: Props) {
           </div>
 
           <div className="ticket-share-grid">
-            <button className="share-btn" onClick={() => handleShare('copy')}><Copy size={18}/></button>
-            <button className="share-btn" onClick={() => handleShare('telegram')}><Send size={18}/></button>
-            <button className="share-btn" onClick={() => handleShare('whatsapp')}><span className="wa-text font-bold">WA</span></button>
-            <button className="share-btn" onClick={() => handleShare('website')}><Share2 size={18}/></button>
+            <button 
+              className="share-btn" 
+              onClick={() => handleShare('copy')}
+            >
+              <Copy size={18}/>
+            </button>
+            <button 
+              className="share-btn" 
+              onClick={() => handleShare('telegram')}
+            >
+              <Send size={18}/>
+            </button>
+            <button 
+              className="share-btn" 
+              onClick={() => handleShare('whatsapp')}
+            >
+              <span className="wa-text font-bold">WA</span>
+            </button>
+            <button 
+              className="share-btn" 
+              onClick={() => handleShare('website')}
+            >
+              <Share2 size={18}/>
+            </button>
           </div>
         </div>
 

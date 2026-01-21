@@ -105,60 +105,37 @@ export default function LiveMarketFeed() {
     fetchData();
   }, []);
 
-  // Render Card Helper
   const renderCard = (item: MarketSignal, index: number, keyPrefix: string) => {
     const isBuy = item.action === "BUY";
     return (
-      <div
-        key={`${keyPrefix}-${item.symbol}-${index}`}
-        className={`feed-card ${isBuy ? "buy-trend" : "sell-trend"}`}
-      >
-        <div className="card-row-top">
-          <div className="symbol-group">
-            <span className="symbol-text">{item.symbol}</span>
-            <span className="price-text">{item.current_price}</span>
-          </div>
-          <div className={`mini-badge ${isBuy ? "green" : "red"}`}>
-            {item.action}
-          </div>
+      <div key={`${keyPrefix}-${item.symbol}-${index}`} className="terminal-slat">
+        <div className="slat-timestamp">[{new Date().toLocaleTimeString([], {hour12: false, hour:'2-digit', minute:'2-digit'})}]</div>
+        <div className="slat-symbol">{item.symbol}</div>
+        <div className={`slat-action ${isBuy ? "up" : "down"}`}>
+          {isBuy ? "▲ LONG" : "▼ SHORT"}
         </div>
-        <div className={`card-stats-grid ${isBuy ? "buy-trend" : "sell-trend"}`}>
-          <div className="stat-item">
-            <span className="stat-label">Trend</span>
-            <span className="stat-value gold">
-              {item.trend.trend.replace(/_/g, " ").toUpperCase()}
-            </span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Confidence</span>
-            <span className="stat-value">{item.confidence}%</span>
-          </div>
+        <div className="slat-price">{item.current_price.toFixed(2)}</div>
+        <div className="slat-conf">
+          <span className="gold-text">{item.confidence}%</span>
+          <div className="conf-bar-bg"><div className="conf-bar-fill" style={{width: `${item.confidence}%`}}></div></div>
         </div>
-        <div className="locked-data">
-          <div className="blur-line w-3/4"></div>
-          <div className="blur-line w-1/2"></div>
-          <div className="lock-overlay">
-            <Link href="/client/register" className="unlock-link">
-              🔓 Unlock
-            </Link>
-          </div>
+        <div className="slat-lock">
+          <div className="slat-blur">TARGET_HIDDEN</div>
+          <Link href="/client/register" className="slat-unlock">TRADE</Link>
         </div>
       </div>
     );
   };
 
-  if (loading)
-    return (
-      <div className="feed-container">
-        <div className="feed-loading">
-          <div className="pulse-bar"></div>
-          <p>Calibrating AI Feed...</p>
-        </div>
-      </div>
-    );
+  if (loading) return (
+    <div className="feed-container">
+      <div className="feed-loading"><div className="pulse-bar"></div><p>Calibrating AI Feed...</p></div>
+    </div>
+  );
 
   if (signals.length === 0) return null;
 
+  // Split signals for two rows
   const displaySignals = signals.slice(0, 6);
   const row1 = displaySignals.slice(0, 3);
   const row2 = displaySignals.slice(3, 6);
@@ -166,32 +143,24 @@ export default function LiveMarketFeed() {
   return (
     <div className="feed-container">
       <div className="feed-header">
-        <div className="live-badge">
-          <span className="blink-dot"></span> LIVE FEED
-        </div>
+        <div className="live-badge"><span className="blink-dot"></span> LIVE FEED</div>
         <h3>Real-time market opportunities detected by MZPrimer AI Trading Expert</h3>
       </div>
 
-      {/* DESKTOP GRID (Static) */}
-      <div className="feed-grid desktop-grid-view">
-        {displaySignals.map((item, index) => renderCard(item, index, "desk"))}
-      </div>
-
-      {/* MOBILE INTERACTIVE SCROLLER */}
-      <div className="mobile-scroll-view">
+      {/* UNIFIED SCROLL VIEW FOR BOTH DESKTOP & MOBILE */}
+      <div className="terminal-scroll-view">
         
-        {/* Row 1: Auto Scrolls Left, User can Swipe */}
+        {/* Row 1: Loops Left */}
         <MobileScrollRow direction="left" speed={0.8}>
-          {/* Triple duplication ensures smooth scrolling even on big phones */}
-          {[...row1, ...row1, ...row1].map((item, index) =>
-            renderCard(item, index, "m1")
+          {[...row1, ...row1, ...row1, ...row1].map((item, index) =>
+            renderCard(item, index, "r1")
           )}
         </MobileScrollRow>
 
-        {/* Row 2: Auto Scrolls Right, User can Swipe */}
-        <MobileScrollRow direction="right" speed={0.8}>
-          {[...row2, ...row2, ...row2].map((item, index) =>
-            renderCard(item, index, "m2")
+        {/* Row 2: Loops Left (Unified Direction) */}
+        <MobileScrollRow direction="left" speed={0.8}>
+          {[...row2, ...row2, ...row2, ...row2].map((item, index) =>
+            renderCard(item, index, "r2")
           )}
         </MobileScrollRow>
       </div>

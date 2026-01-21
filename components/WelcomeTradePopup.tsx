@@ -38,11 +38,8 @@ interface MarketIntelligenceResponse {
 export default function TradingAssistantBridge() {
   const { subscription, subscribeToPush, loading } = usePush();
   const [isVisible, setIsVisible] = useState(false);
-  const [showIOSMenu, setShowIOSMenu] = useState(false);
   const [bestTrade, setBestTrade] = useState<TradeSignal | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [isAppMode, setIsAppMode] = useState(false);
-  const [iosBrowserType, setIosBrowserType] = useState<'safari' | 'chrome'>('safari');
 
   // --- PWA DETECTION ---
   const checkPWA = () => {
@@ -50,15 +47,6 @@ export default function TradingAssistantBridge() {
     const isStandard = window.matchMedia('(display-mode: standalone)').matches;
     const isApple = (window.navigator as any).standalone === true;
     return isStandard || isApple;
-  };
-
-  // --- BROWSER OS DETECTION ---
-  const getMobileOS = () => {
-    if (typeof window === 'undefined') return 'unknown';
-    const ua = navigator.userAgent || navigator.vendor;
-    if (/android/i.test(ua)) return 'android';
-    if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
-    return 'desktop';
   };
 
   // --- TIME FORMATTING ---
@@ -79,19 +67,6 @@ export default function TradingAssistantBridge() {
     setMounted(true);
     
     if (subscription) return;
-
-    const inApp = checkPWA();
-    setIsAppMode(inApp);
-
-    // DETECT IOS BROWSER TYPE
-    if (typeof window !== 'undefined') {
-      const ua = navigator.userAgent;
-      if (ua.match('CriOS')) {
-        setIosBrowserType('chrome');
-      } else {
-        setIosBrowserType('safari');
-      }
-    }
 
     const loadData = async () => {
       let activeSignal: TradeSignal | null = null;
@@ -119,7 +94,7 @@ export default function TradingAssistantBridge() {
       
       if (activeSignal) {
         setBestTrade(activeSignal);
-        const delay = inApp ? 50 : 7000; 
+        const delay = checkPWA() ? 50 : 7000; 
         setTimeout(() => setIsVisible(true), delay);
       }
     };
@@ -139,133 +114,30 @@ export default function TradingAssistantBridge() {
 
   // --- NAVIGATE TO SPECIFIC ASSISTANT ---
   const navigateToAssistant = async (type: 'prop' | 'trader') => {
-    const os = getMobileOS();
     const isInstalled = checkPWA();
-
-    // If in installed app, allow push notifications
-    if (isInstalled) {
-      const targetId = type === 'prop' ? 'propfirm' : 'aiassistant';
-      const el = document.getElementById(targetId);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      await subscribeToPush();
-      setIsVisible(false);
-      return;
-    }
-
-    // iOS browser handling
-    if (os === 'ios' && !isInstalled) {
-      setShowIOSMenu(true);
-      // Store the selected type for later use
-      sessionStorage.setItem('selectedAssistantType', type);
-      return;
-    }
-
-    // Everyone else
-    const targetId = type === 'prop' ? 'propfirm' : 'aiassistant';
-    const el = document.getElementById(targetId);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    
+    // Redirect to specific pages
+    const targetPath = type === 'prop' ? '/prop-firm' : '/AIChat';
+    window.location.href = targetPath;
+    
+    // Subscribe to push notifications
     await subscribeToPush();
     setIsVisible(false);
-  };
-
-  // --- IOS MENU HANDLER ---
-  const forceAppMode = async (type?: 'prop' | 'trader') => {
-    setIsAppMode(true);
-    setShowIOSMenu(false);
-    await subscribeToPush();
-    
-    // Navigate if type is provided
-    if (type) {
-      const targetId = type === 'prop' ? 'propfirm' : 'aiassistant';
-      const el = document.getElementById(targetId);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
   };
 
   // RENDER SAFEGUARD
   if (!mounted || !isVisible || subscription || !bestTrade) return null;
 
   // ===============================================================
-  // 1. IOS "CHOICE MENU"
-  // ===============================================================
-  if (showIOSMenu) {
-    const selectedType = sessionStorage.getItem('selectedAssistantType') as 'prop' | 'trader' || 'trader';
-    
-    return (
-      <div className="ios-guide-overlay" onClick={() => setShowIOSMenu(false)}>
-        <div className="ios-guide-card" onClick={e => e.stopPropagation()}>
-          <button onClick={() => setShowIOSMenu(false)} className="absolute top-4 right-4 text-zinc-600 p-1 hover:text-white">
-            <X size={18} />
-          </button>
-
-          <div className="p-6">
-            <div className="text-center mb-5">
-              <h3 className="text-white font-bold text-xl mb-1">Choose Alert Method</h3>
-              <p className="text-zinc-500 text-xs uppercase tracking-wide font-semibold">
-                {iosBrowserType === 'chrome' ? 'Chrome detected' : 'Instant AI Signals'}
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="ios-pwa-box">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase">Option A: Native Web App</span>
-                </div>
-                <div className="ios-step-row">
-                  <div className="ios-icon-circle text-blue-500"><Share size={14}/></div>
-                  <span>Tap <strong>Share</strong> {iosBrowserType === 'chrome' ? '(Top Right)' : 'in toolbar'}</span>
-                </div>
-                <div className="ios-step-row">
-                  <div className="ios-icon-circle text-zinc-400"><PlusSquare size={14}/></div>
-                  <span>Tap <strong>Add to Home Screen</strong></span>
-                </div>
-              </div>
-
-              <div className="relative flex items-center opacity-50">
-                <div className="flex-grow border-t border-zinc-800"></div>
-                <span className="flex-shrink mx-2 text-[9px] text-zinc-600 uppercase font-bold">Fast Alternative</span>
-                <div className="flex-grow border-t border-zinc-800"></div>
-              </div>
-
-              <a href={TELEGRAM_LINK} target="_blank" className="btn-telegram">
-                <MessageCircle size={18} /> Join Telegram Channel
-              </a>
-
-              <button 
-                onClick={() => forceAppMode(selectedType)}
-                className="w-full text-[10px] text-zinc-600 text-center mt-2 underline hover:text-zinc-400 transition-colors"
-              >
-                I am already using the App
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {iosBrowserType === 'chrome' ? (
-          <div className="ios-pointer-container ios-pos-chrome" onClick={e => e.stopPropagation()}>
-            <ArrowUpRight size={48} className="arrow-animated mb-2 text-yellow-500" />
-            <div className="arrow-label-capsule">Tap Share Button</div>
-          </div>
-        ) : (
-          <div className="ios-pointer-container ios-pos-safari" onClick={e => e.stopPropagation()}>
-            <div className="arrow-label-capsule">Browser Menu</div>
-            <ArrowDown size={48} className="arrow-animated mt-1 text-yellow-500" />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // ===============================================================
-  // 2. MAIN POPUP WITH TRADING TYPE SELECTION
+  // MAIN POPUP WITH TRADING TYPE SELECTION
   // ===============================================================
   return (
     <div className="popup-container">
-      <div className={`popup-card ${isAppMode ? 'ring-2 ring-green-500/50' : ''}`}>
-        {/* HEADER - KEEP ORIGINAL STYLING */}
+      <div className={`popup-card ${checkPWA() ? 'ring-2 ring-green-500/50' : ''}`}>
+        {/* HEADER */}
         <div className="popup-header">
           <div className="popup-header-title">
-            {isAppMode ? (
+            {checkPWA() ? (
                <span className="text-green-400 flex items-center gap-2 font-bold animate-pulse">
                   <BellRing size={16} /> SELECT TRADING ASSISTANT
                </span>
@@ -282,9 +154,9 @@ export default function TradingAssistantBridge() {
           </div>
         </div>
 
-        {/* BODY - SIMPLIFIED */}
+        {/* BODY */}
         <div className="popup-body">
-          {/* SYMBOL - KEEP ORIGINAL */}
+          {/* SYMBOL */}
           <div className="popup-symbol-row">
             <h3 className="popup-symbol flex items-center gap-2">
                 {bestTrade.symbol}
@@ -318,49 +190,48 @@ export default function TradingAssistantBridge() {
           {/* TWO CTA BUTTONS */}
           <div className="space-y-3 mb-4">
             {/* PROP FIRM BUTTON */}
-            {/* PROP FIRM BUTTON */}
-<button 
-  onClick={() => navigateToAssistant('prop')}
-  disabled={loading}
-  className="btn-cta btn-cta-prop"
->
-  <div className="btn-content">
-    <div className="icon-container">
-      <Trophy size={18} className="text-white" />
-    </div>
-    <div className="text-container">
-      <div className="btn-title">PROP FIRM</div>
-      <div className="btn-subtitle">FTMO, FundedNext, MFF, The5%ers</div>
-    </div>
-  </div>
-  <div className="checkmark">
-    <CheckCircle size={20} />
-  </div>
-</button>
+            <button 
+              onClick={() => navigateToAssistant('prop')}
+              disabled={loading}
+              className="btn-cta btn-cta-prop"
+            >
+              <div className="btn-content">
+                <div className="icon-container">
+                  <Trophy size={18} className="text-white" />
+                </div>
+                <div className="text-container">
+                  <div className="btn-title">PROP FIRM</div>
+                  <div className="btn-subtitle">FTMO, FundedNext, MFF, The5%ers</div>
+                </div>
+              </div>
+              <div className="checkmark">
+                <CheckCircle size={20} />
+              </div>
+            </button>
 
-{/* TRADER BUTTON */}
-<button 
-  onClick={() => navigateToAssistant('trader')}
-  disabled={loading}
-  className="btn-cta btn-cta-trader"
->
-  <div className="btn-content">
-    <div className="icon-container">
-      <User size={18} className="text-white" />
-    </div>
-    <div className="text-container">
-      <div className="btn-title">TRADER</div>
-      <div className="btn-subtitle">Personal account, investor</div>
-    </div>
-  </div>
-  <div className="checkmark">
-    <CheckCircle size={20} />
-  </div>
-</button>
+            {/* TRADER BUTTON */}
+            <button 
+              onClick={() => navigateToAssistant('trader')}
+              disabled={loading}
+              className="btn-cta btn-cta-trader"
+            >
+              <div className="btn-content">
+                <div className="icon-container">
+                  <User size={18} className="text-white" />
+                </div>
+                <div className="text-container">
+                  <div className="btn-title">TRADER</div>
+                  <div className="btn-subtitle">Personal account, investor</div>
+                </div>
+              </div>
+              <div className="checkmark">
+                <CheckCircle size={20} />
+              </div>
+            </button>
           </div>
 
           {/* TELEGRAM LINK */}
-          {!isAppMode && (
+          {!checkPWA() && (
             <a 
               href={TELEGRAM_LINK} 
               target="_blank" 

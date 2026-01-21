@@ -13,6 +13,7 @@ import { auth, db } from "../app/lib/firebaseClient";
 import { setDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import SignalTicket from "./SignalTicket";
+import { createPortal } from "react-dom";
 
 // ==========================================
 // 🏆 PROP FIRM CONFIGURATION
@@ -204,12 +205,12 @@ function QuickRegisterModal({
     }
   };
 
-  return (
+  const modalContent = (
     <div className="modal-overlay">
       <div className="modal-content">
         <div className="modal-header">
           <h3>🎯 Quick Registration</h3>
-          <p>Create your account to purchase the {selectedPlan} Setup Plan</p>
+          
           <button onClick={onClose} className="close-modal">✕</button>
         </div>
 
@@ -281,6 +282,11 @@ function QuickRegisterModal({
       </div>
     </div>
   );
+
+  // This sends the modal to the bottom of <body>
+  return typeof document !== "undefined" 
+    ? createPortal(modalContent, document.body) 
+    : null;
 }
 
 // Pricing Plans Modal
@@ -293,13 +299,24 @@ function PricingPlansModal({
   onPlanSelect: (plan: string) => void;
   onRegisterClick: () => void;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      // Scrolls the container to the middle on mount
+      const container = scrollRef.current;
+      const scrollAmount = (container.scrollWidth - container.offsetWidth) / 2;
+      container.scrollLeft = scrollAmount;
+    }
+  }, []);
+
   const plans = [
     { id: "10", name: "Basic Plan", setups: "10 Setups", price: "€4.50", popular: false },
     { id: "20", name: "Pro Plan", setups: "20 Setups", price: "€8.00", popular: true },
     { id: "30", name: "Elite Plan", setups: "30 Setups", price: "€12.00", popular: false }
   ];
 
-  return (
+  const modalContent = (
     <div className="modal-overlay">
       <div className="modal-content pricing-modal">
         <div className="modal-header">
@@ -308,7 +325,7 @@ function PricingPlansModal({
           <button onClick={onClose} className="close-modal">✕</button>
         </div>
 
-        <div className="pricing-options">
+        <div className="pricing-options" ref={scrollRef}>
           {plans.map((plan) => (
             <div 
               key={plan.id} 
@@ -350,6 +367,11 @@ function PricingPlansModal({
       </div>
     </div>
   );
+
+  // This sends the modal to the bottom of <body>
+  return typeof document !== "undefined" 
+    ? createPortal(modalContent, document.body) 
+    : null;
 }
 
 // ==========================================
@@ -852,8 +874,9 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
         </div>
         
         <div className="license-options">
-          <div className="license-option">
-            <h4>🎯 Buy Setups</h4>
+  {/* Card 1 */}
+  <div className="license-option">
+     <h4>🎯 Buy Setups</h4>
             <p>Get more setup credits to continue using prop firm AI analysis</p>
             <button 
               onClick={() => setShowPricingModal(true)} 
@@ -864,9 +887,10 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
             </button>
           </div>
           
-          {!user && (
-            <div className="license-option">
-              <h4>🔑 Create Account</h4>
+          {/* Card 2 (Only if not logged in) */}
+  {!user && (
+    <div className="license-option">
+       <h4>🔑 Create Account</h4>
               <p>Register to get 1 free setup and manage your credits</p>
               <button 
                 onClick={handleRegisterFirst}

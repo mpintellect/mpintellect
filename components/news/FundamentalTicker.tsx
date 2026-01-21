@@ -10,7 +10,6 @@ export default function SlimScrollingTicker() {
   const [isPaused, setIsPaused] = useState(false);
   
   const trackRef = useRef<HTMLDivElement>(null);
-  // FIX: Added undefined as initial value to satisfy TypeScript
   const animationRef = useRef<number | undefined>(undefined);
   
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -24,7 +23,7 @@ export default function SlimScrollingTicker() {
         }
       };
       updateDimensions();
-      window.addEventListener('resize', updateDimensions);
+      window.addEventListener('resize', updateDimensions); 
       return () => window.removeEventListener('resize', updateDimensions);
     }
   }, [loading, news]);
@@ -38,7 +37,7 @@ export default function SlimScrollingTicker() {
     }
 
     let lastTime = 0;
-    const speed = 50; 
+    const speed = 50;
 
     const animate = (currentTime: number) => {
       if (!lastTime) lastTime = currentTime;
@@ -64,9 +63,11 @@ export default function SlimScrollingTicker() {
       <div className="slim-ticker-container">
         <div className="slim-ticker-track">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="slim-news-item loading-skeleton">
-              <div className="skeleton-symbol" />
-              <div className="skeleton-headline" />
+            <div key={i} className="news-terminal-slat loading-skeleton">
+              <div className="slat-timestamp skeleton" />
+              <div className="news-symbol-tag skeleton" />
+              <div className="news-headline-text skeleton" />
+              <div className="news-action-hint skeleton" />
             </div>
           ))}
         </div>
@@ -95,16 +96,14 @@ export default function SlimScrollingTicker() {
               <button
                 key={`${item.id}-${idx}`}
                 onClick={() => setSelectedNews(item)}
-                className="slim-news-item"
+                className="news-terminal-slat"
               >
-                <span className="slim-symbol">{item.symbol}</span>
-                <span className="slim-category">{item.category || 'Market'}</span>
-                <span className="slim-headline">{item.headline}</span>
-                <span className="slim-hover-indicator">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="slim-arrow">
-                    <path d="M17 8l4 4m0 0l-4 4m4-4H3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                <span className="slat-timestamp">
+                  [{new Date().toLocaleTimeString([], {hour12: false, hour:'2-digit', minute:'2-digit'})}]
                 </span>
+                <span className="news-symbol-tag">{item.symbol}</span>
+                <span className="news-headline-text">{item.headline}</span>
+                <div className="news-action-hint">READ_INTEL</div>
               </button>
             ))}
           </div>
@@ -116,7 +115,7 @@ export default function SlimScrollingTicker() {
           onClick={() => setIsPaused(!isPaused)}
           className="slim-pause-btn"
         >
-          {isPaused ? 'PLAY' : 'PAUSE'}
+          {isPaused ? '▶' : '⏸'}
         </button>
       </div>
 

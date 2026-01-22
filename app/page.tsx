@@ -1,6 +1,7 @@
+// app/page.tsx
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from 'lucide-react';
 import StickyLogo from '@/components/StickyLogo';
@@ -50,10 +51,15 @@ export default function Home() {
       <WelcomeTradePopup />
       <MobileMenu />
 
+      {/* Existing Sections */}
       <AiChatSection onLaunch={(sym) => openTool('ai', sym)} />
       <PropFirmChatSection onLaunch={(sym) => openTool('prop', sym)} />
 
-      <TraderAssistantLite />
+      {/* 🚀 THE FIX: Wrap TraderAssistantLite in Suspense */}
+      <Suspense fallback={<div className="py-10 text-center opacity-50">Loading Assistant...</div>}>
+        <TraderAssistantLite />
+      </Suspense>
+
       <LearningHub />
       <AiToolsSection />
       <AIRobotCards />

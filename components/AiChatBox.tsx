@@ -128,9 +128,10 @@ const incrementTrialCount = (): number => {
 // 🧩 TYPES & INTERFACES
 // ==========================================
 type AiChatBoxProps = {
-  mode?: "popup" | "section";
+  mode?: "full" | "section";
   onClose?: () => void;
   autoStart?: boolean;
+  preselectedSymbol?: string | null;
 };
 
 type ChatMessage = {
@@ -391,7 +392,12 @@ function PricingPlansModal({
 // 🚀 MAIN COMPONENT
 // ==========================================
 
-export default function AiChatBox({ mode = "section", onClose, autoStart = true }: AiChatBoxProps) {
+export default function AiChatBox({ 
+  mode = "section", 
+  onClose, 
+  autoStart = true,
+  preselectedSymbol = null
+}: AiChatBoxProps & { preselectedSymbol?: string | null }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [step, setStep] = useState(0);
   const [symbol, setSymbol] = useState<SymbolKey | null>(null);
@@ -429,6 +435,19 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
     const count = getTrialCount();
     setTrialCount(count);
   }, [userId]);
+
+  // ==========================================
+  // ⚡ NEW: PRESELECTED SYMBOL EFFECT
+  // ==========================================
+  useEffect(() => {
+    if (preselectedSymbol && ALL_SYMBOLS.includes(preselectedSymbol as SymbolKey)) {
+      // Small timeout ensures the modal animation finishes before analysis starts
+      const timer = setTimeout(() => {
+        executeQuickAnalysis(preselectedSymbol as SymbolKey);
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [preselectedSymbol]);
 
   // ==========================================
   // ⚡ QUICK ANALYSIS FUNCTION
@@ -1174,11 +1193,11 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
 
   const showPaywall = (!user && trialCount >= 2) || (user && setupCount <= 0);
 
-  if (showPaywall && !userLoading) {
+if (showPaywall && !userLoading) {
     return (
-      <div className="chatbox-wrapper">
+      <div className="chatbox-wrapper section">
         <div className="license-header">
-          <h3>🔐 MZPrimer AI Assistant</h3>
+          <h3>🔐 EXECUTIVE ACCESS REQUIRED</h3>
           <p>
             {user 
               ? "You've used all your setup credits. Buy more setups to continue using advanced trading analysis."
@@ -1189,24 +1208,28 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
         
         <div className="license-options">
           <div className="license-option">
-            <h4>🎯 Buy Setups</h4>
-            <p>Get more setup credits to continue using AI analysis</p>
+            <div className="option-icon">🎯</div>
+            <h4>Buy Setups</h4>
+            <p>Institutional AI analysis & precise lot sizing</p>
             <button 
-              onClick={() => setShowPricingModal(true)} 
-              className="subscribe-button primary"
+              type="button" 
+              onClick={(e) => { e.preventDefault(); setShowPricingModal(true); }} 
+              className="btn-gold" 
               disabled={isLoading}
             >
-              {isLoading ? "Loading..." : "Buy Setups"}
+              {isLoading ? "Loading..." : "View Plans"}
             </button>
           </div>
           
           {!user && (
             <div className="license-option">
-              <h4>🔑 Create Account</h4>
-              <p>Register to get 1 free setup and manage your credits</p>
+              <div className="option-icon">🔑</div>
+              <h4>Register</h4>
+              <p>Create account to get 1 free setup instantly</p>
               <button 
-                onClick={handleRegisterFirst}
-                className="register-button secondary"
+                type="button" 
+                onClick={(e) => { e.preventDefault(); handleRegisterFirst(); }}
+                className="btn-ghost-gold"
               >
                 Register Now
               </button>
@@ -1214,6 +1237,7 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
           )}
         </div>
 
+        {/* ⚡ THE CRITICAL FIX: The modals MUST be here too! ⚡ */}
         {showPricingModal && (
           <PricingPlansModal
             onClose={() => setShowPricingModal(false)}
@@ -1235,14 +1259,14 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
 
   if (userLoading) {
     return (
-      <div className={mode === "popup" ? "chatbox-wrapper popup" : "chatbox-wrapper section"}>
+      <div className={mode === "full" ? "chatbox-wrapper full" : "chatbox-wrapper section"}>
         <div className="chatbot-loading">Loading AI Assistant...</div>
       </div>
     );
   }
 
   return (
-    <div className={mode === "popup" ? "chatbox-wrapper popup" : "chatbox-wrapper section"}>
+    <div className={mode === "full" ? "chatbox-wrapper full" : "chatbox-wrapper section"}>
       {showPricingModal && (
         <PricingPlansModal
           onClose={() => setShowPricingModal(false)}
@@ -1267,7 +1291,7 @@ export default function AiChatBox({ mode = "section", onClose, autoStart = true 
         />
       )}
 
-      {mode === "popup" && (
+      {mode === "full" && onClose && (
         <div className="chatbox-header">
           <div>MZPrimer AI Assistant</div>
           <button onClick={onClose} className="chatbox-close">

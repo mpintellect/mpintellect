@@ -18,6 +18,13 @@ import { createPortal } from "react-dom";
 // ==========================================
 // 🏆 PROP FIRM CONFIGURATION
 // ==========================================
+const PROP_COMPANIES = [
+  { id: "ftmo", name: "FTMO" },
+  { id: "fundednext", name: "FundedNext" },
+  { id: "mff", name: "MyForexFunds" },
+  { id: "fivepercenters", name: "The 5%ers" }
+];
+
 const PROP_STAGES = [
   { id: "step1", name: "Step 1: Challenge Phase", target: 0.10, dailyLoss: 0.05, maxLoss: 0.10, description: "Reach 10% profit target within 30 days" },
   { id: "step2", name: "Step 2: Verification Phase", target: 0.05, dailyLoss: 0.05, maxLoss: 0.10, description: "Reach 5% profit target within 60 days" },
@@ -99,6 +106,12 @@ const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: nu
   "UK100": { pip: 0.1, contract: 1, decimals: 1 },
 };
 
+// Helper function to validate SymbolKey
+const isValidSymbolKey = (value: string | null | undefined): value is SymbolKey => {
+  if (!value) return false;
+  return (ALL_SYMBOLS as readonly string[]).includes(value);
+};
+
 // ==========================================
 // 💾 TRIAL FUNCTIONS
 // ==========================================
@@ -130,8 +143,13 @@ type SummaryBlock = {
   content: string;
 };
 
+type PropFirmChatProps = {
+  onClose?: () => void;
+  preselectedSymbol?: string | null;
+};
+
 // ==========================================
-// 🖼️ MODAL COMPONENTS (From Code2)
+// 🖼️ MODAL COMPONENTS
 // ==========================================
 
 // Quick Registration Modal
@@ -378,9 +396,10 @@ function PricingPlansModal({
 // 🚀 MAIN COMPONENT
 // ==========================================
 
-export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
+export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [step, setStep] = useState(0); // 0=Init, 1=Stage, 2=Balance, 3=Symbol, 4=Result
+  const [step, setStep] = useState(0); // 0=Firm, 1=Stage, 2=Balance, 3=Symbol, 4=Result
+  const [selectedFirm, setSelectedFirm] = useState("");
   const [stage, setStage] = useState<typeof PROP_STAGES[0] | null>(null);
   const [capital, setCapital] = useState("");
   const [symbol, setSymbol] = useState<SymbolKey | null>(null);
@@ -393,7 +412,7 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
   const [trialCount, setTrialCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Modal states (from code2)
+  // Modal states
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showQuickRegister, setShowQuickRegister] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>("");
@@ -418,7 +437,37 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
   }, [userId]);
 
   // ==========================================
-  // 💳 PAYMENT & REGISTRATION HANDLERS (From Code2)
+  // ⚡ FIX: Initialize symbol state with type-safe conversion
+  // ==========================================
+  useEffect(() => {
+    if (preselectedSymbol && isValidSymbolKey(preselectedSymbol)) {
+      setSymbol(preselectedSymbol as SymbolKey);
+    }
+  }, [preselectedSymbol]);
+
+  // ==========================================
+  // ⚡ NEW: PRESELECTED SYMBOL WORKFLOW
+  // ==========================================
+  useEffect(() => {
+    if (preselectedSymbol && isValidSymbolKey(preselectedSymbol) && messages.length === 0) {
+      startPropWorkflow(preselectedSymbol);
+    }
+  }, [preselectedSymbol, messages.length]);
+
+  const startPropWorkflow = (sym: string) => {
+    if (isValidSymbolKey(sym)) {
+      setSymbol(sym as SymbolKey);
+      setMessages([{
+        sender: "ai",
+        text: `🚀 **Prop Firm Analysis: ${sym}**\n\nTo calculate your compliant lot size, please select your Prop Firm:`,
+        actions: PROP_COMPANIES.map(c => ({ label: c.name, value: c.id }))
+      }]);
+      setStep(0);
+    }
+  };
+
+  // ==========================================
+  // 💳 PAYMENT & REGISTRATION HANDLERS
   // ==========================================
   const handleBuySetups = async (plan: string, userEmail?: string) => {
     if (!user) {
@@ -487,29 +536,22 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
   };
 
   // ==========================================
-  // ⚡ WELCOME MESSAGE
+  // 🎯 STEP 0: FIRM SELECTION
   // ==========================================
-  useEffect(() => {
-    if (messages.length === 0 && !userLoading) {
-      setTimeout(() => {
-        setMessages([{
-          sender: "ai",
-          text: "🏆 **Prop Firm AI Assistant**\n\nI'm calibrated for FTMO, FundedNext, MyForexFunds & The5%ers rules.\n\nWhich challenge stage are you currently in?",
-          actions: PROP_STAGES.map(s => ({ label: s.name, value: s.id }))
-        }]);
-        setStep(1);
-      }, 500);
-    }
-  }, [messages.length, userLoading]);
-
-  // ==========================================
-  // 🔄 SCROLL HANDLING
-  // ==========================================
-  useEffect(() => {
-    if (chatRef.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight;
-    }
-  }, [messages]);
+  const handleFirmSelect = (firmId: string) => {
+    const firmName = PROP_COMPANIES.find(f => f.id === firmId)?.name;
+    setSelectedFirm(firmId);
+    setMessages(prev => [
+      ...prev,
+      { sender: "user", text: firmName || firmId },
+      { 
+        sender: "ai", 
+        text: `🏢 Targeting **${firmName}** rules.\n\nWhich stage are you currently in?`,
+        actions: PROP_STAGES.map(s => ({ label: s.name, value: s.id }))
+      }
+    ]);
+    setStep(1);
+  };
 
   // ==========================================
   // 🎯 STEP 1: STAGE SELECTION
@@ -524,7 +566,7 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
       { sender: "user", text: selected.name },
       { 
         sender: "ai", 
-        text: `✅ **${selected.name} Rules Loaded**\n\n🎯 Profit Target: ${selected.target > 0 ? `${(selected.target * 100).toFixed(0)}%` : 'No target (Consistency Focus)'}\n⚠️ Max Daily Loss: ${(selected.dailyLoss * 100).toFixed(1)}%\n⛔ Max Overall Loss: ${(selected.maxLoss * 100).toFixed(1)}%\n\n${selected.description}\n\n💰 **What is your account balance?**`
+        text: `✅ **${selectedFirm.toUpperCase()}: ${selected.name} Rules Loaded**\n\n🎯 Profit Target: ${selected.target > 0 ? `${(selected.target * 100).toFixed(0)}%` : 'No target (Consistency Focus)'}\n⚠️ Max Daily Loss: ${(selected.dailyLoss * 100).toFixed(1)}%\n⛔ Max Overall Loss: ${(selected.maxLoss * 100).toFixed(1)}%\n\n${selected.description}\n\n💰 **What is your account balance?**`
       }
     ]);
     setStep(2);
@@ -544,12 +586,14 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
     }
 
     setCapital(val);
+    
+    const displaySymbol = symbol || "selected asset";
     setMessages(prev => [
       ...prev,
       { sender: "user", text: `$${balance.toLocaleString()}` },
       { 
         sender: "ai", 
-        text: `📊 Account: $${balance.toLocaleString()}\n💵 Daily Loss Limit: **$${(balance * (stage?.dailyLoss || 0.05)).toLocaleString()}**\n\nSelect an asset to analyze. I will calculate lot sizes that keep you safe from drawdown violations:`,
+        text: `📊 Account: $${balance.toLocaleString()}\n🏢 Firm: ${selectedFirm.toUpperCase()}\n💵 Daily Loss Limit: **$${(balance * (stage?.dailyLoss || 0.05)).toLocaleString()}**\n\nSelect an asset to analyze. I will calculate lot sizes that keep you safe from drawdown violations:`,
         actions: QUICK_SYMBOLS.map(s => ({ label: s, value: s }))
       }
     ]);
@@ -557,10 +601,35 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
   };
 
   // ==========================================
+  // ⚡ WELCOME MESSAGE (when no preselected symbol)
+  // ==========================================
+  useEffect(() => {
+    if (!preselectedSymbol && messages.length === 0 && !userLoading) {
+      setTimeout(() => {
+        setMessages([{
+          sender: "ai",
+          text: "🏆 **Prop Firm AI Assistant**\n\nI'm calibrated for FTMO, FundedNext, MyForexFunds & The5%ers rules.\n\nPlease select your Prop Firm:",
+          actions: PROP_COMPANIES.map(c => ({ label: c.name, value: c.id }))
+        }]);
+        setStep(0);
+      }, 500);
+    }
+  }, [messages.length, userLoading, preselectedSymbol]);
+
+  // ==========================================
+  // 🔄 SCROLL HANDLING
+  // ==========================================
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  // ==========================================
   // 📈 STEP 3: SYMBOL ANALYSIS (Prop Firm Version)
   // ==========================================
   const executePropAnalysis = async (targetSymbol: SymbolKey) => {
-    if (!stage || !capital) return;
+    if (!stage || !capital || !selectedFirm) return;
     
     const balance = parseFloat(capital);
     const dailyLimit = balance * stage.dailyLoss;
@@ -740,11 +809,12 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
       // Create PROP FIRM specific summary blocks
       const summary: SummaryBlock[] = [
         {
-          title: "🛡️ RISK COMPLIANCE",
+          title: "🏢 FIRM COMPLIANCE",
           content:
+            `• Prop Firm: <strong>${selectedFirm.toUpperCase()}</strong>\n` +
+            `• Stage: <strong>${stage.name}</strong>\n` +
             `• Daily Cap: <strong>$${dailyLimit.toFixed(0)}</strong>\n` +
             `• Trade Risk: <span style="color:#3b82f6;"><strong>$${actualRiskAmount.toFixed(2)} (${riskPercentageOfDailyLimit.toFixed(1)}% of limit)</strong></span>\n` +
-            `• Balance Risk: <span style="color:${riskPercentageOfBalance > 2 ? '#ef4444' : '#10b981'}"><strong>${riskPercentageOfBalance.toFixed(2)}%</strong></span>\n` +
             `• Status: <span style="color:${riskPercentageOfDailyLimit <= 25 ? '#10b981' : '#f59e0b'}"><strong>${riskPercentageOfDailyLimit <= 25 ? '✓ SAFE' : '⚠ WARNING'}</strong></span> • Uses ${riskPercentageOfDailyLimit.toFixed(1)}% of daily allowance`,
         },
         {
@@ -829,7 +899,7 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
       }
 
       if (!user && newTrialCount >= 2) {
-        setMessages((prev) => [
+        setMessages(prev => [
           ...prev,
           {
             sender: "ai",
@@ -864,37 +934,39 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
     return (
       <div className="chatbox-wrapper section">
         <div className="license-header">
-          <h3>🔐 Prop Firm AI Assistant</h3>
+          <h3>🔐 EXECUTIVE ACCESS REQUIRED</h3>
           <p>
             {user 
-              ? "You've used all your setup credits. Buy more setups to continue using prop firm analysis."
-              : "You've used all 2 free trials. Register or buy setups to continue using prop firm analysis."
+              ? "You've used all your setup credits. Buy more setups to continue using advanced trading analysis."
+              : "You've used all 2 free trials. Register or buy setups to continue using advanced trading analysis."
             }
           </p>
         </div>
         
         <div className="license-options">
-  {/* Card 1 */}
-  <div className="license-option">
-     <h4>🎯 Buy Setups</h4>
+          <div className="license-option">
+            <div className="option-icon">🎯</div>
+            <h4>Buy Setups</h4>
             <p>Get more setup credits to continue using prop firm AI analysis</p>
             <button 
-              onClick={() => setShowPricingModal(true)} 
-              className="subscribe-button primary"
+              type="button" 
+              onClick={(e) => { e.preventDefault(); setShowPricingModal(true); }} 
+              className="btn-gold" 
               disabled={isLoading}
             >
-              {isLoading ? "Loading..." : "Buy Setups"}
+              {isLoading ? "Loading..." : "View Plans"}
             </button>
           </div>
           
-          {/* Card 2 (Only if not logged in) */}
-  {!user && (
-    <div className="license-option">
-       <h4>🔑 Create Account</h4>
-              <p>Register to get 1 free setup and manage your credits</p>
+          {!user && (
+            <div className="license-option">
+              <div className="option-icon">🔑</div>
+              <h4>Register</h4>
+              <p>Create account to get 1 free setup instantly</p>
               <button 
-                onClick={handleRegisterFirst}
-                className="register-button secondary"
+                type="button" 
+                onClick={(e) => { e.preventDefault(); handleRegisterFirst(); }}
+                className="btn-ghost-gold"
               >
                 Register Now
               </button>
@@ -902,6 +974,7 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
           )}
         </div>
 
+        {/* ⚡ THE CRITICAL FIX: The modals MUST be here too! ⚡ */}
         {showPricingModal && (
           <PricingPlansModal
             onClose={() => setShowPricingModal(false)}
@@ -920,7 +993,6 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
       </div>
     );
   }
-
   if (userLoading) {
     return (
       <div className="chatbox-wrapper section">
@@ -956,14 +1028,6 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
         />
       )}
 
-      {onClose && (
-        <div className="chatbox-header">
-          <div>🏆 Prop Firm AI Assistant</div>
-          <button onClick={onClose} className="chatbox-close">
-            ✕
-          </button>
-        </div>
-      )}
 
       <div className="chatbox-body" ref={chatRef}>
         {messages.map((msg, idx) => (
@@ -995,9 +1059,11 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
                       <button
                         key={action.value}
                         onClick={() => {
-                          if (step === 1) {
+                          if (step === 0) {
+                            handleFirmSelect(action.value);
+                          } else if (step === 1) {
                             handleStageSelect(action.value);
-                          } else if (step === 3) {
+                          } else if (step === 3 && isValidSymbolKey(action.value)) {
                             executePropAnalysis(action.value as SymbolKey);
                           }
                         }}
@@ -1057,8 +1123,10 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
           <select
             value={symbol || ""}
             onChange={(e) => {
-              const selected = e.target.value as SymbolKey;
-              if (selected) executePropAnalysis(selected);
+              const selected = e.target.value;
+              if (isValidSymbolKey(selected)) {
+                executePropAnalysis(selected as SymbolKey);
+              }
             }}
             className="chatbox-select"
           >
@@ -1077,10 +1145,11 @@ export default function PropFirmChat({ onClose }: { onClose?: () => void }) {
         <div className="chatbot-input">
           <button 
             onClick={() => {
-              setStep(1);
+              setStep(0);
+              setSelectedFirm("");
               setStage(null);
               setCapital("");
-              setSymbol(null);
+              setSymbol(preselectedSymbol && isValidSymbolKey(preselectedSymbol) ? preselectedSymbol as SymbolKey : null);
               setMessages([]);
               setTicketData(null);
             }} 

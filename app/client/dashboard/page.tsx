@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { onAuthStateChanged, signOut, User, sendEmailVerification } from "firebase/auth";
 import { auth, db } from "@/app/lib/firebaseClient";
 import { doc, getDoc } from "firebase/firestore";
 import toast from "react-hot-toast";
 import AiChatBox from "@/components/AiChatBox";
+import PropFirmChat from "@/components/PropFirmChat";
 import { useOneSetup } from "@/app/lib/firebase/useSetup";
 import UserAnalytics from "./components/AnalyticsSection";
-import { Globe, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Globe, ArrowRight, ShieldCheck, Trophy, X } from 'lucide-react';
+import { createPortal } from "react-dom";
 
 export const dynamic = "force-dynamic";
 
@@ -63,10 +65,13 @@ function DashboardContent() {
   const [buyLoading, setBuyLoading] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"10" | "20" | "30" | null>(null);
-  const [showAiChat, setShowAiChat] = useState(false);
+  
+  // View States
+  const [activeTool, setActiveTool] = useState<'ai' | 'prop' | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  
   const [isNavExpanded, setIsNavExpanded] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
   
   const router = useRouter();
   const searchParams = useSearchParams();  
@@ -95,22 +100,12 @@ function DashboardContent() {
     if (!grid || window.innerWidth > 520) return;
     const middleCard = grid.querySelector(".popular-plan");
     if (middleCard) {
-      const gridWidth = grid.scrollWidth;
       const middleCardOffset = (middleCard as HTMLElement).offsetLeft;
       const gridVisibleWidth = grid.clientWidth;
       const scrollTo = middleCardOffset - (gridVisibleWidth / 2) + ((middleCard as HTMLElement).offsetWidth / 2);
       grid.scrollTo({ left: scrollTo, behavior: "smooth" });
     }
   }, []);
-
-  const handleNavClick = (action: () => void) => {
-    setIsNavExpanded(false);
-    action();
-  };
-
-  const toggleNav = () => {
-    setIsNavExpanded(!isNavExpanded);
-  };
 
   // Auth & Setup Count
   useEffect(() => {
@@ -119,31 +114,32 @@ function DashboardContent() {
         router.push("/client/login");
       } else {
         setUser(firebaseUser);
-        try {
-          const userDocRef = doc(db, "users", firebaseUser.uid);
-          const userSnap = await getDoc(userDocRef);
-          if (userSnap.exists()) {
-            const data = userSnap.data();
-            setSetupCount(data.setupCount ?? 0);
-          }
-          if (searchParams.get("success") === "true") {
-            toast.success("✅ Payment successful! Setup credits added.");
-            const updatedSnap = await getDoc(userDocRef);
-            if (updatedSnap.exists()) {
-              setSetupCount(updatedSnap.data().setupCount ?? 0);
-            }
-            const url = new URL(window.location.href);
-            url.searchParams.delete("success");
-            window.history.replaceState({}, "", url.toString());
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
+        refreshSetupCount();
+        if (searchParams.get("success") === "true") {
+          toast.success("✅ Payment successful! Setup credits added.");
+          refreshSetupCount();
+          const url = new URL(window.location.href);
+          url.searchParams.delete("success");
+          window.history.replaceState({}, "", url.toString());
         }
         setLoading(false);
       }
     });
     return () => unsubscribe();
   }, [router, searchParams]);
+
+  const refreshSetupCount = async () => {
+    if (!auth.currentUser) return;
+    try {
+      const userDocRef = doc(db, "users", auth.currentUser.uid);
+      const userSnap = await getDoc(userDocRef);
+      if (userSnap.exists()) {
+        setSetupCount(userSnap.data().setupCount ?? 0);
+      }
+    } catch (error) {
+      console.error("Error refreshing setup count:", error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -152,6 +148,52 @@ function DashboardContent() {
     } catch (error) {
       console.error("Logout error:", error);
     }
+  };
+
+  // --- RECONECTED HANDLERS ---
+  const openTool = async (tool: 'ai' | 'prop') => {
+    if (setupCount <= 0) {
+      toast.error("No setups available. Please purchase more setups.");
+      return;
+    }
+
+    // Use setup credit
+    const result = await useOneSetup();
+    if (result !== "ok") {
+      if (result === "no-credits") {
+        toast.error("❌ No setups available. Please purchase more.");
+      } else {
+        toast.error("⚠️ Error using setup. Please try again.");
+      }
+      return;
+    }
+
+    // Deduct setup count
+    setSetupCount(prev => Math.max(0, prev - 1));
+
+    // Set active tool and disable background scrolling
+    setActiveTool(tool);
+    setShowAnalytics(false); // Close analytics if opening tool
+    setIsNavExpanded(false); // Close mobile menu
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeTool = () => {
+    setActiveTool(null);
+    document.body.style.overflow = 'auto';
+    refreshSetupCount();
+  };
+
+  const openAnalytics = () => {
+    setShowAnalytics(true);
+    setActiveTool(null); // Close any open tool
+    setIsNavExpanded(false); // Close mobile menu
+  };
+
+  const returnToDashboard = () => {
+    setShowAnalytics(false);
+    setActiveTool(null);
+    setIsNavExpanded(false);
   };
 
   const handleBuySetups = async (plan: string = "10") => {
@@ -178,56 +220,10 @@ function DashboardContent() {
     }
   };
 
-  const handleUseSetup = async () => {
-    if (setupCount <= 0) {
-      alert("No setups available. Please purchase more setups.");
-      return;
-    }
-    try {
-      const result = await useOneSetup();
-      if (result === "ok") {
-        setSetupCount(prev => prev - 1);
-        setShowAiChat(true);
-        toast.success("🎯 Setup used! AI Assistant is ready for analysis.");
-      } else if (result === "no-credits") {
-        toast.error("❌ No setups available. Please purchase more.");
-      } else {
-        toast.error("⚠️ Error using setup. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error using setup:", error);
-      toast.error("❌ Failed to use setup. Please try again.");
-    }
-  };
-
-  const refreshSetupCount = async () => {
-    if (user) {
-      try {
-        const userDocRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userDocRef);
-        if (userSnap.exists()) {
-          const data = userSnap.data();
-          setSetupCount(data.setupCount ?? 0);
-        }
-      } catch (error) {
-        console.error("Error refreshing setup count:", error);
-      }
-    }
-  };
-
-  const handleAiChatClose = () => {
-    setShowAiChat(false);
-    refreshSetupCount();
-  };
-
-  // Track broker gateway click for analytics
   const handleBrokerGatewayClick = () => {
-  // Track event if needed
-  if ((window as any).fbq) (window as any).fbq('track', 'Lead');
-  
-  // Redirect directly to the broker link in new tab
-  window.open('https://www.litefinance.org/fr/?uid=967798214', '_blank', 'noopener,noreferrer');
-};
+    if ((window as any).fbq) (window as any).fbq('track', 'Lead');
+    window.open('https://www.litefinance.org/fr/?uid=967798214', '_blank', 'noopener,noreferrer');
+  };
 
   if (loading) {
     return (
@@ -242,62 +238,51 @@ function DashboardContent() {
 
   return (
     <div className="client-cabinet">
-      {/* Clean Header - No Logo, Just Buttons */}
       <header className="simple-header">
         <nav className="header-nav">
-          {/* Desktop Layout - User section on the right */}
+          {/* Desktop Layout */}
           <div className="desktop-layout">
             <div className="nav-buttons">
               <button 
-                className={`nav-btn ${!showAiChat ? 'active' : ''}`}
-                onClick={() => setShowAiChat(false)}
+                className={`nav-btn ${!showAnalytics && !activeTool ? 'active' : ''}`}
+                onClick={returnToDashboard}
               >
                 Dashboard
               </button>
-              <button 
-                className={`nav-btn ${showAiChat ? 'active' : ''}`}
-                onClick={() => setupCount > 0 && setShowAiChat(true)}
-                disabled={setupCount <= 0}
-              >
-                AI Assistant
-              </button>
+              <button className="nav-btn" onClick={() => openTool('ai')}>AI Assistant</button>
+              <button className="nav-btn" onClick={() => openTool('prop')}>Prop Firm</button>
               <button 
                 className={`nav-btn ${showAnalytics ? 'active' : ''}`}
-                onClick={() => {
-                  setShowAiChat(false);
-                  setShowAnalytics(prev => !prev);
-                }}
+                onClick={openAnalytics}
               >
                 Analytics
               </button>
+              <button className="nav-btn" onClick={() => setShowPlanModal(true)}>Purchase</button>
               <button 
                 className="nav-btn"
                 onClick={() => router.push('/client/dashboard/refer')}
               >
-                Refer Friends
+                Refer
               </button>
             </div>
             
             <div className="user-section">
-              <div className="user-info-simple">
-                <div className="user-avatar-small">
-                  {user?.email?.charAt(0).toUpperCase()}
-                </div>
-                <span className="user-email-simple">{user?.email}</span>
-                <span className="setup-count-simple">
-                  ({setupCount} setup{setupCount !== 1 ? 's' : ''})
-                </span>
-              </div>
-              <button 
-                onClick={handleLogout}
-                className="logout-btn-simple"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
+  <div className="user-info-simple">
+    <div className="user-avatar-small">
+      {user?.email?.charAt(0).toUpperCase()}
+    </div>
+    <span className="user-email-simple">
+      {user?.email?.split('@')[0]} {/* Shorter, cleaner email handle */}
+    </span>
+    <span className="setup-count-simple">
+      {setupCount} INTEL
+    </span>
+  </div>
+  <button onClick={handleLogout} className="logout-btn-simple">Logout</button>
+</div>
+</div>
 
-          {/* Mobile Layout - User section on top */}
+          {/* Mobile Layout */}
           <div className="mobile-layout">
             <div className="mobile-user-top">
               <div className="user-info-mobile-top">
@@ -305,81 +290,42 @@ function DashboardContent() {
                   {user?.email?.charAt(0).toUpperCase()}
                 </div>
                 <div className="user-details-mobile">
-                  <div className="user-email-mobile">{user?.email}</div>
-                  <div className="setup-count-mobile">
-                    {setupCount} setup{setupCount !== 1 ? 's' : ''} available
-                  </div>
+                  <div className="user-email-mobile">Credits: {setupCount}</div>
                 </div>
               </div>
               <button 
-                onClick={handleLogout}
-                className="logout-btn-mobile"
+                className="nav-toggle-btn"
+                onClick={() => setIsNavExpanded(!isNavExpanded)}
               >
-                Logout
+                {isNavExpanded ? <X size={20}/> : "MENU"}
               </button>
             </div>
             
-            {/* Collapsible Navigation Section - Starts collapsed */}
-            <div className={`mobile-nav-section ${isNavExpanded ? 'expanded' : 'collapsed'}`}>
-              <button 
-                className="nav-toggle-btn"
-                onClick={toggleNav}
-              >
-                {isNavExpanded ? '−' : '☰'}
-              </button>
-              
-              {isNavExpanded && (
-                <div className="mobile-nav-buttons">
-                  <button 
-                    className={`mobile-nav-btn ${!showAiChat ? 'active' : ''}`}
-                    onClick={() => handleNavClick(() => setShowAiChat(false))}
-                  >
-                    Dashboard
-                  </button>
-                  <button 
-                    className={`mobile-nav-btn ${showAiChat ? 'active' : ''}`}
-                    onClick={() => handleNavClick(() => {
-                      if (setupCount > 0) setShowAiChat(true);
-                    })}
-                    disabled={setupCount <= 0}
-                  >
-                    AI Assistant
-                  </button>
-                  <button 
-                    className={`mobile-nav-btn ${showAnalytics ? 'active' : ''}`}
-                    onClick={() => handleNavClick(() => {
-                      setShowAiChat(false);
-                      setShowAnalytics(prev => !prev);
-                    })}
-                  >
-                    Analytics
-                  </button>
-                  <button 
-                    className="mobile-nav-btn"
-                    onClick={() => handleNavClick(() => router.push('/client/dashboard/refer'))}
-                  >
-                    Refer Friends
-                  </button>
-                </div>
-              )}
-            </div>
+            {isNavExpanded && (
+              <div className="mobile-nav-buttons">
+                <button className="mobile-nav-btn" onClick={returnToDashboard}>Dashboard</button>
+                <button className="mobile-nav-btn" onClick={() => openTool('ai')}>AI Assistant</button>
+                <button className="mobile-nav-btn" onClick={() => openTool('prop')}>Prop Firm</button>
+                <button className="mobile-nav-btn" onClick={openAnalytics}>Analytics</button>
+                <button className="mobile-nav-btn" onClick={() => {setShowPlanModal(true); setIsNavExpanded(false);}}>Buy Setups</button>
+                <button className="mobile-nav-btn" onClick={() => router.push('/client/dashboard/refer')}>Refer Friends</button>
+                <button className="mobile-nav-btn logout" onClick={handleLogout}>Logout</button>
+              </div>
+            )}
           </div>
         </nav>
       </header>
       
       <main className="cabinet-main">
-        {showAiChat ? (
-          <div className="chat-view">
-            <div className="chat-header">
-              <h1>AI Trading Assistant</h1>
-              <p>Analyze markets and get trading setups</p>
+        {showAnalytics ? (
+          <div className="analytics-full-view">
+            <div className="analytics-header">
+              <h1>Analytics Dashboard</h1>
+              <p>Track your trading performance and progress</p>
+              <button className="back-to-dashboard-btn" onClick={returnToDashboard}>← Back to Dashboard</button>
             </div>
-            <div className="chat-container">
-              <AiChatBox 
-                mode="section" 
-                onClose={handleAiChatClose}
-                autoStart={true}
-              />
+            <div className="analytics-container">
+              <UserAnalytics />
             </div>
           </div>
         ) : (
@@ -389,10 +335,9 @@ function DashboardContent() {
               <p>Ready to analyze the markets with AI-powered insights</p>
             </div>
 
-            {/* SIMPLE Email Verification Message */}
             <EmailVerificationMessage />
 
-            {/* Setup Credits */}
+
             <div className="status-card">
               <div className="status-header">
                 <h2>Your Setup Credits</h2>
@@ -402,7 +347,7 @@ function DashboardContent() {
               </div>
               <div className="setup-count-display">
                 <span className="count-number">{setupCount}</span>
-                <span className="count-label">Setups Available</span>
+                <span className="count-label">Available Setups</span>
               </div>
               {setupCount === 0 && (
                 <div className="warning-message">
@@ -411,15 +356,14 @@ function DashboardContent() {
               )}
             </div>
 
-            {/* Actions Grid - Now with Broker Card */}
             <div className="actions-grid">
-              {/* 1. Use Setup */}
+              {/* Standard AI Assistant */}
               <div className="action-card primary-action">
                 <div className="action-icon">🎯</div>
-                <h3>Use Setup</h3> 
-                <p>Analyze markets with AI Assistant</p>
+                <h3>Standard AI</h3> 
+                <p>Day trading & Scalping setups</p>
                 <button 
-                  onClick={handleUseSetup}
+                  onClick={() => openTool('ai')}
                   disabled={setupCount <= 0}
                   className={`action-btn ${setupCount > 0 ? 'primary' : 'disabled'}`}
                 >
@@ -427,45 +371,28 @@ function DashboardContent() {
                 </button>
               </div>
 
-              {/* 2. Buy Setups */}
+              {/* Prop Firm AI */}
               <div className="action-card">
-                <div className="action-icon">💳</div>
-                <h3>Buy Setups</h3>
-                <p>Purchase more setup credits</p>
+                <div className="action-icon">🏆</div>
+                <h3>Prop Firm AI</h3>
+                <p>Pass your challenge with rule-based risk</p>
                 <button 
-                  onClick={() => {
-                    document.getElementById('purchase-section')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="action-btn secondary"
+                  onClick={() => openTool('prop')}
+                  disabled={setupCount <= 0}
+                  className={`action-btn ${setupCount > 0 ? 'secondary' : 'disabled'}`}
                 >
-                  View Plans
+                  {setupCount > 0 ? 'Launch Assistant' : 'No Setups'}
                 </button>
               </div>
 
-              {/* Broker Gateway Card */}
+              {/* Broker Gateway */}
               <div className="action-card broker-card">
                 <div className="choice-icon-box icon-box-blue">
                   <Globe size={24} />
                 </div>
                 <div className="badge-new">NEW</div>
-                
                 <h3 className="choice-title title-blue">Broker Gateway</h3>
-                <p className="choice-desc">
-                  Access authorized brokers to execute your AI trading signals
-                </p>
-                
-                <ul className="feature-list">
-                  <li className="feature-item">
-                    <ShieldCheck size={16} /> Regulated Partners
-                  </li>
-                  <li className="feature-item">
-                    <ShieldCheck size={16} /> Fast Execution
-                  </li>
-                  <li className="feature-item">
-                    <ShieldCheck size={16} /> Secure Integration
-                  </li>
-                </ul>
-                
+                <p className="choice-desc">Access authorized brokers to execute signals</p>
                 <button 
                   onClick={handleBrokerGatewayClick}
                   className="choice-btn choice-btn-primary"
@@ -474,29 +401,13 @@ function DashboardContent() {
                 </button>
               </div>
 
-              {/* 3. Refer Friends */}
-              <div className="action-card">
-                <div className="action-icon">👥</div>
-                <h3>Refer Friends</h3>
-                <p>Get 5 free setups per referral</p>
-                <button 
-                  className="action-btn secondary"
-                  onClick={() => router.push('/client/dashboard/refer')}
-                >
-                  Refer Friends
-                </button>
-              </div>
-
-              {/* 4. Analytics */}
+              {/* Analytics */}
               <div className="action-card">
                 <div className="action-icon">📊</div>
                 <h3>Analytics</h3>
-                <p>View your trading history</p>
+                <p>View your performance</p>
                 <button 
-                  onClick={() => {
-                    setShowAiChat(false);
-                    setShowAnalytics(prev => !prev);
-                  }}
+                  onClick={openAnalytics}
                   className="action-btn secondary"
                 >
                   View Stats
@@ -504,13 +415,7 @@ function DashboardContent() {
               </div>
             </div>
 
-            {showAnalytics && (
-              <div className="analytics-section mt-8">
-                <UserAnalytics />
-              </div>
-            )}
-
-            {/* Purchase Plans */}
+            {/* Quick Purchase Section */}
             <div className="purchase-section" id="purchase-section">
               <h2>Quick Purchase</h2>
               <div className="purchase-grid">
@@ -562,85 +467,63 @@ function DashboardContent() {
       {/* PRICING MODAL */}
       {showPlanModal && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content pricing-modal">
             <div className="pricing-modal-header">
               <h3 className="pricing-title">🎯 Choose Your Plan</h3>
-              <button 
-                className="close-modal"
-                onClick={() => {
-                  setShowPlanModal(false);
-                  setSelectedPlan(null);
-                }}
-              >
-                ✕
-              </button>
+              <button className="close-modal" onClick={() => setShowPlanModal(false)}>✕</button>
             </div>
-
             <div className="purchase-grid modal-plans-grid">
-              <div className={`purchase-option ${selectedPlan === "10" ? "selected" : ""}`}>
+              <div className={`purchase-option ${selectedPlan === "10" ? "selected" : ""}`} onClick={() => setSelectedPlan("10")}>
                 <div className="plan-name">Basic Plan</div>
                 <div className="plan-price">€4.50</div>
                 <div className="plan-setups">10 Setups</div>
-                <button 
-                  className={`purchase-btn ${selectedPlan === "10" ? "primary" : ""}`}
-                  onClick={() => setSelectedPlan("10")}
-                >
-                  {selectedPlan === "10" ? "Selected" : "Select"}
-                </button>
+                <button className={`purchase-btn ${selectedPlan === "10" ? "primary" : ""}`}>Select</button>
               </div>
-
-              <div className={`purchase-option popular-plan ${selectedPlan === "20" ? "selected" : ""}`}>
+              <div className={`purchase-option popular-plan ${selectedPlan === "20" ? "selected" : ""}`} onClick={() => setSelectedPlan("20")}>
                 <div className="popular-badge">Most Popular</div>
                 <div className="plan-name">Pro Plan</div>
                 <div className="plan-price">€8.00</div>
                 <div className="plan-setups">20 Setups</div>
-                <button 
-                  className={`purchase-btn primary ${selectedPlan === "20" ? "selected" : ""}`}
-                  onClick={() => setSelectedPlan("20")}
-                >
-                  {selectedPlan === "20" ? "Selected" : "Select"}
-                </button>
+                <button className={`purchase-btn primary ${selectedPlan === "20" ? "selected" : ""}`}>Select</button>
               </div>
-
-              <div className={`purchase-option ${selectedPlan === "30" ? "selected" : ""}`}>
+              <div className={`purchase-option ${selectedPlan === "30" ? "selected" : ""}`} onClick={() => setSelectedPlan("30")}>
                 <div className="plan-name">Elite Plan</div>
                 <div className="plan-price">€12.00</div>
                 <div className="plan-setups">30 Setups</div>
-                <button 
-                  className={`purchase-btn ${selectedPlan === "30" ? "primary" : ""}`}
-                  onClick={() => setSelectedPlan("30")}
-                >
-                  {selectedPlan === "30" ? "Selected" : "Select"}
-                </button>
+                <button className={`purchase-btn ${selectedPlan === "30" ? 'primary' : ''}`}>Select</button>
               </div>
             </div>
-
             <div className="modal-footer">
-              <button
-                className="confirm-purchase-btn"
-                disabled={!selectedPlan || buyLoading}
-                onClick={() => {
-                  if (selectedPlan) handleBuySetups(selectedPlan);
-                  setShowPlanModal(false);
-                }}
-              >
+              <button className="confirm-purchase-btn" disabled={!selectedPlan || buyLoading} onClick={() => selectedPlan && handleBuySetups(selectedPlan)}>
                 {buyLoading ? "Processing..." : "Proceed to Payment"}
               </button>
-              <button
-                className="cancel-btn"
-                onClick={() => {
-                  setShowPlanModal(false);
-                  setSelectedPlan(null);
-                }}
-              >
-                Cancel
-              </button>
+              <button className="cancel-btn" onClick={() => setShowPlanModal(false)}>Cancel</button>
             </div>
           </div>
         </div>
       )}
 
-      
+      {/* IMMERSIVE PORTAL */}
+      {activeTool && createPortal(
+        <div className="immersive-modal-overlay">
+          <div className="immersive-modal-container">
+            <div className="immersive-header">
+              <div className="tool-identity">
+                <span className="live-pulse"></span>
+                {activeTool === 'ai' ? 'AI Intel Terminal' : 'Prop Firm Security'}
+              </div>
+              <button onClick={closeTool} className="immersive-close-btn">
+                <X size={20} /> CLOSE
+              </button>
+            </div>
+            <div className="immersive-content">
+              {activeTool === 'ai' ? <AiChatBox mode="section" onClose={closeTool} autoStart={true} /> : <PropFirmChat onClose={closeTool} />}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
     </div>
   );
 }

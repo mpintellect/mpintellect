@@ -83,9 +83,6 @@ export async function fetchCurrentPrice(symbol: string): Promise<number | null> 
   }
 }
 
-/**
- * Fetch all prices data (cached for 2 minutes)
- */
 export async function fetchAllPrices(): Promise<AllPricesData | null> {
   try {
     // Check cache first
@@ -95,12 +92,18 @@ export async function fetchAllPrices(): Promise<AllPricesData | null> {
       return pricesCache;
     }
 
-    console.log('🔄 Cache miss - fetching fresh prices data...');
+    console.log('🔄 Cache miss - fetching fresh prices data from R2...');
     
-    const res = await fetch('https://us-central1-mzprimer-livefeed.cloudfunctions.net/api/prices');
+    // ✅ NEW CLOUDFLARE R2 URL
+    // Replace this with your actual R2 Public URL (r2.dev or custom domain)
+    const R2_PUBLIC_URL = 'https://pub-xxxxxx.r2.dev/prices.json'; 
+    
+    const res = await fetch(R2_PUBLIC_URL, {
+        next: { revalidate: 300 } // Optional: Next.js level caching (5 mins)
+    });
     
     if (!res.ok) {
-      throw new Error(`Google Storage returned ${res.status}: ${res.statusText}`);
+      throw new Error(`Cloudflare R2 returned ${res.status}: ${res.statusText}`);
     }
 
     const data = await res.json();
@@ -114,11 +117,11 @@ export async function fetchAllPrices(): Promise<AllPricesData | null> {
     pricesCache = data;
     cacheTimestamp = now;
     
-    console.log(`✅ Successfully fetched ${Object.keys(data).length} symbols`);
+    console.log(`✅ Successfully fetched ${Object.keys(data).length} symbols from R2`);
     return data;
     
   } catch (err) {
-    console.error('❌ Error fetching all prices:', err);
+    console.error('❌ Error fetching all prices from R2:', err);
     
     // Return cached data even if expired
     if (pricesCache) {

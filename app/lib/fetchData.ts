@@ -166,30 +166,28 @@ export interface SymbolData {
 }
 
 // ==========================================
-// 4. FETCH AND FORMAT FUNCTION
-// ==========================================
-// ==========================================
-// 4. FETCH AND FORMAT FUNCTION
+// 4. FETCH AND FORMAT FUNCTION (MODIFIED)
 // ==========================================
 export async function getSymbolData(
   symbolParam?: string
 ): Promise<SymbolData | null> {
   try {
-    // Guard: if symbol is missing, bail out
-    if (!symbolParam) {
-      console.warn("getSymbolData called without a symbol");
-      return null;
-    }
+    if (!symbolParam) return null;
 
     const cleanSymbol = symbolParam.replace(/[-_/]/g, "").toUpperCase();
-    const gcsUrl = `https://storage.googleapis.com/mzprimer-data-store/output_${cleanSymbol}.json`;
+    
+    // ✅ NEW CLOUDFLARE R2 URL
+    // Use your Public R2.dev link or your custom domain
+    const R2_PUBLIC_URL = "https://pub-9a73dba996664c48aaa24b679e1122a2.r2.dev"; 
+    const url = `${R2_PUBLIC_URL}/output_${cleanSymbol}.json`;
 
-    const res = await fetch(gcsUrl, {
-      cache: "no-store",
+    const res = await fetch(url, {
+      // Use revalidate instead of no-store to make it even faster
+      next: { revalidate: 300 }, 
     });
 
     if (!res.ok) {
-      console.warn("Failed to fetch symbol data from GCS:", cleanSymbol, res.status);
+      console.warn("Failed to fetch from R2:", cleanSymbol, res.status);
       return null;
     }
 

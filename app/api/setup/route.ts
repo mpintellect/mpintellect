@@ -1,4 +1,3 @@
-// app/api/setup/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -10,37 +9,38 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Symbol parameter required" }, { status: 400 });
     }
 
-    console.log('🚀 Setup API called for symbol:', symbol);
+    // Clean the symbol to match your file names (output_BTCUSD.json)
+    const cleanSymbol = symbol.replace(/[-_/]/g, "").toUpperCase();
+    console.log('🚀 Setup API (R2) called for symbol:', cleanSymbol);
     
-    // ✅ FETCH INDIVIDUAL SYMBOL FILE FROM GCS
-    // Now using: https://storage.googleapis.com/mzprimer-data-store/output_SYMBOL.json
-    const gcsUrl = `https://storage.googleapis.com/mzprimer-data-store/output_${symbol}.json`;
+    // ✅ NEW CLOUDFLARE R2 URL
+    // Use the same pub-xxxx.r2.dev link from your other files
+    const R2_URL = 'https://pub-9a73dba996664c48aaa24b679e1122a2.r2.dev';
+    const fileUrl = `${R2_URL}/output_${cleanSymbol}.json`;
     
-    console.log('📡 Fetching from GCS:', gcsUrl);
+    console.log('📡 Fetching from R2:', fileUrl);
     
-    const response = await fetch(gcsUrl, {
+    const response = await fetch(fileUrl, {
       headers: {
         'Accept': 'application/json',
-        'Cache-Control': 'no-cache'
       },
-      // Revalidate every 60 seconds to match Python upload cycle
+      // Revalidate every 60 seconds to keep the analysis fresh
       next: { revalidate: 60 }
     });
     
-    console.log('📡 Google Storage response status:', response.status);
-
     if (!response.ok) {
       if (response.status === 404) {
-        console.warn(`❌ Symbol file 'output_${symbol}.json' not found in GCS`);
+        console.warn(`❌ Symbol file 'output_${cleanSymbol}.json' not found in R2`);
         return NextResponse.json({ error: "Symbol setup not found" }, { status: 404 });
       }
-      throw new Error(`Google Storage returned ${response.status}`);
+      throw new Error(`Cloudflare R2 returned ${response.status}`);
     }
 
     const symbolData = await response.json();
     
-    console.log(`✅ Successfully fetched setup for ${symbol}`);
+    console.log(`✅ Successfully fetched setup for ${cleanSymbol} from R2`);
     
+    // Return with Cache-Control so the browser/CDN helps with the load
     return NextResponse.json(symbolData, {
       headers: {
         'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30',

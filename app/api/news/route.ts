@@ -3,19 +3,21 @@ import { NextResponse } from 'next/server';
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
-const JSON_URL = "https://storage.googleapis.com/mzprimer-data-store/news.json";
+// ✅ NEW CLOUDFLARE R2 URL
+// Replace with your actual pub-xxxx.r2.dev link
+const R2_NEWS_URL = "https://pub-9a73dba996664c48aaa24b679e1122a2.r2.dev/news.json";
 
 export async function GET() {
   try {
-    // Server-side fetch (Bypasses CORS)
-    const res = await fetch(`${JSON_URL}?t=${Date.now()}`, {
+    // Fetch from R2 with a cache buster timestamp
+    const res = await fetch(`${R2_NEWS_URL}?t=${Date.now()}`, {
       method: 'GET',
       headers: { 'Cache-Control': 'no-cache' },
       next: { revalidate: 60 } // Check for new news every minute
     });
 
     if (!res.ok) {
-      throw new Error(`GCS Error: ${res.status}`);
+      throw new Error(`R2 News Error: ${res.status}`);
     }
 
     const data = await res.json();
@@ -31,7 +33,7 @@ export async function GET() {
 
   } catch (error) {
     console.error('News API Error:', error);
-    // Return empty array instead of crashing so the UI handles it gracefully
+    // Return empty array instead of crashing
     return NextResponse.json([], { status: 200 }); 
   }
 }

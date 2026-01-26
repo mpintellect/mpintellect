@@ -1,4 +1,3 @@
-// app/api/livemarketfeed/route.ts
 import { NextResponse } from 'next/server';
 
 // ✅ ENABLE EDGE RUNTIME (Super Fast)
@@ -7,28 +6,31 @@ export const runtime = 'edge';
 // Disable static generation for this route to ensure freshness
 export const dynamic = 'force-dynamic';
 
+// ✅ NEW CLOUDFLARE R2 URL
+// Replace with your actual pub-xxxx.r2.dev link
+const R2_URL = "https://pub-9a73dba996664c48aaa24b679e1122a2.r2.dev/market_intelligence.json";
+
 export async function GET() {
   try {
-    // Fetch directly from Google Cloud Storage
+    // Fetch directly from Cloudflare R2
     // Adding timestamp to bypass Vercel's internal fetch cache
-    const gcsUrl = `https://storage.googleapis.com/mzprimer-data-store/market_intelligence.json?t=${Date.now()}`;
+    const urlWithCacheBuster = `${R2_URL}?t=${Date.now()}`;
 
-    const response = await fetch(gcsUrl, {
+    const response = await fetch(urlWithCacheBuster, {
       method: 'GET',
       headers: {
-        'Cache-Control': 'no-cache', // Force fetch from GCS
+        'Cache-Control': 'no-cache', // Force fresh fetch from R2
       },
-      next: { revalidate: 30 } // Revalidate every 30s
+      next: { revalidate: 30 } // Check for updates every 30s
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch market intelligence');
+      throw new Error(`R2 Error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
 
     // Return with headers that allow browser caching for 30 seconds
-    // stale-while-revalidate=59 means: "If cache is old (30-89s), show old data while fetching new in background"
     return NextResponse.json(data, {
       status: 200,
       headers: {

@@ -1,4 +1,3 @@
-// app/api/data-proxy/route.ts
 export const runtime = 'edge';
 export const maxDuration = 5;
 
@@ -17,22 +16,32 @@ export async function GET(request: Request) {
       );
     }
 
-    // Clean symbol
+    // Clean symbol (e.g. BTC-USD -> BTCUSD)
     const cleanSymbol = symbol.replace(/[-_/]/g, "").toUpperCase();
-    const gcsUrl = `https://storage.googleapis.com/mzprimer-data-store/output_${cleanSymbol}.json`;
     
-    console.log(`[API] Fetching: ${gcsUrl}`);
+    // ✅ NEW CLOUDFLARE R2 URL
+    // Replace with your actual pub-xxxx.r2.dev link
+    const R2_URL = "https://pub-9a73dba996664c48aaa24b679e1122a2.r2.dev";
+    const r2Url = `${R2_URL}/output_${cleanSymbol}.json`;
+    
+    console.log(`[API Proxy] Fetching from R2: ${r2Url}`);
 
-    // Fetch from Google Cloud Storage with cache
-    const response = await fetch(gcsUrl, {
+    // Fetch from Cloudflare R2 with Vercel's edge cache
+    const response = await fetch(r2Url, {
       cache: 'force-cache',
-      next: { revalidate: 300 } // 5 minutes cache
+      next: { revalidate: 300 } // 5 minutes cache (matches your upload cycle)
     });
 
     if (!response.ok) {
+      if (response.status === 404) {
+         return new Response(
+            JSON.stringify({ error: `Setup for ${cleanSymbol} not found in R2` }),
+            { status: 404, headers: { 'Content-Type': 'application/json' } }
+          );
+      }
       return new Response(
         JSON.stringify({ 
-          error: 'Failed to fetch data from storage',
+          error: 'Failed to fetch data from R2 storage',
           status: response.status 
         }),
         { 
@@ -44,7 +53,7 @@ export async function GET(request: Request) {
 
     const data = await response.json();
     
-    // Return with caching headers
+    // Return with strong caching headers to minimize R2 "Class B" operations
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: {

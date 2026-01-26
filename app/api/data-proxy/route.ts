@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     
     // ✅ NEW CLOUDFLARE R2 URL
     // Replace with your actual pub-xxxx.r2.dev link
-    const R2_URL = "https://pub-9a73dba996664c48aaa24b679e1122a2.r2.dev";
+    const R2_URL = "https://data.mzprimer.com";
     const r2Url = `${R2_URL}/output_${cleanSymbol}.json`;
     
     console.log(`[API Proxy] Fetching from R2: ${r2Url}`);

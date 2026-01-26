@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     
     // ✅ NEW CLOUDFLARE R2 URL
     // Replace with your actual pub-xxxx.r2.dev link
-    const R2_URL = 'https://pub-9a73dba996664c48aaa24b679e1122a2.r2.dev/prices.json';
+    const R2_URL = 'https://data.mzprimer.com/prices.json';
     
     // We use a short revalidate (60s) so the API stays fresh
     const response = await fetch(R2_URL, {

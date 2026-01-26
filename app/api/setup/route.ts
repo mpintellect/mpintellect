@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     
     // ✅ NEW CLOUDFLARE R2 URL
     // Use the same pub-xxxx.r2.dev link from your other files
-    const R2_URL = 'https://pub-9a73dba996664c48aaa24b679e1122a2.r2.dev';
+    const R2_URL = 'https://data.mzprimer.com';
     const fileUrl = `${R2_URL}/output_${cleanSymbol}.json`;
     
     console.log('📡 Fetching from R2:', fileUrl);

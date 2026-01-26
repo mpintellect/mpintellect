@@ -178,7 +178,7 @@ export async function getSymbolData(
     
     // ✅ NEW CLOUDFLARE R2 URL
     // Use your Public R2.dev link or your custom domain
-    const R2_PUBLIC_URL = "https://pub-9a73dba996664c48aaa24b679e1122a2.r2.dev"; 
+    const R2_PUBLIC_URL = "https://data.mzprimer.com"; 
     const url = `${R2_PUBLIC_URL}/output_${cleanSymbol}.json`;
 
     const res = await fetch(url, {

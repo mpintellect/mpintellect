@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 // ✅ NEW CLOUDFLARE R2 URL
 // Replace with your actual pub-xxxx.r2.dev link
-const R2_NEWS_URL = "https://pub-9a73dba996664c48aaa24b679e1122a2.r2.dev/news.json";
+const R2_NEWS_URL = "https://data.mzprimer.com/news.json";
 
 export async function GET() {
   try {

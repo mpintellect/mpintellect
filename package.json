@@ -3,13 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "postbuild": "next-sitemap"
-  },
+  "dev": "next dev",
+  "build": "next build && npx @opennextjs/cloudflare",
+  "start": "next start",
+  "lint": "next lint"
+},
   "dependencies": {
     "@noble/hashes": "^2.0.0",
     "@noble/secp256k1": "^3.0.0",
@@ -48,6 +46,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.16.0",
     "@tailwindcss/postcss": "^4.1.11",
     "@types/axios": "^0.9.36",
     "@types/node": "^20",

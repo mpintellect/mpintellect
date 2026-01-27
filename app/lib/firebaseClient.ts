@@ -1,4 +1,4 @@
-// lib/firebaseClient.ts
+// lib/firebaseClient.ts - SIMPLER FIX
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -13,28 +13,44 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Log for debugging (remove in production)
-console.log("Firebase Config:", {
-  hasApiKey: !!firebaseConfig.apiKey,
-  hasAuthDomain: !!firebaseConfig.authDomain,
-  hasProjectId: !!firebaseConfig.projectId
-});
+// ONLY log and initialize in browser
+const isBrowser = typeof window !== 'undefined';
 
-// Initialize Firebase
 let app;
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
+let auth;
+let db;
+let rtdb;
+
+if (isBrowser) {
+  console.log("Firebase Config:", {
+    hasApiKey: !!firebaseConfig.apiKey,
+    hasAuthDomain: !!firebaseConfig.authDomain,
+    hasProjectId: !!firebaseConfig.projectId
+  });
+
+  // Check if config is valid
+  const hasValidConfig = firebaseConfig.apiKey && 
+                        firebaseConfig.authDomain && 
+                        firebaseConfig.projectId;
+
+  if (hasValidConfig) {
+    if (getApps().length === 0) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApps()[0];
+    }
+
+    auth = getAuth(app);
+    db = getFirestore(app);
+    rtdb = getDatabase(app);
+  } else {
+    console.warn('Firebase config missing - skipping initialization');
+  }
 } else {
-  app = getApps()[0];
+  // Return empty objects for SSR/build
+  auth = {} as any;
+  db = {} as any;
+  rtdb = {} as any;
 }
-
-// Initialize Firebase Authentication and get a reference to the service
-const auth = getAuth(app);
-
-// Initialize Cloud Firestore and get a reference to the service
-const db = getFirestore(app);
-
-// Initialize Realtime Database
-const rtdb = getDatabase(app);
 
 export { auth, db, rtdb };

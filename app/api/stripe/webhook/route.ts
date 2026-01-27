@@ -1,4 +1,4 @@
-export const runtime = 'edge';
+export const runtime = 'nodejs'; // ← Change from 'edge' to 'nodejs'
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from "next/server";

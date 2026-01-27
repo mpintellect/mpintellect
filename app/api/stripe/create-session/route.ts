@@ -1,4 +1,4 @@
-export const runtime = 'edge'; // ✅ Must be edge for Cloudflare
+export const runtime = 'nodejs'; // ← Change from 'edge' to 'nodejs'
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from "next/server";

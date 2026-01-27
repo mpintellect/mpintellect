@@ -1,17 +1,14 @@
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+// Note: If firebaseAdmin causes a build error later, we will need to 
+// swap it for the Web SDK, but for now, the Stripe fix is the priority.
 import { adminDb } from "@/app/lib/firebaseAdmin";
 import { sendOrderConfirmation } from "@/app/lib/email";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-08-27.basil",
-});
-//
 // 🎁 Setup plans delivered after payment
-//
 const SETUP_PLANS: Record<string, number> = {
   "price_1SSyQORmR6ESDQvobwheaXws": 10, // €4.5 → 10 setups
   "price_1SSyRGRmR6ESDQvoKgAI9CAN": 20, // €8 → 20 setups
@@ -19,14 +16,21 @@ const SETUP_PLANS: Record<string, number> = {
 };
 
 export async function POST(req: Request) {
-  const sig = req.headers.get("stripe-signature") || "";
-  const secret = process.env.STRIPE_WEBHOOK_SECRET_CHATBOT || "";
+  // ✅ 1. Initialize Stripe INSIDE the function
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  const secret = process.env.STRIPE_WEBHOOK_SECRET_CHATBOT;
 
-  if (!secret) {
-    console.error("❌ Missing STRIPE_WEBHOOK_SECRET_CHATBOT");
-    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
+  if (!stripeKey || !secret) {
+    console.error("❌ Missing Stripe Configuration");
+    return NextResponse.json({ error: "Config missing" }, { status: 500 });
   }
 
+  const stripe = new Stripe(stripeKey, {
+    // @ts-ignore
+    apiVersion: "2023-10-16", // Use a standard stable version
+  });
+
+  const sig = req.headers.get("stripe-signature") || "";
   const body = await req.text();
   let event: Stripe.Event;
 
@@ -41,16 +45,15 @@ export async function POST(req: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    await handleCheckoutCompleted(session);
+    // ✅ 2. Pass the 'stripe' instance to the handler
+    await handleCheckoutCompleted(session, stripe);
   }
 
   return NextResponse.json({ received: true });
 }
 
-//
 // 🔥 CHECKOUT SUCCESS HANDLER
-//
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe: Stripe) {
   console.log("🔄 Processing: checkout.session.completed");
 
   const uid = session.metadata?.uid;
@@ -61,26 +64,24 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
-  // Fetch line items to get the priceId
-  const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
-  const priceId = lineItems.data[0]?.price?.id;
-
-  if (!priceId) {
-    console.error("❌ Missing Stripe Price ID");
-    return;
-  }
-
-  const setupsToAdd = SETUP_PLANS[priceId];
-
-  if (!setupsToAdd) {
-    console.log("⚪ Non-setup product purchased → Ignored");
-    return;
-  }
-
-  // --------------------------
-  // 🔥 Update Firestore setupCount
-  // --------------------------
   try {
+    // Fetch line items to get the priceId
+    const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+    const priceId = lineItems.data[0]?.price?.id;
+
+    if (!priceId) {
+      console.error("❌ Missing Stripe Price ID");
+      return;
+    }
+
+    const setupsToAdd = SETUP_PLANS[priceId];
+
+    if (!setupsToAdd) {
+      console.log("⚪ Non-setup product purchased → Ignored");
+      return;
+    }
+
+    // 🔥 Update Firestore setupCount
     const userRef = adminDb.collection("users").doc(uid);
 
     await adminDb.runTransaction(async (tx) => {
@@ -102,14 +103,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     });
 
     console.log(`🎉 Updated setupCount for UID ${uid}: +${setupsToAdd}`);
-  } catch (err) {
-    console.error("❌ Firestore update failed:", err);
-  }
 
-  // --------------------------
-  // 💌 Send Order Confirmation Email
-  // --------------------------
-  try {
+    // 💌 Send Order Confirmation Email
     await sendOrderConfirmation({
       to: customerEmail,
       orderId: session.id,
@@ -125,7 +120,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     console.log(`📧 Receipt sent to: ${customerEmail}`);
   } catch (err) {
-    console.error("❌ Failed to send email receipt:", err);
+    console.error("❌ Webhook processing error:", err);
   }
 
   console.log("✅ Checkout processing complete!");

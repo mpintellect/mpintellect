@@ -1,15 +1,9 @@
 import { NextResponse } from "next/server";
 import { sendOrderConfirmation } from "../../../lib/email";
 
-export const runtime = "nodejs";
+export const runtime = "edge"; // ✅ Changed from nodejs
 export const dynamic = "force-dynamic";
 
-/**
- * Quick test:
- * curl -X POST http://localhost:3000/api/debug/mail \
- *   -H "Content-Type: application/json" \
- *   -d '{"to":"you@yourdomain.com"}'
- */
 export async function POST(req: Request) {
   try {
     const { to } = await req.json();
@@ -19,18 +13,12 @@ export async function POST(req: Request) {
       to,
       orderId: "TEST-ORDER",
       productName: "Scalper X1",
-      downloadToken: "TEST-TOKEN-ONLY-FOR-EMAIL",
+      downloadToken: "TEST-TOKEN",
       amountPaid: 10,
-      paymentDetails: {
-        wallet: process.env.USDT_WALLET || "",
-        amount: 10,
-        txid: "SIMULATED-TXID",
-        network: "TRC20",
-      },
     });
 
     return NextResponse.json({ ok: true });
-  } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error)?.message || "send fail" }, { status: 500 });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }

@@ -3,10 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build",
-    "opennext:build": "npx @opennextjs/cloudflare build",
-    "opennext:deploy": "npx @opennextjs/cloudflare deploy",
-    "build:full": "next build && npx @opennextjs/cloudflare build"
+    "dev": "next dev",
+    "build": "next build && node scripts/cleanup-symlinks.js",
+    "prebuild": "rm -rf .next",
+    "start": "next start",
+    "lint": "next lint",
+    "clean": "rm -rf .next node_modules/.cache",
+    "build:clean": "npm run clean && npm run build"
   },
   "dependencies": {
     "@noble/hashes": "^2.0.0",

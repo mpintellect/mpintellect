@@ -2,5 +2,14 @@
   "name": "mzprimer-web",
   "compatibility_date": "2024-11-18",
   "compatibility_flags": ["nodejs_compat"],
-  "pages_build_output_dir": ".next"
+  "pages_build_output_dir": ".next",
+  "build": {
+    "command": "npm run build",
+    "output_dir": ".next"
+  },
+  "env": {
+    "production": {
+      "fail_on_error": false
+    }
+  }
 }

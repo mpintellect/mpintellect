@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   productionBrowserSourceMaps: false,
-  
+  turbopack: {},
   webpack: (config, { isServer, dev }) => {
     // Disable source maps completely
     if (!dev) {
@@ -31,3 +31,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+

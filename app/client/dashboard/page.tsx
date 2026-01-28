@@ -18,25 +18,37 @@ export const dynamic = "force-dynamic";
 // SIMPLE Email Verification Message (inline component)
 function EmailVerificationMessage() {
   const [sending, setSending] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    try {
+      const auth = getAuthInstance();
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setCurrentUser(user);
+      });
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Firebase initialization error in EmailVerificationMessage:", error);
+    }
+  }, []);
 
   const handleResend = async () => {
-  const currentUser = getAuthInstance().currentUser;
-  if (!currentUser) return;
-  
-  setSending(true);
-  try {
-    await sendEmailVerification(currentUser);
-    toast.success("Verification email sent! Check your inbox.");
-  } catch (error) {
-    console.error("Error sending verification:", error);
-    toast.error("Failed to send verification email");
-  } finally {
-    setSending(false);
-  }
-};
+    if (!currentUser) return;
+    
+    setSending(true);
+    try {
+      await sendEmailVerification(currentUser);
+      toast.success("Verification email sent! Check your inbox.");
+    } catch (error) {
+      console.error("Error sending verification:", error);
+      toast.error("Failed to send verification email");
+    } finally {
+      setSending(false);
+    }
+  };
 
   // Don't show if email is already verified
-  if (getAuthInstance().currentUser?.emailVerified) {
+  if (!currentUser || currentUser.emailVerified) {
     return null;
   }
 
@@ -110,43 +122,48 @@ function DashboardContent() {
 
   // Auth & Setup Count
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(getAuthInstance(), async (firebaseUser) => {
-      if (!firebaseUser) {
-        router.push("/client/login");
-      } else {
-        setUser(firebaseUser);
-        refreshSetupCount();
-        if (searchParams.get("success") === "true") {
-          toast.success("✅ Payment successful! Setup credits added.");
-          refreshSetupCount();
-          const url = new URL(window.location.href);
-          url.searchParams.delete("success");
-          window.history.replaceState({}, "", url.toString());
+    try {
+      const auth = getAuthInstance();
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (!firebaseUser) {
+          router.push("/client/login");
+        } else {
+          setUser(firebaseUser);
+          await refreshSetupCount(firebaseUser.uid);
+          if (searchParams.get("success") === "true") {
+            toast.success("✅ Payment successful! Setup credits added.");
+            await refreshSetupCount(firebaseUser.uid);
+            const url = new URL(window.location.href);
+            url.searchParams.delete("success");
+            window.history.replaceState({}, "", url.toString());
+          }
+          setLoading(false);
         }
-        setLoading(false);
-      }
-    });
-    return () => unsubscribe();
+      });
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Firebase initialization error in DashboardContent:", error);
+      setLoading(false);
+    }
   }, [router, searchParams]);
 
-  const refreshSetupCount = async () => {
-  const currentUser = getAuthInstance().currentUser;
-  if (!currentUser) return;
-  
-  try {
-    const userDocRef = doc(getDbInstance(), "users", currentUser.uid);
-    const userSnap = await getDoc(userDocRef);
-    if (userSnap.exists()) {
-      setSetupCount(userSnap.data().setupCount ?? 0);
+  const refreshSetupCount = async (userId: string) => {
+    try {
+      const db = getDbInstance();
+      const userDocRef = doc(db, "users", userId);
+      const userSnap = await getDoc(userDocRef);
+      if (userSnap.exists()) {
+        setSetupCount(userSnap.data().setupCount ?? 0);
+      }
+    } catch (error) {
+      console.error("Error refreshing setup count:", error);
     }
-  } catch (error) {
-    console.error("Error refreshing setup count:", error);
-  }
-};
+  };
 
   const handleLogout = async () => {
     try {
-      await signOut(getAuthInstance());
+      const auth = getAuthInstance();
+      await signOut(auth);
       router.push("/client/login");
     } catch (error) {
       console.error("Logout error:", error);
@@ -184,7 +201,9 @@ function DashboardContent() {
   const closeTool = () => {
     setActiveTool(null);
     document.body.style.overflow = 'auto';
-    refreshSetupCount();
+    if (user) {
+      refreshSetupCount(user.uid);
+    }
   };
 
   const openAnalytics = () => {
@@ -270,20 +289,20 @@ function DashboardContent() {
             </div>
             
             <div className="user-section">
-  <div className="user-info-simple">
-    <div className="user-avatar-small">
-      {user?.email?.charAt(0).toUpperCase()}
-    </div>
-    <span className="user-email-simple">
-      {user?.email?.split('@')[0]} {/* Shorter, cleaner email handle */}
-    </span>
-    <span className="setup-count-simple">
-      {setupCount} INTEL
-    </span>
-  </div>
-  <button onClick={handleLogout} className="logout-btn-simple">Logout</button>
-</div>
-</div>
+              <div className="user-info-simple">
+                <div className="user-avatar-small">
+                  {user?.email?.charAt(0).toUpperCase()}
+                </div>
+                <span className="user-email-simple">
+                  {user?.email?.split('@')[0]}
+                </span>
+                <span className="setup-count-simple">
+                  {setupCount} INTEL
+                </span>
+              </div>
+              <button onClick={handleLogout} className="logout-btn-simple">Logout</button>
+            </div>
+          </div>
 
           {/* Mobile Layout */}
           <div className="mobile-layout">
@@ -339,7 +358,6 @@ function DashboardContent() {
             </div>
 
             <EmailVerificationMessage />
-
 
             <div className="status-card">
               <div className="status-header">

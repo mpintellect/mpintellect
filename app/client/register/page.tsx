@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { getAuthInstance, getDbInstance } from "@/app/lib/firebaseClient";
 import Link from "next/link";
+
+export const dynamic = "force-dynamic";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -14,14 +16,6 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [firebaseReady, setFirebaseReady] = useState(false);
-
-  // Check Firebase initialization
-  useEffect(() => {
-    if (getAuthInstance()) {
-      setFirebaseReady(true);
-    }
-  }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,35 +35,43 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // 1. Create user account (NO email verification sent)
-      const userCredential = await createUserWithEmailAndPassword(getAuthInstance(), email, password);
+      // 1. Get Firebase instances inside the event handler
+      const authInstance = getAuthInstance();
+      const dbInstance = getDbInstance();
+      
+      // 2. Create user account
+      const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
       const user = userCredential.user;
 
-      // 2. Create user document with needsEmailVerification flag
-      await setDoc(doc(getDbInstance(), "users", user.uid), {
-        email: user.email,
-        emailVerified: false, // Will update when they verify later
-        needsEmailVerification: true, // Flag to show banner in dashboard
+      // 3. Send email verification
+      await sendEmailVerification(user);
+
+      // 4. Create user document
+      await setDoc(doc(dbInstance, "users", user.uid), {
+        email: user.email?.toLowerCase().trim(),
+        emailVerified: false,
+        needsEmailVerification: true,
         uid: user.uid,
         createdAt: new Date().toISOString(),
         lastLogin: new Date().toISOString(),
-        setupCount: 0,
+        setupCount: 1, // ✅ Give 1 free setup for registration
         plan: "free",
-        subscriptionActive: false
+        subscriptionActive: false,
+        referredBy: null
       });
 
-      // 3. Redirect directly to dashboard (NO waiting for verification)
+      // 5. Redirect to dashboard
       router.push("/client/dashboard");
 
     } catch (error: any) {
       console.error("Registration error:", error);
       
-      // User-friendly error messages
-      if (error.code === "getAuthInstance()/email-already-in-use") {
+      // User-friendly error messages with correct error codes
+      if (error.code === "auth/email-already-in-use") {
         setError("Email already in use. Please login instead.");
-      } else if (error.code === "getAuthInstance()/invalid-email") {
+      } else if (error.code === "auth/invalid-email") {
         setError("Invalid email address");
-      } else if (error.code === "getAuthInstance()/weak-password") {
+      } else if (error.code === "auth/weak-password") {
         setError("Password is too weak. Use at least 6 characters.");
       } else {
         setError("Registration failed. Please try again.");
@@ -93,13 +95,6 @@ export default function RegisterPage() {
             <p className="register-subtitle">Get started with AI-powered trading insights</p>
           </div>
 
-          {/* Alert for Firebase Initialization */}
-          {!firebaseReady && (
-            <div className="alert-box">
-              <p className="alert-text">Initializing authentication service...</p>
-            </div>
-          )}
-
           {/* Registration Form */}
           <form onSubmit={handleRegister} className="register-form">
             {/* Email Field */}
@@ -111,7 +106,7 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="register-input"
-                disabled={loading || !firebaseReady}
+                disabled={loading}
               />
             </div>
 
@@ -124,7 +119,7 @@ export default function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="register-input"
-                disabled={loading || !firebaseReady}
+                disabled={loading}
               />
             </div>
 
@@ -137,7 +132,7 @@ export default function RegisterPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 className="register-input"
-                disabled={loading || !firebaseReady}
+                disabled={loading}
               />
             </div>
 
@@ -151,7 +146,7 @@ export default function RegisterPage() {
             {/* Register Button */}
             <button
               type="submit"
-              disabled={loading || !firebaseReady}
+              disabled={loading}
               className="register-btn"
             >
               {loading ? "Creating Account..." : "Register"}
@@ -169,7 +164,6 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
-
     </div>
   );
 }

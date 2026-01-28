@@ -22,7 +22,7 @@ import PropFirmChatSection from '@/components/PropFirmChatSection';
 import AiChatBox from "@/components/AiChatBox";
 import PropFirmChat from "@/components/PropFirmChat";
 
-export const dynamic = 'force-dynamic';
+
 
 export default function Home() {
   const [activeTool, setActiveTool] = useState<'ai' | 'prop' | null>(null);

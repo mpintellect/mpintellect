@@ -4,11 +4,12 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  output: 'export', // ← This is the key
   images: {
     unoptimized: true,
   },
   productionBrowserSourceMaps: false,
-  turbopack: {},
+  // Remove turbopack config if you have it
 };
 
 export default nextConfig;

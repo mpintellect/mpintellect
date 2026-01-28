@@ -4,31 +4,31 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  output: 'standalone',
+  // 1. Remove output: 'standalone' (Cloudflare Pages doesn't need it)
+  
   images: {
     unoptimized: true,
   },
   productionBrowserSourceMaps: false,
-  turbopack: {},
+  
+  // 2. Webpack config will only work if you build without the --turbo flag
   webpack: (config, { isServer, dev }) => {
-    // Disable source maps completely
     if (!dev) {
+      // Disable source maps
       config.devtool = false;
+      
+      // Split chunks more aggressively to stay under 25MB
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          maxSize: 15000000, // 15MB limit to be safe
+          minSize: 10000,
+        },
+      };
     }
-    
-    // Split chunks to reduce size
-    config.optimization = {
-      ...config.optimization,
-      splitChunks: {
-        chunks: 'all',
-        maxSize: 200000, // 200KB max chunk size
-        minSize: 10000,
-      },
-    };
-    
     return config;
   },
 };
 
 export default nextConfig;
-

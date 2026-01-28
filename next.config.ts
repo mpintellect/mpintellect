@@ -4,12 +4,11 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  output: 'export', // ← This is the key
+  output: 'standalone', // ← Use standalone, not export
   images: {
     unoptimized: true,
   },
   productionBrowserSourceMaps: false,
-  // Remove turbopack config if you have it
 };
 
 export default nextConfig;

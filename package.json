@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && find .next -name \"*.map\" -delete && node scripts/cleanup-symlinks.js",
+    "build": "next build && npm run clear-maps && node scripts/cleanup-symlinks.js",
+    "clear-maps": "find .next -name '*.map' -delete || true",
     "prebuild": "rm -rf .next",
     "start": "next start",
     "lint": "next lint",
-    "clean": "rm -rf .next node_modules/.cache",
-    "build:clean": "npm run clean && npm run build"
+    "clean": "rm -rf .next node_modules/.cache"
 },
   "dependencies": {
     "@noble/hashes": "^2.0.0",

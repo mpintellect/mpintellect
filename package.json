@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run clear-maps && node scripts/cleanup-symlinks.js",
+    "build": "next build && npm run clear-maps && node scripts/cleanup-symlinks.js && node scripts/copy-static-assets.js",
     "clear-maps": "find .next -name '*.map' -delete || true",
     "prebuild": "rm -rf .next",
     "start": "next start",

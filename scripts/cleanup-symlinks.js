@@ -19,14 +19,23 @@ function cleanupSymlinks(dir) {
         
         // Get the target
         const target = fs.readlinkSync(fullPath);
+        console.log(`  → Points to: ${target}`);
+        
+        // Check if it's a CSS or JS file symlink - DON'T DELETE THESE
+        if (fullPath.includes('.css') || fullPath.includes('.js')) {
+          console.log(`  ⚠️  Preserving asset symlink: ${fullPath}`);
+          continue; // Skip, don't delete
+        }
         
         // If target is outside .next directory or doesn't exist, remove it
         const absoluteTarget = path.resolve(path.dirname(fullPath), target);
         if (!absoluteTarget.includes(path.resolve('.next')) || !fs.existsSync(absoluteTarget)) {
-          console.log(`Removing broken symlink: ${fullPath} -> ${target}`);
+          console.log(`  🗑️  Removing broken symlink: ${fullPath}`);
           fs.unlinkSync(fullPath);
+        } else {
+          console.log(`  ✓ Keeping valid symlink: ${fullPath}`);
         }
-      } else if (item.isDirectory()) {
+      } else if (item.isDirectory() && !stat.isSymbolicLink()) {
         cleanupSymlinks(fullPath);
       }
     } catch (error) {
@@ -37,4 +46,33 @@ function cleanupSymlinks(dir) {
 
 // Clean .next directory
 cleanupSymlinks('.next');
-console.log('Cleanup complete');
+
+// Also check for and preserve static assets
+console.log('\nChecking static assets...');
+const staticDir = '.next/static';
+if (fs.existsSync(staticDir)) {
+  console.log(`Static directory exists: ${staticDir}`);
+  
+  // Check for CSS files
+  const cssFiles = [];
+  function findCSS(dir) {
+    if (!fs.existsSync(dir)) return;
+    const items = fs.readdirSync(dir, { withFileTypes: true });
+    for (const item of items) {
+      const fullPath = path.join(dir, item.name);
+      if (item.isDirectory()) {
+        findCSS(fullPath);
+      } else if (fullPath.endsWith('.css')) {
+        cssFiles.push(fullPath);
+      }
+    }
+  }
+  
+  findCSS(staticDir);
+  console.log(`Found ${cssFiles.length} CSS files`);
+  if (cssFiles.length > 0) {
+    console.log('CSS files preserved ✓');
+  }
+}
+
+console.log('✅ Cleanup complete');

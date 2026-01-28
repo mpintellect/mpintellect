@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  output: 'standalone', // ← Use standalone, not export
+  output: 'standalone', // ← This is important
   images: {
     unoptimized: true,
   },

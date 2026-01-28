@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
 import Head from 'next/head'; 
+import Image from 'next/image';
 
 // 🛑 UPDATE YOUR LINKS HERE
 const SOCIAL_LINKS = {
@@ -84,16 +85,13 @@ export default function Footer() {
       {PAYMENT_LOGOS.map((key) => {
         const logo = LOGOS[key];
         return (
-          <img 
+          <Image 
             key={key}
             src={logo.src}
             alt={logo.alt}
             className="trust-logo"
-            loading="lazy"
             width={logo.width || 40}
             height={logo.height || 25}
-            decoding="async"
-            fetchPriority={key === 'stripe' ? 'high' : 'low'}
           />
         );
       })}
@@ -166,15 +164,13 @@ export default function Footer() {
         <div className="footer-content">
           <div className="footer-logo-badges">
             {/* Optimized main logo */}
-            <img
+            <Image
               src={LOGOS.mzlogo.src}
               alt={LOGOS.mzlogo.alt}
               className="footer-logo"
-              loading="eager" // Load eagerly since it's above the fold
               width={LOGOS.mzlogo.width}
               height={LOGOS.mzlogo.height}
-              decoding="sync"
-              fetchPriority="high"
+              priority={true}
             />
             
             {/* Memoized payment badges */}

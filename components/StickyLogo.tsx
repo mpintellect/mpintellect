@@ -12,7 +12,7 @@ export default function StickyLogo() {
       href="/" 
       className="sticky-logo visible"
       aria-label="Go to homepage"
-      prefetch={false} // Don't prefetch since it's same page navigation
+      prefetch={false}
     >
       <Image
         src={LOGO_URL}
@@ -20,9 +20,8 @@ export default function StickyLogo() {
         className="sticky-logo-img"
         width={60}
         height={60}
-        quality={75} // Lower quality for small image
-        priority={false} // Not critical
-        loading="lazy"
+        quality={75}
+        priority={false}
         sizes="60px"
         style={{
           maxWidth: '100%',

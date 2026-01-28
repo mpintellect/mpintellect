@@ -24,8 +24,6 @@ export default function Hero() {
         className="w-40 md:w-56"
         priority={true}
         quality={85}
-        loading="eager"
-        fetchPriority="high"
         sizes="(max-width: 768px) 160px, 224px"
       />
 

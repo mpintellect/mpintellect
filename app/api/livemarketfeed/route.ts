@@ -1,71 +1,47 @@
 // app/api/livemarketfeed/route.ts
 import { NextResponse } from 'next/server';
 
-// Edge runtime for Cloudflare Pages
+// ✅ ENABLE EDGE RUNTIME (Super Fast)
 export const runtime = 'edge';
 
-// Disable static generation
+// Disable static generation for this route to ensure freshness
 export const dynamic = 'force-dynamic';
 
-const R2_URL = "https://data.mzprimer.com/market_intelligence.json";
-
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const url = new URL(request.url);
-    const cacheBuster = url.searchParams.get('t') || Date.now();
-    
-    // Construct URL with cache buster
-    const fetchUrl = `${R2_URL}?t=${cacheBuster}`;
-    
-    const response = await fetch(fetchUrl, {
+    // Fetch directly from Google Cloud Storage
+    // Adding timestamp to bypass Vercel's internal fetch cache
+    const gcsUrl = `https://storage.googleapis.com/mzprimer-data-store/market_intelligence.json?t=${Date.now()}`;
+
+    const response = await fetch(gcsUrl, {
       method: 'GET',
       headers: {
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-cache', // Force fetch from GCS
       },
+      next: { revalidate: 30 } // Revalidate every 30s
     });
 
     if (!response.ok) {
-      throw new Error(`R2 Error: ${response.status}`);
+      throw new Error('Failed to fetch market intelligence');
     }
 
     const data = await response.json();
 
-    return new Response(JSON.stringify(data), {
+    // Return with headers that allow browser caching for 30 seconds
+    // stale-while-revalidate=59 means: "If cache is old (30-89s), show old data while fetching new in background"
+    return NextResponse.json(data, {
       status: 200,
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=59',
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=30',
       },
     });
 
   } catch (error) {
     console.error('Market Intelligence API Error:', error);
-    
-    return new Response(
-      JSON.stringify({ 
-        error: 'Failed to load market data', 
-        signals: [] 
-      }),
-      {
-        status: 500,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json',
-        },
-      }
+    return NextResponse.json(
+      { error: 'Failed to load market data', signals: [] }, 
+      { status: 500 }
     );
   }
-}
-
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
 }

@@ -1,5 +1,5 @@
 // /app/lib/firebase/saveSetup.ts
-import { db } from "@/app/lib/firebaseClient";
+import { getDbInstance } from "@/app/lib/firebaseClient";
 import { collection, doc, setDoc, Timestamp } from "firebase/firestore";
 
 /**
@@ -40,8 +40,11 @@ export async function saveSetup({
   }
 
   try {
+    // Get the Firestore instance using the getter function
+    const dbInstance = getDbInstance();
+    
     // Create a new doc in Firestore > setups
-    const ref = doc(collection(db, "setups"));
+    const ref = doc(collection(dbInstance, "setups"));
     console.log("📝 Creating Firestore document with ID:", ref.id);
 
     const data = {
@@ -65,6 +68,6 @@ export async function saveSetup({
     return { id: ref.id, ...data };
   } catch (error) {
     console.error("❌ Firestore save error:", error);
-    throw new Error(`Failed to save setup: ${error}`);
+    throw new Error(`Failed to save setup: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

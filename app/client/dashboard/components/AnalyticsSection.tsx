@@ -20,7 +20,7 @@ import {
 import { useEffect, useState } from "react";
 import { useUser } from "@/app/hooks/useUser";
 import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
-import { db } from "@/app/lib/firebaseClient";
+import { getDbInstance } from "@/app/lib/firebaseClient";
 import { CONTRACT_SIZES } from "@/data/symbols";
 
 interface Setup {
@@ -70,19 +70,22 @@ export default function UserAnalytics() {
       return;
     }
 
-    const fetchData = async () => {
-      try {
-        console.log("🔍 Fetching setups for user:", user.uid);
-        
-        // Try with generatedAt first (newer setups)
-        const q = query(
-          collection(db, "setups"), 
-          where("userId", "==", user.uid),
-          orderBy("generatedAt", "desc")
-        );
+   const fetchData = async () => {
+  try {
+    console.log("🔍 Fetching setups for user:", user.uid);
+    
+    // Get the database instance
+    const db = getDbInstance();
+    
+    // Try with generatedAt first (newer setups)
+    const q = query(
+      collection(db, "setups"), 
+      where("userId", "==", user.uid),
+      orderBy("generatedAt", "desc")
+    );
 
-        const querySnapshot = await getDocs(q);
-        console.log("🔍 Query snapshot size:", querySnapshot.size);
+    const querySnapshot = await getDocs(q);
+    console.log("🔍 Query snapshot size:", querySnapshot.size);
         
         const fetched = querySnapshot.docs.map((doc) => {
           const data = doc.data();
@@ -101,12 +104,13 @@ export default function UserAnalytics() {
         
         // If ordering by generatedAt fails, try with createdAt
         try {
-          console.log("🔄 Trying with createdAt...");
-          const fallbackQuery = query(
-            collection(db, "setups"), 
-            where("userId", "==", user.uid),
-            orderBy("createdAt", "desc")
-          );
+      console.log("🔄 Trying with createdAt...");
+      const db = getDbInstance(); // Add this line
+      const fallbackQuery = query(
+        collection(db, "setups"), 
+        where("userId", "==", user.uid),
+        orderBy("createdAt", "desc")
+      );
           const fallbackSnapshot = await getDocs(fallbackQuery);
           const fallbackData = fallbackSnapshot.docs.map((doc) => ({
             id: doc.id,
@@ -120,11 +124,12 @@ export default function UserAnalytics() {
           
           // Last attempt: try without any ordering
           try {
-            console.log("🔄 Trying without ordering...");
-            const simpleQuery = query(
-              collection(db, "setups"), 
-              where("userId", "==", user.uid)
-            );
+        console.log("🔄 Trying without ordering...");
+        const db = getDbInstance(); // Add this line
+        const simpleQuery = query(
+          collection(db, "setups"), 
+          where("userId", "==", user.uid)
+        );
             const simpleSnapshot = await getDocs(simpleQuery);
             const simpleData = simpleSnapshot.docs.map((doc) => ({
               id: doc.id,

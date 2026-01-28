@@ -9,7 +9,7 @@ import { saveSetup } from "@/app/lib/firebase/saveSetup";
 import { useOneSetup } from "../app/lib/firebase/useSetup";
 import { loadStripe } from "@stripe/stripe-js";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { auth, db } from "../app/lib/firebaseClient";
+import { getAuthInstance, getDbInstance } from "../app/lib/firebaseClient";
 import { setDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import SignalTicket from "./SignalTicket";
@@ -192,12 +192,16 @@ function QuickRegisterModal({
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+  // Get Firebase instances using getter functions
+  const authInstance = getAuthInstance();
+  const dbInstance = getDbInstance();
+  
+  const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
+  const user = userCredential.user;
 
-      await sendEmailVerification(user);
+  await sendEmailVerification(user);
 
-      await setDoc(doc(db, "users", user.uid), {
+  await setDoc(doc(dbInstance, "users", user.uid), {
         email: email.toLowerCase().trim(),
         setupCount: 1, // 🎁 1 free setup for registration
         referredBy: null,

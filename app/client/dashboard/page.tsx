@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { onAuthStateChanged, signOut, User, sendEmailVerification } from "firebase/auth";
-import { auth, db } from "@/app/lib/firebaseClient";
+import { getAuthInstance, getDbInstance } from "@/app/lib/firebaseClient";
 import { doc, getDoc } from "firebase/firestore";
 import toast from "react-hot-toast";
 import AiChatBox from "@/components/AiChatBox";
@@ -20,22 +20,23 @@ function EmailVerificationMessage() {
   const [sending, setSending] = useState(false);
 
   const handleResend = async () => {
-    if (!auth.currentUser) return;
-    
-    setSending(true);
-    try {
-      await sendEmailVerification(auth.currentUser);
-      toast.success("Verification email sent! Check your inbox.");
-    } catch (error) {
-      console.error("Error sending verification:", error);
-      toast.error("Failed to send verification email");
-    } finally {
-      setSending(false);
-    }
-  };
+  const currentUser = getAuthInstance().currentUser;
+  if (!currentUser) return;
+  
+  setSending(true);
+  try {
+    await sendEmailVerification(currentUser);
+    toast.success("Verification email sent! Check your inbox.");
+  } catch (error) {
+    console.error("Error sending verification:", error);
+    toast.error("Failed to send verification email");
+  } finally {
+    setSending(false);
+  }
+};
 
   // Don't show if email is already verified
-  if (auth.currentUser?.emailVerified) {
+  if (getAuthInstance().currentUser?.emailVerified) {
     return null;
   }
 
@@ -109,7 +110,7 @@ function DashboardContent() {
 
   // Auth & Setup Count
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(getAuthInstance(), async (firebaseUser) => {
       if (!firebaseUser) {
         router.push("/client/login");
       } else {
@@ -129,21 +130,23 @@ function DashboardContent() {
   }, [router, searchParams]);
 
   const refreshSetupCount = async () => {
-    if (!auth.currentUser) return;
-    try {
-      const userDocRef = doc(db, "users", auth.currentUser.uid);
-      const userSnap = await getDoc(userDocRef);
-      if (userSnap.exists()) {
-        setSetupCount(userSnap.data().setupCount ?? 0);
-      }
-    } catch (error) {
-      console.error("Error refreshing setup count:", error);
+  const currentUser = getAuthInstance().currentUser;
+  if (!currentUser) return;
+  
+  try {
+    const userDocRef = doc(getDbInstance(), "users", currentUser.uid);
+    const userSnap = await getDoc(userDocRef);
+    if (userSnap.exists()) {
+      setSetupCount(userSnap.data().setupCount ?? 0);
     }
-  };
+  } catch (error) {
+    console.error("Error refreshing setup count:", error);
+  }
+};
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await signOut(getAuthInstance());
       router.push("/client/login");
     } catch (error) {
       console.error("Logout error:", error);

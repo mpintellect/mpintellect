@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "@/app/lib/firebaseClient";
+import { getAuthInstance, getDbInstance } from "@/app/lib/firebaseClient";
 import Link from "next/link";
 
 export default function RegisterPage() {
@@ -18,7 +18,7 @@ export default function RegisterPage() {
 
   // Check Firebase initialization
   useEffect(() => {
-    if (auth) {
+    if (getAuthInstance()) {
       setFirebaseReady(true);
     }
   }, []);
@@ -42,11 +42,11 @@ export default function RegisterPage() {
 
     try {
       // 1. Create user account (NO email verification sent)
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(getAuthInstance(), email, password);
       const user = userCredential.user;
 
       // 2. Create user document with needsEmailVerification flag
-      await setDoc(doc(db, "users", user.uid), {
+      await setDoc(doc(getDbInstance(), "users", user.uid), {
         email: user.email,
         emailVerified: false, // Will update when they verify later
         needsEmailVerification: true, // Flag to show banner in dashboard
@@ -65,11 +65,11 @@ export default function RegisterPage() {
       console.error("Registration error:", error);
       
       // User-friendly error messages
-      if (error.code === "auth/email-already-in-use") {
+      if (error.code === "getAuthInstance()/email-already-in-use") {
         setError("Email already in use. Please login instead.");
-      } else if (error.code === "auth/invalid-email") {
+      } else if (error.code === "getAuthInstance()/invalid-email") {
         setError("Invalid email address");
-      } else if (error.code === "auth/weak-password") {
+      } else if (error.code === "getAuthInstance()/weak-password") {
         setError("Password is too weak. Use at least 6 characters.");
       } else {
         setError("Registration failed. Please try again.");

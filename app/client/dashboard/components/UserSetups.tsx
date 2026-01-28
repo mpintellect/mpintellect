@@ -1,9 +1,8 @@
-// /app/client/Dashboard/components/UserSetups.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { useUser } from "../../../hooks/useUser";
+import { getDbInstance } from "@/app/lib/firebaseClient";
 
 // ✅ Firestore imports
 import {
@@ -14,7 +13,7 @@ import {
   limit,
   getDocs,
 } from "firebase/firestore";
-import { db } from "@/app/lib/firebaseClient";
+
 
 interface Setup {
   id: string;
@@ -42,8 +41,10 @@ export default function UserSetups() {
       }
 
       try {
+        // Get getDbInstance() instance safely
+        const db = getDbInstance();
         const q = query(
-          collection(db, "setups"),
+          collection(getDbInstance(), "setups"),
           where("userId", "==", user.uid),
           orderBy("createdAt", "desc"),
           limit(20)

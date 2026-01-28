@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/app/lib/firebaseClient";
+import { getAuthInstance, getDbInstance } from "@/app/lib/firebaseClient";
 
 export const dynamic = "force-dynamic";
 
@@ -21,16 +21,16 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(getAuthInstance(), email, password);
       router.push("/client/dashboard");
     } catch (err: any) {
       console.error("Login error:", err);
 
-      if (err.code === "auth/invalid-credential") {
+      if (err.code === "getAuthInstance()/invalid-credential") {
         setError("Invalid email or password");
-      } else if (err.code === "auth/user-not-found") {
+      } else if (err.code === "getAuthInstance()/user-not-found") {
         setError("No account found with this email");
-      } else if (err.code === "auth/wrong-password") {
+      } else if (err.code === "getAuthInstance()/wrong-password") {
         setError("Incorrect password");
       } else {
         setError(err.message || "Login failed");

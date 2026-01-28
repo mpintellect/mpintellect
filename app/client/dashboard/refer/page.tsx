@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation"; 
-import { auth, db } from "@/app/lib/firebaseClient";
+import { getAuthInstance, getDbInstance } from "@/app/lib/firebaseClient";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { doc, getDoc } from "firebase/firestore";
 import { Copy, Share2, Users, Zap, Gift, ArrowLeft } from "lucide-react"; 
@@ -10,7 +10,11 @@ import toast from "react-hot-toast";
 
 export default function ReferPage() {
   const router = useRouter();
+  
+  // Get auth instance
+  const auth = getAuthInstance();
   const [user] = useAuthState(auth);
+  
   const [referralCode, setReferralCode] = useState("");
   const [stats, setStats] = useState({ count: 0, earned: 0 });
   const [loading, setLoading] = useState(true);
@@ -27,6 +31,8 @@ export default function ReferPage() {
   const fetchStats = async () => {
     if(!user) return;
     try {
+        // Get db instance
+        const db = getDbInstance();
         const docSnap = await getDoc(doc(db, "users", user.uid));
         if (docSnap.exists()) {
             const data = docSnap.data();
@@ -55,8 +61,8 @@ export default function ReferPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'MZPrimer  AI Trading',
-          text: 'Join me on MZPrimer  and get free AI trading setups!',
+          title: 'MZPrimer AI Trading',
+          text: 'Join me on MZPrimer and get free AI trading setups!',
           url: referralLink,
         });
       } catch (err) { console.log("Share failed", err); }

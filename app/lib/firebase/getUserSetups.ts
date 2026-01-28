@@ -1,5 +1,5 @@
 // /app/lib/firebase/getUserSetups.ts
-import { db } from "@/app/lib/firebaseClient";
+import { getDbInstance } from "@/app/lib/firebaseClient";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 
 /**
@@ -8,19 +8,27 @@ import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 export async function getUserSetups(userId: string) {
   if (!userId) throw new Error("Missing userId for fetching setups.");
 
-  const setupsRef = collection(db, "setups");
-  const setupsQuery = query(
-    setupsRef,
-    where("userId", "==", userId),
-    orderBy("generatedAt", "desc")
-  );
+  try {
+    // Use getter function to get guaranteed non-null database instance
+    const dbInstance = getDbInstance();
+    
+    const setupsRef = collection(dbInstance, "setups");
+    const setupsQuery = query(
+      setupsRef,
+      where("userId", "==", userId),
+      orderBy("generatedAt", "desc")
+    );
 
-  const querySnapshot = await getDocs(setupsQuery);
+    const querySnapshot = await getDocs(setupsQuery);
 
-  const setups = querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data()
-  }));
+    const setups = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data()
+    }));
 
-  return setups;
+    return setups;
+  } catch (error) {
+    console.error("Error fetching user setups:", error);
+    throw new Error("Failed to fetch user setups. Firebase might not be initialized.");
+  }
 }

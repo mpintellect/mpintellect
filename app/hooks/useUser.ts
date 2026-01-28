@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../../app/lib/firebaseClient";
+import { getAuthInstance, getDbInstance } from "../../app/lib/firebaseClient";
 
 interface UserData {
   userId: string;
@@ -18,43 +18,60 @@ export function useUser(): UserData {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setIsLoading(true);
-      
-      if (firebaseUser) {
-        // ✅ Firebase authenticated user
-        setUser(firebaseUser);
-        setUserId(firebaseUser.uid);
+    try {
+      // Use getter functions to get guaranteed non-null instances
+      const authInstance = getAuthInstance();
+      const dbInstance = getDbInstance();
+
+      const unsubscribe = onAuthStateChanged(authInstance, async (firebaseUser) => {
+        setIsLoading(true);
         
-        try {
-          // Fetch setupCount from Firestore
-          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setSetupCount(userData.setupCount || 0);
-          } else {
+        if (firebaseUser) {
+          // ✅ Firebase authenticated user
+          setUser(firebaseUser);
+          setUserId(firebaseUser.uid);
+          
+          try {
+            // Fetch setupCount from Firestore
+            const userDoc = await getDoc(doc(dbInstance, "users", firebaseUser.uid));
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              setSetupCount(userData.setupCount || 0);
+            } else {
+              setSetupCount(0);
+            }
+          } catch (error) {
+            console.error("Error fetching user data:", error);
             setSetupCount(0);
           }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-          setSetupCount(0);
+        } else {
+          // ✅ Guest user - use localStorage UUID
+          setUser(null);
+          let guestId = localStorage.getItem("mz_user_id");
+          if (!guestId) {
+            guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            localStorage.setItem("mz_user_id", guestId);
+          }
+          setUserId(guestId);
+          setSetupCount(0); // Guest users have 0 setupCount
         }
-      } else {
-        // ✅ Guest user - use localStorage UUID
-        setUser(null);
-        let guestId = localStorage.getItem("mz_user_id");
-        if (!guestId) {
-          guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          localStorage.setItem("mz_user_id", guestId);
-        }
-        setUserId(guestId);
-        setSetupCount(0); // Guest users have 0 setupCount
-      }
-      
-      setIsLoading(false);
-    });
+        
+        setIsLoading(false);
+      });
 
-    return () => unsubscribe();
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Firebase not initialized in useUser:", error);
+      // If Firebase isn't initialized, set up as guest user
+      setIsLoading(false);
+      let guestId = localStorage.getItem("mz_user_id");
+      if (!guestId) {
+        guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem("mz_user_id", guestId);
+      }
+      setUserId(guestId);
+      setSetupCount(0);
+    }
   }, []);
 
   return { userId, setupCount, user, isLoading };

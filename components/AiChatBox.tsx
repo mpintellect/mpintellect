@@ -7,7 +7,7 @@ import { useUser } from "../app/hooks/useUser";
 import { fetchSetup, hasValidPendingOrders, getPrimaryOrder, getAllPendingOrders, getOrderConfidence, getMarketContext, type ExtendedTradeSetupData } from "../app/lib/fetchSetup";
 import { loadStripe } from "@stripe/stripe-js";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { auth, db } from "../app/lib/firebaseClient";
+import { getAuthInstance, getDbInstance } from "../app/lib/firebaseClient";
 import { setDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { saveSetup } from "@/app/lib/firebase/saveSetup";
@@ -188,12 +188,14 @@ function QuickRegisterModal({
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const authInstance = getAuthInstance();
+      const dbInstance = getDbInstance();
+      const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
       const user = userCredential.user;
 
       await sendEmailVerification(user);
 
-      await setDoc(doc(db, "users", user.uid), {
+      await setDoc(doc(dbInstance, "users", user.uid), {
         email: email.toLowerCase().trim(),
         setupCount: 1, // 🎁 1 free setup for registration
         referredBy: null,

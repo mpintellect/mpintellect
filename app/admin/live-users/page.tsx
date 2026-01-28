@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ref, onValue } from "firebase/database";
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "firebase/auth";
-import { auth, rtdb } from "@/app/lib/firebaseClient";
+import { getAuthInstance, rtdb } from "@/app/lib/firebaseClient";
 import { ShieldAlert, Lock, LogOut } from "lucide-react";
 
 // 🛑 CONFIG: ADD YOUR ADMIN EMAILS HERE
@@ -32,7 +32,14 @@ export default function LiveUsersPage() {
 
   // 1. Check Authentication on Load
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const authInstance = getAuthInstance();
+    if (!authInstance) {
+      console.error("Firebase auth not initialized");
+      setAuthLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(authInstance, (user) => {
       if (user && user.email && ADMIN_EMAILS.includes(user.email)) {
         setIsAdmin(true);
       } else {
@@ -46,6 +53,12 @@ export default function LiveUsersPage() {
   // 2. Fetch Live Users (Only runs if Admin)
   useEffect(() => {
     if (!isAdmin) return;
+
+    // Use the direct rtdb export (which can be null)
+    if (!rtdb) {
+      console.error("Real-time database not initialized");
+      return;
+    }
 
     const statusRef = ref(rtdb, "/status");
     const unsubscribe = onValue(statusRef, (snapshot) => {
@@ -73,8 +86,15 @@ export default function LiveUsersPage() {
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    
+    const authInstance = getAuthInstance();
+    if (!authInstance) {
+      setError("Authentication service not available");
+      return;
+    }
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(authInstance, email, password);
       // The onAuthStateChanged effect will handle the redirect/state update
     } catch (err: any) {
       setError("Invalid credentials or unauthorized access.");
@@ -150,13 +170,18 @@ export default function LiveUsersPage() {
           Live Traffic: {users.length}
         </h1>
         <button 
-          onClick={() => signOut(auth)}
+          onClick={() => {
+            const authInstance = getAuthInstance();
+            if (authInstance) {
+              signOut(authInstance);
+            }
+          }}
           className="flex items-center gap-2 text-xs text-zinc-500 hover:text-white transition-colors"
         >
           <LogOut size={14} /> Sign Out
         </button>
       </div>
-
+      
       <div className="grid gap-4">
         {users.map((user) => (
           <div key={user.uid} className="bg-zinc-900 border border-zinc-800 p-6 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -179,7 +204,7 @@ export default function LiveUsersPage() {
                 {user.current_page === '/' ? 'HOME PAGE' : user.current_page.replace('/', '').toUpperCase()}
               </span>
               <p className="text-[10px] text-zinc-500 mt-2 font-mono">
-                 Active Now
+                Active Now
               </p>
             </div>
           </div>

@@ -15,9 +15,9 @@ const firebaseConfig = {
 
 // Initialize only in browser with valid config
 let app: FirebaseApp | null = null;
-let auth: Auth | null = null;
-let db: Firestore | null = null;
-let rtdb: Database | null = null;
+let _auth: Auth | null = null;
+let _db: Firestore | null = null;
+let _rtdb: Database | null = null;
 
 if (typeof window !== 'undefined') {
   const hasValidConfig = firebaseConfig.apiKey && 
@@ -32,9 +32,9 @@ if (typeof window !== 'undefined') {
         app = getApps()[0];
       }
 
-      auth = getAuth(app);
-      db = getFirestore(app);
-      rtdb = getDatabase(app);
+      _auth = getAuth(app);
+      _db = getFirestore(app);
+      _rtdb = getDatabase(app);
     } catch (error) {
       console.error('Firebase initialization error:', error);
     }
@@ -43,19 +43,32 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// Helper functions to ensure Firebase is initialized
+// Helper functions that throw if not initialized (for build-time safety)
 function getAuthInstance(): Auth {
-  if (!auth) {
+  if (!_auth) {
     throw new Error('Firebase Auth not initialized. Check your environment variables.');
   }
-  return auth;
+  return _auth;
 }
 
 function getDbInstance(): Firestore {
-  if (!db) {
+  if (!_db) {
     throw new Error('Firestore not initialized. Check your environment variables.');
   }
-  return db;
+  return _db;
 }
 
-export { auth, db, rtdb, getAuthInstance, getDbInstance };
+// ADDED: Helper function for Realtime Database
+function getRTDBInstance(): Database {
+  if (!_rtdb) {
+    throw new Error('Firebase Realtime Database not initialized. Check your environment variables.');
+  }
+  return _rtdb;
+}
+
+// Safe exports that can be null (for runtime use)
+const auth = _auth;
+const db = _db;
+const rtdb = _rtdb;
+
+export { auth, db, rtdb, getAuthInstance, getDbInstance, getRTDBInstance };

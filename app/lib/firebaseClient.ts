@@ -1,8 +1,8 @@
-// lib/firebaseClient.ts - SIMPLER FIX
-import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getDatabase } from "firebase/database";
+// lib/firebaseClient.ts
+import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import { getAuth, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
+import { getDatabase, Database } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,44 +13,49 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// ONLY log and initialize in browser
-const isBrowser = typeof window !== 'undefined';
+// Initialize only in browser with valid config
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+let rtdb: Database | null = null;
 
-let app;
-let auth;
-let db;
-let rtdb;
-
-if (isBrowser) {
-  console.log("Firebase Config:", {
-    hasApiKey: !!firebaseConfig.apiKey,
-    hasAuthDomain: !!firebaseConfig.authDomain,
-    hasProjectId: !!firebaseConfig.projectId
-  });
-
-  // Check if config is valid
+if (typeof window !== 'undefined') {
   const hasValidConfig = firebaseConfig.apiKey && 
                         firebaseConfig.authDomain && 
                         firebaseConfig.projectId;
 
   if (hasValidConfig) {
-    if (getApps().length === 0) {
-      app = initializeApp(firebaseConfig);
-    } else {
-      app = getApps()[0];
-    }
+    try {
+      if (getApps().length === 0) {
+        app = initializeApp(firebaseConfig);
+      } else {
+        app = getApps()[0];
+      }
 
-    auth = getAuth(app);
-    db = getFirestore(app);
-    rtdb = getDatabase(app);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      rtdb = getDatabase(app);
+    } catch (error) {
+      console.error('Firebase initialization error:', error);
+    }
   } else {
     console.warn('Firebase config missing - skipping initialization');
   }
-} else {
-  // Return empty objects for SSR/build
-  auth = {} as any;
-  db = {} as any;
-  rtdb = {} as any;
 }
 
-export { auth, db, rtdb };
+// Helper functions to ensure Firebase is initialized
+function getAuthInstance(): Auth {
+  if (!auth) {
+    throw new Error('Firebase Auth not initialized. Check your environment variables.');
+  }
+  return auth;
+}
+
+function getDbInstance(): Firestore {
+  if (!db) {
+    throw new Error('Firestore not initialized. Check your environment variables.');
+  }
+  return db;
+}
+
+export { auth, db, rtdb, getAuthInstance, getDbInstance };

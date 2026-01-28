@@ -11,15 +11,24 @@ import toast from "react-hot-toast";
 export default function ReferPage() {
   const router = useRouter();
   
-  // Get auth instance
-  const auth = getAuthInstance();
-  const [user] = useAuthState(auth);
+  const [authInstance, setAuthInstance] = useState<any>(null);
+  const [user] = useAuthState(authInstance || undefined);
   
   const [referralCode, setReferralCode] = useState("");
   const [stats, setStats] = useState({ count: 0, earned: 0 });
   const [loading, setLoading] = useState(true);
   const [inputCode, setInputCode] = useState("");
   const [redeemLoading, setRedeemLoading] = useState(false);
+
+  // Initialize Firebase client-side only
+  useEffect(() => {
+    try {
+      const auth = getAuthInstance();
+      setAuthInstance(auth);
+    } catch (error) {
+      console.error("Firebase initialization error:", error);
+    }
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -31,7 +40,7 @@ export default function ReferPage() {
   const fetchStats = async () => {
     if(!user) return;
     try {
-        // Get db instance
+        // Get db instance client-side only
         const db = getDbInstance();
         const docSnap = await getDoc(doc(db, "users", user.uid));
         if (docSnap.exists()) {

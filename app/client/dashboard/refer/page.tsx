@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 export default function ReferPage() {
   const router = useRouter();
   
+  // Move auth instance to state
   const [authInstance, setAuthInstance] = useState<any>(null);
   const [user] = useAuthState(authInstance || undefined);
   
@@ -20,7 +21,7 @@ export default function ReferPage() {
   const [inputCode, setInputCode] = useState("");
   const [redeemLoading, setRedeemLoading] = useState(false);
 
-  // Initialize Firebase client-side only
+  // Initialize Firebase ONLY on client side
   useEffect(() => {
     try {
       const auth = getAuthInstance();
@@ -107,7 +108,7 @@ export default function ReferPage() {
     }
   };
 
-  if (loading) {
+  if (loading || !authInstance) {
       return <div className="min-h-[50vh] flex items-center justify-center text-zinc-500">Loading...</div>;
   }
 

@@ -1,5 +1,5 @@
 // app/lib/firebase/useSetup.ts
-import { auth, db } from "../firebaseClient";
+import { getAuthInstance, getDbInstance } from "../firebaseClient";
 import { doc, runTransaction } from "firebase/firestore";
 
 /**
@@ -7,15 +7,19 @@ import { doc, runTransaction } from "firebase/firestore";
  * Returns "ok" if successful, "no-credits" if none available, "error" if unknown failure.
  */
 export async function useOneSetup(): Promise<"ok" | "no-credits" | "error"> {
-  const user = auth.currentUser;
-  if (!user) return "error";
-
-  const userRef = doc(db, "users", user.uid);
-
   try {
+    // Get Firebase instances using getter functions
+    const authInstance = getAuthInstance();
+    const dbInstance = getDbInstance();
+    
+    const user = authInstance.currentUser;
+    if (!user) return "error";
+
+    const userRef = doc(dbInstance, "users", user.uid);
+
     let success = "error" as "ok" | "no-credits" | "error";
 
-    await runTransaction(db, async (transaction) => {
+    await runTransaction(dbInstance, async (transaction) => {
       const userDoc = await transaction.get(userRef);
       const current = userDoc.data()?.setupCount || 0;
 

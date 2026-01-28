@@ -1,17 +1,31 @@
 import { useState, useEffect } from 'react';
 import { urlBase64ToUint8Array } from '../lib/push-utils'; 
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '../lib/firebaseClient'; 
+import { getAuthInstance, getDbInstance } from '../lib/firebaseClient'; 
 import { signInAnonymously } from "firebase/auth"; 
 import { doc, setDoc, Timestamp, getDoc } from "firebase/firestore"; 
 
 export function usePush() {
   const [isSupported, setIsSupported] = useState(false);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
-  const [user] = useAuthState(auth);
+  const [authInstance, setAuthInstance] = useState<any>(null);
+  const [dbInstance, setDbInstance] = useState<any>(null);
+  const [user, loadingAuth] = useAuthState(authInstance || undefined);
   const [loading, setLoading] = useState(false);
 
-  // 1. BROWSER CHECK + RESTORE STATE
+  // 1. Initialize Firebase instances
+  useEffect(() => {
+    try {
+      const authInst = getAuthInstance();
+      const dbInst = getDbInstance();
+      setAuthInstance(authInst);
+      setDbInstance(dbInst);
+    } catch (error) {
+      console.error("Firebase not initialized in usePush:", error);
+    }
+  }, []);
+
+  // 2. BROWSER CHECK + RESTORE STATE
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
       setIsSupported(true);
@@ -23,17 +37,16 @@ export function usePush() {
     }
   }, []);
 
-  // 2. NEW: SILENT MIGRATION / SYNC
-  // Whenever 'user' or 'subscription' changes, ensure DB is synced.
+  // 3. NEW: SILENT MIGRATION / SYNC
   useEffect(() => {
     async function syncUserSubscription() {
         // Conditions: User exists, Subscription exists, and User is NOT Anonymous (They logged in)
-        if (user && subscription && !user.isAnonymous) {
+        if (user && subscription && !user.isAnonymous && dbInstance) {
             
             console.log("🔄 Detected Logged In User + Existing Push. Syncing...");
             
             // Check if this user already has this saved (Optimize reads)
-            const userPushRef = doc(db, "push_subscriptions", user.uid);
+            const userPushRef = doc(dbInstance, "push_subscriptions", user.uid);
             
             // We save cleanly to the NEW Real User ID
             await setDoc(userPushRef, {
@@ -58,9 +71,9 @@ export function usePush() {
     }
 
     syncUserSubscription();
-  }, [user, subscription]); // Runs automatically when user logs in or allows push
+  }, [user, subscription, dbInstance]);
 
-  // 3. SUBSCRIBE FUNCTION (Triggered by Buttons)
+  // 4. SUBSCRIBE FUNCTION (Triggered by Buttons)
   const subscribeToPush = async () => {
     if (!isSupported) {
         console.log("Push not supported");
@@ -70,10 +83,14 @@ export function usePush() {
     setLoading(true);
 
     try {
+        if (!authInstance || !dbInstance) {
+            throw new Error("Firebase not initialized");
+        }
+
         let currentUser = user;
         if (!currentUser) {
             console.log("Logging in Anonymously...");
-            const userCredential = await signInAnonymously(auth);
+            const userCredential = await signInAnonymously(authInstance);
             currentUser = userCredential.user;
         }
         
@@ -91,7 +108,7 @@ export function usePush() {
         });
 
         // Client-Side Save
-        const userPushRef = doc(db, "push_subscriptions", currentUser.uid);
+        const userPushRef = doc(dbInstance, "push_subscriptions", currentUser.uid);
         const pushData = {
             userId: currentUser.uid,
             // Capture email/phone if they happen to be logged in already
@@ -128,5 +145,7 @@ export function usePush() {
     }
   };
 
-  return { isSupported, subscription, subscribeToPush, loading };
+  const isLoading = loading || loadingAuth || !authInstance || !dbInstance;
+
+  return { isSupported, subscription, subscribeToPush, loading: isLoading };
 }

@@ -4,12 +4,16 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // We remove 'standalone' because Cloudflare Pages manages its own bundling
+  output: 'standalone',
   images: {
     unoptimized: true,
   },
   productionBrowserSourceMaps: false,
-  // Explicitly disable source maps for webpack builds
+  
+  // ADD THIS
+  turbopack: {},
+  
+  // KEEP webpack config
   webpack: (config, { dev }) => {
     if (!dev) {
       config.devtool = false;

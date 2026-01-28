@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { urlBase64ToUint8Array } from '../lib/push-utils'; 
-import { useAuthState } from 'react-firebase-hooks/auth';
 import { getAuthInstance, getDbInstance } from '../lib/firebaseClient'; 
-import { signInAnonymously } from "firebase/auth"; 
-import { doc, setDoc, Timestamp, getDoc } from "firebase/firestore"; 
+import { signInAnonymously, onAuthStateChanged } from "firebase/auth"; 
+import { doc, setDoc, Timestamp } from "firebase/firestore"; 
 
 export function usePush() {
   const [isSupported, setIsSupported] = useState(false);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [authInstance, setAuthInstance] = useState<any>(null);
   const [dbInstance, setDbInstance] = useState<any>(null);
-  const [user, loadingAuth] = useAuthState(authInstance || undefined);
   const [loading, setLoading] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
   // 1. Initialize Firebase instances
   useEffect(() => {
@@ -20,8 +20,17 @@ export function usePush() {
       const dbInst = getDbInstance();
       setAuthInstance(authInst);
       setDbInstance(dbInst);
+      
+      // Set up auth state listener
+      const unsubscribe = onAuthStateChanged(authInst, (user) => {
+        setUser(user);
+        setAuthLoading(false);
+      });
+      
+      return () => unsubscribe();
     } catch (error) {
       console.error("Firebase not initialized in usePush:", error);
+      setAuthLoading(false);
     }
   }, []);
 
@@ -92,6 +101,7 @@ export function usePush() {
             console.log("Logging in Anonymously...");
             const userCredential = await signInAnonymously(authInstance);
             currentUser = userCredential.user;
+            setUser(currentUser); // Update user state
         }
         
         if (!currentUser) throw new Error("Auth Failed");
@@ -145,7 +155,7 @@ export function usePush() {
     }
   };
 
-  const isLoading = loading || loadingAuth || !authInstance || !dbInstance;
+  const isLoading = loading || authLoading;
 
   return { isSupported, subscription, subscribeToPush, loading: isLoading };
 }

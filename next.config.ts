@@ -1,4 +1,3 @@
-// next.config.js
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
@@ -7,23 +6,19 @@ const nextConfig: NextConfig = {
   },
   output: 'standalone',
   
-  // Add empty Turbopack config
   turbopack: {},
   
-  // Base path configuration
-  basePath: '', // Keep empty for root domain
+  basePath: '',
   
-  // Image configuration
   images: {
     formats: ['image/avif', 'image/webp'],
     unoptimized: true,
   },
   
-  // Asset prefix configuration
-  assetPrefix: '', // Empty for root
+  assetPrefix: '',
   
-  // Webpack configuration for SVG support
-  webpack(config) {
+  webpack: (config, { isServer, dev }) => {
+    // Handle SVG support
     config.module.rules.push({
       test: /\.svg$/,
       use: [{
@@ -35,7 +30,6 @@ const nextConfig: NextConfig = {
               name: 'preset-default',
               params: {
                 overrides: {
-                  // Disable removeViewBox to preserve SVG scaling
                   removeViewBox: false,
                 },
               },
@@ -45,10 +39,48 @@ const nextConfig: NextConfig = {
       }],
     });
     
+    // ✅ CRITICAL FIX: Handle Node.js modules for Cloudflare
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        net: false,
+        tls: false,
+        fs: false,
+        crypto: require.resolve('crypto-browserify'),
+        stream: require.resolve('stream-browserify'),
+        http: false,
+        https: false,
+        zlib: false,
+        os: false,
+        path: false,
+        child_process: false,
+      };
+    }
+    
+    // ✅ Exclude problematic packages from client bundles
+    if (!isServer) {
+      config.externals = [
+        ...(config.externals || []),
+        'web-push',
+        'firebase',
+        'firebase-admin'
+      ];
+    }
+    
     return config;
   },
   
   productionBrowserSourceMaps: false,
+  
+  // ✅ For Cloudflare compatibility
+  experimental: {
+    esmExternals: 'loose',
+  },
+  
+  // ✅ Important for Cloudflare Pages
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
 };
 
 export default nextConfig;

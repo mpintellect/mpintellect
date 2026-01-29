@@ -7,6 +7,6 @@ compatibility_flags = ["nodejs_compat"]
 command = "npm run pages:build"
 
 [[d1_databases]]
-binding = "mzprimer_db"
+binding = "Db"
 database_name = "mzprimer-db"
 database_id = "fa332b73-0ce0-468b-b92c-e7691a351bde"

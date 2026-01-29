@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "pages:build": "npm run build",
     "build": "next build && npm run clear-maps && node scripts/cleanup-symlinks.js && node scripts/copy-static-assets.js",
     "clear-maps": "find .next -name '*.map' -delete || true",
     "prebuild": "rm -rf .next",

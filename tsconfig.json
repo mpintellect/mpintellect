@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "types": ["@cloudflare/next-on-pages"],
+    "types": [],
     "target": "es2020",
     "lib": [
       "dom",

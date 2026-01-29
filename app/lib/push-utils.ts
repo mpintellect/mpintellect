@@ -1,34 +1,45 @@
-// app/lib/push-utils.ts
-export function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/\-/g, '+')
-    .replace(/_/g, '/');
+// app/lib/push-utils.ts - CLOUDFLARE VERSION
 
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
+// Simple push notification utilities for Cloudflare
+// Note: We're not using web-push package as it has Node.js dependencies
 
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
-// Generate VAPID keys (run once)
-export async function generateVAPIDKeys() {
-  const webpush = await import('web-push');
-  const vapidKeys = webpush.generateVAPIDKeys();
-  
-  return {
-    publicKey: vapidKeys.publicKey,
-    privateKey: vapidKeys.privateKey
+export interface PushSubscription {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
   };
 }
 
-// Check browser support
-export function checkPushSupport(): boolean {
-  return typeof window !== 'undefined' && 
-         'serviceWorker' in navigator && 
-         'PushManager' in window &&
-         'Notification' in window;
+export async function sendPushNotification(
+  subscription: PushSubscription,
+  payload: any
+): Promise<boolean> {
+  try {
+    // For Cloudflare Pages, we'll use fetch API
+    const response = await fetch('/api/push/send-cloudflare', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        subscription,
+        payload
+      }),
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error('Push notification error:', error);
+    return false;
+  }
+}
+
+export function generateVAPIDKeys() {
+  // For Cloudflare, you might want to generate these manually
+  // or use environment variables
+  return {
+    publicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '',
+    privateKey: process.env.VAPID_PRIVATE_KEY || ''
+  };
 }

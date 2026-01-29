@@ -1,0 +1,29 @@
+name = "mzprimer-push-worker"
+main = "index.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "mzprimer-push-db"
+database_id = "" # Add your D1 database ID here
+
+# Environment variables
+[vars]
+VAPID_PUBLIC_KEY = ""
+VAPID_PRIVATE_KEY = ""
+VAPID_SUBJECT = "mailto:admin@mzprimer.com"
+
+# Routes
+routes = [
+  { pattern = "push.mzprimer.com/*", zone_name = "mzprimer.com" }
+]
+
+# Cron trigger for scheduled notifications
+triggers = [
+  { cron = "*/5 * * * *" } # Run every 5 minutes
+]
+
+[build]
+command = ""

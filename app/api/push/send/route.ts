@@ -1,27 +1,13 @@
-// app/api/push/send/route.ts - CLOUDFLARE VERSION
+// app/api/push/send/route.ts - UPDATED FOR WORKER
 import { NextResponse } from "next/server";
-import webpush from "web-push";
-import { getDb, query, execute } from "@/app/lib/cloudflare/db-simple";
+import { getDB, query } from "@/app/lib/cloudflare/db-simple";
 import { sendToTelegram } from "@/app/lib/telegram";
+import { pushClient } from "@/app/lib/cloudflare/push-client";
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    // 1. SETUP & VALIDATE KEYS
-    const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
-    const vapidSubject = process.env.VAPID_SUBJECT || "mailto:admin@mzprimer.com";
-    
-    if (!vapidPublicKey || !vapidPrivateKey) {
-      console.error("VAPID Keys missing. Web Push disabled.");
-      return NextResponse.json({ 
-        error: "Push notifications not configured" 
-      }, { status: 500 });
-    }
-
-    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
-
     const body = await req.json();
     const { 
       title, 
@@ -48,27 +34,22 @@ export async function POST(req: Request) {
         .replace('Conf:', '🧠 Conf:');
     }
 
-    const pushPayload = JSON.stringify({
+    const notification = {
       title: title?.startsWith("🚀") ? title : `🚀 ${title || "Market Update"}`,
       body: enrichedBody,
       url: url || "https://mzprimer.com",
-      
-      // Visuals
       icon: icon,
       badge: badge,
-      vibrate: [200, 100, 200],
       tag: tag,
-      
-      // Interactive Buttons
+      data: {
+        type: type,
+        timestamp: Date.now(),
+      },
       actions: [
         { action: "open", title: "⚡ Execute Trade" },
         { action: "close", title: "Dismiss" }
       ],
-      
-      // Additional data
-      timestamp: Date.now(),
-      type: type
-    });
+    };
 
     // ===========================================
     // SCENARIO A: SINGLE TARGET (Testing)
@@ -76,7 +57,7 @@ export async function POST(req: Request) {
     if (targetUserId && !sendToAll) {
         console.log(`[TEST] Searching for User: ${targetUserId}`);
         
-        // Look for user's push subscriptions
+        // Get user's subscription
         const subscriptions = await query<{
           endpoint: string;
           subscription_data: string;
@@ -87,26 +68,19 @@ export async function POST(req: Request) {
         );
 
         if (subscriptions.length > 0) {
-          const sendPromises = subscriptions.map(async (sub) => {
-            try {
-              const subscription = JSON.parse(sub.subscription_data);
-              await webpush.sendNotification(subscription, pushPayload);
-              return { success: true, endpoint: sub.endpoint };
-            } catch (error: any) {
-              console.error(`Failed to send to ${sub.endpoint}:`, error);
-              
-              // If subscription is invalid, mark as inactive
-              if (error.statusCode === 410 || error.statusCode === 404) {
-                await execute(
-                  'UPDATE push_subscriptions SET status = "inactive" WHERE endpoint = ?',
-                  [sub.endpoint]
-                );
+          const results = await Promise.all(
+            subscriptions.map(async (sub) => {
+              try {
+                const subscription = JSON.parse(sub.subscription_data);
+                const success = await pushClient.sendNotification(subscription, notification);
+                return { success, endpoint: sub.endpoint };
+              } catch (error: any) {
+                console.error(`Failed to send to ${sub.endpoint}:`, error);
+                return { success: false, endpoint: sub.endpoint, error: error.message };
               }
-              return { success: false, endpoint: sub.endpoint, error: error.message };
-            }
-          });
+            })
+          );
 
-          const results = await Promise.all(sendPromises);
           const successful = results.filter(r => r.success).length;
           
           return NextResponse.json({ 
@@ -133,104 +107,24 @@ export async function POST(req: Request) {
         // 1. TELEGRAM BOT (Parallel Fire)
         const telegramPromise = sendToTelegram(title, enrichedBody, url);
 
-        // 2. DISCORD WEBHOOK (Optional)
-        // const discordPromise = sendToDiscord(title, message, url);
-
-        // 3. WEB PUSH BLAST (Iterate All Users)
-        const pushPromise = (async () => {
-            const subscriptions = await query<{
-              id: number;
-              endpoint: string;
-              subscription_data: string;
-              user_id: string;
-              email: string;
-            }>('SELECT * FROM push_subscriptions WHERE status = "active"');
-            
-            if (subscriptions.length === 0) {
-              console.log("No active push subscriptions found");
-              return 0;
-            }
-
-            console.log(`Sending to ${subscriptions.length} Push Subscribers...`);
-
-            // Send in parallel
-            const sendTasks = subscriptions.map(async (sub) => {
-              try {
-                const subscription = JSON.parse(sub.subscription_data);
-                await webpush.sendNotification(subscription, pushPayload);
-                
-                // Log the notification
-                await execute(`
-                  INSERT INTO push_notifications_log 
-                  (subscription_id, user_id, email, title, body, sent_at, status)
-                  VALUES (?, ?, ?, ?, ?, ?, ?)
-                `, [
-                  sub.id,
-                  sub.user_id,
-                  sub.email,
-                  title,
-                  enrichedBody,
-                  Date.now(),
-                  'sent'
-                ]);
-                
-                return { success: true, endpoint: sub.endpoint };
-              } catch (error: any) {
-                console.error(`Failed to send to ${sub.endpoint}:`, error);
-                
-                // Mark invalid subscriptions as inactive
-                if (error.statusCode === 410 || error.statusCode === 404) {
-                  await execute(
-                    'UPDATE push_subscriptions SET status = "inactive" WHERE id = ?',
-                    [sub.id]
-                  );
-                }
-                
-                // Log the failure
-                await execute(`
-                  INSERT INTO push_notifications_log 
-                  (subscription_id, user_id, email, title, body, sent_at, status, error)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                `, [
-                  sub.id,
-                  sub.user_id,
-                  sub.email,
-                  title,
-                  enrichedBody,
-                  Date.now(),
-                  'failed',
-                  error.message
-                ]);
-                
-                return { success: false, endpoint: sub.endpoint, error: error.message };
-              }
-            });
-
-            const results = await Promise.all(sendTasks);
-            const successful = results.filter(r => r.success).length;
-            
-            console.log(`📊 Push Broadcast Complete: ${successful}/${subscriptions.length} successful`);
-            
-            return successful;
-        })();
+        // 2. WEB PUSH BROADCAST via Cloudflare Worker
+        const pushPromise = pushClient.broadcast(notification);
 
         // Wait for all channels
-        const [telegramResult, pushCount] = await Promise.all([
+        const [telegramResult, pushResult] = await Promise.all([
           telegramPromise,
           pushPromise
         ]);
 
         return NextResponse.json({ 
-          success: true, 
+          success: pushResult.success,
           mode: 'Omni-Channel Broadcast',
           stats: {
-            push: {
-              sent: pushCount,
-              total: 0 // We'll need to query to get total
-            },
+            push: pushResult.stats,
             telegram: telegramResult,
             timestamp: new Date().toISOString()
-          }
+          },
+          ...(pushResult.error && { error: pushResult.error })
         });
     }
 

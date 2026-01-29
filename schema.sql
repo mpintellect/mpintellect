@@ -436,3 +436,115 @@ CREATE TABLE IF NOT EXISTS poll_votes (
 
 CREATE INDEX idx_poll_votes_poll_id ON poll_votes(poll_id);
 CREATE INDEX idx_poll_votes_user_id ON poll_votes(user_id);
+-- Push notifications queue
+CREATE TABLE IF NOT EXISTS push_notifications_queue (
+  id TEXT PRIMARY KEY,
+  subscription TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  status TEXT DEFAULT 'pending',
+  created_at TEXT NOT NULL,
+  processed_at TEXT,
+  error_message TEXT
+);
+
+-- Referral system
+CREATE TABLE IF NOT EXISTS referral_codes (
+  id TEXT PRIMARY KEY,
+  code TEXT UNIQUE NOT NULL,
+  owner_id TEXT,
+  max_uses INTEGER DEFAULT 1,
+  uses_count INTEGER DEFAULT 0,
+  credits_reward INTEGER DEFAULT 5,
+  is_active INTEGER DEFAULT 1,
+  expires_at TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS referral_redemptions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  referral_code TEXT NOT NULL,
+  redeemed_at TEXT NOT NULL,
+  FOREIGN KEY (referral_code) REFERENCES referral_codes(code)
+);
+
+-- Chat sessions
+CREATE TABLE IF NOT EXISTS chat_sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  chat_data TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Presence tracking
+CREATE TABLE IF NOT EXISTS presence (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  user_name TEXT,
+  online INTEGER DEFAULT 0,
+  last_seen TEXT NOT NULL,
+  page TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE INDEX idx_presence_user_id ON presence(user_id);
+CREATE INDEX idx_presence_online ON presence(online);
+-- push_subscriptions table
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  endpoint TEXT UNIQUE NOT NULL,
+  user_id TEXT,
+  email TEXT,
+  subscription_data TEXT NOT NULL,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'expired')),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+-- notification_queue table
+CREATE TABLE IF NOT EXISTS notification_queue (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  subscription_data TEXT,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed')),
+  scheduled_for TEXT,
+  created_at TEXT NOT NULL,
+  processed_at TEXT,
+  error TEXT
+);
+
+-- push_logs table
+CREATE TABLE IF NOT EXISTS push_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  endpoint TEXT NOT NULL,
+  title TEXT,
+  success INTEGER DEFAULT 0,
+  error TEXT,
+  sent_at TEXT NOT NULL
+);
+
+-- broadcast_logs table
+CREATE TABLE IF NOT EXISTS broadcast_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  endpoint TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  success INTEGER DEFAULT 0,
+  error TEXT,
+  sent_at TEXT NOT NULL
+);
+
+-- Create indexes
+CREATE INDEX idx_push_subs_user_id ON push_subscriptions(user_id);
+CREATE INDEX idx_push_subs_status ON push_subscriptions(status);
+CREATE INDEX idx_notification_queue_status ON notification_queue(status);
+CREATE INDEX idx_notification_queue_scheduled ON notification_queue(scheduled_for);
+CREATE INDEX idx_push_logs_sent_at ON push_logs(sent_at);
+CREATE INDEX idx_broadcast_logs_sent_at ON broadcast_logs(sent_at);

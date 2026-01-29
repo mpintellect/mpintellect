@@ -1,75 +1,81 @@
-import { NextResponse } from "next/server";
-import { adminAuth, adminDb } from "../../../lib/pushAdminSafe"; // Use your existing Safe Admin file
-import * as admin from 'firebase-admin';
+// app/api/referral/redeem/route.ts - CLOUDFLARE VERSION
+import { NextRequest, NextResponse } from "next/server";
+import { getDB } from "@/app/lib/cloudflare/db-simple";
 
-export const dynamic = 'force-dynamic';
-
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { currentUserId, referralCode } = await req.json();
-
-    if (!currentUserId || !referralCode) {
-      return NextResponse.json({ error: "Missing data" }, { status: 400 });
+    const body = await request.json();
+    const { userId, code } = body;
+    
+    if (!userId || !code) {
+      return NextResponse.json(
+        { success: false, error: "Missing userId or code" },
+        { status: 400 }
+      );
     }
 
-    // 1. VALIDATION
-    if (currentUserId === referralCode) {
-      return NextResponse.json({ error: "You cannot refer yourself." }, { status: 400 });
+    const db = getDB();
+    if (!db) {
+      return NextResponse.json(
+        { success: false, error: "Database not available" },
+        { status: 500 }
+      );
     }
 
-    // Get the User performing the action (Referee)
-    const userRef = adminDb.collection("users").doc(currentUserId);
-    const userSnap = await userRef.get();
+    // Check if referral code exists and is valid
+    const referral = await db.prepare(
+      `SELECT * FROM referral_codes 
+       WHERE code = ? AND is_active = 1 
+       AND (expires_at IS NULL OR expires_at > ?)`
+    ).bind(code, new Date().toISOString()).first();
 
-    if (!userSnap.exists) {
-      return NextResponse.json({ error: "User profile not found." }, { status: 404 });
+    if (!referral) {
+      return NextResponse.json(
+        { success: false, error: "Invalid or expired referral code" },
+        { status: 400 }
+      );
     }
 
-    // Check if they were already referred
-    if (userSnap.data()?.referredBy) {
-      return NextResponse.json({ error: "You have already redeemed a referral code." }, { status: 400 });
+    // Check if user already redeemed this code
+    const existingRedemption = await db.prepare(
+      `SELECT id FROM referral_redemptions 
+       WHERE user_id = ? AND referral_code = ?`
+    ).bind(userId, code).first();
+
+    if (existingRedemption) {
+      return NextResponse.json(
+        { success: false, error: "You have already redeemed this code" },
+        { status: 400 }
+      );
     }
 
-    // 2. FIND THE REFERRER (The person who gets the credits)
-    const referrerRef = adminDb.collection("users").doc(referralCode);
-    const referrerSnap = await referrerRef.get();
+    // Record redemption
+    const redemptionId = crypto.randomUUID();
+    await db.prepare(
+      `INSERT INTO referral_redemptions (
+        id, user_id, referral_code, redeemed_at
+      ) VALUES (?, ?, ?, ?)`
+    ).bind(redemptionId, userId, code, new Date().toISOString()).run();
 
-    if (!referrerSnap.exists) {
-      return NextResponse.json({ error: "Invalid Referral Code." }, { status: 404 });
-    }
+    // Give user setup credits (e.g., 5 extra setups)
+    await db.prepare(
+      `UPDATE users 
+       SET setup_count = setup_count + 5,
+           updated_at = ?
+       WHERE id = ?`
+    ).bind(new Date().toISOString(), userId).run();
 
-    // 3. EXECUTE TRANSACTION (Atomic update)
-    const BATCH_BONUS = 5; // How many setups to give
-
-    const batch = adminDb.batch();
-
-    // Update Current User (Mark as referred)
-    batch.set(userRef, { 
-      referredBy: referralCode,
-      referredAt: admin.firestore.Timestamp.now()
-    }, { merge: true });
-
-    // Update Referrer (Give credits)
-    batch.update(referrerRef, {
-      setupCount: admin.firestore.FieldValue.increment(BATCH_BONUS),
-      referralsCount: admin.firestore.FieldValue.increment(1)
+    return NextResponse.json({
+      success: true,
+      message: "Referral code redeemed successfully! You received 5 setup credits.",
+      creditsAdded: 5
     });
-
-    // Log the transaction for analytics (Optional)
-    const logRef = adminDb.collection("referral_logs").doc();
-    batch.set(logRef, {
-        referrer: referralCode,
-        referee: currentUserId,
-        amount: BATCH_BONUS,
-        timestamp: admin.firestore.Timestamp.now()
-    });
-
-    await batch.commit();
-
-    return NextResponse.json({ success: true, message: "Referral redeemed!" });
-
-  } catch (error: any) {
-    console.error("Referral API Error:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    
+  } catch (error) {
+    console.error("Referral redemption error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to redeem referral code" },
+      { status: 500 }
+    );
   }
 }

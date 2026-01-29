@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build --no-turbopack",
+    "build": "next build", 
     "pages:build": "npm run build && npx @opennextjs/cloudflare",
     "prebuild": "rm -rf .next .open-next",
     "start": "next start",

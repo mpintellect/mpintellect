@@ -4,16 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "pages:build": "opennext build",
-    "build": "next build --no-turbopack && npm run clear-maps && node scripts/cleanup-symlinks.js && node scripts/copy-static-assets.js",
-    "clear-maps": "find .next -name '*.map' -delete || true",
-    "prebuild": "rm -rf .next",
+    "build": "next build --no-turbopack",
+    "pages:build": "npm run build && npx @opennextjs/cloudflare",
+    "prebuild": "rm -rf .next .open-next",
     "start": "next start",
     "lint": "next lint",
-    "clean": "rm -rf .next .opennext node_modules/.cache",
-    "cf:dev": "wrangler pages dev .opennext/static --compatibility-flags=nodejs_compat",
-    "cf:deploy": "wrangler pages publish .opennext/static"
-  },
+    "clean": "rm -rf .next .open-next node_modules/.cache"
+},
   "dependencies": {
     "@noble/hashes": "^2.0.0",
     "@noble/secp256k1": "^3.0.0",

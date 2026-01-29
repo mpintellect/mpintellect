@@ -51,7 +51,6 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.16.0",
     "@tailwindcss/postcss": "^4.1.11",
     "@types/axios": "^0.9.36",
     "@types/node": "^20",

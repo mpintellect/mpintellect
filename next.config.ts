@@ -4,13 +4,16 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Ensure 'output: standalone' is NOT here.
+  // Ensure output: 'standalone' is NOT here.
   
   images: {
     formats: ['image/avif', 'image/webp'],
     unoptimized: true,
   },
   
+  // ADD THIS LINE for Next.js 16 compatibility
+  turbopack: {},
+
   webpack: (config, { isServer }) => {
     config.module.rules.push({
       test: /\.svg$/,

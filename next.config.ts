@@ -6,7 +6,8 @@ const nextConfig: NextConfig = {
   },
   output: 'standalone',
   
-  turbopack: {},
+  // Remove turbopack config entirely
+  // turbopack: {}, // DELETE THIS LINE
   
   basePath: '',
   
@@ -17,7 +18,7 @@ const nextConfig: NextConfig = {
   
   assetPrefix: '',
   
-  webpack: (config, { isServer, dev }) => {
+  webpack: (config, { isServer }) => {
     // Handle SVG support
     config.module.rules.push({
       test: /\.svg$/,
@@ -39,15 +40,15 @@ const nextConfig: NextConfig = {
       }],
     });
     
-    // ✅ CRITICAL FIX: Handle Node.js modules for Cloudflare
+    // Handle Node.js modules for Cloudflare
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         net: false,
         tls: false,
         fs: false,
-        crypto: require.resolve('crypto-browserify'),
-        stream: require.resolve('stream-browserify'),
+        crypto: false,
+        stream: false,
         http: false,
         https: false,
         zlib: false,
@@ -57,30 +58,15 @@ const nextConfig: NextConfig = {
       };
     }
     
-    // ✅ Exclude problematic packages from client bundles
-    if (!isServer) {
-      config.externals = [
-        ...(config.externals || []),
-        'web-push',
-        'firebase',
-        'firebase-admin'
-      ];
-    }
-    
     return config;
   },
   
   productionBrowserSourceMaps: false,
   
-  // ✅ For Cloudflare compatibility
-  experimental: {
-    esmExternals: 'loose',
-  },
-  
-  // ✅ Important for Cloudflare Pages
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
+  // Remove problematic experimental config
+  // experimental: {
+  //   esmExternals: 'loose', // This breaks Turbopack
+  // },
 };
 
 export default nextConfig;

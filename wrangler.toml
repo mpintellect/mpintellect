@@ -1,12 +1,13 @@
-# wrangler.toml - CORRECTED VERSION
+# wrangler.toml - FIXED VERSION
 name = "mzprimer-web"
 compatibility_date = "2024-11-18"
 compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"  # ADD THIS LINE
 
 [build]
 command = "npm run pages:build"
 
 [[d1_databases]]
-binding = "Db"
+binding = "DB"  # Use DB to match your code
 database_name = "mzprimer-db"
 database_id = "fa332b73-0ce0-468b-b92c-e7691a351bde"

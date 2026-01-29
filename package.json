@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build && npm run clear-maps && node scripts/cleanup-symlinks.js && node scripts/copy-static-assets.js",
-    "pages:build": "next build && npx @cloudflare/next-on-pages",
+    "dev": "next dev --no-turbopack",
+    "build": "next build --no-turbopack && npm run clear-maps && node scripts/cleanup-symlinks.js && node scripts/copy-static-assets.js",
+    "pages:build": "next build --no-turbopack && npx @cloudflare/next-on-pages",
     "clear-maps": "find .next -name '*.map' -delete || true",
     "prebuild": "rm -rf .next",
     "start": "next start",

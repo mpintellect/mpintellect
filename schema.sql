@@ -329,3 +329,32 @@ CREATE TABLE IF NOT EXISTS news_views (
   INDEX idx_views_timestamp (viewed_at),
   FOREIGN KEY (news_id) REFERENCES news_articles(id) ON DELETE CASCADE
 );
+-- AI Chat Analytics table
+CREATE TABLE IF NOT EXISTS ai_chat_analytics (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  chat_data TEXT NOT NULL, -- JSON string of chat data
+  license_key TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  
+  -- Indexes
+  INDEX idx_ai_analytics_user (user_id),
+  INDEX idx_ai_analytics_created (created_at),
+  INDEX idx_ai_analytics_license (license_key)
+);
+
+-- AI Usage Tracking table
+CREATE TABLE IF NOT EXISTS ai_usage_tracking (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  action TEXT NOT NULL, -- e.g., 'setup_generated', 'analysis_viewed', 'signal_saved'
+  metadata TEXT, -- JSON string of additional data
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  
+  -- Indexes
+  INDEX idx_usage_user (user_id),
+  INDEX idx_usage_action (action),
+  INDEX idx_usage_created (created_at)
+);

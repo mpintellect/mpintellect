@@ -1,4 +1,4 @@
-cat > wrangler.toml << 'EOF'
+# wrangler.toml - CORRECTED VERSION
 name = "mzprimer-web"
 compatibility_date = "2024-11-18"
 compatibility_flags = ["nodejs_compat"]
@@ -10,4 +10,3 @@ command = "npm run pages:build"
 binding = "mzprimer_db"
 database_name = "mzprimer-db"
 database_id = "fa332b73-0ce0-468b-b92c-e7691a351bde"
-EOF

@@ -1,10 +1,8 @@
+// app/client/dashboard/refer/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation"; 
-import { getAuthInstance, getDbInstance } from "@/app/lib/firebaseClient";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 import { Copy, Share2, Users, Zap, Gift, ArrowLeft } from "lucide-react"; 
 import toast from "react-hot-toast";
 
@@ -20,42 +18,81 @@ export default function ReferPage() {
   const [inputCode, setInputCode] = useState("");
   const [redeemLoading, setRedeemLoading] = useState(false);
 
-  // Initialize Firebase auth state
+  // Initialize Cloudflare auth state
   useEffect(() => {
-    try {
-      const auth = getAuthInstance();
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setUser(user);
-        if (user) {
-          setReferralCode(user.uid);
-          fetchStats(user.uid);
+    const checkAuth = async () => {
+      const token = localStorage.getItem('cf_token');
+      const userData = localStorage.getItem('cf_user');
+      
+      if (!token || !userData) {
+        router.push("/client/login");
+        return;
+      }
+
+      try {
+        // Verify token with Cloudflare API
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            const user = data.user;
+            setUser(user);
+            
+            // Get referral code from user data
+            if (user.referral_code) {
+              setReferralCode(user.referral_code);
+            } else if (user.id) {
+              // Use part of user ID as fallback
+              setReferralCode(user.id.substring(0, 8).toUpperCase());
+            }
+            
+            // Fetch referral stats
+            await fetchStats(user.id);
+          } else {
+            // Token invalid, redirect to login
+            localStorage.removeItem('cf_token');
+            localStorage.removeItem('cf_user');
+            localStorage.removeItem('cf_session_id');
+            router.push("/client/login");
+          }
         } else {
-          setLoading(false);
+          // Token invalid, redirect to login
+          localStorage.removeItem('cf_token');
+          localStorage.removeItem('cf_user');
+          localStorage.removeItem('cf_session_id');
+          router.push("/client/login");
         }
-      });
-      return () => unsubscribe();
-    } catch (error) {
-      console.error("Firebase initialization error:", error);
-      setLoading(false);
-    }
-  }, []);
+      } catch (error) {
+        console.error("Auth check error:", error);
+        router.push("/client/login");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   const fetchStats = async (userId: string) => {
     try {
-      const db = getDbInstance();
-      const docSnap = await getDoc(doc(db, "users", userId));
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const count = data.referralsCount || 0;
-        setStats({
-          count: count,
-          earned: count * 5
-        });
+      // Get referral stats from Cloudflare D1
+      const response = await fetch(`/api/user/referral-stats?userId=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setStats({
+            count: data.referralCount || 0,
+            earned: (data.referralCount || 0) * 5 // 5 setups per referral
+          });
+        }
       }
     } catch(e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+      console.error("Error fetching referral stats:", e);
     }
   };
 
@@ -91,16 +128,19 @@ export default function ReferPage() {
     try {
       const res = await fetch('/api/referral/redeem', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('cf_token')}`
+        },
         body: JSON.stringify({
-          currentUserId: user.uid,
+          userId: user.id,
           referralCode: inputCode.trim()
         })
       });
       const data = await res.json();
       if(res.ok) {
         toast.success("🎉 Referral Redeemed!");
-        fetchStats(user.uid); // Pass the userId parameter
+        fetchStats(user.id);
       } else {
         toast.error(data.error || "Failed to redeem");
       }
@@ -188,7 +228,7 @@ export default function ReferPage() {
         <div className="redeem-form">
           <input 
             type="text" 
-            placeholder="Enter Referral UID" 
+            placeholder="Enter Referral Code" 
             className="referral-input-field"
             value={inputCode}
             onChange={(e) => setInputCode(e.target.value)}

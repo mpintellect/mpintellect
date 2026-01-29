@@ -1,10 +1,8 @@
+// app/client/register/page.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
-import { getAuthInstance, getDbInstance } from "@/app/lib/firebaseClient";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +19,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
 
-    // Basic validation
+    // Basic validation (same as before)
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -35,47 +33,42 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // 1. Get Firebase instances inside the event handler
-      const authInstance = getAuthInstance();
-      const dbInstance = getDbInstance();
-      
-      // 2. Create user account
-      const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
-      const user = userCredential.user;
-
-      // 3. Send email verification
-      await sendEmailVerification(user);
-
-      // 4. Create user document
-      await setDoc(doc(dbInstance, "users", user.uid), {
-        email: user.email?.toLowerCase().trim(),
-        emailVerified: false,
-        needsEmailVerification: true,
-        uid: user.uid,
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString(),
-        setupCount: 1, // ✅ Give 1 free setup for registration
-        plan: "free",
-        subscriptionActive: false,
-        referredBy: null
+      // Call Cloudflare auth API instead of Firebase
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email, 
+          password,
+          displayName: email.split('@')[0] // Use part of email as display name
+        })
       });
 
-      // 5. Redirect to dashboard
-      router.push("/client/dashboard");
+      const data = await response.json();
 
+      if (data.success) {
+        // Store session in localStorage (similar to Firebase)
+        localStorage.setItem('cf_token', data.token);
+        localStorage.setItem('cf_user', JSON.stringify(data.user));
+        localStorage.setItem('cf_session_id', data.sessionId);
+        
+        // Redirect to dashboard
+        router.push("/client/dashboard");
+      } else {
+        // Map Cloudflare errors to user-friendly messages
+        if (data.error.includes('already exists')) {
+          setError("Email already in use. Please login instead.");
+        } else if (data.error.includes('Invalid email')) {
+          setError("Invalid email address");
+        } else if (data.error.includes('weak password')) {
+          setError("Password is too weak. Use at least 6 characters.");
+        } else {
+          setError(data.error || "Registration failed. Please try again.");
+        }
+      }
     } catch (error: any) {
       console.error("Registration error:", error);
-      
-      // User-friendly error messages with correct error codes
-      if (error.code === "auth/email-already-in-use") {
-        setError("Email already in use. Please login instead.");
-      } else if (error.code === "auth/invalid-email") {
-        setError("Invalid email address");
-      } else if (error.code === "auth/weak-password") {
-        setError("Password is too weak. Use at least 6 characters.");
-      } else {
-        setError("Registration failed. Please try again.");
-      }
+      setError("Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }

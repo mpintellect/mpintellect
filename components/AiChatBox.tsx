@@ -6,12 +6,8 @@ import { fetchCurrentPrice } from "../app/lib/fetchPrice";
 import { useUser } from "../app/hooks/useUser";
 import { fetchSetup, hasValidPendingOrders, getPrimaryOrder, getAllPendingOrders, getOrderConfidence, getMarketContext, type ExtendedTradeSetupData } from "../app/lib/fetchSetup";
 import { loadStripe } from "@stripe/stripe-js";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { getAuthInstance, getDbInstance } from "../app/lib/firebaseClient";
-import { setDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { saveSetup } from "@/app/lib/firebase/saveSetup";
-import { useOneSetup } from "../app/lib/firebase/useSetup";
+import { useOneSetup } from "../app/hooks/useOneSetup";
 import SignalTicket from "./SignalTicket";
 import { createPortal } from "react-dom";
 
@@ -188,34 +184,40 @@ function QuickRegisterModal({
     }
 
     try {
-      const authInstance = getAuthInstance();
-      const dbInstance = getDbInstance();
-      const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
-      const user = userCredential.user;
-
-      await sendEmailVerification(user);
-
-      await setDoc(doc(dbInstance, "users", user.uid), {
-        email: email.toLowerCase().trim(),
-        setupCount: 1, // 🎁 1 free setup for registration
-        referredBy: null,
-        emailVerified: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      // Register with Cloudflare API
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email, 
+          password,
+          displayName: email.split('@')[0]
+        })
       });
 
-      onSuccess(user, selectedPlan);
-      
-    } catch (err: any) {
-      if (err.code === 'auth/email-already-in-use') {
-        setError("This email is already registered. Please login instead.");
-      } else if (err.code === 'auth/invalid-email') {
-        setError("Invalid email address format.");
-      } else if (err.code === 'auth/weak-password') {
-        setError("Password is too weak. Please use a stronger password.");
+      const data = await response.json();
+
+      if (data.success) {
+        const user = data.user;
+        // Store session
+        localStorage.setItem('cf_token', data.token);
+        localStorage.setItem('cf_user', JSON.stringify(user));
+        localStorage.setItem('cf_session_id', data.sessionId);
+        
+        onSuccess(user, selectedPlan);
       } else {
-        setError(err.message || "Registration failed. Please try again.");
+        if (data.error.includes('already exists')) {
+          setError("This email is already registered. Please login instead.");
+        } else if (data.error.includes('Invalid email')) {
+          setError("Invalid email address format.");
+        } else if (data.error.includes('weak password')) {
+          setError("Password is too weak. Please use a stronger password.");
+        } else {
+          setError(data.error || "Registration failed. Please try again.");
+        }
       }
+    } catch (err: any) {
+      setError(err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -406,7 +408,7 @@ export default function AiChatBox({
   const [capital, setCapital] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   
-  const { userId, setupCount, user, isLoading: userLoading } = useUser();
+  const { user, setupCount, isLoading: userLoading, userId } = useUser();
   const router = useRouter();
   
   const chatRef = useRef<HTMLDivElement>(null);
@@ -506,7 +508,8 @@ export default function AiChatBox({
       }
     } else {
       if (trialCount < 2) {
-        newTrialCount = await incrementTrial();
+        newTrialCount = incrementTrialCount();
+        setTrialCount(newTrialCount);
         proceed = true;
       } else {
         setShowPricingModal(true);
@@ -710,16 +713,27 @@ export default function AiChatBox({
           const finalRR = (tpPrice && slPrice && entryPrice) ? 
             Math.abs(tpPrice - entryPrice) / Math.abs(entryPrice - slPrice) : 1.0;
           
-          await saveSetup({
-            userId,
-            symbol: targetSymbol,
-            entryPrice,
-            takeProfit: tpPrice,
-            stopLoss: slPrice,
-            capital: quickCapital,      
-            lotSize: lotSize,            
-            riskReward: finalRR  
+          // Save setup via Cloudflare API
+          const saveResponse = await fetch('/api/setups', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('cf_token')}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              symbol: targetSymbol,
+              entry_price: entryPrice,
+              take_profit: tpPrice,
+              stop_loss: slPrice,
+              capital: quickCapital,
+              lot_size: lotSize,
+              risk_reward: finalRR
+            })
           });
+
+          if (!saveResponse.ok) {
+            throw new Error('Failed to save setup');
+          }
           
           console.log("✅ Quick setup saved successfully");
         } catch (err) {
@@ -754,7 +768,7 @@ export default function AiChatBox({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          uid: user.uid, 
+          userId: user.id, 
           plan: plan,
           email: user.email || userEmail
         }),
@@ -960,7 +974,8 @@ export default function AiChatBox({
         }
       } else {
         if (trialCount < 2) {
-          newTrialCount = await incrementTrial();
+          newTrialCount = incrementTrialCount();
+          setTrialCount(newTrialCount);
           proceed = true;
         } else {
           setShowPricingModal(true);
@@ -1160,16 +1175,27 @@ export default function AiChatBox({
             const finalRR = (tpPrice && slPrice && entryPrice) ? 
               Math.abs(tpPrice - entryPrice) / Math.abs(entryPrice - slPrice) : 1.0;
             
-            await saveSetup({
-              userId,
-              symbol,
-              entryPrice,
-              takeProfit: tpPrice,
-              stopLoss: slPrice,
-              capital: capitalNumber,      
-              lotSize: lotSize,            
-              riskReward: finalRR  
+            // Save setup via Cloudflare API
+            const saveResponse = await fetch('/api/setups', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('cf_token')}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                symbol: symbol,
+                entry_price: entryPrice,
+                take_profit: tpPrice,
+                stop_loss: slPrice,
+                capital: capitalNumber,
+                lot_size: lotSize,
+                risk_reward: finalRR
+              })
             });
+
+            if (!saveResponse.ok) {
+              throw new Error('Failed to save setup');
+            }
             
             console.log("✅ Setup saved successfully");
           } catch (err) {

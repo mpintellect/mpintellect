@@ -1,78 +1,88 @@
-// hooks/useUser.ts
-import { useEffect, useState } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { getAuthInstance, getDbInstance } from "../../app/lib/firebaseClient";
+// app/hooks/useUser.ts (CLOUDFLARE VERSION)
+"use client";
 
-interface UserData {
-  userId: string;
-  setupCount: number;
-  user: User | null;
-  isLoading: boolean;
+import { useState, useEffect } from 'react';
+
+interface User {
+  id: string;
+  email: string;
+  display_name?: string;
+  photo_url?: string;
+  email_verified: boolean;
+  license_type: string;
+  setup_count: number;
+  referral_code?: string;
 }
 
-export function useUser(): UserData {
-  const [userId, setUserId] = useState<string>("");
-  const [setupCount, setSetupCount] = useState<number>(0);
+export function useUser() {
   const [user, setUser] = useState<User | null>(null);
+  const [setupCount, setSetupCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      // Use getter functions to get guaranteed non-null instances
-      const authInstance = getAuthInstance();
-      const dbInstance = getDbInstance();
-
-      const unsubscribe = onAuthStateChanged(authInstance, async (firebaseUser) => {
-        setIsLoading(true);
-        
-        if (firebaseUser) {
-          // ✅ Firebase authenticated user
-          setUser(firebaseUser);
-          setUserId(firebaseUser.uid);
-          
-          try {
-            // Fetch setupCount from Firestore
-            const userDoc = await getDoc(doc(dbInstance, "users", firebaseUser.uid));
-            if (userDoc.exists()) {
-              const userData = userDoc.data();
-              setSetupCount(userData.setupCount || 0);
-            } else {
-              setSetupCount(0);
-            }
-          } catch (error) {
-            console.error("Error fetching user data:", error);
-            setSetupCount(0);
-          }
-        } else {
-          // ✅ Guest user - use localStorage UUID
-          setUser(null);
-          let guestId = localStorage.getItem("mz_user_id");
-          if (!guestId) {
-            guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            localStorage.setItem("mz_user_id", guestId);
-          }
-          setUserId(guestId);
-          setSetupCount(0); // Guest users have 0 setupCount
-        }
-        
+    const checkAuth = async () => {
+      const token = localStorage.getItem('cf_token');
+      const userData = localStorage.getItem('cf_user');
+      
+      if (!token || !userData) {
         setIsLoading(false);
-      });
-
-      return () => unsubscribe();
-    } catch (error) {
-      console.error("Firebase not initialized in useUser:", error);
-      // If Firebase isn't initialized, set up as guest user
-      setIsLoading(false);
-      let guestId = localStorage.getItem("mz_user_id");
-      if (!guestId) {
-        guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem("mz_user_id", guestId);
+        return;
       }
-      setUserId(guestId);
-      setSetupCount(0);
-    }
+
+      try {
+        // Verify token with Cloudflare API
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            const userData = data.user;
+            setUser(userData);
+            setUserId(userData.id);
+            setSetupCount(userData.setup_count || 0);
+          }
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
   }, []);
 
-  return { userId, setupCount, user, isLoading };
+  // Refresh setup count
+  const refreshSetupCount = async () => {
+    if (!userId) return;
+    
+    try {
+      const token = localStorage.getItem('cf_token');
+      const response = await fetch(`/api/user/setup-count?userId=${userId}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setSetupCount(data.setupCount || 0);
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing setup count:', error);
+    }
+  };
+
+  return {
+    user,
+    userId,
+    setupCount,
+    isLoading,
+    refreshSetupCount
+  };
 }

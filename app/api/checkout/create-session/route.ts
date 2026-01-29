@@ -1,60 +1,78 @@
-export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
-
-import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
-
-// 🔐 Stripe Price IDs → Setup Credits
-const PRICE_MAP: Record<string, string> = {
-  "10": "price_1SVbAXDoB4i1qeaLC32KJQ6L",   // €4.5 → 10 setups
-  "20": "price_1SVWWXDoB4i1qeaL2dquhtfv",   // €8 → 20 setups
-  "30": "price_1SVWUlDoB4i1qeaLabDsRHo2",   // €12 → 30 setups
-};
+// app/api/checkout/create-session/route.ts - SIMPLIFIED
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
 
 export async function POST(req: NextRequest) {
-  // ✅ 1. Initialize Stripe INSIDE the request handler
-  // This prevents the build from crashing if the key is missing at compile time
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
-  
-  if (!stripeKey) {
-    console.error("❌ STRIPE_SECRET_KEY is missing");
-    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
-  }
-
-  const stripe = new Stripe(stripeKey, {
-    // @ts-ignore - basil versioning might need ignore for strict types
-    apiVersion: "2025-08-27.basil",
-  });
-
   try {
     const body = await req.json();
-    const { uid, email, plan } = body;
+    const { userId, plan, email } = body;
 
-    if (!uid || !email || !PRICE_MAP[plan]) {
-      return NextResponse.json({ error: "Missing uid/email/plan" }, { status: 400 });
+    if (!userId || !plan || !email) {
+      return NextResponse.json(
+        { error: 'Missing required fields: userId, plan, email' },
+        { status: 400 }
+      );
     }
 
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      throw new Error('Stripe secret key not configured');
+    }
+
+    const stripe = new Stripe(stripeKey, {
+      // @ts-ignore
+      apiVersion: '2023-10-16',
+    });
+
+    // Map plan to price ID (one-time purchases only)
+    const priceMap: Record<string, string> = {
+      '10': 'price_1SSyQORmR6ESDQvobwheaXws', // €4.5 for 10 setups
+      '20': 'price_1SSyRGRmR6ESDQvoKgAI9CAN', // €8 for 20 setups
+      '30': 'price_1SSyUORmR6ESDQvo7dzPKmPt', // €12 for 30 setups
+    };
+
+    const priceId = priceMap[plan];
+    if (!priceId) {
+      return NextResponse.json(
+        { error: 'Invalid plan selected. Choose 10, 20, or 30 setups.' },
+        { status: 400 }
+      );
+    }
+
+    // Create checkout session for one-time payment
     const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
+      payment_method_types: ['card'],
       line_items: [
         {
-          price: PRICE_MAP[plan],
+          price: priceId,
           quantity: 1,
         },
       ],
+      mode: 'payment', // One-time payment, not subscription
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/client/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/client/dashboard?payment=canceled`,
+      customer_email: email,
       metadata: {
-        uid,
-        email,
-        plan,
+        userId: userId,
+        plan: plan,
+        email: email,
       },
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/client/dashboard?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/client/dashboard?canceled=true`,
+      allow_promotion_codes: true,
     });
 
-    return NextResponse.json({ url: session.url });
-  } catch (err: any) {
-    console.error("❌ Stripe session error:", err);
-    return NextResponse.json({ error: "Failed to create Stripe session" }, { status: 500 });
+    console.log(`💰 Checkout session created: ${session.id} for user ${userId}`);
+
+    return NextResponse.json({
+      success: true,
+      url: session.url,
+      sessionId: session.id,
+    });
+
+  } catch (error: any) {
+    console.error('❌ Checkout session creation error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to create checkout session' },
+      { status: 500 }
+    );
   }
 }

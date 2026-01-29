@@ -1,10 +1,8 @@
+// app/client/dashboard/page.tsx
 "use client";
 
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { onAuthStateChanged, signOut, User, sendEmailVerification } from "firebase/auth";
-import { getAuthInstance, getDbInstance } from "@/app/lib/firebaseClient";
-import { doc, getDoc } from "firebase/firestore";
 import toast from "react-hot-toast";
 import AiChatBox from "@/components/AiChatBox";
 import PropFirmChat from "@/components/PropFirmChat";
@@ -18,17 +16,16 @@ export const dynamic = "force-dynamic";
 // SIMPLE Email Verification Message (inline component)
 function EmailVerificationMessage() {
   const [sending, setSending] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    try {
-      const auth = getAuthInstance();
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setCurrentUser(user);
-      });
-      return () => unsubscribe();
-    } catch (error) {
-      console.error("Firebase initialization error in EmailVerificationMessage:", error);
+    // Check if user is logged in via Cloudflare token
+    const token = localStorage.getItem('cf_token');
+    const userData = localStorage.getItem('cf_user');
+    
+    if (token && userData) {
+      const user = JSON.parse(userData);
+      setCurrentUser(user);
     }
   }, []);
 
@@ -37,8 +34,11 @@ function EmailVerificationMessage() {
     
     setSending(true);
     try {
-      await sendEmailVerification(currentUser);
-      toast.success("Verification email sent! Check your inbox.");
+      // TODO: Implement Cloudflare email verification
+      // For now, just show a message
+      toast.success("Email verification will be implemented soon!");
+      // await sendEmailVerification(currentUser);
+      // toast.success("Verification email sent! Check your inbox.");
     } catch (error) {
       console.error("Error sending verification:", error);
       toast.error("Failed to send verification email");
@@ -48,7 +48,7 @@ function EmailVerificationMessage() {
   };
 
   // Don't show if email is already verified
-  if (!currentUser || currentUser.emailVerified) {
+  if (!currentUser || currentUser.email_verified) {
     return null;
   }
 
@@ -72,7 +72,7 @@ function EmailVerificationMessage() {
 }
 
 function DashboardContent() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [setupCount, setSetupCount] = useState<number>(0);
   const [buyLoading, setBuyLoading] = useState(false);
@@ -122,38 +122,73 @@ function DashboardContent() {
 
   // Auth & Setup Count
   useEffect(() => {
-    try {
-      const auth = getAuthInstance();
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        if (!firebaseUser) {
-          router.push("/client/login");
-        } else {
-          setUser(firebaseUser);
-          await refreshSetupCount(firebaseUser.uid);
-          if (searchParams.get("success") === "true") {
-            toast.success("✅ Payment successful! Setup credits added.");
-            await refreshSetupCount(firebaseUser.uid);
-            const url = new URL(window.location.href);
-            url.searchParams.delete("success");
-            window.history.replaceState({}, "", url.toString());
+    const checkAuth = async () => {
+      const token = localStorage.getItem('cf_token');
+      const userData = localStorage.getItem('cf_user');
+      
+      if (!token || !userData) {
+        router.push("/client/login");
+        return;
+      }
+
+      try {
+        // Verify token with Cloudflare API
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
           }
-          setLoading(false);
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            const user = data.user;
+            setUser(user);
+            
+            // Get setup count from Cloudflare D1
+            await refreshSetupCount(user.id);
+            
+            if (searchParams.get("success") === "true") {
+              toast.success("✅ Payment successful! Setup credits added.");
+              await refreshSetupCount(user.id);
+              const url = new URL(window.location.href);
+              url.searchParams.delete("success");
+              window.history.replaceState({}, "", url.toString());
+            }
+          } else {
+            // Token invalid, redirect to login
+            localStorage.removeItem('cf_token');
+            localStorage.removeItem('cf_user');
+            localStorage.removeItem('cf_session_id');
+            router.push("/client/login");
+          }
+        } else {
+          // Token invalid, redirect to login
+          localStorage.removeItem('cf_token');
+          localStorage.removeItem('cf_user');
+          localStorage.removeItem('cf_session_id');
+          router.push("/client/login");
         }
-      });
-      return () => unsubscribe();
-    } catch (error) {
-      console.error("Firebase initialization error in DashboardContent:", error);
-      setLoading(false);
-    }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        router.push("/client/login");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
   }, [router, searchParams]);
 
   const refreshSetupCount = async (userId: string) => {
     try {
-      const db = getDbInstance();
-      const userDocRef = doc(db, "users", userId);
-      const userSnap = await getDoc(userDocRef);
-      if (userSnap.exists()) {
-        setSetupCount(userSnap.data().setupCount ?? 0);
+      // Get setup count from Cloudflare D1
+      const response = await fetch(`/api/user/setup-count?userId=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setSetupCount(data.setupCount || 0);
+        }
       }
     } catch (error) {
       console.error("Error refreshing setup count:", error);
@@ -162,22 +197,44 @@ function DashboardContent() {
 
   const handleLogout = async () => {
     try {
-      const auth = getAuthInstance();
-      await signOut(auth);
-      router.push("/client/login");
+      const token = localStorage.getItem('cf_token');
+      const sessionId = localStorage.getItem('cf_session_id');
+      
+      if (token && sessionId) {
+        // Call Cloudflare logout API
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ sessionId })
+        });
+      }
     } catch (error) {
       console.error("Logout error:", error);
+    } finally {
+      // Clear local storage
+      localStorage.removeItem('cf_token');
+      localStorage.removeItem('cf_user');
+      localStorage.removeItem('cf_session_id');
+      router.push("/client/login");
     }
   };
 
   // --- RECONECTED HANDLERS ---
   const openTool = async (tool: 'ai' | 'prop') => {
+    if (!user) {
+      toast.error("Please log in first");
+      return;
+    }
+
     if (setupCount <= 0) {
       toast.error("No setups available. Please purchase more setups.");
       return;
     }
 
-    // Use setup credit
+    // Use setup credit (TODO: Update useOneSetup hook for Cloudflare)
     const result = await useOneSetup();
     if (result !== "ok") {
       if (result === "no-credits") {
@@ -188,7 +245,7 @@ function DashboardContent() {
       return;
     }
 
-    // Deduct setup count
+    // Deduct setup count locally
     setSetupCount(prev => Math.max(0, prev - 1));
 
     // Set active tool and disable background scrolling
@@ -202,7 +259,7 @@ function DashboardContent() {
     setActiveTool(null);
     document.body.style.overflow = 'auto';
     if (user) {
-      refreshSetupCount(user.uid);
+      refreshSetupCount(user.id);
     }
   };
 
@@ -228,7 +285,11 @@ function DashboardContent() {
       const res = await fetch("/api/checkout/create-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid: user.uid, plan: plan, email: user.email }),
+        body: JSON.stringify({ 
+          userId: user.id, 
+          plan: plan, 
+          email: user.email 
+        }),
       });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();

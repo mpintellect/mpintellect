@@ -12,6 +12,7 @@
     "clean": "rm -rf .next node_modules/.cache"
   },
   "dependencies": {
+    "@cloudflare/next-on-pages": "^1.13.16",
     "@noble/hashes": "^2.0.0",
     "@noble/secp256k1": "^3.0.0",
     "@stripe/stripe-js": "^7.9.0",

@@ -135,3 +135,60 @@ self.addEventListener('notificationclick', function (event) {
     })
   );
 });
+// public/sw.js
+self.addEventListener('push', function(event) {
+  if (!event.data) return;
+  
+  const data = event.data.json();
+  
+  const options = {
+    body: data.body || 'New notification',
+    icon: data.icon || '/icons/icon-192x192.png',
+    badge: data.badge || '/icons/badge-72x72.png',
+    tag: data.tag || 'default',
+    data: data.data || {},
+    requireInteraction: data.requireInteraction || false,
+    actions: data.actions || []
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'MZPrimer', options)
+  );
+});
+
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  
+  const url = event.notification.data?.url || '/';
+  
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then(windowClients => {
+      // Check if there's already a window/tab open with the target URL
+      for (let client of windowClients) {
+        if (client.url === url && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // If not, open a new window/tab
+      if (clients.openWindow) {
+        return clients.openWindow(url);
+      }
+    })
+  );
+});
+
+self.addEventListener('pushsubscriptionchange', function(event) {
+  event.waitUntil(
+    self.registration.pushManager.subscribe(event.oldSubscription.options)
+      .then(function(subscription) {
+        // Send new subscription to server
+        return fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subscription: subscription.toJSON()
+          })
+        });
+      })
+  );
+});

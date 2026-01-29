@@ -1,9 +1,8 @@
+// app/client/login/page.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { getAuthInstance } from "@/app/lib/firebaseClient";
 
 export const dynamic = "force-dynamic";
 
@@ -20,22 +19,33 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Call getAuthInstance() inside the event handler (client-side only)
-      const authInstance = getAuthInstance();
-      await signInWithEmailAndPassword(authInstance, email, password);
-      router.push("/client/dashboard");
+      // Call Cloudflare auth API instead of Firebase
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Store token in localStorage (similar to Firebase's session)
+        localStorage.setItem('cf_token', data.token);
+        localStorage.setItem('cf_user', JSON.stringify(data.user));
+        localStorage.setItem('cf_session_id', data.sessionId);
+        
+        router.push("/client/dashboard");
+      } else {
+        // Map Cloudflare errors to user-friendly messages
+        if (data.error.includes('Invalid credentials') || data.error.includes('User not found')) {
+          setError("Invalid email or password");
+        } else {
+          setError(data.error || "Login failed");
+        }
+      }
     } catch (err: any) {
       console.error("Login error:", err);
-
-      if (err.code === "auth/invalid-credential") {
-        setError("Invalid email or password");
-      } else if (err.code === "auth/user-not-found") {
-        setError("No account found with this email");
-      } else if (err.code === "auth/wrong-password") {
-        setError("Incorrect password");
-      } else {
-        setError(err.message || "Login failed");
-      }
+      setError(err.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }

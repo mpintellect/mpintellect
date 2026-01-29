@@ -1,6 +1,7 @@
+// app/sitemap.ts - CLOUDFLARE VERSION
 import { MetadataRoute } from 'next';
 import { getAvailableSetupSymbols } from '@/app/lib/fetchSetup';
-import { adminDb } from '../app/lib/pushAdminSafe';
+import { query } from '@/app/lib/cloudflare/db-simple';
 
 export const revalidate = 3600;
 
@@ -50,25 +51,67 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   });
 
-  // News routes
+  // News routes - MIGRATED FROM FIREBASE TO CLOUDFLARE
   const newsRoutes: MetadataRoute.Sitemap = [];
   try {
-    const newsSnapshot = await adminDb.collection('news_archive').get();
-    console.log(`Found ${newsSnapshot.size} news articles`);
+    // Fetch news from Cloudflare D1 instead of Firebase
+    const newsArticles = await query<{
+      id: string;
+      title: string;
+      content: string;
+      timestamp: number;
+      slug?: string;
+      category?: string;
+      created_at: number;
+    }>('SELECT * FROM news_articles ORDER BY created_at DESC LIMIT 1000');
     
-    newsSnapshot.forEach((doc) => {
-      const data = doc.data();
-      const newsDate = data.timestamp ? new Date(data.timestamp) : now;
+    console.log(`Found ${newsArticles.length} news articles from Cloudflare D1`);
+    
+    newsArticles.forEach((article) => {
+      const newsDate = article.timestamp ? new Date(article.timestamp) : 
+                      article.created_at ? new Date(article.created_at) : now;
+      
+      // Use slug if available, otherwise use ID
+      const slug = article.slug || article.id;
       
       newsRoutes.push({
-        url: `${baseUrl}/news/${doc.id}`,
+        url: `${baseUrl}/news/${slug}`,
         lastModified: newsDate,
         changeFrequency: 'monthly' as const,
         priority: 0.7,
       });
     });
   } catch (error) {
-    console.error("Sitemap: Failed to fetch news archive", error);
+    console.error("Sitemap: Failed to fetch news archive from Cloudflare", error);
+  }
+
+  // Blog routes - ADDED: Fetch from blog_posts table
+  const blogRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const blogPosts = await query<{
+      id: string;
+      title: string;
+      slug: string;
+      published_at: number;
+      updated_at: number;
+      status: string;
+    }>('SELECT * FROM blog_posts WHERE status = "published" ORDER BY published_at DESC LIMIT 500');
+    
+    console.log(`Found ${blogPosts.length} blog posts`);
+    
+    blogPosts.forEach((post) => {
+      const postDate = post.updated_at ? new Date(post.updated_at) : 
+                      post.published_at ? new Date(post.published_at) : now;
+      
+      blogRoutes.push({
+        url: `${baseUrl}/blog/${post.slug}`,
+        lastModified: postDate,
+        changeFrequency: 'weekly' as const,
+        priority: 0.8,
+      });
+    });
+  } catch (error) {
+    console.error("Sitemap: Failed to fetch blog posts", error);
   }
 
   // Static routes
@@ -79,23 +122,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily' as const, 
       priority: 1.0 
     },
-    { url: `${baseUrl}/AIChat`, lastModified: now, priority: 0.9 },
+    { url: `${baseUrl}/ai-chat`, lastModified: now, priority: 0.9 },
+    { url: `${baseUrl}/prop-firm-chat`, lastModified: now, priority: 0.9 },
     { url: `${baseUrl}/dashboard`, lastModified: now, priority: 0.8 },
     { url: `${baseUrl}/blog`, lastModified: now, priority: 0.7 },
     { url: `${baseUrl}/about`, lastModified: now, priority: 0.5 },
     { url: `${baseUrl}/legal`, lastModified: now, priority: 0.3 },
+    { url: `${baseUrl}/privacy`, lastModified: now, priority: 0.3 },
+    { url: `${baseUrl}/terms`, lastModified: now, priority: 0.3 },
     { url: `${baseUrl}/faq`, lastModified: now, priority: 0.5 },
     { url: `${baseUrl}/ai-robot`, lastModified: now, priority: 0.7 },
     { url: `${baseUrl}/client/login`, lastModified: now, priority: 0.6 },
+    { url: `${baseUrl}/client/register`, lastModified: now, priority: 0.6 },
+    { url: `${baseUrl}/pricing`, lastModified: now, priority: 0.8 },
+    { url: `${baseUrl}/contact`, lastModified: now, priority: 0.4 },
+    { url: `${baseUrl}/features`, lastModified: now, priority: 0.6 },
+    { url: `${baseUrl}/how-it-works`, lastModified: now, priority: 0.6 },
+    { url: `${baseUrl}/testimonials`, lastModified: now, priority: 0.5 },
   ];
 
   // Combine all routes
-  const allRoutes = [...staticRoutes, ...dynamicRoutes, ...newsRoutes];
+  const allRoutes = [...staticRoutes, ...dynamicRoutes, ...newsRoutes, ...blogRoutes];
   
   console.log(`Generated sitemap with ${allRoutes.length} URLs`);
   console.log(`- Static: ${staticRoutes.length}`);
   console.log(`- Dynamic: ${dynamicRoutes.length}`);
   console.log(`- News: ${newsRoutes.length}`);
+  console.log(`- Blog: ${blogRoutes.length}`);
   
   return allRoutes;
 }

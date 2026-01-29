@@ -1,14 +1,14 @@
+
+// app/api/webhooks/stripe/route.ts - SIMPLIFIED CLOUDFLARE VERSION
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-// Note: If firebaseAdmin causes a build error later, we will need to 
-// swap it for the Web SDK, but for now, the Stripe fix is the priority.
-import { adminDb } from "@/app/lib/firebaseAdmin";
+import { getDb, execute, queryOne } from "@/app/lib/cloudflare/db-simple";
 import { sendOrderConfirmation } from "@/app/lib/email";
 
-// 🎁 Setup plans delivered after payment
+// 🎁 Setup plans for one-time purchases only
 const SETUP_PLANS: Record<string, number> = {
   "price_1SSyQORmR6ESDQvobwheaXws": 10, // €4.5 → 10 setups
   "price_1SSyRGRmR6ESDQvoKgAI9CAN": 20, // €8 → 20 setups
@@ -16,18 +16,18 @@ const SETUP_PLANS: Record<string, number> = {
 };
 
 export async function POST(req: Request) {
-  // ✅ 1. Initialize Stripe INSIDE the function
+  // ✅ Initialize Stripe
   const stripeKey = process.env.STRIPE_SECRET_KEY;
-  const secret = process.env.STRIPE_WEBHOOK_SECRET_CHATBOT;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET_CHATBOT;
 
-  if (!stripeKey || !secret) {
+  if (!stripeKey || !webhookSecret) {
     console.error("❌ Missing Stripe Configuration");
-    return NextResponse.json({ error: "Config missing" }, { status: 500 });
+    return NextResponse.json({ error: "Stripe configuration missing" }, { status: 500 });
   }
 
   const stripe = new Stripe(stripeKey, {
     // @ts-ignore
-    apiVersion: "2023-10-16", // Use a standard stable version
+    apiVersion: "2023-10-16",
   });
 
   const sig = req.headers.get("stripe-signature") || "";
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(body, sig, secret);
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err: any) {
     console.error("❌ Invalid webhook signature:", err.message);
     return NextResponse.json({ error: err.message }, { status: 400 });
@@ -43,30 +43,39 @@ export async function POST(req: Request) {
 
   console.log(`⚡ Stripe webhook event: ${event.type}`);
 
+  // Handle ONLY checkout.session.completed for one-time purchases
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    // ✅ 2. Pass the 'stripe' instance to the handler
     await handleCheckoutCompleted(session, stripe);
+  } else if (event.type === "payment_intent.succeeded") {
+    const paymentIntent = event.data.object as Stripe.PaymentIntent;
+    console.log(`✅ Payment succeeded: ${paymentIntent.id}`);
+  } else if (event.type === "payment_intent.payment_failed") {
+    const paymentIntent = event.data.object as Stripe.PaymentIntent;
+    console.error(`❌ Payment failed: ${paymentIntent.id}`);
+  } else {
+    console.log(`ℹ️ Ignoring unhandled event type: ${event.type}`);
   }
 
   return NextResponse.json({ received: true });
 }
 
-// 🔥 CHECKOUT SUCCESS HANDLER
+// 🔥 CHECKOUT SUCCESS HANDLER - One-time purchases only
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe: Stripe) {
-  console.log("🔄 Processing: checkout.session.completed");
+  console.log("🔄 Processing one-time purchase: checkout.session.completed");
 
-  const uid = session.metadata?.uid;
-  const customerEmail = session.customer_details?.email;
+  const userId = session.metadata?.userId || session.metadata?.uid;
+  const customerEmail = session.customer_details?.email || session.customer_email;
+  const sessionId = session.id;
 
-  if (!uid || !customerEmail) {
-    console.error("❌ Missing uid or customerEmail in metadata");
+  if (!userId || !customerEmail) {
+    console.error("❌ Missing userId or customerEmail in metadata:", { userId, customerEmail });
     return;
   }
 
   try {
     // Fetch line items to get the priceId
-    const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+    const lineItems = await stripe.checkout.sessions.listLineItems(sessionId);
     const priceId = lineItems.data[0]?.price?.id;
 
     if (!priceId) {
@@ -81,31 +90,83 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe:
       return;
     }
 
-    // 🔥 Update Firestore setupCount
-    const userRef = adminDb.collection("users").doc(uid);
+    // Update user's setup count in Cloudflare D1
+    const db = getDb();
+    if (!db) {
+      throw new Error("Database not available");
+    }
 
-    await adminDb.runTransaction(async (tx) => {
-      const userDoc = await tx.get(userRef);
-      const currentCount = userDoc.exists ? userDoc.data()?.setupCount || 0 : 0;
+    const now = Date.now();
+    
+    // 1. Get current setup count
+    const user = await queryOne<{ setup_count: number; email: string }>(
+      'SELECT setup_count, email FROM users WHERE id = ?',
+      [userId]
+    );
 
-      tx.set(
-        userRef,
-        {
-          setupCount: currentCount + setupsToAdd,
-          updatedAt: new Date().toISOString(),
-          lastPurchase: {
-            amount: setupsToAdd,
-            stripeSessionId: session.id,
-          },
-        },
-        { merge: true }
-      );
-    });
+    if (!user) {
+      console.error(`❌ User not found: ${userId}`);
+      return;
+    }
 
-    console.log(`🎉 Updated setupCount for UID ${uid}: +${setupsToAdd}`);
+    const currentCount = user.setup_count || 0;
+    const newCount = currentCount + setupsToAdd;
+
+    // 2. Update user's setup count
+    const updateResult = await execute(
+      `UPDATE users 
+       SET setup_count = ?, updated_at = ?, last_purchase_at = ?
+       WHERE id = ?`,
+      [newCount, now, now, userId]
+    );
+
+    if (!updateResult.success) {
+      throw new Error("Failed to update user setup count");
+    }
+
+    // 3. Record the purchase in stripe_purchases table
+    const purchaseResult = await execute(
+      `INSERT INTO stripe_purchases 
+       (user_id, stripe_session_id, price_id, setup_count, amount_paid, currency, 
+        customer_email, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?)`,
+      [
+        userId,
+        sessionId,
+        priceId,
+        setupsToAdd,
+        (session.amount_total ?? 0) / 100,
+        session.currency?.toUpperCase() || 'EUR',
+        customerEmail,
+        now,
+        now
+      ]
+    );
+
+    if (!purchaseResult.success) {
+      throw new Error("Failed to record purchase");
+    }
+
+    // 4. Record setup credits addition for audit trail
+    await execute(
+      `INSERT INTO setup_credits_history 
+       (user_id, change_amount, new_total, reason, stripe_session_id, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        setupsToAdd,
+        newCount,
+        'stripe_purchase',
+        sessionId,
+        now
+      ]
+    );
+
+    console.log(`🎉 Updated setupCount for user ${userId}: ${currentCount} → ${newCount} (+${setupsToAdd})`);
 
     // 💌 Send Order Confirmation Email
-    await sendOrderConfirmation({
+    try {
+      await sendOrderConfirmation({
       to: customerEmail,
       orderId: session.id,
       productName: `${setupsToAdd} Setup Credits`,
@@ -118,9 +179,48 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe:
       },
     });
 
-    console.log(`📧 Receipt sent to: ${customerEmail}`);
+      console.log(`📧 Receipt sent to: ${customerEmail}`);
+    } catch (emailError) {
+      console.error("❌ Failed to send confirmation email:", emailError);
+      // Don't fail the webhook if email fails
+    }
+
+    // Optional: Send real-time update to user if they're online
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/push/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUserId: userId,
+          title: '✅ Purchase Complete!',
+          message: `You've received ${setupsToAdd} setup credits. Start using them now!`,
+          url: '/client/dashboard'
+        })
+      });
+    } catch (pushError) {
+      console.warn("Failed to send push notification:", pushError);
+    }
+
   } catch (err) {
     console.error("❌ Webhook processing error:", err);
+    
+    // Log the error
+    try {
+      await execute(
+        `INSERT INTO stripe_webhook_errors 
+         (event_type, stripe_session_id, user_id, error_message, created_at)
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          'checkout.session.completed',
+          session.id,
+          userId,
+          err instanceof Error ? err.message : 'Unknown error',
+          Date.now()
+        ]
+      );
+    } catch (logError) {
+      console.error("Failed to log webhook error:", logError);
+    }
   }
 
   console.log("✅ Checkout processing complete!");

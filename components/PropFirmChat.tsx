@@ -5,13 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { fetchCurrentPrice } from "../app/lib/fetchPrice";
 import { useUser } from "../app/hooks/useUser";
 import { fetchSetup, hasValidPendingOrders, getPrimaryOrder, getAllPendingOrders, getOrderConfidence, getMarketContext, type ExtendedTradeSetupData } from "../app/lib/fetchSetup";
-import { saveSetup } from "@/app/lib/firebase/saveSetup";
-import { useOneSetup } from "../app/lib/firebase/useSetup";
 import { loadStripe } from "@stripe/stripe-js";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { getAuthInstance, getDbInstance } from "../app/lib/firebaseClient";
-import { setDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import { useOneSetup } from "../app/hooks/useOneSetup";
 import SignalTicket from "./SignalTicket";
 import { createPortal } from "react-dom";
 
@@ -75,7 +71,9 @@ const SYMBOL_NAMES: Record<string, string> = {
   UK100: "FTSE 100"
 };
 
+// ✅ EXACT MATCH WITH BACKEND PIP/CONTRACT SETTINGS
 const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: number }> = {
+  // Forex (Standard Lot = 100,000 units)
   "EURUSD": { pip: 0.0001, contract: 100000, decimals: 5 },
   "GBPUSD": { pip: 0.0001, contract: 100000, decimals: 5 },
   "USDJPY": { pip: 0.01, contract: 100000, decimals: 3 },
@@ -87,16 +85,24 @@ const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: nu
   "EURGBP": { pip: 0.0001, contract: 100000, decimals: 5 },
   "GBPJPY": { pip: 0.01, contract: 100000, decimals: 3 },
   "GBPCHF": { pip: 0.0001, contract: 100000, decimals: 5 },
-  "XAUUSD": { pip: 0.01, contract: 100, decimals: 2 },
+
+  // Metals
+  "XAUUSD": { pip: 0.01, contract: 100, decimals: 2 }, 
   "XAUEUR": { pip: 0.01, contract: 100, decimals: 2 },
   "XAGUSD": { pip: 0.001, contract: 5000, decimals: 3 },
   "PLATINUM": { pip: 0.01, contract: 100, decimals: 2 },
+
+  // Energy
   "BRENT": { pip: 0.01, contract: 1000, decimals: 2 },
-  "BTCUSD": { pip: 1.0, contract: 1, decimals: 1 },
-  "ETHUSD": { pip: 0.1, contract: 1, decimals: 2 },
-  "XRPUSD": { pip: 0.0001, contract: 1000, decimals: 4 },
-  "LTCUSD": { pip: 0.01, contract: 10, decimals: 2 },
-  "DOGEUSD": { pip: 0.0001, contract: 1000, decimals: 4 },
+
+  // Crypto - ADJUSTED FOR MT5 CONTRACT SIZES (Standard CFD lots)
+  "BTCUSD": { pip: 1.0, contract: 1, decimals: 1 },      // 1 Lot = 1 Bitcoin
+  "ETHUSD": { pip: 0.1, contract: 1, decimals: 2 },      // 1 Lot = 1 Ether
+  "XRPUSD": { pip: 0.0001, contract: 1000, decimals: 4 }, // ✅ 1 Lot = 1000 XRP (Standard CFD)
+  "LTCUSD": { pip: 0.01, contract: 10, decimals: 2 },    // ✅ 1 Lot = 10 LTC
+  "DOGEUSD": { pip: 0.0001, contract: 1000, decimals: 4 }, // ✅ 1 Lot = 1000 DOGE
+
+  // Indices (Standard Lot = 1 Contract)
   "US500": { pip: 0.1, contract: 1, decimals: 2 },
   "USTEC": { pip: 0.1, contract: 1, decimals: 2 },
   "US30": { pip: 1.0, contract: 1, decimals: 1 },
@@ -106,14 +112,8 @@ const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: nu
   "UK100": { pip: 0.1, contract: 1, decimals: 1 },
 };
 
-// Helper function to validate SymbolKey
-const isValidSymbolKey = (value: string | null | undefined): value is SymbolKey => {
-  if (!value) return false;
-  return (ALL_SYMBOLS as readonly string[]).includes(value);
-};
-
 // ==========================================
-// 💾 TRIAL FUNCTIONS
+// 💾 LOCAL STORAGE TRIAL FUNCTIONS
 // ==========================================
 const getTrialCount = (): number => {
   if (typeof window === 'undefined') return 0;
@@ -130,8 +130,13 @@ const incrementTrialCount = (): number => {
 };
 
 // ==========================================
-// 🧩 TYPES
+// 🧩 TYPES & INTERFACES
 // ==========================================
+type PropFirmChatProps = {
+  onClose?: () => void;
+  preselectedSymbol?: string | null;
+};
+
 type ChatMessage = {
   sender: "ai" | "user";
   text: string | Array<{ title: string; content: string }>;
@@ -141,11 +146,6 @@ type ChatMessage = {
 type SummaryBlock = {
   title: string;
   content: string;
-};
-
-type PropFirmChatProps = {
-  onClose?: () => void;
-  preselectedSymbol?: string | null;
 };
 
 // ==========================================
@@ -192,36 +192,40 @@ function QuickRegisterModal({
     }
 
     try {
-  // Get Firebase instances using getter functions
-  const authInstance = getAuthInstance();
-  const dbInstance = getDbInstance();
-  
-  const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
-  const user = userCredential.user;
-
-  await sendEmailVerification(user);
-
-  await setDoc(doc(dbInstance, "users", user.uid), {
-        email: email.toLowerCase().trim(),
-        setupCount: 1, // 🎁 1 free setup for registration
-        referredBy: null,
-        emailVerified: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      // Register with Cloudflare API
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email, 
+          password,
+          displayName: email.split('@')[0]
+        })
       });
 
-      onSuccess(user, selectedPlan);
-      
-    } catch (err: any) {
-      if (err.code === 'auth/email-already-in-use') {
-        setError("This email is already registered. Please login instead.");
-      } else if (err.code === 'auth/invalid-email') {
-        setError("Invalid email address format.");
-      } else if (err.code === 'auth/weak-password') {
-        setError("Password is too weak. Please use a stronger password.");
+      const data = await response.json();
+
+      if (data.success) {
+        const user = data.user;
+        // Store session
+        localStorage.setItem('cf_token', data.token);
+        localStorage.setItem('cf_user', JSON.stringify(user));
+        localStorage.setItem('cf_session_id', data.sessionId);
+        
+        onSuccess(user, selectedPlan);
       } else {
-        setError(err.message || "Registration failed. Please try again.");
+        if (data.error.includes('already exists')) {
+          setError("This email is already registered. Please login instead.");
+        } else if (data.error.includes('Invalid email')) {
+          setError("Invalid email address format.");
+        } else if (data.error.includes('weak password')) {
+          setError("Password is too weak. Please use a stronger password.");
+        } else {
+          setError(data.error || "Registration failed. Please try again.");
+        }
       }
+    } catch (err: any) {
+      setError(err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -441,25 +445,20 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
   }, [userId]);
 
   // ==========================================
-  // ⚡ FIX: Initialize symbol state with type-safe conversion
+  // ⚡ NEW: PRESELECTED SYMBOL EFFECT
   // ==========================================
   useEffect(() => {
-    if (preselectedSymbol && isValidSymbolKey(preselectedSymbol)) {
-      setSymbol(preselectedSymbol as SymbolKey);
+    if (preselectedSymbol && ALL_SYMBOLS.includes(preselectedSymbol as SymbolKey)) {
+      // Small timeout ensures the modal animation finishes before analysis starts
+      const timer = setTimeout(() => {
+        startPropWorkflow(preselectedSymbol);
+      }, 600);
+      return () => clearTimeout(timer);
     }
   }, [preselectedSymbol]);
 
-  // ==========================================
-  // ⚡ NEW: PRESELECTED SYMBOL WORKFLOW
-  // ==========================================
-  useEffect(() => {
-    if (preselectedSymbol && isValidSymbolKey(preselectedSymbol) && messages.length === 0) {
-      startPropWorkflow(preselectedSymbol);
-    }
-  }, [preselectedSymbol, messages.length]);
-
   const startPropWorkflow = (sym: string) => {
-    if (isValidSymbolKey(sym)) {
+    if (ALL_SYMBOLS.includes(sym as SymbolKey)) {
       setSymbol(sym as SymbolKey);
       setMessages([{
         sender: "ai",
@@ -485,7 +484,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          uid: user.uid, 
+          userId: user.id, 
           plan: plan,
           email: user.email || userEmail
         }),
@@ -692,7 +691,8 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
       }
     } else {
       if (trialCount < 2) {
-        newTrialCount = await incrementTrial();
+        newTrialCount = incrementTrialCount();
+        setTrialCount(newTrialCount);
         proceed = true;
       } else {
         setShowPricingModal(true);
@@ -885,20 +885,35 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
           const finalRR = (tpPrice && slPrice && entryPrice) ? 
             Math.abs(tpPrice - entryPrice) / Math.abs(entryPrice - slPrice) : 1.0;
           
-          await saveSetup({
-            userId,
-            symbol: targetSymbol,
-            entryPrice,
-            takeProfit: tpPrice,
-            stopLoss: slPrice,
-            capital: balance,
-            lotSize: lotSize,
-            riskReward: finalRR,
+          // Save setup via Cloudflare API
+          const saveResponse = await fetch('/api/setups', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('cf_token')}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              symbol: targetSymbol,
+              entry_price: entryPrice,
+              take_profit: tpPrice,
+              stop_loss: slPrice,
+              capital: balance,
+              lot_size: lotSize,
+              risk_reward: finalRR
+            })
           });
+
+          if (!saveResponse.ok) {
+            throw new Error('Failed to save setup');
+          }
           
           console.log("✅ Prop firm setup saved successfully");
         } catch (err) {
           console.error("❌ Failed to save prop firm setup:", err);
+          setMessages(prev => [
+            ...prev,
+            { sender: "ai", text: "⚠️ Analysis complete, but failed to save to history." },
+          ]);
         }
       }
 
@@ -1067,7 +1082,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
                             handleFirmSelect(action.value);
                           } else if (step === 1) {
                             handleStageSelect(action.value);
-                          } else if (step === 3 && isValidSymbolKey(action.value)) {
+                          } else if (step === 3 && ALL_SYMBOLS.includes(action.value as SymbolKey)) {
                             executePropAnalysis(action.value as SymbolKey);
                           }
                         }}
@@ -1128,7 +1143,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
             value={symbol || ""}
             onChange={(e) => {
               const selected = e.target.value;
-              if (isValidSymbolKey(selected)) {
+              if (ALL_SYMBOLS.includes(selected as SymbolKey)) {
                 executePropAnalysis(selected as SymbolKey);
               }
             }}
@@ -1153,7 +1168,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
               setSelectedFirm("");
               setStage(null);
               setCapital("");
-              setSymbol(preselectedSymbol && isValidSymbolKey(preselectedSymbol) ? preselectedSymbol as SymbolKey : null);
+              setSymbol(preselectedSymbol && ALL_SYMBOLS.includes(preselectedSymbol as SymbolKey) ? preselectedSymbol as SymbolKey : null);
               setMessages([]);
               setTicketData(null);
             }} 

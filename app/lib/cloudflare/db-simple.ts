@@ -1,19 +1,63 @@
-// app/lib/cloudflare/db-simple.ts - UPDATED VERSION
-import { getRequestContext } from '@cloudflare/next-on-pages';
+// app/lib/cloudflare/db-simple.ts - OPENNEXT VERSION
+// Simple helper functions that work with OpenNext and Cloudflare
 
-// Simple helper functions that work without complex types
-
+// OpenNext provides Cloudflare bindings via environment
 export function getDB() {
-  try {
-    const { env } = getRequestContext();
-    return env.DB;
-  } catch (error) {
-    console.warn('Cloudflare context not available. Are you running locally?');
-    return null;
+  // Method 1: OpenNext runtime (production)
+  if (typeof process !== 'undefined' && process.env.DB) {
+    return process.env.DB;
   }
+  
+  // Method 2: Cloudflare Pages Functions environment
+  if (typeof globalThis !== 'undefined') {
+    // Try various OpenNext/Cloudflare environment patterns
+    const env = (globalThis as any).env || 
+                (globalThis as any).process?.env || 
+                (globalThis as any).__env__;
+    
+    if (env?.DB) {
+      return env.DB;
+    }
+    
+    // Direct global access (Cloudflare Workers style)
+    if ((globalThis as any).DB) {
+      return (globalThis as any).DB;
+    }
+  }
+  
+  // Method 3: Local development with wrangler
+  if (typeof globalThis !== 'undefined' && (globalThis as any).__cloudflare__?.env?.DB) {
+    return (globalThis as any).__cloudflare__.env.DB;
+  }
+  
+  console.warn('Database not available in current context. Running in:', 
+    typeof window !== 'undefined' ? 'browser' : 
+    typeof process !== 'undefined' ? 'Node.js' : 'unknown');
+  
+  // Return mock for local development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Returning mock database for development');
+    return {
+      prepare: (sql: string) => ({
+        bind: (...params: any[]) => ({
+          all: async () => ({ 
+            results: [],
+            success: true,
+            meta: {}
+          }),
+          run: async () => ({
+            success: true,
+            meta: { last_row_id: null }
+          })
+        })
+      })
+    } as any;
+  }
+  
+  return null;
 }
 
-// ✅ ADD THIS ALIAS FOR BACKWARD COMPATIBILITY
+// ✅ ALIAS for backward compatibility
 export const getDb = getDB;
 
 export async function query<T = any>(sql: string, params: any[] = []): Promise<T[]> {
@@ -26,10 +70,12 @@ export async function query<T = any>(sql: string, params: any[] = []): Promise<T
   try {
     const stmt = db.prepare(sql);
     const bound = params.length > 0 ? stmt.bind(...params) : stmt;
-    const result = await bound.all<T>();
+    const result = await bound.all();
     return result.results || [];
   } catch (error) {
     console.error('D1 query error:', error);
+    console.error('SQL:', sql);
+    console.error('Params:', params);
     return [];
   }
 }
@@ -39,7 +85,6 @@ export async function queryOne<T = any>(sql: string, params: any[] = []): Promis
   return results[0] || null;
 }
 
-// FIXED: Update return type to handle null
 export async function execute(sql: string, params: any[] = []): Promise<{ success: boolean; id?: number }> {
   const db = getDB();
   if (!db) {
@@ -52,7 +97,6 @@ export async function execute(sql: string, params: any[] = []): Promise<{ succes
     const bound = params.length > 0 ? stmt.bind(...params) : stmt;
     const result = await bound.run();
     
-    // FIX: Convert null to undefined or don't include id if it's null
     const lastRowId = result.meta?.last_row_id;
     
     return {
@@ -61,6 +105,8 @@ export async function execute(sql: string, params: any[] = []): Promise<{ succes
     };
   } catch (error) {
     console.error('D1 execute error:', error);
+    console.error('SQL:', sql);
+    console.error('Params:', params);
     return { success: false };
   }
 }

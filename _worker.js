@@ -1,6 +1,19 @@
-// _worker.js - REQUIRED for @cloudflare/next-on-pages
-import { createPagesRoute } from "@cloudflare/next-on-pages/next-dev";
+// _worker.js - OpenNext entry point
+import { createRequestHandler } from "@opennextjs/cloudflare/next";
 
-const { onRequest } = createPagesRoute();
+// Create the request handler
+const handleRequest = createRequestHandler({
+  // OpenNext will automatically configure this
+  buildId: process.env.BUILD_ID || "next-build",
+  // You can add custom middleware or configuration here
+});
 
-export { onRequest };
+// Cloudflare Worker export
+export default {
+  fetch: handleRequest,
+  
+  // Optional: For scheduled tasks
+  // scheduled: async (event, env, ctx) => {
+  //   // Handle scheduled events
+  // },
+};

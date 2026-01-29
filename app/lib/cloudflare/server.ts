@@ -1,19 +1,25 @@
-// app/lib/cloudflare/server.ts
+// app/lib/cloudflare/server.ts - OPENNEXT VERSION
 // This replaces firebaseAdmin.ts
-
-import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export class CloudflareServer {
   private env: any;
 
   constructor() {
-    try {
-      const context = getRequestContext();
-      this.env = context.env;
-    } catch (error) {
-      console.warn('Cloudflare context not available (running locally?)');
+    // OpenNext/Cloudflare environment detection
+    if (typeof globalThis !== 'undefined') {
+      // Try various environment patterns
+      this.env = (globalThis as any).env || 
+                 (globalThis as any).process?.env || 
+                 (globalThis as any).__env__ ||
+                 (globalThis as any).__cloudflare__?.env ||
+                 {};
+    } else if (typeof process !== 'undefined') {
+      this.env = process.env;
+    } else {
       this.env = {};
     }
+    
+    console.log('CloudflareServer initialized with env keys:', Object.keys(this.env));
   }
 
   // ========== DATABASE (D1) ==========
@@ -30,11 +36,12 @@ export class CloudflareServer {
     }
 
     try {
-      // FIX: Remove the type argument from .all() and cast the result instead
       const result = await db.prepare(sql).bind(...params).all();
       return result.results as T[];
     } catch (error) {
       console.error('D1 query error:', error);
+      console.error('SQL:', sql);
+      console.error('Params:', params);
       return [];
     }
   }
@@ -61,6 +68,8 @@ export class CloudflareServer {
       };
     } catch (error) {
       console.error('D1 execute error:', error);
+      console.error('SQL:', sql);
+      console.error('Params:', params);
       return { success: false };
     }
   }
@@ -172,7 +181,7 @@ export class CloudflareServer {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
     
-    await this.execute(
+    const result = await this.execute(
       `INSERT INTO users (id, email, display_name, photo_url, license_type, created_at, updated_at) 
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
@@ -185,6 +194,10 @@ export class CloudflareServer {
         now
       ]
     );
+
+    if (!result.success) {
+      throw new Error('Failed to create user');
+    }
 
     return { id, ...userData };
   }

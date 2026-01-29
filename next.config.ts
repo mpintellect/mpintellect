@@ -6,9 +6,6 @@ const nextConfig: NextConfig = {
   },
   output: 'standalone',
   
-  // Remove turbopack config entirely
-  // turbopack: {}, // DELETE THIS LINE
-  
   basePath: '',
   
   images: {
@@ -18,7 +15,7 @@ const nextConfig: NextConfig = {
   
   assetPrefix: '',
   
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
     // Handle SVG support
     config.module.rules.push({
       test: /\.svg$/,
@@ -58,15 +55,23 @@ const nextConfig: NextConfig = {
       };
     }
     
+    // Exclude problematic packages from client bundles
+    if (!isServer) {
+      config.externals = [
+        ...(config.externals || []),
+        'web-push',
+        'firebase',
+        'firebase-admin'
+      ];
+    }
+    
     return config;
   },
   
   productionBrowserSourceMaps: false,
   
-  // Remove problematic experimental config
-  // experimental: {
-  //   esmExternals: 'loose', // This breaks Turbopack
-  // },
+  // Remove experimental.turbo entirely - just don't use Turbopack
+  // To disable Turbopack, use --no-turbopack flag in build command
 };
 
 export default nextConfig;

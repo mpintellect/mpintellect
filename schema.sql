@@ -358,3 +358,81 @@ CREATE TABLE IF NOT EXISTS ai_usage_tracking (
   INDEX idx_usage_action (action),
   INDEX idx_usage_created (created_at)
 );
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  display_name TEXT,
+  photo_url TEXT,
+  email_verified INTEGER DEFAULT 0,
+  license_type TEXT DEFAULT 'free',
+  setup_count INTEGER DEFAULT 2, -- Give 2 free trials
+  trial_count INTEGER DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+-- Setups table
+CREATE TABLE IF NOT EXISTS setups (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  symbol TEXT NOT NULL,
+  entry_price REAL NOT NULL,
+  take_profit REAL NOT NULL,
+  stop_loss REAL NOT NULL,
+  lot_size REAL DEFAULT 0.01,
+  capital REAL DEFAULT 1000,
+  risk_reward REAL DEFAULT 1.5,
+  status TEXT DEFAULT 'pending',
+  created_at TEXT NOT NULL,
+  generated_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE INDEX idx_setups_user_id ON setups(user_id);
+CREATE INDEX idx_setups_created_at ON setups(created_at);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_count INTEGER DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS setup_count INTEGER DEFAULT 2;
+CREATE TABLE IF NOT EXISTS setups (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  symbol TEXT NOT NULL,
+  entry_price REAL NOT NULL,
+  take_profit REAL NOT NULL,
+  stop_loss REAL NOT NULL,
+  lot_size REAL DEFAULT 0.01,
+  capital REAL DEFAULT 1000,
+  risk_reward REAL DEFAULT 1.5,
+  status TEXT DEFAULT 'pending',
+  created_at TEXT NOT NULL,
+  generated_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+-- Market polls table
+CREATE TABLE IF NOT EXISTS market_polls (
+  id TEXT PRIMARY KEY,
+  question TEXT,
+  symbol TEXT,
+  category TEXT,
+  votes_low INTEGER DEFAULT 0,
+  votes_medium INTEGER DEFAULT 0,
+  votes_high INTEGER DEFAULT 0,
+  total_votes INTEGER DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+-- Poll votes table (to track who voted)
+CREATE TABLE IF NOT EXISTS poll_votes (
+  id TEXT PRIMARY KEY,
+  poll_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  user_name TEXT,
+  vote TEXT NOT NULL CHECK (vote IN ('low', 'medium', 'high')),
+  voted_at TEXT NOT NULL,
+  FOREIGN KEY (poll_id) REFERENCES market_polls(id),
+  UNIQUE(poll_id, user_id) -- Prevent duplicate votes
+);
+
+CREATE INDEX idx_poll_votes_poll_id ON poll_votes(poll_id);
+CREATE INDEX idx_poll_votes_user_id ON poll_votes(user_id);

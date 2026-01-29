@@ -1,626 +1,742 @@
-// app/client/dashboard/page.tsx
 "use client";
 
-import { useEffect, useRef, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import toast from "react-hot-toast";
-import AiChatBox from "@/components/AiChatBox";
-import PropFirmChat from "@/components/PropFirmChat";
-import { useOneSetup } from "@/app/lib/firebase/useSetup";
-import UserAnalytics from "./components/AnalyticsSection";
-import { Globe, ArrowRight, ShieldCheck, Trophy, X } from 'lucide-react';
-import { createPortal } from "react-dom";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  LineChart,
+  Line,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from "recharts";
+import { useEffect, useState } from "react";
+import { CONTRACT_SIZES } from "@/data/symbols";
+import { useOneSetup } from "@/app/hooks/useOneSetup";
 
-export const dynamic = "force-dynamic";
+interface Setup {
+  id: string;
+  symbol: string;
+  entryPrice: number;
+  takeProfit: number;
+  stopLoss: number;
+  generatedAt: string;
+  createdAt: string;
+  status: "pending" | "hit_tp" | "hit_sl" | "expired";
+  capital: number;
+  lotSize: number;
+  riskReward: number;
+  userId: string;
+}
 
-// SIMPLE Email Verification Message (inline component)
-function EmailVerificationMessage() {
-  const [sending, setSending] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+interface TradingStyle {
+  type: "SCALPER" | "DAY_TRADER" | "SWING_TRADER" | "AGGRESSIVE" | "CONSERVATIVE";
+  confidence: number;
+  description: string;
+  characteristics: string[];
+}
+
+interface ProfitLossData {
+  totalProfit: number;
+  totalLoss: number;
+  netProfit: number;
+  profitPerTrade: number;
+  roi: number;
+  largestWin: number;
+  largestLoss: number;
+  profitFactor: number;
+}
+
+export default function UserAnalytics() {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [setups, setSetups] = useState<Setup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedSymbol, setSelectedSymbol] = useState<string>("ALL");
+  const [timeFilter, setTimeFilter] = useState<"ALL" | "WEEK" | "MONTH">("ALL");
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    // Check if user is logged in via Cloudflare token
+    // Get user from localStorage (Cloudflare auth)
     const token = localStorage.getItem('cf_token');
     const userData = localStorage.getItem('cf_user');
     
-    if (token && userData) {
+    if (!token || !userData) {
+      console.log("❌ No user authenticated");
+      setLoading(false);
+      return;
+    }
+
+    try {
       const user = JSON.parse(userData);
-      setCurrentUser(user);
+      setUserId(user.id);
+      
+      fetchSetups(user.id);
+    } catch (error) {
+      console.error("❌ Error parsing user data:", error);
+      setLoading(false);
     }
   }, []);
 
-  const handleResend = async () => {
-    if (!currentUser) return;
-    
-    setSending(true);
+  const fetchSetups = async (userId: string) => {
     try {
-      // TODO: Implement Cloudflare email verification
-      // For now, just show a message
-      toast.success("Email verification will be implemented soon!");
-      // await sendEmailVerification(currentUser);
-      // toast.success("Verification email sent! Check your inbox.");
-    } catch (error) {
-      console.error("Error sending verification:", error);
-      toast.error("Failed to send verification email");
-    } finally {
-      setSending(false);
-    }
-  };
-
-  // Don't show if email is already verified
-  if (!currentUser || currentUser.email_verified) {
-    return null;
-  }
-
-  return (
-    <div className="verify-message">
-      <div className="verify-content">
-        <span>📧</span>
-        <div>
-          <strong>Verify your email</strong> - Check your inbox for the verification link.
-        </div>
-        <button 
-          onClick={handleResend}
-          disabled={sending}
-          className="verify-resend-btn"
-        >
-          {sending ? "Sending..." : "Resend"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function DashboardContent() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [setupCount, setSetupCount] = useState<number>(0);
-  const [buyLoading, setBuyLoading] = useState(false);
-  const [showPlanModal, setShowPlanModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<"10" | "20" | "30" | null>(null);
-  
-  // View States
-  const [activeTool, setActiveTool] = useState<'ai' | 'prop' | null>(null);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  
-  const [isNavExpanded, setIsNavExpanded] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  
-  const router = useRouter();
-  const searchParams = useSearchParams();  
-
-  // Detect query param showPlans=true
-  useEffect(() => {
-    if (searchParams.get("showPlans") === "true") {
-      setShowPlanModal(true);
-    }
-  }, [searchParams]);
-
-  // Handle scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      if (scrollTop > 50 && !isScrolled) setIsScrolled(true);
-      else if (scrollTop <= 50 && isScrolled) setIsScrolled(false);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isScrolled]);
-
-  // Auto-center PRO card on mobile
-  useEffect(() => {
-    const grid = document.querySelector(".purchase-grid");
-    if (!grid || window.innerWidth > 520) return;
-    const middleCard = grid.querySelector(".popular-plan");
-    if (middleCard) {
-      const middleCardOffset = (middleCard as HTMLElement).offsetLeft;
-      const gridVisibleWidth = grid.clientWidth;
-      const scrollTo = middleCardOffset - (gridVisibleWidth / 2) + ((middleCard as HTMLElement).offsetWidth / 2);
-      grid.scrollTo({ left: scrollTo, behavior: "smooth" });
-    }
-  }, []);
-
-  // Auth & Setup Count
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('cf_token');
-      const userData = localStorage.getItem('cf_user');
+      console.log("🔍 Fetching setups for user:", userId);
       
-      if (!token || !userData) {
-        router.push("/client/login");
-        return;
-      }
-
-      try {
-        // Verify token with Cloudflare API
-        const response = await fetch('/api/auth/me', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            const user = data.user;
-            setUser(user);
-            
-            // Get setup count from Cloudflare D1
-            await refreshSetupCount(user.id);
-            
-            if (searchParams.get("success") === "true") {
-              toast.success("✅ Payment successful! Setup credits added.");
-              await refreshSetupCount(user.id);
-              const url = new URL(window.location.href);
-              url.searchParams.delete("success");
-              window.history.replaceState({}, "", url.toString());
-            }
-          } else {
-            // Token invalid, redirect to login
-            localStorage.removeItem('cf_token');
-            localStorage.removeItem('cf_user');
-            localStorage.removeItem('cf_session_id');
-            router.push("/client/login");
-          }
-        } else {
-          // Token invalid, redirect to login
-          localStorage.removeItem('cf_token');
-          localStorage.removeItem('cf_user');
-          localStorage.removeItem('cf_session_id');
-          router.push("/client/login");
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-        router.push("/client/login");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [router, searchParams]);
-
-  const refreshSetupCount = async (userId: string) => {
-    try {
-      // Get setup count from Cloudflare D1
-      const response = await fetch(`/api/user/setup-count?userId=${userId}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setSetupCount(data.setupCount || 0);
-        }
-      }
-    } catch (error) {
-      console.error("Error refreshing setup count:", error);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      const token = localStorage.getItem('cf_token');
-      const sessionId = localStorage.getItem('cf_session_id');
+      const response = await fetch(`/api/setups?userId=${userId}`);
       
-      if (token && sessionId) {
-        // Call Cloudflare logout API
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ sessionId })
-        });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      // Clear local storage
-      localStorage.removeItem('cf_token');
-      localStorage.removeItem('cf_user');
-      localStorage.removeItem('cf_session_id');
-      router.push("/client/login");
-    }
-  };
-
-  // --- RECONECTED HANDLERS ---
-  const openTool = async (tool: 'ai' | 'prop') => {
-    if (!user) {
-      toast.error("Please log in first");
-      return;
-    }
-
-    if (setupCount <= 0) {
-      toast.error("No setups available. Please purchase more setups.");
-      return;
-    }
-
-    // Use setup credit (TODO: Update useOneSetup hook for Cloudflare)
-    const result = await useOneSetup();
-    if (result !== "ok") {
-      if (result === "no-credits") {
-        toast.error("❌ No setups available. Please purchase more.");
+      
+      const data = await response.json();
+      
+      if (data.success && data.setups) {
+        console.log("🔍 Fetched setups:", data.setups.length);
+        
+        // Transform the data to match our interface
+        const transformedSetups: Setup[] = data.setups.map((setup: any) => ({
+          id: setup.id,
+          symbol: setup.symbol,
+          entryPrice: parseFloat(setup.entry_price),
+          takeProfit: parseFloat(setup.take_profit),
+          stopLoss: parseFloat(setup.stop_loss),
+          generatedAt: setup.generated_at || setup.created_at,
+          createdAt: setup.created_at,
+          status: setup.status,
+          capital: parseFloat(setup.capital) || 1000,
+          lotSize: parseFloat(setup.lot_size) || 0.01,
+          riskReward: parseFloat(setup.risk_reward) || 1.5,
+          userId: setup.user_id
+        }));
+        
+        setSetups(transformedSetups);
+        setError("");
       } else {
-        toast.error("⚠️ Error using setup. Please try again.");
+        throw new Error(data.error || "Failed to fetch setups");
       }
-      return;
-    }
-
-    // Deduct setup count locally
-    setSetupCount(prev => Math.max(0, prev - 1));
-
-    // Set active tool and disable background scrolling
-    setActiveTool(tool);
-    setShowAnalytics(false); // Close analytics if opening tool
-    setIsNavExpanded(false); // Close mobile menu
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeTool = () => {
-    setActiveTool(null);
-    document.body.style.overflow = 'auto';
-    if (user) {
-      refreshSetupCount(user.id);
-    }
-  };
-
-  const openAnalytics = () => {
-    setShowAnalytics(true);
-    setActiveTool(null); // Close any open tool
-    setIsNavExpanded(false); // Close mobile menu
-  };
-
-  const returnToDashboard = () => {
-    setShowAnalytics(false);
-    setActiveTool(null);
-    setIsNavExpanded(false);
-  };
-
-  const handleBuySetups = async (plan: string = "10") => {
-    if (!user) {
-      alert("Please log in to purchase setups.");
-      return;
-    }
-    setBuyLoading(true);
-    try {
-      const res = await fetch("/api/checkout/create-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          userId: user.id, 
-          plan: plan, 
-          email: user.email 
-        }),
-      });
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else throw new Error("Checkout URL not received.");
-    } catch (error) {
-      console.error("Buy setup error:", error);
-      alert("Failed to start checkout session. Please try again.");
+    } catch (error: any) {
+      console.error("❌ Error fetching setups:", error);
+      setError(`Failed to load data: ${error.message}`);
     } finally {
-      setBuyLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleBrokerGatewayClick = () => {
-    if ((window as any).fbq) (window as any).fbq('track', 'Lead');
-    window.open('https://www.litefinance.org/fr/?uid=967798214', '_blank', 'noopener,noreferrer');
+  // Helper function to get timestamp from setup
+  const getSetupTimestamp = (setup: Setup): number => {
+    try {
+      return new Date(setup.generatedAt || setup.createdAt).getTime();
+    } catch {
+      return Date.now();
+    }
   };
+
+  // Filter setups based on selected symbol and time
+  const filteredSetups = setups.filter(setup => {
+    const symbolMatch = selectedSymbol === "ALL" || setup.symbol === selectedSymbol;
+    
+    if (timeFilter === "ALL") return symbolMatch;
+    
+    const setupDate = new Date(getSetupTimestamp(setup));
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - setupDate.getTime());
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    
+    if (timeFilter === "WEEK") return symbolMatch && diffDays <= 7;
+    if (timeFilter === "MONTH") return symbolMatch && diffDays <= 30;
+    
+    return symbolMatch;
+  });
+
+  // ==================== PROFIT/LOSS CALCULATIONS ====================
+
+  const calculateProfitLoss = (): ProfitLossData => {
+    let totalProfit = 0;
+    let totalLoss = 0;
+    let largestWin = 0;
+    let largestLoss = 0;
+    const completedTrades = filteredSetups.filter(s => s.status === "hit_tp" || s.status === "hit_sl");
+
+    completedTrades.forEach(setup => {
+      const contractSize = CONTRACT_SIZES[setup.symbol as keyof typeof CONTRACT_SIZES]?.contract || 100000;
+      
+      if (setup.status === "hit_tp") {
+        const priceDifference = Math.abs(setup.takeProfit - setup.entryPrice);
+        const tradeProfit = priceDifference * setup.lotSize * contractSize;
+        totalProfit += tradeProfit;
+        largestWin = Math.max(largestWin, tradeProfit);
+      } else if (setup.status === "hit_sl") {
+        const priceDifference = Math.abs(setup.entryPrice - setup.stopLoss);
+        const tradeLoss = priceDifference * setup.lotSize * contractSize;
+        totalLoss += tradeLoss;
+        largestLoss = Math.max(largestLoss, tradeLoss);
+      }
+    });
+
+    const netProfit = totalProfit - totalLoss;
+    const profitPerTrade = completedTrades.length > 0 ? netProfit / completedTrades.length : 0;
+    const totalCapital = filteredSetups.reduce((sum, setup) => sum + (setup.capital || 0), 0);
+    const roi = totalCapital > 0 ? (netProfit / totalCapital) * 100 : 0;
+    const profitFactor = totalLoss > 0 ? totalProfit / totalLoss : totalProfit > 0 ? Infinity : 0;
+
+    return {
+      totalProfit,
+      totalLoss,
+      netProfit,
+      profitPerTrade,
+      roi,
+      largestWin,
+      largestLoss,
+      profitFactor
+    };
+  };
+
+  const profitLossData = calculateProfitLoss();
+
+  // ==================== ANALYTICS CALCULATIONS ====================
+
+  // Basic Stats
+  const totalSetups = filteredSetups.length;
+  const pendingSetups = filteredSetups.filter(s => s.status === "pending").length;
+  const tpHitSetups = filteredSetups.filter(s => s.status === "hit_tp").length;
+  const slHitSetups = filteredSetups.filter(s => s.status === "hit_sl").length;
+  const expiredSetups = filteredSetups.filter(s => s.status === "expired").length;
+  const completedTrades = tpHitSetups + slHitSetups;
+  
+  const winRate = completedTrades > 0 ? (tpHitSetups / completedTrades) * 100 : 0;
+
+  // Trading Volume Analysis
+  const totalLots = filteredSetups.reduce((sum, setup) => sum + (setup.lotSize || 0), 0);
+  const avgLotSize = totalSetups > 0 ? totalLots / totalSetups : 0;
+  const totalCapital = filteredSetups.reduce((sum, setup) => sum + (setup.capital || 0), 0);
+  const avgCapital = totalSetups > 0 ? totalCapital / totalSetups : 0;
+
+  // Symbol Analysis
+  const symbolUsage = Object.entries(
+    filteredSetups.reduce((acc, cur) => {
+      acc[cur.symbol] = (acc[cur.symbol] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  ).map(([symbol, count]) => ({ symbol, count }));
+
+  const topSymbol = symbolUsage.sort((a, b) => b.count - a.count)[0]?.symbol || "N/A";
+
+  // Risk Analysis
+  const avgRiskReward = totalSetups > 0 
+    ? filteredSetups.reduce((sum, setup) => sum + (setup.riskReward || 1), 0) / totalSetups 
+    : 1;
+  const highRiskSetups = filteredSetups.filter(s => (s.riskReward || 1) > 2).length;
+  const lowRiskSetups = filteredSetups.filter(s => (s.riskReward || 1) < 1.5).length;
+
+  // Time-based Analysis
+  const setupsByHour = Array.from({ length: 24 }, (_, hour) => {
+    const hourSetups = filteredSetups.filter(setup => {
+      try {
+        const setupDate = new Date(getSetupTimestamp(setup));
+        return setupDate.getHours() === hour;
+      } catch {
+        return false;
+      }
+    });
+    return { hour: `${hour}:00`, count: hourSetups.length };
+  });
+
+  // Profit/Loss by Symbol
+  const profitBySymbol = symbolUsage.map(symbolData => {
+    const symbolSetups = filteredSetups.filter(s => s.symbol === symbolData.symbol);
+    const symbolProfit = symbolSetups.reduce((sum, setup) => {
+      const contractSize = CONTRACT_SIZES[setup.symbol as keyof typeof CONTRACT_SIZES]?.contract || 100000;
+      
+      if (setup.status === "hit_tp") {
+        const priceDifference = Math.abs(setup.takeProfit - setup.entryPrice);
+        return sum + (priceDifference * setup.lotSize * contractSize);
+      } else if (setup.status === "hit_sl") {
+        const priceDifference = Math.abs(setup.entryPrice - setup.stopLoss);
+        return sum - (priceDifference * setup.lotSize * contractSize);
+      }
+      return sum;
+    }, 0);
+    
+    return { 
+      symbol: symbolData.symbol, 
+      profit: symbolProfit, 
+      trades: symbolData.count 
+    };
+  });
+
+  // Monthly Profit/Loss Trend
+  const monthlyProfit = filteredSetups.reduce((acc, setup) => {
+    try {
+      const date = new Date(getSetupTimestamp(setup));
+      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      
+      if (!acc[monthKey]) {
+        acc[monthKey] = 0;
+      }
+      
+      const contractSize = CONTRACT_SIZES[setup.symbol as keyof typeof CONTRACT_SIZES]?.contract || 100000;
+      
+      if (setup.status === "hit_tp") {
+        const priceDifference = Math.abs(setup.takeProfit - setup.entryPrice);
+        acc[monthKey] += priceDifference * setup.lotSize * contractSize;
+      } else if (setup.status === "hit_sl") {
+        const priceDifference = Math.abs(setup.entryPrice - setup.stopLoss);
+        acc[monthKey] -= priceDifference * setup.lotSize * contractSize;
+      }
+    } catch (error) {
+      console.error("Error processing setup for monthly profit:", error);
+    }
+    
+    return acc;
+  }, {} as Record<string, number>);
+
+  const monthlyProfitData = Object.entries(monthlyProfit)
+    .map(([month, profit]) => ({ month, profit }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+
+  // ==================== TRADING STYLE ANALYSIS ====================
+
+  const analyzeTradingStyle = (): TradingStyle => {
+    if (totalSetups === 0) {
+      return {
+        type: "CONSERVATIVE",
+        confidence: 0,
+        description: "No trading data available",
+        characteristics: ["Start trading to discover your style"]
+      };
+    }
+
+    const characteristics: string[] = [];
+    let score = {
+      scalper: 0,
+      dayTrader: 0,
+      swingTrader: 0,
+      aggressive: 0,
+      conservative: 0
+    };
+
+    // Trading Frequency Analysis
+    const setupsPerDay = totalSetups / 30;
+    if (setupsPerDay > 3) {
+      score.scalper += 3;
+      characteristics.push("High frequency trading");
+    } else if (setupsPerDay > 1) {
+      score.dayTrader += 2;
+      characteristics.push("Daily trading activity");
+    } else {
+      score.swingTrader += 2;
+      characteristics.push("Swing trading pattern");
+    }
+
+    // Risk Analysis
+    if (avgRiskReward > 2) {
+      score.aggressive += 3;
+      characteristics.push("High risk-reward preference");
+    } else if (avgRiskReward < 1.5) {
+      score.conservative += 2;
+      characteristics.push("Conservative risk management");
+    }
+
+    // Profitability Analysis
+    if (profitLossData.netProfit > 0) {
+      score.conservative += 2;
+      characteristics.push("Profitable trading strategy");
+    } else if (profitLossData.netProfit < -totalCapital * 0.1) {
+      score.aggressive += 1;
+      characteristics.push("High risk tolerance");
+    }
+
+    // Lot Size Analysis
+    if (avgLotSize > 2) {
+      score.aggressive += 2;
+      characteristics.push("Large position sizes");
+    } else if (avgLotSize < 0.5) {
+      score.conservative += 2;
+      characteristics.push("Small position sizes");
+    }
+
+    // Win Rate Analysis
+    if (winRate > 60) {
+      score.conservative += 2;
+      characteristics.push("High win rate strategy");
+    } else if (winRate < 40) {
+      score.aggressive += 1;
+      characteristics.push("Lower win rate, high risk");
+    }
+
+    // Symbol Concentration
+    if (symbolUsage.length <= 3 && totalSetups > 5) {
+      score.scalper += 1;
+      characteristics.push("Focused on few symbols");
+    }
+
+    // Determine primary style
+    const maxScore = Math.max(...Object.values(score));
+    const primaryStyle = Object.keys(score).find(key => score[key as keyof typeof score] === maxScore);
+
+    const styleMap: { [key: string]: Omit<TradingStyle, 'confidence' | 'description' | 'characteristics'> } = {
+      scalper: { type: "SCALPER" },
+      dayTrader: { type: "DAY_TRADER" },
+      swingTrader: { type: "SWING_TRADER" },
+      aggressive: { type: "AGGRESSIVE" },
+      conservative: { type: "CONSERVATIVE" }
+    };
+
+    const confidence = Math.min(100, Math.max(30, (maxScore / 8) * 100));
+
+    const descriptions = {
+      SCALPER: "Quick, frequent trades with small profits",
+      DAY_TRADER: "Daily trading with medium-term positions",
+      SWING_TRADER: "Holding positions for several days",
+      AGGRESSIVE: "High risk, high reward approach",
+      CONSERVATIVE: "Careful risk management, steady gains"
+    };
+
+    const selectedType = styleMap[primaryStyle || "conservative"]?.type || "CONSERVATIVE";
+
+    return {
+      type: selectedType,
+      confidence,
+      description: descriptions[selectedType],
+      characteristics
+    };
+  };
+
+  const tradingStyle = analyzeTradingStyle();
+
+  // ==================== CHART DATA ====================
+
+  const statusData = [
+    { name: "TP Hit", value: tpHitSetups, color: "#10B981" },
+    { name: "SL Hit", value: slHitSetups, color: "#EF4444" },
+    { name: "Pending", value: pendingSetups, color: "#FBBF24" },
+    { name: "Expired", value: expiredSetups, color: "#6B7280" },
+  ];
+
+  const performanceData = [
+    { metric: "Win Rate", value: winRate },
+    { metric: "Avg Risk/Reward", value: avgRiskReward },
+    { metric: "ROI", value: profitLossData.roi },
+  ];
+
+  // ==================== RENDER ====================
 
   if (loading) {
     return (
-      <div className="client-cabinet">
-        <div className="cabinet-loading">
-          <div className="loading-spinner"></div>
-          <p>Loading your cabinet...</p>
+      <div className="analytics-container">
+        <div className="analytics-loading">Loading analytics...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="analytics-container">
+        <h3 className="analytics-header">📊 Trading Analytics</h3>
+        <div className="error-message">
+          {error}
+          <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#6b7280' }}>
+            Please check if you have setup data.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (setups.length === 0) {
+    return (
+      <div className="analytics-container">
+        <h3 className="analytics-header">📊 Trading Analytics</h3>
+        <div className="no-data">
+          No trading data available yet. Start using setups to see your analytics.
+          <br />
+          <small style={{ color: '#6b7280', marginTop: '0.5rem', display: 'block' }}>
+            User ID: {userId || 'No user'}
+          </small>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="client-cabinet">
-      <header className="simple-header">
-        <nav className="header-nav">
-          {/* Desktop Layout */}
-          <div className="desktop-layout">
-            <div className="nav-buttons">
-              <button 
-                className={`nav-btn ${!showAnalytics && !activeTool ? 'active' : ''}`}
-                onClick={returnToDashboard}
-              >
-                Dashboard
-              </button>
-              <button className="nav-btn" onClick={() => openTool('ai')}>AI Assistant</button>
-              <button className="nav-btn" onClick={() => openTool('prop')}>Prop Firm</button>
-              <button 
-                className={`nav-btn ${showAnalytics ? 'active' : ''}`}
-                onClick={openAnalytics}
-              >
-                Analytics
-              </button>
-              <button className="nav-btn" onClick={() => setShowPlanModal(true)}>Purchase</button>
-              <button 
-                className="nav-btn"
-                onClick={() => router.push('/client/dashboard/refer')}
-              >
-                Refer
-              </button>
-            </div>
-            
-            <div className="user-section">
-              <div className="user-info-simple">
-                <div className="user-avatar-small">
-                  {user?.email?.charAt(0).toUpperCase()}
-                </div>
-                <span className="user-email-simple">
-                  {user?.email?.split('@')[0]}
-                </span>
-                <span className="setup-count-simple">
-                  {setupCount} INTEL
-                </span>
-              </div>
-              <button onClick={handleLogout} className="logout-btn-simple">Logout</button>
-            </div>
-          </div>
+    <div className="analytics-container">
+      <h3 className="analytics-header">📊 Advanced Trading Analytics</h3>
 
-          {/* Mobile Layout */}
-          <div className="mobile-layout">
-            <div className="mobile-user-top">
-              <div className="user-info-mobile-top">
-                <div className="user-avatar-mobile">
-                  {user?.email?.charAt(0).toUpperCase()}
-                </div>
-                <div className="user-details-mobile">
-                  <div className="user-email-mobile">Credits: {setupCount}</div>
-                </div>
-              </div>
-              <button 
-                className="nav-toggle-btn"
-                onClick={() => setIsNavExpanded(!isNavExpanded)}
-              >
-                {isNavExpanded ? <X size={20}/> : "MENU"}
-              </button>
-            </div>
-            
-            {isNavExpanded && (
-              <div className="mobile-nav-buttons">
-                <button className="mobile-nav-btn" onClick={returnToDashboard}>Dashboard</button>
-                <button className="mobile-nav-btn" onClick={() => openTool('ai')}>AI Assistant</button>
-                <button className="mobile-nav-btn" onClick={() => openTool('prop')}>Prop Firm</button>
-                <button className="mobile-nav-btn" onClick={openAnalytics}>Analytics</button>
-                <button className="mobile-nav-btn" onClick={() => {setShowPlanModal(true); setIsNavExpanded(false);}}>Buy Setups</button>
-                <button className="mobile-nav-btn" onClick={() => router.push('/client/dashboard/refer')}>Refer Friends</button>
-                <button className="mobile-nav-btn logout" onClick={handleLogout}>Logout</button>
-              </div>
-            )}
-          </div>
-        </nav>
-      </header>
-      
-      <main className="cabinet-main">
-        {showAnalytics ? (
-          <div className="analytics-full-view">
-            <div className="analytics-header">
-              <h1>Analytics Dashboard</h1>
-              <p>Track your trading performance and progress</p>
-              <button className="back-to-dashboard-btn" onClick={returnToDashboard}>← Back to Dashboard</button>
-            </div>
-            <div className="analytics-container">
-              <UserAnalytics />
-            </div>
-          </div>
-        ) : (
-          <div className="dashboard-view">
-            <div className="welcome-section">
-              <h1>Welcome back, Trader! 👋</h1>
-              <p>Ready to analyze the markets with AI-powered insights</p>
-            </div>
+      {/* Debug Info */}
+      <div style={{ 
+        background: '#1a1a1a', 
+        padding: '0.5rem', 
+        marginBottom: '1rem', 
+        borderRadius: '4px',
+        fontSize: '0.8rem',
+        color: '#6b7280',
+        textAlign: 'center'
+      }}>
+        📊 Showing {filteredSetups.length} of {setups.length} total setups
+        {selectedSymbol !== "ALL" && ` • Filtered by: ${selectedSymbol}`}
+        {timeFilter !== "ALL" && ` • Time: ${timeFilter.toLowerCase()}`}
+      </div>
 
-            <EmailVerificationMessage />
+      {/* Filters */}
+      <div className="analytics-filters">
+        <select 
+          value={selectedSymbol} 
+          onChange={(e) => setSelectedSymbol(e.target.value)}
+          className="filter-select"
+        >
+          <option value="ALL">All Symbols</option>
+          {symbolUsage.map(symbol => (
+            <option key={symbol.symbol} value={symbol.symbol}>
+              {symbol.symbol} ({symbol.count})
+            </option>
+          ))}
+        </select>
 
-            <div className="status-card">
-              <div className="status-header">
-                <h2>Your Setup Credits</h2>
-                <div className={`status-badge ${setupCount > 0 ? 'active' : 'inactive'}`}>
-                  {setupCount > 0 ? 'Active' : 'No Credits'}
-                </div>
-              </div>
-              <div className="setup-count-display">
-                <span className="count-number">{setupCount}</span>
-                <span className="count-label">Available Setups</span>
-              </div>
-              {setupCount === 0 && (
-                <div className="warning-message">
-                  ⚠️ You need to purchase setups to use the AI Assistant
-                </div>
-              )}
-            </div>
+        <select 
+          value={timeFilter} 
+          onChange={(e) => setTimeFilter(e.target.value as any)}
+          className="filter-select"
+        >
+          <option value="ALL">All Time</option>
+          <option value="MONTH">Last 30 Days</option>
+          <option value="WEEK">Last 7 Days</option>
+        </select>
+      </div>
 
-            <div className="actions-grid">
-              {/* Standard AI Assistant */}
-              <div className="action-card primary-action">
-                <div className="action-icon">🎯</div>
-                <h3>Standard AI</h3> 
-                <p>Day trading & Scalping setups</p>
-                <button 
-                  onClick={() => openTool('ai')}
-                  disabled={setupCount <= 0}
-                  className={`action-btn ${setupCount > 0 ? 'primary' : 'disabled'}`}
-                >
-                  {setupCount > 0 ? 'Start Analysis' : 'No Setups'}
-                </button>
-              </div>
-
-              {/* Prop Firm AI */}
-              <div className="action-card">
-                <div className="action-icon">🏆</div>
-                <h3>Prop Firm AI</h3>
-                <p>Pass your challenge with rule-based risk</p>
-                <button 
-                  onClick={() => openTool('prop')}
-                  disabled={setupCount <= 0}
-                  className={`action-btn ${setupCount > 0 ? 'secondary' : 'disabled'}`}
-                >
-                  {setupCount > 0 ? 'Launch Assistant' : 'No Setups'}
-                </button>
-              </div>
-
-              {/* Broker Gateway */}
-              <div className="action-card broker-card">
-                <div className="choice-icon-box icon-box-blue">
-                  <Globe size={24} />
-                </div>
-                <div className="badge-new">NEW</div>
-                <h3 className="choice-title title-blue">Broker Gateway</h3>
-                <p className="choice-desc">Access authorized brokers to execute signals</p>
-                <button 
-                  onClick={handleBrokerGatewayClick}
-                  className="choice-btn choice-btn-primary"
-                >
-                  Launch Gateway <ArrowRight size={16} />
-                </button>
-              </div>
-
-              {/* Analytics */}
-              <div className="action-card">
-                <div className="action-icon">📊</div>
-                <h3>Analytics</h3>
-                <p>View your performance</p>
-                <button 
-                  onClick={openAnalytics}
-                  className="action-btn secondary"
-                >
-                  View Stats
-                </button>
-              </div>
-            </div>
-
-            {/* Quick Purchase Section */}
-            <div className="purchase-section" id="purchase-section">
-              <h2>Quick Purchase</h2>
-              <div className="purchase-grid">
-                <div className="purchase-option">
-                  <div className="plan-name">Basic</div>
-                  <div className="plan-price">€4.50</div>
-                  <div className="plan-setups">10 Setups</div>
-                  <button
-                    onClick={() => handleBuySetups("10")}
-                    disabled={buyLoading}
-                    className="purchase-btn"
-                  >
-                    {buyLoading ? "Processing..." : "Buy Now"}
-                  </button>
-                </div>
-
-                <div className="purchase-option popular-plan">
-                  <div className="popular-badge">Most Popular</div>
-                  <div className="plan-name">Pro</div>
-                  <div className="plan-price">€8.00</div>
-                  <div className="plan-setups">20 Setups</div>
-                  <button
-                    onClick={() => handleBuySetups("20")}
-                    disabled={buyLoading}
-                    className="purchase-btn primary"
-                  >
-                    {buyLoading ? "Processing..." : "Buy Now"}
-                  </button>
-                </div>
-
-                <div className="purchase-option">
-                  <div className="plan-name">Elite</div>
-                  <div className="plan-price">€12.00</div>
-                  <div className="plan-setups">30 Setups</div>
-                  <button
-                    onClick={() => handleBuySetups("30")}
-                    disabled={buyLoading}
-                    className="purchase-btn"
-                  >
-                    {buyLoading ? "Processing..." : "Buy Now"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* PRICING MODAL */}
-      {showPlanModal && (
-        <div className="modal-overlay">
-          <div className="modal-content pricing-modal">
-            <div className="pricing-modal-header">
-              <h3 className="pricing-title">🎯 Choose Your Plan</h3>
-              <button className="close-modal" onClick={() => setShowPlanModal(false)}>✕</button>
-            </div>
-            <div className="purchase-grid modal-plans-grid">
-              <div className={`purchase-option ${selectedPlan === "10" ? "selected" : ""}`} onClick={() => setSelectedPlan("10")}>
-                <div className="plan-name">Basic Plan</div>
-                <div className="plan-price">€4.50</div>
-                <div className="plan-setups">10 Setups</div>
-                <button className={`purchase-btn ${selectedPlan === "10" ? "primary" : ""}`}>Select</button>
-              </div>
-              <div className={`purchase-option popular-plan ${selectedPlan === "20" ? "selected" : ""}`} onClick={() => setSelectedPlan("20")}>
-                <div className="popular-badge">Most Popular</div>
-                <div className="plan-name">Pro Plan</div>
-                <div className="plan-price">€8.00</div>
-                <div className="plan-setups">20 Setups</div>
-                <button className={`purchase-btn primary ${selectedPlan === "20" ? "selected" : ""}`}>Select</button>
-              </div>
-              <div className={`purchase-option ${selectedPlan === "30" ? "selected" : ""}`} onClick={() => setSelectedPlan("30")}>
-                <div className="plan-name">Elite Plan</div>
-                <div className="plan-price">€12.00</div>
-                <div className="plan-setups">30 Setups</div>
-                <button className={`purchase-btn ${selectedPlan === "30" ? 'primary' : ''}`}>Select</button>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="confirm-purchase-btn" disabled={!selectedPlan || buyLoading} onClick={() => selectedPlan && handleBuySetups(selectedPlan)}>
-                {buyLoading ? "Processing..." : "Proceed to Payment"}
-              </button>
-              <button className="cancel-btn" onClick={() => setShowPlanModal(false)}>Cancel</button>
-            </div>
-          </div>
+      {/* Key Metrics */}
+      <div className="metrics-grid">
+        <div className="metric-card">
+          <div className="metric-value">{totalSetups}</div>
+          <div className="metric-label">Total Setups</div>
         </div>
-      )}
-
-      {/* IMMERSIVE PORTAL */}
-      {activeTool && createPortal(
-        <div className="immersive-modal-overlay">
-          <div className="immersive-modal-container">
-            <div className="immersive-header">
-              <div className="tool-identity">
-                <span className="live-pulse"></span>
-                {activeTool === 'ai' ? 'AI Intel Terminal' : 'Prop Firm Security'}
-              </div>
-              <button onClick={closeTool} className="immersive-close-btn">
-                <X size={20} /> CLOSE
-              </button>
-            </div>
-            <div className="immersive-content">
-              {activeTool === 'ai' ? <AiChatBox mode="section" onClose={closeTool} autoStart={true} /> : <PropFirmChat onClose={closeTool} />}
-            </div>
+        <div className="metric-card">
+          <div className="metric-value">{winRate.toFixed(1)}%</div>
+          <div className="metric-label">Win Rate</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-value" style={{ color: profitLossData.netProfit >= 0 ? '#10B981' : '#EF4444' }}>
+            ${profitLossData.netProfit > 0 ? '+' : ''}{profitLossData.netProfit.toFixed(2)}
           </div>
-        </div>,
-        document.body
-      )}
-
-    </div>
-  );
-}
-
-export default function DashboardPage() {
-  return (
-    <Suspense fallback={
-      <div className="client-cabinet">
-        <div className="cabinet-loading">
-          <div className="loading-spinner"></div>
-          <p>Loading dashboard...</p>
+          <div className="metric-label">Net P&L</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-value">{profitLossData.roi.toFixed(1)}%</div>
+          <div className="metric-label">ROI</div>
         </div>
       </div>
-    }>
-      <DashboardContent />
-    </Suspense>
+
+      {/* Profit/Loss Breakdown */}
+      <div className="profit-loss-grid">
+        <div className="profit-loss-card positive">
+          <div className="pl-value">+${profitLossData.totalProfit.toFixed(2)}</div>
+          <div className="pl-label">Total Profit</div>
+        </div>
+        <div className="profit-loss-card negative">
+          <div className="pl-value">-${profitLossData.totalLoss.toFixed(2)}</div>
+          <div className="pl-label">Total Loss</div>
+        </div>
+        <div className="profit-loss-card neutral">
+          <div className="pl-value">{profitLossData.profitFactor === Infinity ? "∞" : profitLossData.profitFactor.toFixed(2)}</div>
+          <div className="pl-label">Profit Factor</div>
+        </div>
+        <div className="profit-loss-card neutral">
+          <div className="pl-value">${profitLossData.profitPerTrade.toFixed(2)}</div>
+          <div className="pl-label">Avg P&L/Trade</div>
+        </div>
+      </div>
+
+      {/* Trading Style Analysis */}
+      <div className="trading-style-card">
+        <h4>🎯 Your Trading Style</h4>
+        <div className="style-header">
+          <span className="style-type">{tradingStyle.type}</span>
+          <span className="style-confidence">{tradingStyle.confidence.toFixed(0)}% Match</span>
+        </div>
+        <p className="style-description">{tradingStyle.description}</p>
+        <div className="style-characteristics">
+          {tradingStyle.characteristics.map((char, index) => (
+            <span key={index} className="characteristic-tag">{char}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* Charts Grid */}
+      <div className="analytics-grid">
+        {/* Status Pie Chart */}
+        <div className="analytics-card">
+          <h4>Trade Outcomes</h4>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={statusData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, value, percent }) => 
+                  `${name}: ${value} (${percent ? (percent * 100).toFixed(1) : '0.0'}%)`
+                }
+                outerRadius={80}
+                dataKey="value"
+              >
+                {statusData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Profit by Symbol */}
+        <div className="analytics-card">
+          <h4>Profit by Symbol</h4>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={profitBySymbol}>
+              <XAxis dataKey="symbol" />
+              <YAxis />
+              <Tooltip 
+                formatter={(value: number) => [`$${value.toFixed(2)}`, "Profit"]}
+                labelFormatter={(label) => `Symbol: ${label}`}
+              />
+              <Bar 
+                dataKey="profit" 
+                fill="#8884d8"
+                name="Profit"
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Monthly Profit Trend */}
+        <div className="analytics-card">
+          <h4>Monthly Profit Trend</h4>
+          <ResponsiveContainer width="100%" height={250}>
+            <AreaChart data={monthlyProfitData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip 
+                formatter={(value: number) => [`$${value.toFixed(2)}`, "Profit"]}
+                labelFormatter={(label) => `Month: ${label}`}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="profit" 
+                stroke="#10B981" 
+                fill="#10B981" 
+                fillOpacity={0.3} 
+                name="Monthly Profit"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Performance Metrics */}
+        <div className="analytics-card">
+          <h4>Performance Metrics</h4>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={performanceData}>
+              <XAxis dataKey="metric" />
+              <YAxis />
+              <Tooltip formatter={(value: number) => [`${value.toFixed(1)}`, "Value"]} />
+              <Bar dataKey="value" fill="#F59E0B" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Detailed Statistics */}
+      <div className="stats-grid">
+        <div className="stats-card">
+          <h5>Risk Analysis</h5>
+          <div className="stats-list">
+            <div className="stat-item">
+              <span>Avg Risk/Reward:</span>
+              <span>{avgRiskReward.toFixed(2)}:1</span>
+            </div>
+            <div className="stat-item">
+              <span>High Risk Trades:</span>
+              <span>{highRiskSetups}</span>
+            </div>
+            <div className="stat-item">
+              <span>Low Risk Trades:</span>
+              <span>{lowRiskSetups}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="stats-card">
+          <h5>Symbol Analysis</h5>
+          <div className="stats-list">
+            <div className="stat-item">
+              <span>Most Traded:</span>
+              <span>{topSymbol}</span>
+            </div>
+            <div className="stat-item">
+              <span>Unique Symbols:</span>
+              <span>{symbolUsage.length}</span>
+            </div>
+            <div className="stat-item">
+              <span>Symbol Concentration:</span>
+              <span>{((symbolUsage[0]?.count || 0) / totalSetups * 100).toFixed(1)}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="stats-card">
+          <h5>Volume Analysis</h5>
+          <div className="stats-list">
+            <div className="stat-item">
+              <span>Total Lots:</span>
+              <span>{totalLots.toFixed(2)}</span>
+            </div>
+            <div className="stat-item">
+              <span>Total Capital:</span>
+              <span>${totalCapital.toFixed(0)}</span>
+            </div>
+            <div className="stat-item">
+              <span>Active Trades:</span>
+              <span>{pendingSetups}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Performance Highlights */}
+      <div className="performance-highlights">
+        <div className="highlight-card">
+          <h5>🎯 Performance Highlights</h5>
+          <div className="highlight-list">
+            <div className="highlight-item">
+              <span>Best Performing Symbol:</span>
+              <span>
+                {profitBySymbol.length > 0 
+                  ? profitBySymbol.reduce((max, current) => current.profit > max.profit ? current : max).symbol
+                  : "N/A"
+                }
+              </span>
+            </div>
+            <div className="highlight-item">
+              <span>Largest Win:</span>
+              <span style={{ color: '#10B981' }}>${profitLossData.largestWin.toFixed(2)}</span>
+            </div>
+            <div className="highlight-item">
+              <span>Largest Loss:</span>
+              <span style={{ color: '#EF4444' }}>${profitLossData.largestLoss.toFixed(2)}</span>
+            </div>
+            <div className="highlight-item">
+              <span>Total Completed Trades:</span>
+              <span>{completedTrades}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

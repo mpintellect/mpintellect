@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build --webpack", 
+    "build": "next build --webpack",
     "pages:build": "npm run build && npx @opennextjs/cloudflare",
     "prebuild": "rm -rf .next .open-next",
     "start": "next start",
     "lint": "next lint"
-},
+  },
   "dependencies": {
     "@noble/hashes": "^2.0.0",
     "@noble/secp256k1": "^3.0.0",

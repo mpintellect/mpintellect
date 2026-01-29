@@ -18,9 +18,6 @@ import {
   Area
 } from "recharts";
 import { useEffect, useState } from "react";
-import { useUser } from "@/app/hooks/useUser";
-import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
-import { getDbInstance } from "@/app/lib/firebaseClient";
 import { CONTRACT_SIZES } from "@/data/symbols";
 
 interface Setup {
@@ -29,12 +26,13 @@ interface Setup {
   entryPrice: number;
   takeProfit: number;
   stopLoss: number;
-  generatedAt?: { seconds: number; nanoseconds: number };
-  createdAt?: { seconds: number; nanoseconds: number };
+  generatedAt: string;
+  createdAt: string;
   status: "pending" | "hit_tp" | "hit_sl" | "expired";
   capital: number;
   lotSize: number;
   riskReward: number;
+  userId: string;
 }
 
 interface TradingStyle {
@@ -56,110 +54,87 @@ interface ProfitLossData {
 }
 
 export default function UserAnalytics() {
-  const { user } = useUser();
+  const [userId, setUserId] = useState<string | null>(null);
   const [setups, setSetups] = useState<Setup[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSymbol, setSelectedSymbol] = useState<string>("ALL");
   const [timeFilter, setTimeFilter] = useState<"ALL" | "WEEK" | "MONTH">("ALL");
   const [error, setError] = useState<string>("");
 
+  // Get user from localStorage (Cloudflare auth)
   useEffect(() => {
-    if (!user?.uid) {
-      console.log("❌ No user ID available");
+    const token = localStorage.getItem('cf_token');
+    const userData = localStorage.getItem('cf_user');
+    
+    if (!token || !userData) {
+      console.log("❌ No user authenticated");
       setLoading(false);
       return;
     }
 
-   const fetchData = async () => {
-  try {
-    console.log("🔍 Fetching setups for user:", user.uid);
-    
-    // Get the database instance
-    const db = getDbInstance();
-    
-    // Try with generatedAt first (newer setups)
-    const q = query(
-      collection(db, "setups"), 
-      where("userId", "==", user.uid),
-      orderBy("generatedAt", "desc")
-    );
+    try {
+      const user = JSON.parse(userData);
+      setUserId(user.id);
+      
+      fetchSetups(user.id);
+    } catch (error) {
+      console.error("❌ Error parsing user data:", error);
+      setLoading(false);
+    }
+  }, []);
 
-    const querySnapshot = await getDocs(q);
-    console.log("🔍 Query snapshot size:", querySnapshot.size);
-        
-        const fetched = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-          } as Setup;
-        });
-
-        console.log("🔍 Final fetched setups:", fetched.length);
-        setSetups(fetched);
-        setError("");
-
-      } catch (error: any) {
-        console.error("❌ Error fetching setups with generatedAt:", error);
-        
-        // If ordering by generatedAt fails, try with createdAt
-        try {
-      console.log("🔄 Trying with createdAt...");
-      const db = getDbInstance(); // Add this line
-      const fallbackQuery = query(
-        collection(db, "setups"), 
-        where("userId", "==", user.uid),
-        orderBy("createdAt", "desc")
-      );
-          const fallbackSnapshot = await getDocs(fallbackQuery);
-          const fallbackData = fallbackSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          } as Setup));
-          console.log("🔍 Fallback fetched setups:", fallbackData.length);
-          setSetups(fallbackData);
-          setError("");
-        } catch (fallbackError: any) {
-          console.error("❌ Error with createdAt too:", fallbackError);
-          
-          // Last attempt: try without any ordering
-          try {
-        console.log("🔄 Trying without ordering...");
-        const db = getDbInstance(); // Add this line
-        const simpleQuery = query(
-          collection(db, "setups"), 
-          where("userId", "==", user.uid)
-        );
-            const simpleSnapshot = await getDocs(simpleQuery);
-            const simpleData = simpleSnapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            } as Setup));
-            console.log("🔍 Simple query setups:", simpleData.length);
-            setSetups(simpleData);
-            setError("");
-          } catch (simpleError: any) {
-            console.error("❌ All queries failed:", simpleError);
-            setError(`Failed to load data: ${simpleError.message}`);
-          }
-        }
-      } finally {
-        setLoading(false);
+  // Fetch setups from Cloudflare API
+  const fetchSetups = async (userId: string) => {
+    try {
+      console.log("🔍 Fetching setups for user:", userId);
+      
+      const response = await fetch(`/api/setups?userId=${userId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
-
-    fetchData();
-  }, [user?.uid]);
+      
+      const data = await response.json();
+      
+      if (data.success && data.setups) {
+        console.log("🔍 Fetched setups:", data.setups.length);
+        
+        // Transform the data to match our interface
+        const transformedSetups: Setup[] = data.setups.map((setup: any) => ({
+          id: setup.id,
+          symbol: setup.symbol,
+          entryPrice: parseFloat(setup.entry_price),
+          takeProfit: parseFloat(setup.take_profit),
+          stopLoss: parseFloat(setup.stop_loss),
+          generatedAt: setup.generated_at || setup.created_at,
+          createdAt: setup.created_at,
+          status: setup.status,
+          capital: parseFloat(setup.capital) || 1000,
+          lotSize: parseFloat(setup.lot_size) || 0.01,
+          riskReward: parseFloat(setup.risk_reward) || 1.5,
+          userId: setup.user_id
+        }));
+        
+        setSetups(transformedSetups);
+        setError("");
+      } else {
+        throw new Error(data.error || "Failed to fetch setups");
+      }
+    } catch (error: any) {
+      console.error("❌ Error fetching setups:", error);
+      setError(`Failed to load data: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Helper function to get timestamp from setup
   const getSetupTimestamp = (setup: Setup): number => {
-    if (setup.generatedAt?.seconds) {
-      return setup.generatedAt.seconds * 1000;
+    try {
+      return new Date(setup.generatedAt || setup.createdAt).getTime();
+    } catch {
+      return Date.now();
     }
-    if (setup.createdAt?.seconds) {
-      return setup.createdAt.seconds * 1000;
-    }
-    return Date.now();
   };
 
   // Filter setups based on selected symbol and time
@@ -253,15 +228,21 @@ export default function UserAnalytics() {
   const topSymbol = symbolUsage.sort((a, b) => b.count - a.count)[0]?.symbol || "N/A";
 
   // Risk Analysis
-  const avgRiskReward = filteredSetups.reduce((sum, setup) => sum + (setup.riskReward || 1), 0) / totalSetups || 1;
+  const avgRiskReward = totalSetups > 0 
+    ? filteredSetups.reduce((sum, setup) => sum + (setup.riskReward || 1), 0) / totalSetups 
+    : 1;
   const highRiskSetups = filteredSetups.filter(s => (s.riskReward || 1) > 2).length;
   const lowRiskSetups = filteredSetups.filter(s => (s.riskReward || 1) < 1.5).length;
 
   // Time-based Analysis
   const setupsByHour = Array.from({ length: 24 }, (_, hour) => {
     const hourSetups = filteredSetups.filter(setup => {
-      const setupDate = new Date(getSetupTimestamp(setup));
-      return setupDate.getHours() === hour;
+      try {
+        const setupDate = new Date(getSetupTimestamp(setup));
+        return setupDate.getHours() === hour;
+      } catch {
+        return false;
+      }
     });
     return { hour: `${hour}:00`, count: hourSetups.length };
   });
@@ -282,26 +263,34 @@ export default function UserAnalytics() {
       return sum;
     }, 0);
     
-    return { symbol: symbolData.symbol, profit: symbolProfit, trades: symbolData.count };
+    return { 
+      symbol: symbolData.symbol, 
+      profit: symbolProfit, 
+      trades: symbolData.count 
+    };
   });
 
   // Monthly Profit/Loss Trend
   const monthlyProfit = filteredSetups.reduce((acc, setup) => {
-    const date = new Date(getSetupTimestamp(setup));
-    const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-    
-    if (!acc[monthKey]) {
-      acc[monthKey] = 0;
-    }
-    
-    const contractSize = CONTRACT_SIZES[setup.symbol as keyof typeof CONTRACT_SIZES]?.contract || 100000;
-    
-    if (setup.status === "hit_tp") {
-      const priceDifference = Math.abs(setup.takeProfit - setup.entryPrice);
-      acc[monthKey] += priceDifference * setup.lotSize * contractSize;
-    } else if (setup.status === "hit_sl") {
-      const priceDifference = Math.abs(setup.entryPrice - setup.stopLoss);
-      acc[monthKey] -= priceDifference * setup.lotSize * contractSize;
+    try {
+      const date = new Date(getSetupTimestamp(setup));
+      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      
+      if (!acc[monthKey]) {
+        acc[monthKey] = 0;
+      }
+      
+      const contractSize = CONTRACT_SIZES[setup.symbol as keyof typeof CONTRACT_SIZES]?.contract || 100000;
+      
+      if (setup.status === "hit_tp") {
+        const priceDifference = Math.abs(setup.takeProfit - setup.entryPrice);
+        acc[monthKey] += priceDifference * setup.lotSize * contractSize;
+      } else if (setup.status === "hit_sl") {
+        const priceDifference = Math.abs(setup.entryPrice - setup.stopLoss);
+        acc[monthKey] -= priceDifference * setup.lotSize * contractSize;
+      }
+    } catch (error) {
+      console.error("Error processing setup for monthly profit:", error);
     }
     
     return acc;
@@ -409,10 +398,12 @@ export default function UserAnalytics() {
       CONSERVATIVE: "Careful risk management, steady gains"
     };
 
+    const selectedType = styleMap[primaryStyle || "conservative"]?.type || "CONSERVATIVE";
+
     return {
-      ...styleMap[primaryStyle || "conservative"],
+      type: selectedType,
       confidence,
-      description: descriptions[styleMap[primaryStyle || "conservative"].type],
+      description: descriptions[selectedType],
       characteristics
     };
   };
@@ -439,7 +430,10 @@ export default function UserAnalytics() {
   if (loading) {
     return (
       <div className="analytics-container">
-        <div className="analytics-loading">Loading analytics...</div>
+        <div className="analytics-loading">
+          <div className="loading-spinner"></div>
+          <p>Loading analytics...</p>
+        </div>
       </div>
     );
   }
@@ -451,7 +445,7 @@ export default function UserAnalytics() {
         <div className="error-message">
           {error}
           <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#6b7280' }}>
-            Please check your Firestore rules and ensure you have setup data.
+            Please check if you have setup data.
           </div>
         </div>
       </div>
@@ -466,7 +460,7 @@ export default function UserAnalytics() {
           No trading data available yet. Start using setups to see your analytics.
           <br />
           <small style={{ color: '#6b7280', marginTop: '0.5rem', display: 'block' }}>
-            User ID: {user?.uid || 'No user'}
+            User ID: {userId || 'No user'}
           </small>
         </div>
       </div>
@@ -745,6 +739,19 @@ export default function UserAnalytics() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Refresh Button */}
+      <div className="mt-6 text-center">
+        <button 
+          onClick={() => userId && fetchSetups(userId)}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+        >
+          Refresh Analytics
+        </button>
+        <p className="text-xs text-gray-500 mt-2">
+          Last updated: {new Date().toLocaleTimeString()}
+        </p>
       </div>
     </div>
   );

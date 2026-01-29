@@ -1,4 +1,3 @@
-// app/hooks/useUser.ts (CLOUDFLARE VERSION)
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -8,17 +7,16 @@ interface User {
   email: string;
   display_name?: string;
   photo_url?: string;
-  email_verified: boolean;
+  email_verified: number;
   license_type: string;
   setup_count: number;
-  referral_code?: string;
+  trial_count: number;
+  created_at: string;
 }
 
 export function useUser() {
   const [user, setUser] = useState<User | null>(null);
-  const [setupCount, setSetupCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -26,7 +24,8 @@ export function useUser() {
       const userData = localStorage.getItem('cf_user');
       
       if (!token || !userData) {
-        setIsLoading(false);
+        setUser(null);
+        setLoading(false);
         return;
       }
 
@@ -41,48 +40,102 @@ export function useUser() {
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
-            const userData = data.user;
-            setUser(userData);
-            setUserId(userData.id);
-            setSetupCount(userData.setup_count || 0);
+            setUser(data.user);
+          } else {
+            // Token invalid, clear local storage
+            localStorage.removeItem('cf_token');
+            localStorage.removeItem('cf_user');
+            localStorage.removeItem('cf_session_id');
+            setUser(null);
           }
+        } else {
+          // Token invalid, clear local storage
+          localStorage.removeItem('cf_token');
+          localStorage.removeItem('cf_user');
+          localStorage.removeItem('cf_session_id');
+          setUser(null);
         }
       } catch (error) {
-        console.error('Auth check error:', error);
+        console.error("Auth check error:", error);
+        setUser(null);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
     checkAuth();
+
+    // Listen for storage changes (login/logout from other tabs)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'cf_user' || e.key === 'cf_token') {
+        checkAuth();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Refresh setup count
-  const refreshSetupCount = async () => {
-    if (!userId) return;
+  const refreshUser = async () => {
+    const token = localStorage.getItem('cf_token');
+    const userData = localStorage.getItem('cf_user');
     
+    if (!token || !userData) {
+      setUser(null);
+      return;
+    }
+
     try {
-      const token = localStorage.getItem('cf_token');
-      const response = await fetch(`/api/user/setup-count?userId=${userId}`, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setSetupCount(data.setupCount || 0);
+          setUser(data.user);
+          localStorage.setItem('cf_user', JSON.stringify(data.user));
         }
       }
     } catch (error) {
-      console.error('Error refreshing setup count:', error);
+      console.error("Refresh user error:", error);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      const token = localStorage.getItem('cf_token');
+      const sessionId = localStorage.getItem('cf_session_id');
+      
+      if (token && sessionId) {
+        // Call Cloudflare logout API
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ sessionId })
+        });
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Clear local storage
+      localStorage.removeItem('cf_token');
+      localStorage.removeItem('cf_user');
+      localStorage.removeItem('cf_session_id');
+      setUser(null);
     }
   };
 
   return {
     user,
-    userId,
-    setupCount,
-    isLoading,
-    refreshSetupCount
+    loading,
+    refreshUser,
+    logout,
+    isAuthenticated: !!user
   };
 }

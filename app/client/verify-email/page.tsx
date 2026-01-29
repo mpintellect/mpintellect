@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth, db } from "@/app/lib/firebaseClient";
-import { doc, updateDoc } from "firebase/firestore";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -15,29 +13,36 @@ export default function VerifyEmailPage() {
   }, []);
 
   useEffect(() => {
-    if (!mounted || !auth) return; // Check if auth exists
-    
+    if (!mounted) return;
+
     const interval = setInterval(async () => {
       try {
-        // Type-safe check
-        const currentUser = auth?.currentUser;
-        if (!currentUser) {
+        // Check if user is authenticated
+        const token = localStorage.getItem('cf_token');
+        const userData = localStorage.getItem('cf_user');
+        
+        if (!token || !userData) {
           setMessage("Please log in first.");
           return;
         }
 
-        await currentUser.reload();
-
-        if (currentUser.emailVerified) {
-          const uid = currentUser.uid;
-
-          if (db) {
-            await updateDoc(doc(db, "users", uid), { emailVerified: true });
+        const user = JSON.parse(userData);
+        
+        // Check email verification status via API
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
           }
+        });
 
-          clearInterval(interval);
-          setMessage("✅ Email verified! Redirecting to your dashboard...");
-          setTimeout(() => router.push("/client/dashboard"), 2000);
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.success && data.user.email_verified) {
+            clearInterval(interval);
+            setMessage("✅ Email verified! Redirecting to your dashboard...");
+            setTimeout(() => router.push("/client/dashboard"), 2000);
+          }
         }
       } catch (error) {
         console.error('Error checking email verification:', error);

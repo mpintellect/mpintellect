@@ -5,34 +5,30 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    formats: ['image/avif', 'image/webp'],
     unoptimized: true,
   },
-  
   turbopack: {},
-
   webpack: (config, { isServer }) => {
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     });
 
-    // We only block these on the client side to prevent size issues,
-    // but we MUST allow 'firebase' because your hooks use it.
+    // This is the fix for "Module not found"
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
+        fs: false,
         net: false,
         tls: false,
-        fs: false,
+        child_process: false,
+        os: false,
+        path: false,
+        stream: false,
+        crypto: false,
       };
-      
-      // REMOVED 'firebase' from externals so the build can find it
-      config.externals = [
-        ...(config.externals || []),
-        'firebase-admin' 
-      ];
     }
+
     return config;
   },
   productionBrowserSourceMaps: false,

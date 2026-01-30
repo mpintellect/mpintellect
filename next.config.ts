@@ -3,7 +3,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
   images: { unoptimized: true },
-  output: 'export', // ← ADD THIS LINE
+  
   webpack: (config, { isServer }) => {
     config.module.rules.push({ test: /\.svg$/, use: ['@svgr/webpack'] });
     if (!isServer) {

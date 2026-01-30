@@ -39,7 +39,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
-, "mz-ads-engine/next.config.mjs", "open-next.config.ts"  ],
+, "mz-ads-engine/next.config.mjs", "open-next.config.mjs"  ],
   "exclude": [
     "node_modules"
   ]

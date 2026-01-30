@@ -1,5 +1,3 @@
-import type { OpenNextConfig } from "@opennextjs/cloudflare";
-
 const config = {
   default: {
     override: {
@@ -13,8 +11,7 @@ const config = {
   },
   edgeExternals: ["node:crypto"],
   middleware: {
-    // CRITICAL: This must be false to stop the ENOENT error
-    external: false,
+    external: true,
     override: {
       wrapper: "cloudflare-edge",
       converter: "edge",
@@ -26,4 +23,4 @@ const config = {
   },
 };
 
-export default config as any;
+export default config;

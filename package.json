@@ -3,13 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build --webpack", 
-    "pages:build": "npm run build && npx @opennextjs/cloudflare build --openNextConfigPath ./open-next.config.ts --dangerouslyUseUnsupportedNextVersion",
-    "prebuild": "rm -rf .next .open-next",
+    "dev": "next dev --turbo",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint"
-},
+    "lint": "next lint",
+    "pages:build": "npm run build",
+    "prebuild": "rm -rf .next .open-next",
+    "deploy": "npm run pages:build",
+    "analyze": "ANALYZE=true npm run build"
+  },
   "dependencies": {
     "@noble/hashes": "^2.0.0",
     "@noble/secp256k1": "^3.0.0",

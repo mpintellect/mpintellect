@@ -1,6 +1,6 @@
 import type { OpenNextConfig } from "@opennextjs/cloudflare";
 
-const config = {
+const config: OpenNextConfig = {
   default: {
     override: {
       wrapper: "cloudflare-node",
@@ -13,13 +13,16 @@ const config = {
   },
   edgeExternals: ["node:crypto"],
   middleware: {
-    external: false, // Keeps middleware bundled to prevent ENOENT bug
+    external: true,
     override: {
       wrapper: "cloudflare-edge",
       converter: "edge",
       proxyExternalRequest: "fetch",
+      incrementalCache: "dummy",
+      tagCache: "dummy",
+      queue: "dummy",
     },
   },
-} as any; 
+};
 
 export default config;

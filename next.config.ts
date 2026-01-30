@@ -5,30 +5,17 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   productionBrowserSourceMaps: false,
   serverExternalPackages: ['web-push'], 
-  
   turbopack: {},
-  
-  webpack: (config, { isServer }) => {
+  webpack: (config: any, { isServer }) => {
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     });
 
-    // Let Cloudflare handle Node.js modules natively
     if (isServer) {
-      config.externals.push('node:crypto', 'node:stream', 'node:util', 'node:buffer', 'node:events');
-    } else {
-      // On client side, just ignore them
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-        crypto: false,
-        stream: false,
-      };
+      // This allows Cloudflare to provide these modules natively
+      config.externals.push('node:crypto', 'node:stream', 'node:util', 'node:events', 'node:buffer');
     }
-
     return config;
   },
 };

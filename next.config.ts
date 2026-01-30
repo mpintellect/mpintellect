@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
   images: { unoptimized: true },
   productionBrowserSourceMaps: false,
-  
+  serverExternalPackages: ['web-push'], // Correct for Next.js 16
   // Correct way to disable Turbopack in Next.js 16+
   // Remove the experimental.turbo property entirely
   

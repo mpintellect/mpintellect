@@ -1,6 +1,5 @@
-import type { OpenNextConfig } from "@opennextjs/cloudflare";
-
-const config: OpenNextConfig = {
+/** @type {import('@opennextjs/cloudflare').OpenNextConfig} */
+export default {
   default: {
     override: {
       wrapper: "cloudflare-node",
@@ -11,18 +10,9 @@ const config: OpenNextConfig = {
       queue: "dummy",
     },
   },
-  edgeExternals: ["node:crypto"],
+  // We disable the separate middleware bundle to fix the ENOENT bug
+  // The middleware will still run inside the main worker
   middleware: {
-    external: true,
-    override: {
-      wrapper: "cloudflare-edge",
-      converter: "edge",
-      proxyExternalRequest: "fetch",
-      incrementalCache: "dummy",
-      tagCache: "dummy",
-      queue: "dummy",
-    },
+    external: false, 
   },
 };
-
-export default config;

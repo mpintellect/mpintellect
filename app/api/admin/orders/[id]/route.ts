@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getOrder, updateOrder } from "../../../../lib/orders";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'edge'; // or 'nodejs'
+export const dynamic = 'auto'; // Default
 
 const ADMIN_HEADER = "x-admin-key";
 

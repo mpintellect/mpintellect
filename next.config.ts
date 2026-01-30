@@ -1,23 +1,19 @@
-// next.config.js or next.config.ts
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
-  images: { unoptimized: true }, // Required for Cloudflare Pages
+  images: { unoptimized: true },
   productionBrowserSourceMaps: false,
   serverExternalPackages: ['web-push'], 
   turbopack: {},
   
-  // Remove output: 'export' if present (not compatible with APIs)
-  
-  webpack: (config: any, { isServer, dev, webpack }) => {
+  webpack: (config, { isServer, dev, webpack }) => {
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     });
 
     if (!isServer) {
-      // Client-side polyfills for Cloudflare
       config.resolve.fallback = {
         fs: false,
         crypto: require.resolve('crypto-browserify'),
@@ -30,7 +26,6 @@ const nextConfig: NextConfig = {
         os: false,
       };
       
-      // Provide polyfills
       config.plugins.push(
         new webpack.ProvidePlugin({
           Buffer: ['buffer', 'Buffer'],
@@ -39,7 +34,6 @@ const nextConfig: NextConfig = {
     }
 
     if (isServer) {
-      // This allows Cloudflare to provide these modules natively
       config.externals.push('node:crypto', 'node:stream', 'node:util', 'node:events', 'node:buffer');
     }
     
@@ -49,12 +43,20 @@ const nextConfig: NextConfig = {
         ...config.optimization,
         splitChunks: {
           chunks: 'all',
-          maxSize: 200000, // 200KB chunks
+          minSize: 10000,
+          maxSize: 50000, // 50KB max chunks
         },
       };
+      
+      // Disable source maps
+      config.devtool = false;
     }
     
     return config;
+  },
+  
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
   },
 };
 

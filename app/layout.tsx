@@ -11,7 +11,7 @@ import CtaTracker from '@/components/CTATracker';
 import FacebookPixel from "@/components/FacebookPixel";
 import Footer from '@/components/Footer';
 import FBPixelEvents from '@/components/FBPixelEvents'; // ✅ Imported
-import PresenceTracker from '@/components/PresenceTracker';
+
 
 
 
@@ -130,7 +130,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <CookieConsent />
         
         <Suspense fallback={null}>
-           <PresenceTracker /> {/* 👈 Add this here */}
+           
          </Suspense>
 
       </body>

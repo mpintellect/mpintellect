@@ -1,5 +1,6 @@
-// ✅ REMOVED: fs, path, and process.cwd()
-import { randomUUID } from "node:crypto"; // Cloudflare supports node:crypto
+// app/lib/orders.ts
+// ✅ REMOVE: import { randomUUID } from "node:crypto";
+// ✅ USE: Web Crypto API or a polyfill
 
 /* ========= Types ========= */
 export type OrderStatus = "pending" | "paid" | "expired";
@@ -49,13 +50,25 @@ export const PRODUCTS = {
   }
 } as const;
 
+/* ========= UUID Generation (Cloudflare compatible) ========= */
+function generateUUID(): string {
+  // Use Web Crypto API if available (works in Cloudflare Workers)
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  
+  // Fallback for environments without crypto.randomUUID
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 /* ========= Store (In-Memory Only for Edge) ========= */
-// NOTE: On Cloudflare, global variables reset often. 
-// You should use Firestore to save/load these in production.
 const ORDERS: Map<string, Order> = new Map();
 
 export async function ensureOrdersHydrated(): Promise<void> {
-  // Logic to pull from Firebase/KV would go here
   return Promise.resolve();
 }
 
@@ -71,7 +84,7 @@ export function createOrder(
 
   const order: Order = {
     ...o,
-    id: randomUUID(), // Standard Edge-compatible UUID
+    id: generateUUID(), // Use our Cloudflare-compatible UUID generator
     status: "pending",
     createdAt: now,
     createdAtISO: new Date(now).toISOString(),
@@ -79,7 +92,6 @@ export function createOrder(
 
   ORDERS.set(order.id, order);
   
-  // ✅ IMPORTANT: You should call a Firebase function here to save the order
   console.log("🆕 ORDER CREATED:", order.id);
 
   return order;
@@ -104,8 +116,16 @@ export function issueDownloadToken(orderId: string, ttlSeconds = 24 * 3600) {
   const order = ORDERS.get(orderId);
   if (!order) throw new Error("Order not found");
 
-  // Create a random token using Web Crypto API
-  const rawToken = btoa(Math.random().toString()).substring(0, 20); 
+  // Create a random token using crypto if available
+  let rawToken: string;
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const array = new Uint8Array(20);
+    crypto.getRandomValues(array);
+    rawToken = btoa(String.fromCharCode.apply(null, Array.from(array)));
+  } else {
+    rawToken = btoa(Math.random().toString()).substring(0, 20);
+  }
+  
   const expires = Date.now() + ttlSeconds * 1000;
 
   updateOrder(orderId, {

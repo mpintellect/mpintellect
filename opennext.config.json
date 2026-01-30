@@ -1,0 +1,7 @@
+{
+  "default": {
+    "runtime": "edge",
+    "buildCommand": "npm run build",
+    "buildOutputPath": ".next"
+  }
+}

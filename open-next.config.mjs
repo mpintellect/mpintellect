@@ -1,6 +1,5 @@
-import type { OpenNextConfig } from "@opennextjs/cloudflare";
-
-const config: OpenNextConfig = {
+/** @type {import('@opennextjs/cloudflare').OpenNextConfig} */
+export default {
   default: {
     override: {
       wrapper: "cloudflare-node",
@@ -13,16 +12,13 @@ const config: OpenNextConfig = {
   },
   edgeExternals: ["node:crypto"],
   middleware: {
-    external: true,
+    // FIX: Setting this to false bundles middleware with the main app
+    // This stops the ENOENT "file not found" crash
+    external: false, 
     override: {
       wrapper: "cloudflare-edge",
       converter: "edge",
       proxyExternalRequest: "fetch",
-      incrementalCache: "dummy",
-      tagCache: "dummy",
-      queue: "dummy",
     },
   },
 };
-
-export default config;

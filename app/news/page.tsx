@@ -2,7 +2,9 @@
 import Link from 'next/link';
 import { getRecentNews } from '@/app/lib/newsStore';
 
-export const revalidate = 3600; // Revalidate every hour
+// For Cloudflare static export, we need to export dynamic as 'force-static'
+export const dynamic = 'force-static';
+// export const revalidate = 3600; // Remove this for static export
 
 export default async function NewsPage() {
   const newsArticles = await getRecentNews(50);

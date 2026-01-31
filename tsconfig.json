@@ -1,13 +1,7 @@
 {
   "compilerOptions": {
-    "types": [],
     "target": "es2020",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "es2020"
-    ],
-    "downlevelIteration": true,
+    "lib": ["dom", "dom.iterable", "es2020"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -18,13 +12,11 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
+    "jsx": "preserve",
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     },
     "plugins": [
       {
@@ -34,13 +26,9 @@
   },
   "include": [
     "next-env.d.ts",
-    "types/**/*.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
-, "mz-ads-engine/next.config.mjs", "open-next.config.mjs", "next.config.js"  ],
-  "exclude": [
-    "node_modules"
-  ]
+    "env.d.ts"
+  ],
+  "exclude": ["node_modules", ".next", "out"]
 }

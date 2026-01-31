@@ -4,7 +4,7 @@ import { createRequestHandler } from "@opennextjs/cloudflare/next";
 // Create the request handler
 const handleRequest = createRequestHandler({
   // OpenNext will automatically configure this
-  buildId: process.env.BUILD_ID || "next-build",
+  buildId: context.env.BUILD_ID || "next-build",
   // You can add custom middleware or configuration here
 });
 

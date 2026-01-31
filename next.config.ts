@@ -1,24 +1,30 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // 1. SET OUTPUT TO EXPORT
+  // 1. Mandatory for Path A
   output: 'export',
   
-  typescript: { ignoreBuildErrors: true },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   
-  // 2. IMAGES MUST BE UNOPTIMIZED FOR STATIC EXPORT
+  // 2. Mandatory for Cloudflare Images (Logos/Hero)
   images: {
     unoptimized: true,
   },
+  
+  // 3. Mandatory for Next.js 16 to allow Webpack usage
+  turbopack: {},
 
-  // 3. Keep your SVGR logic
-  webpack(config: any) {
+  webpack: (config: any) => {
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     });
     return config;
   },
+  
+  productionBrowserSourceMaps: false,
 };
 
 export default nextConfig;

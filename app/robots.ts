@@ -1,5 +1,8 @@
 import { MetadataRoute } from 'next';
 
+// ✅ MANDATORY FOR STATIC EXPORT
+export const dynamic = 'force-static';
+
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = 'https://mzprimer.com';
 
@@ -8,11 +11,11 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
       disallow: [
-        '/api/',          // Don't let bots waste budget crawling raw JSON
-        '/admin-console-x9z/', // Block your admin path (from your logs earlier)
-        '/client/',       // Block internal client dashboard pages
-        '/_next/',        // Block internal Next.js build files (optional, but saves budget)
-        '/private/',      // Block any private folders
+        '/api/',
+        '/admin-console-x9z/',
+        '/client/',
+        '/_next/',
+        '/private/',
       ],
     },
     sitemap: `${baseUrl}/sitemap.xml`,

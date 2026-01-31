@@ -1,21 +1,10 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // 1. Mandatory for Path A
-  output: 'export',
-  
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  
-  // 2. Mandatory for Cloudflare Images (Logos/Hero)
-  images: {
-    unoptimized: true,
-  },
-  
-  // 3. Mandatory for Next.js 16 to allow Webpack usage
-  turbopack: {},
-
+  output: 'export', // Mandatory
+  typescript: { ignoreBuildErrors: true },
+  images: { unoptimized: true }, // Mandatory
+  turbopack: {}, // Prevents the engine crash
   webpack: (config: any) => {
     config.module.rules.push({
       test: /\.svg$/,
@@ -23,8 +12,6 @@ const nextConfig: NextConfig = {
     });
     return config;
   },
-  
-  productionBrowserSourceMaps: false,
 };
 
 export default nextConfig;

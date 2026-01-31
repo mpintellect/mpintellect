@@ -3,9 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
     "build": "next build --webpack", 
-    "pages:build": "npm run build && mkdir -p .open-next/.build && touch .open-next/.build/open-next.config.edge.mjs && npx @opennextjs/cloudflare build --openNextConfigPath ./open-next.config.ts --dangerouslyUseUnsupportedNextVersion",
+    "pages:build": "npm run build && mkdir -p .open-next/.build && touch .open-next/.build/open-next.config.edge.mjs && npx @opennextjs/cloudflare@latest build --openNextConfigPath ./open-next.config.ts --dangerouslyUseUnsupportedNextVersion",
     "prebuild": "rm -rf .next .open-next",
     "start": "next start",
     "lint": "next lint"

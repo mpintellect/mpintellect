@@ -1,3 +1,4 @@
+// open-next.config.ts
 const config = {
   default: {
     override: {
@@ -11,9 +12,10 @@ const config = {
   },
   edgeExternals: ["node:crypto"],
   middleware: {
-    external: true,
+    external: false, 
     override: {
-      wrapper: "cloudflare-edge",
+      // By using 'cloudflare-node' here, we bypass the ENOENT bug
+      wrapper: "cloudflare-node", 
       converter: "edge",
       proxyExternalRequest: "fetch",
       incrementalCache: "dummy",
@@ -23,4 +25,4 @@ const config = {
   },
 };
 
-export default config;
+export default config as any;

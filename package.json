@@ -6,9 +6,9 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "prebuild": "rm -rf .next out",
-    "start": "next start",
-    "lint": "next lint"
-  },
+    "preview": "npm run build && npx wrangler pages dev out --compatibility-flags=nodejs_compat --d1 DB",
+    "cf:dev": "npx wrangler pages dev --port 3000 --proxy 3001 --command \"next dev -p 3001\" --compatibility-flags=nodejs_compat --d1 DB"
+},
   "dependencies": {
     "@noble/hashes": "^2.0.0",
     "@noble/secp256k1": "^3.0.0",

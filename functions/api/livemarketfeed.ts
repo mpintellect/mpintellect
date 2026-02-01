@@ -1,47 +1,37 @@
-// app/api/livemarketfeed/route.ts
+// functions/api/livemarketfeed.ts
 
+export async function onRequestGet(context: any) {
+  const { env } = context;
 
-// ✅ ENABLE EDGE RUNTIME (Super Fast)
-export const runtime = 'edge';
-
-// Disable static generation for this route to ensure freshness
-export const dynamic = 'force-dynamic';
-
-export async function GET() {
   try {
-    // Fetch directly from Google Cloud Storage
-    // Adding timestamp to bypass Vercel's internal fetch cache
-    const gcsUrl = `https://storage.googleapis.com/mzprimer-data-store/market_intelligence.json?t=${Date.now()}`;
+    const R2_URL = "https://data.mzprimer.com/market_intelligence.json";
+    
+    // Add a timestamp to prevent browser caching
+    const url = `${R2_URL}?t=${Date.now()}`;
 
-    const response = await fetch(gcsUrl, {
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Cache-Control': 'no-cache', // Force fetch from GCS
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache', 
       },
-      next: { revalidate: 30 } // Revalidate every 30s
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch market intelligence');
+      return new Response(JSON.stringify({ error: "R2 Fetch Failed" }), { status: 500 });
     }
 
     const data = await response.json();
 
-    // Return with headers that allow browser caching for 30 seconds
-    // stale-while-revalidate=59 means: "If cache is old (30-89s), show old data while fetching new in background"
-    return Response.json(data, {
-      status: 200,
+    return new Response(JSON.stringify(data), {
       headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=59',
         'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=30', // Cache for 30s
+        'Access-Control-Allow-Origin': '*'    // Prevent CORS errors
       },
     });
 
-  } catch (error) {
-    console.error('Market Intelligence API Error:', error);
-    return Response.json(
-      { error: 'Failed to load market data', signals: [] }, 
-      { status: 500 }
-    );
+  } catch (error: any) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }

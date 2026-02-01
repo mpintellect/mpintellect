@@ -1,30 +1,21 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // 1. Mandatory for Native Cloudflare (Path A)
-  output: 'export',
+  // Only use export for production builds
+  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
   
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  typescript: { ignoreBuildErrors: true },
   
-  // 2. Mandatory for Logos/Hero images
   images: {
     unoptimized: true,
+    qualities: [75, 85], // Fixes your mzlogo.webp warning
   },
-  
-  // 3. Mandatory for Next.js 16 to allow Webpack engine
-  turbopack: {},
 
+  turbopack: {},
   webpack: (config: any) => {
-    config.module.rules.push({
-      test: /\.svg$/,
-      use: ['@svgr/webpack'],
-    });
+    config.module.rules.push({ test: /\.svg$/, use: ['@svgr/webpack'] });
     return config;
   },
-  
-  productionBrowserSourceMaps: false,
 };
 
 export default nextConfig;

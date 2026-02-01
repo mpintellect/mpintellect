@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
+    "build:landing": "next build --webpack",
+    "start": "next start",
     "prebuild": "rm -rf .next out",
     "preview": "npm run build && npx wrangler pages dev out --compatibility-flags=nodejs_compat --d1 DB",
     "cf:dev": "npx wrangler pages dev --port 3000 --proxy 3001 --compatibility-flags=nodejs_compat --d1 DB --command \"next dev -p 3001\"",
     "test:functions": "npx wrangler pages dev --port 8788",
-    "dev:full": "concurrently \"npm run dev\" \"npm run test:functions\"",
     "test:production": "npm run build && npx serve@latest out"
   }
 }

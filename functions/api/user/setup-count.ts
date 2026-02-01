@@ -1,5 +1,3 @@
-// app/api/user/setup-count/route.ts
-
 import { query } from '@/app/lib/cloudflare/db-simple';
 
 // Simple token verification
@@ -13,8 +11,9 @@ function getUserIdFromToken(token: string): string | null {
   }
 }
 
-export async function onRequestGet(context: any)) {
+export async function onRequestGet(context: any): Promise<Response> {
   try {
+    const { request } = context;
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     

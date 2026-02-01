@@ -1,4 +1,3 @@
-// app/lib/fetchPrice.ts
 const SYMBOL_MAP: Record<string, string> = {
   EURUSD: 'EURUSD',
   GBPUSD: 'GBPUSD',
@@ -47,7 +46,7 @@ export type AllPricesData = {
   [symbol: string]: PriceData;
 };
 
-// Cache for prices
+// Cache for prices (client-side only)
 let pricesCache: AllPricesData | null = null;
 let cacheTimestamp: number = 0;
 const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
@@ -62,7 +61,7 @@ export async function fetchCurrentPrice(symbol: string): Promise<number | null> 
     const mappedSymbol = SYMBOL_MAP[symbol] || symbol;
     console.log(`🔍 [fetchCurrentPrice] Mapped symbol: ${mappedSymbol}`);
     
-    // Use API route instead of direct Google Storage call
+    // Use API route instead of direct R2 call
     const res = await fetch(`/api/price?symbol=${encodeURIComponent(mappedSymbol)}`);
     
     console.log(`📡 API response status: ${res.status}, ok: ${res.ok}`);
@@ -83,23 +82,32 @@ export async function fetchCurrentPrice(symbol: string): Promise<number | null> 
   }
 }
 
+/**
+ * Fetch all prices from R2 (Server-side only)
+ */
 export async function fetchAllPrices(): Promise<AllPricesData | null> {
   try {
-    // Check cache first
-    const now = Date.now();
-    if (pricesCache && (now - cacheTimestamp < CACHE_DURATION)) {
-      console.log('📊 Returning cached prices data');
-      return pricesCache;
+    // Check cache first (client-side only)
+    if (typeof window !== 'undefined') {
+      const now = Date.now();
+      if (pricesCache && (now - cacheTimestamp < CACHE_DURATION)) {
+        console.log('📊 Returning cached prices data');
+        return pricesCache;
+      }
     }
 
     console.log('🔄 Cache miss - fetching fresh prices data from R2...');
     
-    // ✅ NEW CLOUDFLARE R2 URL
-    // Replace this with your actual R2 Public URL (r2.dev or custom domain)
-    const R2_PUBLIC_URL = 'https://pub-xxxxxx.r2.dev/prices.json'; 
+    // ✅ CLOUDFLARE R2 URL - Update with your actual URL
+    const R2_PUBLIC_URL = 'https://your-r2-domain.com/prices.json'; 
     
     const res = await fetch(R2_PUBLIC_URL, {
-        next: { revalidate: 300 } // Optional: Next.js level caching (5 mins)
+      // Cloudflare-compatible cache headers
+      headers: {
+        'Cache-Control': 'public, max-age=120, s-maxage=120', // 2 minute cache
+      },
+      // Remove Next.js-specific options
+      // next: { revalidate: 300 } // ❌ REMOVE THIS
     });
     
     if (!res.ok) {
@@ -113,9 +121,11 @@ export async function fetchAllPrices(): Promise<AllPricesData | null> {
       throw new Error('Invalid data structure from prices.json');
     }
 
-    // Update cache
-    pricesCache = data;
-    cacheTimestamp = now;
+    // Update cache (client-side only)
+    if (typeof window !== 'undefined') {
+      pricesCache = data;
+      cacheTimestamp = Date.now();
+    }
     
     console.log(`✅ Successfully fetched ${Object.keys(data).length} symbols from R2`);
     return data;
@@ -123,8 +133,8 @@ export async function fetchAllPrices(): Promise<AllPricesData | null> {
   } catch (err) {
     console.error('❌ Error fetching all prices from R2:', err);
     
-    // Return cached data even if expired
-    if (pricesCache) {
+    // Return cached data even if expired (client-side only)
+    if (typeof window !== 'undefined' && pricesCache) {
       console.log('🔄 Using expired cache as fallback');
       return pricesCache;
     }
@@ -140,7 +150,14 @@ export async function fetchPriceData(symbol: string): Promise<PriceData | null> 
   try {
     const mappedSymbol = SYMBOL_MAP[symbol] || symbol;
     
-    // Use getAllPrices for better caching
+    // For client-side, use the API
+    if (typeof window !== 'undefined') {
+      const res = await fetch(`/api/price-data?symbol=${encodeURIComponent(mappedSymbol)}`);
+      if (!res.ok) return null;
+      return await res.json();
+    }
+    
+    // For server-side, use getAllPrices
     const allPrices = await fetchAllPrices();
     
     if (!allPrices || !allPrices[mappedSymbol]) {
@@ -161,6 +178,24 @@ export async function fetchPriceData(symbol: string): Promise<PriceData | null> 
  */
 export async function fetchMultiplePrices(symbols: string[]): Promise<Record<string, number | null>> {
   try {
+    // For client-side, use batch API endpoint
+    if (typeof window !== 'undefined') {
+      const res = await fetch(`/api/batch-prices`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbols }),
+      });
+      if (!res.ok) return {};
+      const data = await res.json();
+      
+      const results: Record<string, number | null> = {};
+      symbols.forEach(symbol => {
+        results[symbol] = data[symbol] || null;
+      });
+      return results;
+    }
+    
+    // Server-side: fetch all and filter
     const allPrices = await fetchAllPrices();
     const results: Record<string, number | null> = {};
 
@@ -206,6 +241,16 @@ export async function getAvailableSymbols(): Promise<string[]> {
 export async function symbolExists(symbol: string): Promise<boolean> {
   try {
     const mappedSymbol = SYMBOL_MAP[symbol] || symbol;
+    
+    // For client-side, use API
+    if (typeof window !== 'undefined') {
+      const res = await fetch(`/api/symbol-exists?symbol=${encodeURIComponent(mappedSymbol)}`);
+      if (!res.ok) return false;
+      const data = await res.json();
+      return data.exists || false;
+    }
+    
+    // Server-side: check in allPrices
     const allPrices = await fetchAllPrices();
     return !!(allPrices && allPrices[mappedSymbol]);
   } catch (err) {
@@ -219,6 +264,15 @@ export async function symbolExists(symbol: string): Promise<boolean> {
  */
 export async function getPricesLastUpdate(): Promise<number | null> {
   try {
+    // For client-side, use API
+    if (typeof window !== 'undefined') {
+      const res = await fetch(`/api/prices-last-update`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.timestamp || null;
+    }
+    
+    // Server-side: calculate from data
     const allPrices = await fetchAllPrices();
     
     if (!allPrices) return null;
@@ -240,22 +294,80 @@ export async function getPricesLastUpdate(): Promise<number | null> {
 }
 
 /**
- * Clear the prices cache (useful for testing or manual refresh)
+ * Clear the prices cache (client-side only)
  */
 export function clearPricesCache(): void {
+  if (typeof window === 'undefined') return;
+  
   pricesCache = null;
   cacheTimestamp = 0;
   console.log('🧹 Prices cache cleared');
 }
 
 /**
- * Get cache status (useful for debugging)
+ * Get cache status (client-side only)
  */
 export function getCacheStatus(): { hasCache: boolean; isFresh: boolean; cacheAge: number } {
+  if (typeof window === 'undefined') {
+    return { hasCache: false, isFresh: false, cacheAge: 0 };
+  }
+  
   const now = Date.now();
   const hasCache = !!pricesCache;
   const isFresh = hasCache && (now - cacheTimestamp < CACHE_DURATION);
   const cacheAge = hasCache ? Math.round((now - cacheTimestamp) / 1000) : 0;
   
   return { hasCache, isFresh, cacheAge };
+}
+
+// ==========================================
+// NEW: Client-side specific functions
+// ==========================================
+
+/**
+ * Client-side only: Fetch prices with caching
+ */
+export async function fetchPricesClient(): Promise<AllPricesData | null> {
+  if (typeof window === 'undefined') {
+    throw new Error('fetchPricesClient can only be called on the client');
+  }
+  
+  try {
+    const now = Date.now();
+    if (pricesCache && (now - cacheTimestamp < CACHE_DURATION)) {
+      return pricesCache;
+    }
+    
+    const res = await fetch('/api/prices');
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    
+    const data = await res.json();
+    pricesCache = data;
+    cacheTimestamp = now;
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching prices on client:', error);
+    return pricesCache; // Return stale cache if available
+  }
+}
+
+/**
+ * Client-side only: Fetch single price
+ */
+export async function fetchPriceClient(symbol: string): Promise<number | null> {
+  if (typeof window === 'undefined') {
+    throw new Error('fetchPriceClient can only be called on the client');
+  }
+  
+  try {
+    const res = await fetch(`/api/price-client?symbol=${encodeURIComponent(symbol)}`);
+    if (!res.ok) return null;
+    
+    const data = await res.json();
+    return data.price;
+  } catch (error) {
+    console.error(`Error fetching price for ${symbol}:`, error);
+    return null;
+  }
 }

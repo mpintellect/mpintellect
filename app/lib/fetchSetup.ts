@@ -1,4 +1,3 @@
-// app/lib/fetchSetup.ts - UPDATED FOR INDIVIDUAL SYMBOL FILES
 import { SymbolKey } from "@/data/symbols";
 
 /** Individual pending order */
@@ -61,10 +60,14 @@ export async function fetchSetup(symbol: SymbolKey): Promise<ExtendedTradeSetupD
 
     const response = await fetch(`/api/setup?symbol=${symbol}`, {
       method: 'GET',
+      // Cloudflare-compatible headers
       headers: {
         'Accept': 'application/json',
-        'Cache-Control': 'no-cache'
-      }
+        // Use cache headers instead of no-cache for better performance
+        'Cache-Control': 'public, max-age=60, stale-while-revalidate=300'
+      },
+      // Remove next.js specific options
+      // cache: 'no-store' // ❌ REMOVE THIS
     });
     
     console.log(`📡 API response status: ${response.status}, ok: ${response.ok}`);
@@ -87,6 +90,28 @@ export async function fetchSetup(symbol: SymbolKey): Promise<ExtendedTradeSetupD
     
   } catch (error) {
     console.error("❌ Error fetching setup via API:", error);
+    return null;
+  }
+}
+
+/**
+ * ✅ Client-side version (for Fetcher components)
+ */
+export async function fetchSetupClient(symbol: SymbolKey): Promise<ExtendedTradeSetupData | null> {
+  try {
+    console.log(`🔍 [Client] Fetching setup for ${symbol}...`);
+
+    const response = await fetch(`/api/setup?symbol=${symbol}`);
+    
+    if (!response.ok) {
+      console.error(`❌ Client API failed: ${response.status}`);
+      return null;
+    }
+
+    return await response.json() as ExtendedTradeSetupData;
+    
+  } catch (error) {
+    console.error("❌ Error fetching setup on client:", error);
     return null;
   }
 }
@@ -172,6 +197,19 @@ export async function fetchMultipleSetups(symbols: SymbolKey[]): Promise<Record<
   try {
     console.log(`🔍 Fetching multiple setups: ${symbols.join(', ')}`);
     
+    // For client-side, use batch API endpoint
+    if (typeof window !== 'undefined') {
+      const response = await fetch('/api/batch-setups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbols }),
+      });
+      
+      if (!response.ok) return {};
+      return await response.json();
+    }
+    
+    // Server-side: fetch individually
     const promises = symbols.map(symbol => fetchSetup(symbol));
     const results = await Promise.allSettled(promises);
     
@@ -192,6 +230,33 @@ export async function fetchMultipleSetups(symbols: SymbolKey[]): Promise<Record<
     
   } catch (error) {
     console.error('❌ Error fetching multiple setups:', error);
+    return {};
+  }
+}
+
+/**
+ * ✅ Client-side: Fetch multiple setups at once
+ */
+export async function fetchMultipleSetupsClient(symbols: SymbolKey[]): Promise<Record<string, ExtendedTradeSetupData | null>> {
+  if (typeof window === 'undefined') {
+    throw new Error('fetchMultipleSetupsClient can only be called on the client');
+  }
+  
+  try {
+    const response = await fetch('/api/batch-setups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbols }),
+    });
+    
+    if (!response.ok) {
+      console.error(`Batch API failed: ${response.status}`);
+      return {};
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching multiple setups on client:', error);
     return {};
   }
 }

@@ -1,10 +1,10 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'export', // Mandatory
+  output: 'export',
   typescript: { ignoreBuildErrors: true },
-  images: { unoptimized: true }, // Mandatory
-  turbopack: {}, // Prevents the engine crash
+  images: { unoptimized: true },
+  turbopack: {},
   webpack: (config: any) => {
     config.module.rules.push({
       test: /\.svg$/,
@@ -13,5 +13,4 @@ const nextConfig: NextConfig = {
     return config;
   },
 };
-
 export default nextConfig;

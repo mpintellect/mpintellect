@@ -1,5 +1,3 @@
-// lib/fetchData.ts
-
 // ==========================================
 // 1. SYMBOL CONFIGURATION (Decimal Precision)
 // ==========================================
@@ -166,7 +164,7 @@ export interface SymbolData {
 }
 
 // ==========================================
-// 4. FETCH AND FORMAT FUNCTION (MODIFIED)
+// 4. FETCH AND FORMAT FUNCTION (UPDATED FOR CLOUDFLARE)
 // ==========================================
 export async function getSymbolData(
   symbolParam?: string
@@ -176,14 +174,18 @@ export async function getSymbolData(
 
     const cleanSymbol = symbolParam.replace(/[-_/]/g, "").toUpperCase();
     
-    // ✅ NEW CLOUDFLARE R2 URL
-    // Use your Public R2.dev link or your custom domain
+    // ✅ CLOUDFLARE R2 URL - Use your R2 public URL
+    // Change this to your actual R2 domain
     const R2_PUBLIC_URL = "https://data.mzprimer.com"; 
     const url = `${R2_PUBLIC_URL}/output_${cleanSymbol}.json`;
 
     const res = await fetch(url, {
-      // Use revalidate instead of no-store to make it even faster
-      next: { revalidate: 300 }, 
+      // Cloudflare Workers: Use cache control headers
+      headers: {
+        'Cache-Control': 'public, max-age=300, s-maxage=300', // 5 minute cache
+      },
+      // Remove Next.js-specific options
+      // next: { revalidate: 300 }, // ❌ REMOVE THIS
     });
 
     if (!res.ok) {
@@ -229,5 +231,26 @@ export async function getSymbolData(
   } catch (error) { 
     console.error(`Data fetch error for ${symbolParam}:`, error);
     return null; 
+  }
+}
+
+// ==========================================
+// 5. NEW: FETCH FOR CLIENT-SIDE (for Fetcher components)
+// ==========================================
+export async function fetchSymbolDataClient(
+  symbol: string
+): Promise<SymbolData | null> {
+  try {
+    // Call your API endpoint instead of direct R2
+    const res = await fetch(`/api/data-proxy?symbol=${symbol}`);
+    
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status}`);
+    }
+    
+    return await res.json();
+  } catch (error) {
+    console.error(`Client fetch error for ${symbol}:`, error);
+    return null;
   }
 }

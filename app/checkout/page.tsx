@@ -1,4 +1,3 @@
-// app/checkout/page.tsx
 import { Suspense } from 'react';
 import CheckoutClient from '../checkout/CheckClient';
 
@@ -8,8 +7,12 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// CHANGE: Remove dynamic, make it static
+// export const dynamic = 'force-dynamic'; // ❌ REMOVE THIS
+// export const revalidate = 0; // ❌ REMOVE THIS
+
+// ADD: Make it static
+export const dynamic = 'force-static';
 
 export default function Page() {
   return (

@@ -1,14 +1,17 @@
 import Stripe from "stripe";
-// FIXED: Path updated for /functions structure
 import { execute, queryOne } from "../../../app/lib/cloudflare/db-simple";
 import { sendOrderConfirmation } from "../../../app/lib/email";
 
+// 🎁 Setup plans mapping
 const SETUP_PLANS: Record<string, number> = {
   "price_1SSyQORmR6ESDQvobwheaXws": 10, 
   "price_1SSyRGRmR6ESDQvoKgAI9CAN": 20, 
   "price_1SSyUORmR6ESDQvo7dzPKmPt": 30, 
 };
 
+/**
+ * Cloudflare Handler: onRequestPost
+ */
 export async function onRequestPost(context: any) {
   const { request, env } = context;
 
@@ -36,14 +39,18 @@ export async function onRequestPost(context: any) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    // FIXED: Pass 'env' to the helper
-    await handleCheckoutCompleted(session, stripe, env);
+    // Pass the whole context so the helper has access to 'env' for Email/Push
+    await handleCheckoutCompleted(session, stripe, context);
   } 
 
   return Response.json({ received: true });
 }
 
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe: Stripe, env: any) {
+/**
+ * Helper: Handle successful checkout
+ */
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe: Stripe, context: any) {
+  const { env } = context;
   const userId = session.metadata?.userId || session.metadata?.uid;
   const customerEmail = session.customer_details?.email || session.customer_email;
   const sessionId = session.id;
@@ -60,9 +67,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe:
 
     const now = Date.now();
     
-    // FIXED: Pass 'env.DB' to the database helpers
+    // 1. Get current user
+    // FIXED: Removed 'env.DB' as the first argument. Only 2 arguments expected.
     const user = await queryOne<{ setup_count: number; email: string }>(
-      env.DB,
       'SELECT setup_count, email FROM users WHERE id = ?',
       [userId]
     );
@@ -71,21 +78,27 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe:
 
     const newCount = (user.setup_count || 0) + setupsToAdd;
 
-    // Update user in D1 SQL
+    // 2. Update user (D1 SQL)
+    // FIXED: Removed 'env.DB' as the first argument.
     await execute(
-      env.DB,
       `UPDATE users SET setup_count = ?, updated_at = ?, last_purchase_at = ? WHERE id = ?`,
       [newCount, now, now, userId]
     );
 
-    // Record purchase in D1 SQL
+    // 3. Record purchase (D1 SQL)
     await execute(
-      env.DB,
       `INSERT INTO stripe_purchases (user_id, stripe_session_id, price_id, setup_count, amount_paid, currency, customer_email, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?)`,
       [userId, sessionId, priceId, setupsToAdd, (session.amount_total ?? 0) / 100, session.currency?.toUpperCase() || 'EUR', customerEmail, now, now]
     );
 
-    // FIXED: Pass 'env' to sendOrderConfirmation to use the fetch-based email API
+    // 4. Record history
+    await execute(
+      `INSERT INTO setup_credits_history (user_id, change_amount, new_total, reason, stripe_session_id, created_at) VALUES (?, ?, ?, 'stripe_purchase', ?, ?)`,
+      [userId, setupsToAdd, newCount, sessionId, now]
+    );
+
+    // 💌 Send Email Confirmation
+    // We pass 'env' so the fetch-based email utility has the API keys
     await sendOrderConfirmation({
       to: customerEmail,
       orderId: session.id,
@@ -93,7 +106,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe:
       amountPaid: (session.amount_total ?? 0) / 100,
     }, env);
 
-    // Internal push notification
+    // 🔔 Send Internal Push Notification
     const appUrl = env.NEXT_PUBLIC_APP_URL || "https://mzprimer.com";
     await fetch(`${appUrl}/api/push/send`, {
       method: 'POST',
@@ -107,9 +120,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe:
     });
 
   } catch (err: any) {
-    console.error("❌ Webhook error:", err);
+    console.error("❌ Webhook processing error:", err);
     await execute(
-      env.DB,
       `INSERT INTO stripe_webhook_errors (event_type, stripe_session_id, user_id, error_message, created_at) VALUES (?, ?, ?, ?, ?)`,
       ['checkout.session.completed', session.id, userId, err.message, Date.now()]
     );

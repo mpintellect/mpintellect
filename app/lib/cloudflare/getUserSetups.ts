@@ -1,5 +1,5 @@
 // /app/lib/cloudflare/getUserSetups.ts
-import { query } from "./db-simple";
+import { query } from "../../../backend-lib/db-simple";
 
 /**
  * Fetch all trade setups linked to a specific userId from Cloudflare D1

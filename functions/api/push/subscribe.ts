@@ -1,6 +1,6 @@
 // functions/api/push/subscribe.ts (Move from app/api/push/subscribe/route.ts)
 
-import { getDb, queryOne, execute } from '@/app/lib/cloudflare/db-simple';
+import { getDb, queryOne, execute } from '@/backend-lib/db-simple';
 
 /**
  * FIXED: 

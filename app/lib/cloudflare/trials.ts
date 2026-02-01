@@ -1,6 +1,6 @@
 // Trial management utilities for Cloudflare D1
 
-import { getDB, queryOne } from './db-simple';
+import { getDB, queryOne } from '../../../backend-lib/db-simple';
 
 export async function checkTrialStatus(userId: string): Promise<{
   available: boolean;

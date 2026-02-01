@@ -1,6 +1,6 @@
 // functions/api/newsletter/unsubscribe.ts (Move from app/api/newsletter/unsubscribe/route.ts)
 
-import { execute } from '../../app/lib/cloudflare/db-simple';
+import { execute } from '../../backend-lib/db-simple';
 
 /**
  * POST: Handles unsubscribe requests via API/Form

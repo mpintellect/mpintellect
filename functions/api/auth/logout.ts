@@ -1,6 +1,6 @@
 // functions/api/auth/logout.ts
 
-import { execute } from '@/app/lib/cloudflare/db-simple';
+import { execute } from '@/backend-lib/db-simple';
 
 /**
  * FIXED: 

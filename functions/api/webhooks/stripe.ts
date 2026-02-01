@@ -1,6 +1,6 @@
 import Stripe from "stripe";
-import { execute, queryOne } from "../../../app/lib/cloudflare/db-simple";
-import { sendOrderConfirmation } from "../../../app/lib/email";
+import { execute, queryOne } from "../../../backend-lib/db-simple";
+import { sendOrderConfirmation } from "../../../backend-lib/email";
 
 // 🎁 Setup plans mapping
 const SETUP_PLANS: Record<string, number> = {

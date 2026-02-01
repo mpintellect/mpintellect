@@ -1,6 +1,6 @@
 // functions/api/push/sync.ts (Move from app/api/push/sync/route.ts)
 
-import { getDb, execute } from '../../../app/lib/cloudflare/db-simple';
+import { getDb, execute } from '../../../backend-lib/db-simple';
 
 /**
  * FIXED: 

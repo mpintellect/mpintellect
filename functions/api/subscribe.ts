@@ -1,6 +1,6 @@
 // app/api/newsletter/subscribe/route.ts - CLOUDFLARE VERSION (FIXED)
 
-import { getDb, queryOne, execute } from '@/app/lib/cloudflare/db-simple';
+import { getDb, queryOne, execute } from '@/backend-lib/db-simple';
 
 export async function POST(request: Request) {
   try {

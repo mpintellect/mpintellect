@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDB, queryOne } from "@/app/lib/cloudflare/db-simple";
+import { getDB, queryOne } from "@/backend-lib/db-simple";
 
 export async function POST(
   request: NextRequest,

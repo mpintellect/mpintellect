@@ -15,7 +15,7 @@ export async function verifyCloudflareToken(token: string): Promise<any> {
     
     // Fallback: Check if it's a simple user ID (for backward compatibility)
     if (token.length === 36 || token.length === 28) { // UUID or short ID
-      const { queryOne } = await import('./db-simple');
+      const { queryOne } = await import('../../../backend-lib/db-simple');
       const user = await queryOne(
         'SELECT * FROM users WHERE id = ? LIMIT 1',
         [token]

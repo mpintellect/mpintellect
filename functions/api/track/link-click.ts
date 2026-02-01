@@ -1,6 +1,6 @@
 // app/api/track/link-click/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, execute } from "@/app/lib/cloudflare/db-simple";
+import { getDb, execute } from "@/backend-lib/db-simple";
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;

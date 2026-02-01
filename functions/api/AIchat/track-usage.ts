@@ -1,6 +1,6 @@
 // app/api/AIchat/track-usage/route.ts - CLOUDFLARE VERSION
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, execute } from "@/app/lib/cloudflare/db-simple";
+import { getDb, execute } from "@/backend-lib/db-simple";
 
 export async function POST(req: NextRequest) {
   try {

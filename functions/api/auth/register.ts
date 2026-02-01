@@ -1,6 +1,6 @@
 // functions/api/auth/register.ts (Move from app/api/auth/register/route.ts)
 
-import { query, execute } from '@/app/lib/cloudflare/db-simple';
+import { query, execute } from '@/backend-lib/db-simple';
 
 // Generate random referral code
 function generateReferralCode(): string {

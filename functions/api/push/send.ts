@@ -1,6 +1,6 @@
 // app/api/push/send/route.ts - UPDATED FOR WORKER
 import { NextResponse } from "next/server";
-import { getDB, query } from "@/app/lib/cloudflare/db-simple";
+import { getDB, query } from "@/backend-lib/db-simple";
 import { sendToTelegram } from "@/app/lib/telegram";
 import { pushClient } from "@/app/lib/cloudflare/push-client";
 

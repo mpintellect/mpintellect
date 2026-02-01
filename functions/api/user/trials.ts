@@ -1,6 +1,6 @@
 // functions/api/user/trial-status.ts (Move from app/api/user/trial-status/route.ts)
 
-import { getDB } from "../../../app/lib/cloudflare/db-simple";
+import { getDB } from "../../../backend-lib/db-simple";
 
 /**
  * GET: Check trial status

@@ -1,6 +1,6 @@
 // functions/api/referral/redeem.ts (Move from app/api/referral/redeem/route.ts)
 
-import { getDB } from "../../../app/lib/cloudflare/db-simple";
+import { getDB } from "../../../backend-lib/db-simple";
 
 /**
  * FIXED: 

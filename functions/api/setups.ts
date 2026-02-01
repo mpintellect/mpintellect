@@ -1,6 +1,6 @@
 // functions/api/setups.ts (Move from app/api/setups/route.ts)
 
-import { query, execute } from '../../app/lib/cloudflare/db-simple';
+import { query, execute } from '../../backend-lib/db-simple';
 
 // Simple token verification helper
 function getUserIdFromToken(token: string): string | null {

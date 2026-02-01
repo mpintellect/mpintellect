@@ -1,7 +1,7 @@
 
 import { MetadataRoute } from 'next';
 import { getAvailableSetupSymbols } from '@/app/lib/fetchSetup';
-import { query } from '@/app/lib/cloudflare/db-simple';
+import { query } from '@/backend-lib/db-simple';
 
 // ✅ MANDATORY FOR STATIC EXPORT
 export const dynamic = 'force-static';

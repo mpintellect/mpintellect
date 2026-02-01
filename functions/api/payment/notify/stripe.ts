@@ -1,7 +1,7 @@
 // app/api/payment/notify/stripe/route.ts
 import { NextResponse } from "next/server";
 import { getOrder, updateOrder, issueDownloadToken } from "../../../../app/lib/orders";
-import { sendOrderConfirmation } from "../../../../app/lib/email"; // optional if you already have it
+import { sendOrderConfirmation } from "../../../../backend-lib/email"; // optional if you already have it
 
 export const dynamic = "force-dynamic";
 

@@ -1,6 +1,6 @@
 // functions/api/contact.ts
 
-import { sendEmail } from "../../app/lib/email";
+import { sendEmail } from "../../backend-lib/email";
 
 function escapeHtml(s: string) {
   return String(s)

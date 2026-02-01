@@ -1,4 +1,4 @@
-import { query } from '@/app/lib/cloudflare/db-simple';
+import { query } from '@/backend-lib/db-simple';
 
 // Simple token verification
 function getUserIdFromToken(token: string): string | null {

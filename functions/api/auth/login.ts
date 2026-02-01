@@ -1,6 +1,6 @@
 // functions/api/auth/login.ts (Make sure to move this to the /functions folder)
 
-import { query, execute } from '@/app/lib/cloudflare/db-simple';
+import { query, execute } from '@/backend-lib/db-simple';
 
 // Simple password hash (must match the one in register)
 async function hashPassword(password: string): Promise<string> {

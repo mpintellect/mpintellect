@@ -1,5 +1,5 @@
 // app/lib/newsStore.ts - CLOUDFLARE VERSION
-import { getDb, execute } from "./cloudflare/db-simple";
+import { getDb, execute } from "../../backend-lib/db-simple";
 import { SymbolData } from "./fetchData";
 
 export interface NewsEvent {

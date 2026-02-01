@@ -1,5 +1,5 @@
 // app/lib/seoIndexing.ts - CLOUDFLARE VERSION
-import { getDb, queryOne, execute } from "@/app/lib/cloudflare/db-simple";
+import { getDb, queryOne, execute } from "@/backend-lib/db-simple";
 import { requestIndexingForSymbol, requestIndexingForUrl } from "@/app/lib/indexing";
 import { createNewsEvent } from "@/app/lib/newsStore";
 

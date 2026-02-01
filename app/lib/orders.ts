@@ -1,6 +1,6 @@
 
 // app/lib/orders.ts (D1 SQL VERSION)
-import { execute, queryOne } from './cloudflare/db-simple';
+import { execute, queryOne } from '../../backend-lib/db-simple';
 
 export const PRODUCTS = {
   aiAssistantMonthly: {

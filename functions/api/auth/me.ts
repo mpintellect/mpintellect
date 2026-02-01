@@ -1,6 +1,6 @@
 // functions/api/auth/me.ts (Move from app/api/auth/me/route.ts)
 
-import { query } from '@/app/lib/cloudflare/db-simple';
+import { query } from '@/backend-lib/db-simple';
 
 // Simple JWT verification
 function verifyToken(token: string): { userId: string; email: string } | null {

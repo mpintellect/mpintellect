@@ -1,6 +1,6 @@
 // functions/api/user/referral-stats.ts (Move from app/api/user/referral-stats/route.ts)
 
-import { query } from '../../../app/lib/cloudflare/db-simple';
+import { query } from '../../../backend-lib/db-simple';
 
 /**
  * FIXED: 

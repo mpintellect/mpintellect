@@ -1,8 +1,8 @@
 // app/api/push/send/route.ts - UPDATED FOR WORKER
 import { NextResponse } from "next/server";
-import { getDB, query } from "@/landing/backend-lib/db-simple";
-import { sendToTelegram } from "@/landing/app/lib/telegram";
-import { pushClient } from "@/landing/app/lib/cloudflare/push-client";
+import { getDB, query } from "../../../../landing/backend-lib/db-simple";
+import { sendToTelegram } from "../../../../landing/app/lib/telegram";
+import { pushClient } from "../../../../landing/app/lib/cloudflare/push-client";
 
 export const dynamic = 'force-dynamic';
 

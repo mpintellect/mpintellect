@@ -16,9 +16,9 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area
-} from "@/landing/node_modules/recharts/types";
+} from "../../../../landing/node_modules/recharts/types";
 import { useEffect, useState } from "react";
-import { CONTRACT_SIZES } from "@/dashboard/data/symbols";
+import { CONTRACT_SIZES } from "../../../../dashboard/data/symbols";
 
 interface Setup {
   id: string;

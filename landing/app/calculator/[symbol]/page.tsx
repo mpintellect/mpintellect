@@ -1,4 +1,4 @@
-import { STATIC_SYMBOLS } from "@/landing/app/lib/symbols";
+import { STATIC_SYMBOLS } from "../../../../landing/app/lib/symbols";
 import CalcFetcher from "./CalcFetcher";
 
 export async function generateStaticParams() {

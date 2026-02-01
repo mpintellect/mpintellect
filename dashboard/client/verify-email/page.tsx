@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "@/landing/node_modules/next/navigation";
+import { useRouter } from "../../../landing/node_modules/next/navigation";
 
 export default function VerifyEmailPage() {
   const router = useRouter();

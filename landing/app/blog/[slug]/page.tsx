@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { blogPosts } from '@/landing/app/lib/blogPosts';
+import { blogPosts } from '../../../app/lib/blogPosts';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 

@@ -16,10 +16,10 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area
-} from "@/landing/node_modules/recharts/types";
+} from "../../../landing/node_modules/recharts/types";
 import { useEffect, useState } from "react";
-import { CONTRACT_SIZES } from "@/dashboard/data/symbols";
-import { useOneSetup } from "@/landing/app/hooks/useOneSetup";
+import { CONTRACT_SIZES } from "../../../dashboard/data/symbols";
+import { useOneSetup } from "../../../landing/app/hooks/useOneSetup";
 
 interface Setup {
   id: string;

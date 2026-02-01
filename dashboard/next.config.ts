@@ -1,4 +1,4 @@
-import type { NextConfig } from '@/landing/node_modules/next';
+import type { NextConfig } from '../../../landing/node_modules/next';
 
 const nextConfig: NextConfig = {
   // Keep exactly as is - Cloudflare Pages needs this

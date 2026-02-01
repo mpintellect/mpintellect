@@ -1,5 +1,5 @@
 // app/analysis/[symbol]/page.tsx
-import { STATIC_SYMBOLS } from "@/landing/app/lib/symbols";
+import { STATIC_SYMBOLS } from "../../../app/lib/symbols";
 import AnalysisFetcher from "./AnalysisFetcher";
 
 export async function generateStaticParams() {

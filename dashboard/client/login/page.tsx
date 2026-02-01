@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "@/landing/node_modules/next/navigation";
+import { useRouter } from "../../../../landing/node_modules/next/navigation";
 
 export const dynamic = "force-dynamic";
 

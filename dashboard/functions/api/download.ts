@@ -2,7 +2,7 @@
 
 import path from "path";
 import { readFile, stat } from "fs/promises";
-import { verifyDownloadToken, markDownloadUsed } from "@/landing/app/lib/orders";
+import { verifyDownloadToken, markDownloadUsed } from "../../../landing/app/lib/orders";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

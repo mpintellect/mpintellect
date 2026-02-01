@@ -2,8 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "@/landing/node_modules/next/navigation";
-import Link from "@/landing/node_modules/next/link";
+import { useRouter } from "../../../../landing/node_modules/next/navigation";
+import Link from "../../../../landing/node_modules/next/link";
 
 export const dynamic = "force-dynamic";
 

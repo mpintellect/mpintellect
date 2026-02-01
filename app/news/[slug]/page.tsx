@@ -1,7 +1,7 @@
-import { getDb } from '@/app/lib/cloudflare/db-simple';
-import NewsFetcher from './NewsFetcher';
+import { getDb } from "@/app/lib/cloudflare/db-simple";
+import NewsFetcher from "./NewsFetcher";
 
-// Generate static params for popular articles
+// Generate static params for popular news articles
 export async function generateStaticParams() {
   try {
     const db = getDb();

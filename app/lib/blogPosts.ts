@@ -3,14 +3,14 @@
 export interface BlogPost {
   title: string;
   slug: string;
-  date: string;
-  image: string;
+  date?: string;
+  image?: string;
   description: string;
   content: string;
-  lang: 'en' | 'ar';
+  lang?: 'en' | 'ar';
 }
 
-export const blogPosts = [
+export const blogPosts: BlogPost[] = [
   {
   title: 'What is Lot Size in Forex?',
   slug: 'lot-size-guide',

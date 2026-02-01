@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { blogPosts } from '@/lib/blogPosts';
+import { blogPosts } from '@/app/lib/blogPosts';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
@@ -12,7 +12,6 @@ export async function generateStaticParams() {
   }));
 }
 
-// Add this for Cloudflare static export
 export const dynamic = 'force-static';
 
 // Generate metadata for each blog post
@@ -33,15 +32,14 @@ export async function generateMetadata({
 
   return {
     title: `${post.title} - MZPrimer Blog`,
-    description: post.description || post.content.substring(0, 160),
+    description: post.description,
     openGraph: {
       title: post.title,
-      description: post.description || post.content.substring(0, 160),
+      description: post.description,
       type: 'article',
-      publishedTime: post.date,
-      authors: [post.author || 'MZPrimer'],
-      tags: post.tags || [],
-      images: post.image ? [
+      publishedTime: post.date, // Will be undefined if missing
+      authors: ['MZPrimer'],
+      images: post.image ? [ // Optional check
         {
           url: `https://mzprimer.com${post.image}`,
           width: 1200,
@@ -53,7 +51,7 @@ export async function generateMetadata({
     twitter: {
       card: 'summary_large_image',
       title: post.title,
-      description: post.description || post.content.substring(0, 160),
+      description: post.description,
       images: post.image ? [`https://mzprimer.com${post.image}`] : undefined,
     },
   };
@@ -69,12 +67,27 @@ export default async function BlogPostPage({
 
   if (!post) notFound();
 
-  // Format the date nicely
-  const formattedDate = new Date(post.date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  // Format the date if it exists, otherwise use "Recent"
+  const formattedDate = post.date 
+    ? new Date(post.date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : 'Recent';
+
+  // Calculate read time based on content length
+  const getReadTime = (content: string) => {
+    const wordCount = content.split(/\s+/).length;
+    const wordsPerMinute = 200;
+    return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
+  };
+
+  // Get language label if exists
+  const getLanguageLabel = (lang?: 'en' | 'ar') => {
+    if (!lang) return 'English'; // Default
+    return lang === 'en' ? 'English' : 'العربية';
+  };
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-12 bg-black text-white min-h-screen">
@@ -90,7 +103,7 @@ export default async function BlogPostPage({
 
       {/* Article Header */}
       <header className="mb-10">
-        {/* Featured Image */}
+        {/* Featured Image if exists */}
         {post.image && (
           <div className="mb-8 rounded-xl overflow-hidden">
             <img 
@@ -110,48 +123,31 @@ export default async function BlogPostPage({
             <span>{formattedDate}</span>
           </div>
           
-          {post.author && (
-            <div className="flex items-center gap-2">
-              <span className="text-zinc-600">👤</span>
-              <span>{post.author}</span>
-            </div>
-          )}
+          {/* Author - using default */}
+          <div className="flex items-center gap-2">
+            <span className="text-zinc-600">👤</span>
+            <span>MZPrimer Team</span>
+          </div>
           
-          {post.readTime && (
-            <div className="flex items-center gap-2">
-              <span className="text-zinc-600">⏱️</span>
-              <span>{post.readTime} min read</span>
-            </div>
-          )}
+          {/* Read time - calculated */}
+          <div className="flex items-center gap-2">
+            <span className="text-zinc-600">⏱️</span>
+            <span>{getReadTime(post.content)} min read</span>
+          </div>
           
+          {/* Language if exists */}
           {post.lang && (
             <div className="flex items-center gap-2">
               <span className="text-zinc-600">🌐</span>
-              <span className="uppercase">{post.lang}</span>
+              <span className="uppercase">{getLanguageLabel(post.lang)}</span>
             </div>
           )}
         </div>
 
-        {/* Tags */}
-        {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-8">
-            {post.tags.map((tag: string) => (
-              <span 
-                key={tag}
-                className="px-3 py-1 bg-zinc-800 text-zinc-300 rounded-full text-xs"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-        
-        {/* Description/Excerpt */}
-        {post.description && (
-          <div className="text-lg text-zinc-300 italic border-l-4 border-blue-500 pl-4 py-2 mb-8">
-            {post.description}
-          </div>
-        )}
+        {/* Description */}
+        <div className="text-lg text-zinc-300 italic border-l-4 border-blue-500 pl-4 py-2 mb-8">
+          {post.description}
+        </div>
       </header>
 
       {/* Article Content */}
@@ -183,11 +179,11 @@ export default async function BlogPostPage({
             "@type": "BlogPosting",
             "headline": post.title,
             "description": post.description,
-            "datePublished": post.date,
-            "dateModified": post.date,
+            "datePublished": post.date || new Date().toISOString(),
+            "dateModified": post.date || new Date().toISOString(),
             "author": {
               "@type": "Person",
-              "name": post.author || "MZPrimer",
+              "name": "MZPrimer Team",
             },
             "publisher": {
               "@type": "Organization",

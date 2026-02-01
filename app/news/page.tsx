@@ -2,11 +2,19 @@
 import Link from 'next/link';
 import { getRecentNews } from '@/app/lib/newsStore';
 
-// For Cloudflare static export, we need to export dynamic as 'force-static'
+// For static export, we need to generate data at build time
 export const dynamic = 'force-static';
-// export const revalidate = 3600; // Remove this for static export
+export const revalidate = false; // Static page, no revalidation
 
+// Add generateStaticParams for static export compatibility
+export async function generateStaticParams() {
+  // This page has no dynamic parameters, return empty array
+  return [];
+}
+
+// This runs at build time
 export default async function NewsPage() {
+  // This will run during build, not at runtime
   const newsArticles = await getRecentNews(50);
   
   return (

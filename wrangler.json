@@ -1,15 +1,13 @@
 {
   "name": "mzprimer-web",
-  "pages_build_output_dir": "out",
+  "compatibility_date": "2024-11-18",
   "compatibility_flags": ["nodejs_compat"],
-  "minify": true,
-  "functions_bundler_config": {
-    "external": [
-      "firebase-admin",
-      "nodemailer",
-      "@firebase/app",
-      "@firebase/firestore",
-      "web-push"
-    ]
-  }
+  "pages_build_output_dir": "out",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mzprimer-db",
+      "database_id": "fa332b73-0ce0-468b-b92c-e7691a351bde"
+    }
+  ]
 }

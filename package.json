@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build --webpack", 
+    "build": "next build",
     "prebuild": "rm -rf .next out",
     "start": "next start",
     "lint": "next lint"
-},
+  },
   "dependencies": {
     "@noble/hashes": "^2.0.0",
     "@noble/secp256k1": "^3.0.0",
@@ -28,7 +28,6 @@
     "lucide-react": "^0.536.0",
     "next": "^16.1.1",
     "next-sitemap": "^4.2.3",
-    "nodemailer": "^6.10.1",
     "process": "^0.11.10",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.1",

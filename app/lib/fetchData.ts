@@ -1,3 +1,5 @@
+// app/lib/fetchData.ts
+
 // ==========================================
 // 1. SYMBOL CONFIGURATION (Decimal Precision)
 // ==========================================
@@ -164,7 +166,7 @@ export interface SymbolData {
 }
 
 // ==========================================
-// 4. FETCH AND FORMAT FUNCTION (UPDATED FOR CLOUDFLARE)
+// 4. FETCH AND FORMAT FUNCTION (UPDATED FOR CLOUDFLARE WORKERS)
 // ==========================================
 export async function getSymbolData(
   symbolParam?: string
@@ -173,19 +175,14 @@ export async function getSymbolData(
     if (!symbolParam) return null;
 
     const cleanSymbol = symbolParam.replace(/[-_/]/g, "").toUpperCase();
-    
-    // ✅ CLOUDFLARE R2 URL - Use your R2 public URL
-    // Change this to your actual R2 domain
     const R2_PUBLIC_URL = "https://data.mzprimer.com"; 
-    const url = `${R2_PUBLIC_URL}/output_${cleanSymbol}.json`;
+    const url = `${R2_PUBLIC_URL}/output_${cleanSymbol}.json?t=${Date.now()}`; // Added cache buster for fresh data
 
     const res = await fetch(url, {
-      // Cloudflare Workers: Use cache control headers
-      headers: {
-        'Cache-Control': 'public, max-age=300, s-maxage=300', // 5 minute cache
-      },
-      // Remove Next.js-specific options
-      // next: { revalidate: 300 }, // ❌ REMOVE THIS
+      // Cloudflare native fetch uses 'cf' object for caching control
+      // This tells Cloudflare to cache this JSON at the edge for 5 minutes
+      // @ts-ignore
+      cf: { cacheTtl: 300 }
     });
 
     if (!res.ok) {
@@ -195,10 +192,7 @@ export async function getSymbolData(
 
     const data: SymbolData = await res.json();
     
-    // Fallback if symbol key missing in JSON
-    if (!data.symbol) {
-      data.symbol = cleanSymbol;
-    }
+    if (!data.symbol) data.symbol = cleanSymbol;
 
     // --- APPLY DATA NORMALIZATION BASED ON SYMBOL SPECS ---
     
@@ -234,20 +228,15 @@ export async function getSymbolData(
   }
 }
 
-// ==========================================
-// 5. NEW: FETCH FOR CLIENT-SIDE (for Fetcher components)
-// ==========================================
-export async function fetchSymbolDataClient(
-  symbol: string
-): Promise<SymbolData | null> {
+/**
+ * FETCH FOR CLIENT-SIDE
+ * Used by your Fetcher.tsx components
+ */
+export async function fetchSymbolDataClient(symbol: string): Promise<SymbolData | null> {
   try {
-    // Call your API endpoint instead of direct R2
-    const res = await fetch(`/api/data-proxy?symbol=${symbol}`);
-    
-    if (!res.ok) {
-      throw new Error(`API error: ${res.status}`);
-    }
-    
+    // This calls your native Cloudflare Function at /functions/api/symbol-data.ts
+    const res = await fetch(`/api/symbol-data?symbol=${symbol}`);
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
     return await res.json();
   } catch (error) {
     console.error(`Client fetch error for ${symbol}:`, error);

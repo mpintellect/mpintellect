@@ -22,7 +22,6 @@
     "crypto-browserify": "^3.12.1",
     "elliptic": "^6.6.1",
     "framer-motion": "^12.23.12",
-    "googleapis": "^166.0.0",
     "jsonwebtoken": "^9.0.2",
     "keccak": "^3.0.4",
     "lucide-react": "^0.536.0",

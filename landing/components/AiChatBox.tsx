@@ -2,12 +2,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fetchCurrentPrice } from "../landing/app/lib/fetchPrice";
-import { useUser } from "../landing/app/hooks/useUser";
-import { fetchSetup, hasValidPendingOrders, getPrimaryOrder, getAllPendingOrders, getOrderConfidence, getMarketContext, type ExtendedTradeSetupData } from "../landing/app/lib/fetchSetup";
+import { fetchCurrentPrice } from "../../landing/app/lib/fetchPrice";
+import { useUser } from "../../landing/app/hooks/useUser";
+import { fetchSetup, hasValidPendingOrders, getPrimaryOrder, getAllPendingOrders, getOrderConfidence, getMarketContext, type ExtendedTradeSetupData } from "../../landing/app/lib/fetchSetup";
 import { loadStripe } from "@stripe/stripe-js";
 import { useRouter } from "next/navigation";
-import { useOneSetup } from "../landing/app/hooks/useOneSetup";
+import { useOneSetup } from "../../landing/app/hooks/useOneSetup";
 import SignalTicket from "./SignalTicket";
 import { createPortal } from "react-dom";
 

@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "es2020"
-    ],
+    "lib": ["dom", "dom.iterable", "es2020"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -20,27 +16,16 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     },
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
+    // CRITICAL: This tells TypeScript to look in parent node_modules
+    "typeRoots": ["../node_modules/@types", "./node_modules/@types"]
   },
   "include": [
-    "dashboard/next-env.d.ts",
+    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "dashboard/env.d.tsenv.d.ts",
-    "dashboard/.next/types/**/*.ts",
-    "dashboard/.next/dev/types/**/*.ts"
+    ".next/types/**/*.ts"
   ],
-  "exclude": [
-    "landing/node_modules",
-    "dashboard/.next",
-    "out"
-  ]
+  "exclude": ["node_modules"]
 }

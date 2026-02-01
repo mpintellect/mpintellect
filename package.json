@@ -1,10 +1,17 @@
 {
-  "name": "mzprimer-nextjs-v1",
+  "name": "mzprimer-monorepo",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "landing",
+    "dashboard"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build --webpack",
+    "dev:landing": "npm run dev -w landing",
+    "dev:dashboard": "npm run dev -w dashboard",
+    "build:landing": "npm run build -w landing",
+    "build:dashboard": "npm run build -w dashboard",
+    "install:all": "npm install",
     "prebuild": "rm -rf .next out",
     "preview": "npm run build && npx wrangler pages dev out --compatibility-flags=nodejs_compat --d1 DB",
     "cf:dev": "npx wrangler pages dev --port 3000 --proxy 3001 --command \"next dev -p 3001\" --compatibility-flags=nodejs_compat --d1 DB",

@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/AIChat/layout,_N_T_/AIChat/page,_N_T_/AIChat"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/AIChat/__PAGE__",
+    "/AIChat",
+    "/_index",
+    "/_head"
+  ]
+}

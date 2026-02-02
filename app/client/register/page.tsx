@@ -1,14 +1,11 @@
-// app/client/register/page.tsx
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -19,7 +16,6 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
 
-    // Basic validation (same as before)
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -33,39 +29,41 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Call Cloudflare auth API instead of Firebase
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email, 
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
           password,
-          displayName: email.split('@')[0] // Use part of email as display name
+          displayName: email.split("@")[0]
         })
       });
 
       const data = await response.json();
 
-      if (data.success) {
-        // Store session in localStorage (similar to Firebase)
-        localStorage.setItem('cf_token', data.token);
-        localStorage.setItem('cf_user', JSON.stringify(data.user));
-        localStorage.setItem('cf_session_id', data.sessionId);
-        
-        // Redirect to dashboard
-        router.push("/client/dashboard");
-      } else {
-        // Map Cloudflare errors to user-friendly messages
-        if (data.error.includes('already exists')) {
-          setError("Email already in use. Please login instead.");
-        } else if (data.error.includes('Invalid email')) {
-          setError("Invalid email address");
-        } else if (data.error.includes('weak password')) {
-          setError("Password is too weak. Use at least 6 characters.");
-        } else {
-          setError(data.error || "Registration failed. Please try again.");
-        }
+      // ⭐ FIX: Reliable validation instead of fragile data.success
+      if (response.ok && data.token && data.user) {
+        localStorage.setItem("cf_token", data.token);
+        localStorage.setItem("cf_user", JSON.stringify(data.user));
+        localStorage.setItem("cf_session_id", data.sessionId || data.token);
+
+        // Clear trials on successful registration
+        localStorage.removeItem("MZP_TRIAL_COUNT");
+
+        console.log("✅ Registration successful — redirecting...");
+
+        // Hard redirect to dashboard
+        window.location.href = "/client/dashboard?showPlans=true&status=new_user";
+        return;
       }
+
+      // 🔥 Error mapping
+      if (data.error?.includes("already exists")) {
+        setError("Email already in use. Please login instead.");
+      } else {
+        setError(data.error || "Registration failed. Please try again.");
+      }
+
     } catch (error: any) {
       console.error("Registration error:", error);
       setError("Registration failed. Please try again.");
@@ -76,21 +74,18 @@ export default function RegisterPage() {
 
   return (
     <div className="register-page">
-      {/* Background Effects */}
       <div className="register-glow glow-top-left"></div>
       <div className="register-glow glow-bottom-right"></div>
 
       <div className="register-container">
         <div className="register-card">
-          {/* Header */}
+
           <div className="register-header">
             <h1 className="register-title">Create Account</h1>
             <p className="register-subtitle">Get started with AI-powered trading insights</p>
           </div>
 
-          {/* Registration Form */}
           <form onSubmit={handleRegister} className="register-form">
-            {/* Email Field */}
             <div className="input-group">
               <input
                 type="email"
@@ -103,7 +98,6 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Password Field */}
             <div className="input-group">
               <input
                 type="password"
@@ -116,7 +110,6 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Confirm Password Field */}
             <div className="input-group">
               <input
                 type="password"
@@ -129,24 +122,17 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="error-box">
                 <p className="error-text">{error}</p>
               </div>
             )}
 
-            {/* Register Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="register-btn"
-            >
+            <button type="submit" disabled={loading} className="register-btn">
               {loading ? "Creating Account..." : "Register"}
             </button>
           </form>
 
-          {/* Already have account */}
           <div className="register-footer">
             <p className="footer-text">
               Already have an account?{" "}
@@ -155,6 +141,7 @@ export default function RegisterPage() {
               </Link>
             </p>
           </div>
+
         </div>
       </div>
     </div>

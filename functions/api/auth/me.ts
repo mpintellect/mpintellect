@@ -1,88 +1,57 @@
-// functions/api/auth/me.ts - FIXED (NO atob)
+// functions/api/auth/me.ts
+
 export async function onRequestGet(context: any) {
   const { request, env } = context;
 
   try {
-    const authHeader = request.headers.get('Authorization');
-    console.log('🔍 /api/auth/me called, auth header:', authHeader?.substring(0, 30) + '...');
+    const authHeader = request.headers.get('Authorization') || "";
+    const token = authHeader.replace('Bearer ', '').trim();
 
-    if (!authHeader) {
-      console.log('❌ No auth header');
-      return Response.json(
-        { success: false, error: 'No token provided' },
-        { status: 401 }
+    if (!token || token.length < 10) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing or Invalid Token" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    let token: string;
-    let userId: string | undefined;
+    console.log(`🔍 [ME] Checking Token: ${token.substring(0, 8)}...`);
 
-    // Extract token
-    if (authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
-    } else {
-      token = authHeader;
-    }
-
-    console.log('🔑 Token extracted:', token.substring(0, 20) + '...');
-
-    // Check if token is UUID (not cf_ encoded)
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token);
-    
-    if (!isUuid) {
-      console.error('❌ Token is not UUID format');
-      return Response.json(
-        { success: false, error: 'Invalid token format' },
-        { status: 401 }
-      );
-    }
-
-    // Look up session in database
     const session = await env.DB.prepare(
-      'SELECT user_id, expires_at FROM sessions WHERE id = ? AND expires_at > datetime("now")'
+      "SELECT user_id, expires_at FROM sessions WHERE id = ?"
     ).bind(token).first();
 
     if (!session) {
-      console.log('❌ No valid session found');
-      return Response.json(
-        { success: false, error: 'Invalid or expired session' },
-        { status: 401 }
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid Session" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    userId = session.user_id;
-    console.log('✅ Valid session for user:', userId);
+    // Manual expiry check
+    const now = new Date().toISOString().replace('T', ' ').replace('Z', '');
+    if (session.expires_at < now) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Expired" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
-    // Get user data
     const user = await env.DB.prepare(
-      'SELECT id, email, display_name, setup_count, license_type, referral_code FROM users WHERE id = ?'
-    ).bind(userId).first();
+      "SELECT * FROM users WHERE id = ?"
+    ).bind(session.user_id).first();
 
-    if (!user) {
-      console.error('❌ User not found in database');
-      return Response.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      );
-    }
+    console.log(`✅ [ME] Authorized user: ${user.email}`);
 
-    return Response.json({
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        display_name: user.display_name,
-        setup_count: user.setup_count || 0,
-        license_type: user.license_type || 'free',
-        referral_code: user.referral_code
-      }
+    return new Response(JSON.stringify({ success: true, user }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
     });
 
   } catch (error: any) {
-    console.error('❌ /api/auth/me error:', error);
-    return Response.json(
-      { success: false, error: 'Authentication failed' },
-      { status: 500 }
+    console.error('💥 [ME] Crash:', error.message);
+    return new Response(
+      JSON.stringify({ success: false, error: "Server Error" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }

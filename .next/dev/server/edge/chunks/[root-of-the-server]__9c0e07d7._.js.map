@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 16, "column": 0}, "map": {"version":3,"sources":["turbopack:///[project]/mzprimer-nextjs-v1 /middleware.ts"],"sourcesContent":["import { NextResponse } from 'next/server';\n\n// NEXT.JS 16 FIX: Changed from 'edge' to 'experimental-edge'\nexport const runtime = 'experimental-edge';\n\nexport function middleware() {\n  return NextResponse.next();\n}"],"names":[],"mappings":";;;;;;AAAA;AAAA;;AAGO,MAAM,UAAU;AAEhB,SAAS;IACd,OAAO,8NAAY,CAAC,IAAI;AAC1B"}}]
-}

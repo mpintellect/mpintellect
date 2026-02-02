@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "npx wrangler pages dev ./public --port 8788 --proxy 3000 --compatibility-flags=nodejs_compat --d1 DB=mzprimer-db --persist-to=./.wrangler/state --command \"npx next dev\"",
     "build": "next build --webpack",
     "prebuild": "rm -rf .next out",
     "preview": "npm run build && npx wrangler pages dev out --compatibility-flags=nodejs_compat --d1 DB",

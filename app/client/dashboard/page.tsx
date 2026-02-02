@@ -1,15 +1,15 @@
-// app/client/dashboard/page.tsx - COMPLETE FIXED VERSION
+// app/client/dashboard/page.tsx
 "use client";
 
-import { useEffect, useRef, useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import toast from "react-hot-toast";
-import { Globe, ArrowRight, ShieldCheck, Trophy, X, BarChart3, User, CreditCard, LogOut, Menu } from 'lucide-react';
+import { useUser } from "@/app/hooks/useUser";
+import { Globe, ArrowRight, Trophy, X, BarChart3, CreditCard, LogOut, Menu } from 'lucide-react';
 import { createPortal } from "react-dom";
 import AiChatBox from "@/components/AiChatBox";
 import PropFirmChat from "@/components/PropFirmChat";
 import UserAnalytics from "./components/AnalyticsSection";
+import toast from "react-hot-toast";
 
 export const dynamic = "force-dynamic";
 
@@ -50,9 +50,7 @@ function EmailVerificationMessage() {
 }
 
 function DashboardContent() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [setupCount, setSetupCount] = useState<number>(0);
+  const { user, loading, setupCount, refreshUser, logout: logoutFromHook } = useUser();
   const [buyLoading, setBuyLoading] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"10" | "20" | "30" | null>(null);
@@ -66,12 +64,28 @@ function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Detect query param showPlans=true
+  // Handle query params
   useEffect(() => {
     if (searchParams.get("showPlans") === "true") {
       setShowPlanModal(true);
     }
+    
+    // Check if user just registered
+    if (searchParams.get("status") === "new_user" || searchParams.get("new_user") === "true") {
+      setShowPlanModal(true);
+      // Clean up the URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
   }, [searchParams]);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      console.log("❌ No authenticated user, redirecting to login");
+      router.push("/client/login");
+    }
+  }, [user, loading, router]);
 
   // Handle scroll
   useEffect(() => {
@@ -84,39 +98,6 @@ function DashboardContent() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isScrolled]);
 
-  // Auth & Setup Count
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem('cf_token');
-        const userData = localStorage.getItem('cf_user');
-        
-        if (!token || !userData) {
-          router.push("/client/login");
-          return;
-        }
-
-        const user = JSON.parse(userData);
-        setUser(user);
-        setSetupCount(user.setup_count || 0);
-        
-        if (searchParams.get("success") === "true") {
-          toast.success("✅ Payment successful! Setup credits added.");
-          const url = new URL(window.location.href);
-          url.searchParams.delete("success");
-          window.history.replaceState({}, "", url.toString());
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error("Auth check error:", error);
-        router.push("/client/login");
-      }
-    };
-
-    checkAuth();
-  }, [router, searchParams]);
-
   // Auto-center PRO card on mobile
   useEffect(() => {
     const grid = document.querySelector(".purchase-grid");
@@ -128,27 +109,7 @@ function DashboardContent() {
       const scrollTo = middleCardOffset - (gridVisibleWidth / 2) + ((middleCard as HTMLElement).offsetWidth / 2);
       grid.scrollTo({ left: scrollTo, behavior: "smooth" });
     }
-  }, []);
-
-  const refreshSetupCount = async () => {
-    try {
-      const token = localStorage.getItem('cf_token');
-      if (!token || !user) return;
-      
-      const response = await fetch(`/api/user/trial-status?userId=${user.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setSetupCount(data.setup_count || 0);
-        }
-      }
-    } catch (error) {
-      console.error("Error refreshing setup count:", error);
-    }
-  };
+  }, [showPlanModal]);
 
   const handleLogout = async () => {
     try {
@@ -164,23 +125,26 @@ function DashboardContent() {
         });
       }
       
-      // Clear local storage
-      localStorage.removeItem('cf_token');
-      localStorage.removeItem('cf_user');
-      localStorage.removeItem('cf_session_id');
+      // Use the logout method from useUser hook
+      logoutFromHook();
       
       // Redirect to login
       router.push("/client/login");
     } catch (error) {
       console.error("Logout error:", error);
-      // Still clear and redirect
-      localStorage.clear();
+      // Still clear and redirect using hook's logout
+      logoutFromHook();
       router.push("/client/login");
     }
   };
 
   // Use setup credit
   const openTool = async (tool: 'ai' | 'prop') => {
+    if (!user) {
+      toast.error("Please login to use this feature");
+      return;
+    }
+    
     if (setupCount <= 0) {
       toast.error("No setups available. Please purchase more setups.");
       return;
@@ -207,8 +171,8 @@ function DashboardContent() {
       const data = await response.json();
       
       if (data.success) {
-        // Deduct setup count
-        setSetupCount(prev => Math.max(0, prev - 1));
+        // Refresh user data to update setup count
+        await refreshUser();
         
         // Set active tool
         setActiveTool(tool);
@@ -229,7 +193,7 @@ function DashboardContent() {
   const closeTool = () => {
     setActiveTool(null);
     document.body.style.overflow = 'auto';
-    refreshSetupCount();
+    refreshUser(); // Refresh setup count
   };
 
   const openAnalytics = () => {
@@ -246,7 +210,7 @@ function DashboardContent() {
 
   const handleBuySetups = async (plan: string = "10") => {
     if (!user) {
-      alert("Please log in to purchase setups.");
+      toast.error("Please log in to purchase setups.");
       return;
     }
     
@@ -289,12 +253,25 @@ function DashboardContent() {
     window.open('https://www.litefinance.org/fr/?uid=967798214', '_blank', 'noopener,noreferrer');
   };
 
+  // Loading state
   if (loading) {
     return (
       <div className="client-cabinet">
         <div className="cabinet-loading">
           <div className="loading-spinner"></div>
           <p>Loading your cabinet...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If no user after loading, show nothing (will redirect)
+  if (!user) {
+    return (
+      <div className="client-cabinet">
+        <div className="cabinet-loading">
+          <div className="loading-spinner"></div>
+          <p>Redirecting to login...</p>
         </div>
       </div>
     );
@@ -314,11 +291,19 @@ function DashboardContent() {
               >
                 <Trophy size={16} /> Dashboard
               </button>
-              <button className="nav-btn" onClick={() => openTool('ai')}>
-                🎯 AI Assistant
+              <button 
+                className="nav-btn" 
+                onClick={() => openTool('ai')}
+                disabled={setupCount <= 0}
+              >
+                🎯 AI Assistant {setupCount <= 0 && "(No Credits)"}
               </button>
-              <button className="nav-btn" onClick={() => openTool('prop')}>
-                🏆 Prop Firm
+              <button 
+                className="nav-btn" 
+                onClick={() => openTool('prop')}
+                disabled={setupCount <= 0}
+              >
+                🏆 Prop Firm {setupCount <= 0 && "(No Credits)"}
               </button>
               <button 
                 className={`nav-btn ${showAnalytics ? 'active' : ''}`}
@@ -382,11 +367,19 @@ function DashboardContent() {
                 <button className="mobile-nav-btn" onClick={returnToDashboard}>
                   <Trophy size={16} /> Dashboard
                 </button>
-                <button className="mobile-nav-btn" onClick={() => openTool('ai')}>
-                  🎯 AI Assistant
+                <button 
+                  className="mobile-nav-btn" 
+                  onClick={() => openTool('ai')}
+                  disabled={setupCount <= 0}
+                >
+                  🎯 AI Assistant {setupCount <= 0 && "(No Credits)"}
                 </button>
-                <button className="mobile-nav-btn" onClick={() => openTool('prop')}>
-                  🏆 Prop Firm
+                <button 
+                  className="mobile-nav-btn" 
+                  onClick={() => openTool('prop')}
+                  disabled={setupCount <= 0}
+                >
+                  🏆 Prop Firm {setupCount <= 0 && "(No Credits)"}
                 </button>
                 <button className="mobile-nav-btn" onClick={openAnalytics}>
                   <BarChart3 size={16} /> Analytics
@@ -425,7 +418,7 @@ function DashboardContent() {
           <div className="dashboard-view">
             {/* Welcome Section */}
             <div className="welcome-section">
-              <h1>Welcome back, Trader! 👋</h1>
+              <h1>Welcome back, {user?.email?.split('@')[0]}! 👋</h1>
               <p>Ready to analyze the markets with AI-powered insights</p>
             </div>
 
@@ -508,9 +501,6 @@ function DashboardContent() {
                   View Stats
                 </button>
               </div>
-
-
-              
             </div>
 
             {/* Quick Purchase Section */}
@@ -558,10 +548,7 @@ function DashboardContent() {
                 </div>
               </div>
             </div>
-
-            
-              </div>
-          
+          </div>
         )}
       </main>
 

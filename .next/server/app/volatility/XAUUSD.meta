@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/volatility/layout,_N_T_/volatility/[symbol]/layout,_N_T_/volatility/[symbol]/page,_N_T_/volatility/XAUUSD"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/volatility/$d$symbol/__PAGE__",
+    "/volatility/$d$symbol",
+    "/volatility",
+    "/_index",
+    "/_head"
+  ]
+}

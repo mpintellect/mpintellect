@@ -147,7 +147,6 @@ type SummaryBlock = {
 // Quick Registration Modal
 function QuickRegisterModal({ 
   onClose, 
-  onSuccess,
   selectedPlan 
 }: { 
   onClose: () => void; 
@@ -164,6 +163,9 @@ function QuickRegisterModal({
     e.preventDefault();
     setError("");
     setLoading(true);
+    console.log("📝 QuickRegister started");
+  console.log("  - email:", email);
+  console.log("  - selectedPlan:", selectedPlan);
 
     if (!email || !password || !confirmPassword) {
       setError("Please fill in all fields");
@@ -184,27 +186,42 @@ function QuickRegisterModal({
     }
 
     try {
-      // Register with Cloudflare API
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email, 
-          password,
-          displayName: email.split('@')[0]
-        })
-      });
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        email, 
+        password,
+        displayName: email.split('@')[0]
+      })
+    });
 
-      const data = await response.json();
-
-      if (data.success) {
-        const user = data.user;
-        // Store session
-        localStorage.setItem('cf_token', data.token);
-        localStorage.setItem('cf_user', JSON.stringify(user));
-        localStorage.setItem('cf_session_id', data.sessionId);
+    const data = await response.json();
+console.log("📝 Registration API response:", data);
+    if (data.success) {
+      console.log("✅ Quick registration success:", data);
+      console.log("✅ Registration SUCCESS!");
+      console.log("  - data.token:", data.token);
+      console.log("  - data.user:", data.user);
+      console.log("  - data.user.setup_count:", data.user?.setup_count);
+      // 🔥 DO EVERYTHING HERE, don't rely on parent callback
+      localStorage.setItem('cf_token', data.token);
+      localStorage.setItem('cf_user', JSON.stringify(data.user));
+      localStorage.setItem('cf_session_id', data.token);
+      console.log("📝 After saving to localStorage:");
+      console.log("  - cf_token saved:", localStorage.getItem('cf_token') ? 'YES' : 'NO');
+      console.log("  - cf_user saved:", localStorage.getItem('cf_user') ? 'YES' : 'NO');
+      localStorage.removeItem("MZP_TRIAL_COUNT");
+      // 🔥 CLOSE MODAL
+      onClose();
+      
+      // 🔥 REDIRECT IMMEDIATELY
+      setTimeout(() => {
+        window.location.href = `/client/dashboard?showPlans=true&plan=${selectedPlan}`;
+      }, 50);
+      
         
-        onSuccess(user, selectedPlan);
+      
       } else {
         if (data.error.includes('already exists')) {
           setError("This email is already registered. Please login instead.");
@@ -221,7 +238,7 @@ function QuickRegisterModal({
     } finally {
       setLoading(false);
     }
-  };
+};
 
   const modalContent = (
     <div className="modal-overlay">
@@ -402,13 +419,25 @@ export default function AiChatBox({
   autoStart = true,
   preselectedSymbol = null
 }: AiChatBoxProps & { preselectedSymbol?: string | null }) {
+  console.log("🚀 AiChatBox MOUNTING - Current state:");
+  console.log("  - localStorage cf_token:", localStorage.getItem('cf_token'));
+  console.log("  - localStorage cf_user:", localStorage.getItem('cf_user'));
+  console.log("  - localStorage MZP_TRIAL_COUNT:", localStorage.getItem('MZP_TRIAL_COUNT'));
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [step, setStep] = useState(0);
   const [symbol, setSymbol] = useState<SymbolKey | null>(null);
   const [capital, setCapital] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   
-  const { user, setupCount, isLoading: userLoading, userId } = useUser();
+  // Use 'loading' (the name in the hook) and rename it to 'userLoading'
+const { user, setupCount, loading: userLoading, userId, refreshUser } = useUser();
+useEffect(() => {
+    console.log("🔄 AiChatBox user state changed:");
+    console.log("  - user:", user);
+    console.log("  - userLoading:", userLoading);
+    console.log("  - setupCount:", setupCount);
+  }, [user, userLoading, setupCount]);
+  const { deductSetup } = useOneSetup();
   const router = useRouter();
   
   const chatRef = useRef<HTMLDivElement>(null);
@@ -457,10 +486,23 @@ export default function AiChatBox({
   // ⚡ QUICK ANALYSIS FUNCTION
   // ==========================================
   const executeQuickAnalysis = async (targetSymbol: SymbolKey) => {
+    console.log("🔍 executeQuickAnalysis called with symbol:", targetSymbol);
+    console.log("  - user:", user);
+    console.log("  - trialCount:", trialCount);
+    console.log("  - !user && trialCount >= 2:", !user && trialCount >= 2);
     // Check access first
     if (!user && trialCount >= 2) {
+      console.log("❌ Blocked: !user && trialCount >= 2 is TRUE");
+      console.log("  - Showing pricing modal");
       setShowPricingModal(true);
       return;
+    }
+    
+    console.log("✅ Access granted or user has trials left");
+    // 🔥 CHECK: If user just registered, redirect to dashboard
+    if (localStorage.getItem('just_registered')) {
+        window.location.href = '/client/dashboard?showPlans=true';
+        return;
     }
 
     let proceed = false;
@@ -468,7 +510,7 @@ export default function AiChatBox({
 
     // Access Control Logic
     if (user) {
-      const result = await useOneSetup(); 
+      const result = await deductSetup(); 
       if (result === "ok") {
         proceed = true;
       } else if (result === "no-credits") {
@@ -506,7 +548,20 @@ export default function AiChatBox({
         ]);
         return;
       }
-    } else {
+      } else {
+      // 🔥 CHECK: Did user just register? (trial count cleared but user not yet loaded)
+      const hasJustRegistered = trialCount === 0 && localStorage.getItem('cf_token');
+      
+      if (hasJustRegistered) {
+        // User just registered but hook hasn't updated yet
+        // Show loading message or wait for user state
+        setMessages((prev) => [
+          ...prev,
+          { sender: "ai", text: "🔄 Loading your account, please wait..." },
+        ]);
+        return; // Don't proceed yet
+      }
+      
       if (trialCount < 2) {
         newTrialCount = incrementTrialCount();
         setTrialCount(newTrialCount);
@@ -757,70 +812,120 @@ export default function AiChatBox({
   };
 
   const handleBuySetups = async (plan: string, userEmail?: string) => {
-    if (!user) {
-      console.error("No user found for purchase");
+  if (!user) {
+    console.error("No user found for purchase");
+    return;
+  }
+
+  setIsLoading(true);
+  try {
+    const res = await fetch("/api/checkout/create-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        userId: user.id, 
+        plan: plan,
+        email: user.email || userEmail
+      }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      throw new Error("Checkout URL not received.");
+    }
+  } catch (error: any) {
+    console.error("Buy setup error:", error);
+    alert(`Failed to start checkout: ${error.message}`);
+  } finally {
+    setIsLoading(false);
+  }
+};
+useEffect(() => {
+    // Check if user just registered and needs to select a plan
+    const urlParams = new URLSearchParams(window.location.search);
+    const showPlans = urlParams.get('showPlans');
+    const isNewUser = urlParams.get('status') === 'new_user';
+    
+    if (user && (showPlans || isNewUser)) {
+        // User is registered, show plan selection immediately
+        setShowPricingModal(true);
+        // Clean up URL
+        window.history.replaceState({}, '', '/client/dashboard');
+    }
+}, [user]);
+const handleQuickRegisterSuccess = async (data: any, plan: string) => {
+    console.log("🎯 [AiChatBox] Registration Successful");
+    
+    // Debug: Show what we received
+    console.log("📦 Registration data:", data);
+    console.log("🔑 Token received:", data.token?.substring(0, 20) + '...');
+    console.log("👤 User received:", data.user);
+    
+    if (!data.token || !data.user) {
+      console.error("❌ Missing token or user in registration response");
       return;
     }
-
-    setIsLoading(true);
-    try {
-      const res = await fetch("/api/checkout/create-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          userId: user.id, 
-          plan: plan,
-          email: user.email || userEmail
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
-      }
-
-      const data = await res.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("Checkout URL not received.");
-      }
-    } catch (error: any) {
-      console.error("Buy setup error:", error);
-      alert(`Failed to start checkout: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handlePlanSelect = (plan: string) => {
-    setSelectedPlan(plan);
-    if (user) {
-      handleBuySetups(plan);
-      setShowPricingModal(false);
-    } else {
-      setShowPricingModal(false);
-      setShowQuickRegister(true);
-    }
-  };
-
-  const handleQuickRegisterSuccess = (newUser: any, plan: string) => {
+    
+    // 1. Save credentials IMMEDIATELY
+    localStorage.setItem('cf_token', data.token);
+    localStorage.setItem('cf_user', JSON.stringify(data.user));
+    
+    // 2. CRITICAL: Clear trial count to prevent paywall
+    localStorage.removeItem("MZP_TRIAL_COUNT");
+    
+    // 3. Update local state
+    setTrialCount(0);
+    
+    // 4. Close all modals
     setShowQuickRegister(false);
-    handleBuySetups(plan, newUser.email);
-  };
+    setShowPricingModal(false);
+    
+    // 5. FORCE REDIRECT - don't wait for anything
+    console.log("🔀 Redirecting to dashboard with plan:", plan);
+    
+    // Use full URL to avoid any routing issues
+    const redirectUrl = `${window.location.origin}/client/dashboard?showPlans=true&plan=${plan}&new_user=true`;
+    console.log("📍 Redirect URL:", redirectUrl);
+    
+    // Hard redirect with timeout to ensure it happens
+    setTimeout(() => {
+      window.location.href = redirectUrl;
+    }, 100);
+};
 
-  const handleRegisterFirst = () => {
+
+// ✅ Only one handlePlanSelect function
+const handlePlanSelect = (plan: string) => {
+  setSelectedPlan(plan);
+  if (user) {
+    // If logged in, go to Stripe
+    handleBuySetups(plan, user.email);
+  } else {
+    // If guest, show registration modal
     setShowPricingModal(false);
     setShowQuickRegister(true);
-    setSelectedPlan("10");
-  };
+  }
+};
 
-  const incrementTrial = async () => {
-    const newCount = incrementTrialCount();
-    setTrialCount(newCount);
-    return newCount;
-  };
+const handleRegisterFirst = () => {
+  setShowPricingModal(false);
+  setShowQuickRegister(true);
+  setSelectedPlan("10");
+};
+
+const incrementTrial = async () => {
+  const newCount = incrementTrialCount();
+  setTrialCount(newCount);
+  return newCount;
+};
 
   // Welcome message with QUICK ACTION BUTTONS
   useEffect(() => {
@@ -931,7 +1036,7 @@ export default function AiChatBox({
 
       // Access Control Logic
       if (user) {
-        const result = await useOneSetup(); 
+        const result = await deductSetup(); 
         if (result === "ok") {
           proceed = true;
         } else if (result === "no-credits") {
@@ -1219,9 +1324,18 @@ export default function AiChatBox({
     }
   };
 
-  const showPaywall = (!user && trialCount >= 2) || (user && setupCount <= 0);
+  const showPaywall = !userLoading && ((!user && trialCount >= 2) || (user && setupCount <= 0));
+  console.log("🔍 showPaywall calculation:");
+console.log("  - userLoading:", userLoading);
+console.log("  - !user:", !user);
+console.log("  - trialCount:", trialCount);
+console.log("  - trialCount >= 2:", trialCount >= 2);
+console.log("  - !user && trialCount >= 2:", !user && trialCount >= 2);
+console.log("  - user && setupCount <= 0:", user && setupCount <= 0);
+console.log("  - showPaywall result:", showPaywall);
 
 if (showPaywall && !userLoading) {
+   console.log("🚨 SHOWING PAYWALL!");
     return (
       <div className="chatbox-wrapper section">
         <div className="license-header">

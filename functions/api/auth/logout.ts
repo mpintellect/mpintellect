@@ -1,41 +1,29 @@
 // functions/api/auth/logout.ts
 
-import { execute } from '@/backend-lib/db-simple';
-
-/**
- * FIXED: 
- * 1. Added ': any' type to context
- * 2. Destructured 'request' from context
- */
 export async function onRequestPost(context: any) {
-  const { request } = context; 
+  const { request, env } = context; 
 
   try {
-    // Now 'request' is defined
-    const { sessionId } = await request.json();
+    // 1. Safely parse body (prevents 500 if empty)
+    const body = await request.json().catch(() => ({}));
+    const { sessionId } = body;
 
     if (sessionId) {
-      // Delete session from database
-      await execute(
-        'DELETE FROM sessions WHERE id = ?',
-        [sessionId]
-      );
+      // 2. Delete session from D1
+      await env.DB.prepare('DELETE FROM sessions WHERE id = ?')
+        .bind(sessionId)
+        .run();
     }
 
-    return Response.json({
-      success: true,
-      message: 'Logged out successfully'
+    // 3. Clear the cookie by setting an expired date
+    return new Response(JSON.stringify({ success: true }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Set-Cookie': 'mz_token=; path=/; domain=.localhost; Max-Age=0; HttpOnly'
+      }
     });
 
   } catch (error: any) {
-    console.error('Logout error:', error);
-    
-    return Response.json(
-      { 
-        success: false, 
-        error: 'Logout failed' 
-      },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ success: false }), { status: 500 });
   }
 }

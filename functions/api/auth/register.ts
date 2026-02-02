@@ -1,206 +1,70 @@
-// functions/api/auth/register.ts
-
-import { query, execute } from '@/backend-lib/db-simple';
-
-// Generate random referral code
-function generateReferralCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
-
-// Simple password hash
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hash))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
 export async function onRequestPost(context: any) {
-  const { request } = context;
+  const { request, env } = context;
 
   try {
-    const { email, password, displayName, referralCode } = await request.json();
+    const { email, password, displayName } = await request.json();
 
-    // Validation
-    if (!email || !password) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Email and password are required' }),
-        { 
-          status: 400, 
-          headers: { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-          } 
-        }
-      );
-    }
-
-    // Check if user already exists
-    const existingUser = await query(
-      'SELECT id FROM users WHERE email = ? LIMIT 1',
-      [email]
-    );
-
-    if (existingUser.length > 0) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'User already exists' }),
-        { 
-          status: 400, 
-          headers: { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-          } 
-        }
-      );
-    }
-
-    // Create user
+    const cleanEmail = email.toLowerCase().trim();
     const userId = crypto.randomUUID();
-    const referralCodeGenerated = generateReferralCode();
-    const now = new Date().toISOString();
-    
-    // Insert user with setup_count = 1 (free setup on registration)
-    await execute(
-      `INSERT INTO users (
-        id, email, display_name, email_verified, license_type, 
-        referral_code, setup_count, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        userId, 
-        email, 
-        displayName || null, 
-        0, // email_verified
-        'free', 
-        referralCodeGenerated,
-        1, // setup_count (1 free setup)
-        now, 
-        now
-      ]
-    );
+    const token = crypto.randomUUID(); // Session ID
 
-    // Hash and store password
-    const passwordHash = await hashPassword(password);
-    
-    // Ensure passwords table exists
-    await execute(
-      `CREATE TABLE IF NOT EXISTS user_passwords (
-        user_id TEXT PRIMARY KEY,
-        password_hash TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`,
-      []
-    );
+    const now = new Date().toISOString().replace('T', ' ').replace('Z', '');
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .replace('T', ' ')
+      .replace('Z', '');
 
-    await execute(
-      'INSERT INTO user_passwords (user_id, password_hash) VALUES (?, ?)',
-      [userId, passwordHash]
-    );
+    console.log(`📝 [REG] Registering user: ${cleanEmail}`);
+    console.log(`🎫 [REG] Creating Token: ${token.substring(0, 8)}...`);
 
-    // Handle referral if provided
-    if (referralCode) {
-      const referrerResult = await query<{id: string}>(
-        'SELECT id FROM users WHERE referral_code = ? LIMIT 1',
-        [referralCode]
-      );
-      
-      if (referrerResult.length > 0) {
-        // Ensure referrals table exists
-        await execute(
-          `CREATE TABLE IF NOT EXISTS referrals (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            referrer_id TEXT,
-            referred_id TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          )`, []
-        );
+    // 1. Save User
+    await env.DB.prepare(
+      "INSERT INTO users (id, email, display_name, setup_count, created_at, updated_at) VALUES (?, ?, ?, 2, ?, ?)"
+    ).bind(userId, cleanEmail, displayName || null, now, now).run();
 
-        // Create referral record
-        await execute(
-          'INSERT INTO referrals (referrer_id, referred_id) VALUES (?, ?)',
-          [referrerResult[0].id, userId]
-        );
-        
-        // Give referrer +5 setups
-        await execute(
-          'UPDATE users SET setup_count = setup_count + 5 WHERE id = ?',
-          [referrerResult[0].id]
-        );
-      }
-    }
+    // 2. Save Password
+    const encoder = new TextEncoder();
+    const hash = await crypto.subtle.digest('SHA-256', encoder.encode(password));
+    const passwordHash = Array.from(new Uint8Array(hash))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
 
-    // Create token
-    const tokenPayload = {
-      userId,
-      email,
-      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 days
-    };
-    const token = `cf_${btoa(JSON.stringify(tokenPayload))}`;
+    await env.DB.prepare(
+      "INSERT INTO user_passwords (user_id, password_hash) VALUES (?, ?)"
+    ).bind(userId, passwordHash).run();
 
-    // Create session
-    const sessionId = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    
-    // Ensure sessions table exists
-    await execute(
-      `CREATE TABLE IF NOT EXISTS sessions (
-        id TEXT PRIMARY KEY,
-        user_id TEXT,
-        expires_at TEXT
-      )`, []
-    );
+    // 3. Save Session
+    await env.DB.prepare(
+      "INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)"
+    ).bind(token, userId, expiresAt).run();
 
-    await execute(
-      'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)',
-      [sessionId, userId, expiresAt.toISOString()]
-    );
+    console.log(`✅ [REG] Session saved to DB for: ${cleanEmail}`);
 
-    // Return success
     return new Response(
       JSON.stringify({
-        success: true,
+        success: true,         // ⭐ ALWAYS returned
+        token,
+        sessionId: token,      // ⭐ ALWAYS included
         user: {
           id: userId,
-          email,
+          email: cleanEmail,
           display_name: displayName,
-          license_type: 'free',
-          email_verified: false,
-          referral_code: referralCodeGenerated,
-          setup_count: 1
-        },
-        token,
-        sessionId
+          setup_count: 2
+        }
       }),
-      { 
-        status: 200, 
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        } 
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
       }
     );
 
   } catch (error: any) {
-    console.error('Registration error:', error);
-    
+    console.error('💥 [REG] Crash:', error.message);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message || 'Registration failed' 
-      }),
-      { 
-        status: 500, 
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        } 
-      }
+      JSON.stringify({ success: false, error: error.message }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }

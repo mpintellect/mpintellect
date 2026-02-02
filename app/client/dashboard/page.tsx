@@ -547,7 +547,7 @@ export default function UserAnalytics() {
         </div>
         <div className="profit-loss-card neutral">
           <div className="pl-value">${profitLossData.profitPerTrade.toFixed(2)}</div>
-          <div className="pl-label">Avg P&L/Trade</div>
+          <div className="pl-label">Average P&L/Trade</div>
         </div>
       </div>
 

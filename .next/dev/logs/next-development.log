@@ -1,0 +1,15 @@
+[01:14:34.781] Server  WARN    ⚠ You are using an experimental edge runtime, the API might change.
+[01:14:34.794] Server  WARN    ⚠ You are using an experimental edge runtime, the API might change.
+[01:14:37.770] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'
+[01:14:37.830] Server  LOG     ✓ Compiled in 2.6s
+[01:14:37.844] Server  WARN    ⚠ Fast Refresh had to perform a full reload when ./mzprimer-nextjs-v1 /app/client/dashboard/page.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[01:14:37.935] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'
+[01:14:40.823] Server  LOG     ○ Compiling /_error ...
+[01:14:55.652] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'
+[01:14:55.673] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'
+[01:14:55.725] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'
+[01:14:55.833] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'
+[01:18:50.752] Server  WARN    ⚠ You are using an experimental edge runtime, the API might change.
+[01:20:00.364] Server  WARN    ⚠ You are using an experimental edge runtime, the API might change.
+[01:20:01.283] Server  WARN    ⚠ Fast Refresh had to perform a full reload when ./mzprimer-nextjs-v1 /app/client/dashboard/page.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[01:20:01.543] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'

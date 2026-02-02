@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     description:
       'Automate parts of your trading with tested AI robots for MetaTrader. Simple setup and clear risk options.',
     url: 'https://mzprimer.com/ai-robot',
-    siteName: 'MZPrimer',
+    siteName: 'MZPrimer', 
     images: [{ url: 'https://mzprimer.com/og/ai-robots.jpg', width: 1200, height: 630 }],
     locale: 'en_US',
     type: 'website',

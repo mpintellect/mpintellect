@@ -1,58 +1,73 @@
-import { query } from '@/backend-lib/db-simple';
-
-// Simple token verification
-function getUserIdFromToken(token: string): string | null {
-  try {
-    const cleanToken = token.replace('Bearer ', '').replace('cf_', '');
-    const decoded = JSON.parse(atob(cleanToken));
-    return decoded.userId;
-  } catch (error) {
-    return null;
-  }
-}
-
+// functions/api/user/setup-count.ts - FIXED
 export async function onRequestGet(context: any): Promise<Response> {
+  const { request, env } = context;
+
   try {
-    const { request } = context;
+    console.log('🔍 setup-count called');
+    
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     
-    // Alternative: Get userId from token
+    // Try to get userId from token
     let targetUserId = userId;
     if (!targetUserId) {
       const authHeader = request.headers.get('Authorization');
       if (authHeader) {
-        targetUserId = getUserIdFromToken(authHeader);
+        console.log('🔑 Auth header found, extracting userId...');
+        
+        if (authHeader.startsWith('Bearer ')) {
+          const token = authHeader.split(' ')[1];
+          // Check sessions table
+          const session = await env.DB.prepare(
+            'SELECT user_id FROM sessions WHERE id = ? AND expires_at > datetime("now")'
+          ).bind(token).first();
+          if (session) {
+            targetUserId = session.user_id;
+          }
+        } else if (authHeader.startsWith('cf_')) {
+          try {
+            const decoded = atob(authHeader.substring(3));
+            const payload = JSON.parse(decoded);
+            targetUserId = payload.userId;
+          } catch (error) {
+            console.error('Failed to decode cf_ token:', error);
+          }
+        }
       }
     }
 
     if (!targetUserId) {
+      console.error('❌ No user ID found');
       return Response.json(
         { success: false, error: 'User ID required' },
         { status: 400 }
       );
     }
 
-    // Get setup count from database
-    const result = await query<{ setup_count: number }>(
-      'SELECT setup_count FROM users WHERE id = ? LIMIT 1',
-      [targetUserId]
-    );
+    console.log('📊 Getting setup count for user:', targetUserId);
 
-    if (result.length === 0) {
+    // Get setup count - USING env.DB
+    const user = await env.DB.prepare(
+      'SELECT setup_count, license_type FROM users WHERE id = ?'
+    ).bind(targetUserId).first();
+
+    if (!user) {
       return Response.json(
         { success: false, error: 'User not found' },
         { status: 404 }
       );
     }
 
+    console.log('✅ Setup count:', user.setup_count || 0);
+
     return Response.json({
       success: true,
-      setupCount: result[0].setup_count || 0
+      setupCount: user.setup_count || 0,
+      licenseType: user.license_type || 'free'
     });
 
   } catch (error: any) {
-    console.error('Get setup count error:', error);
+    console.error('❌ Get setup count error:', error);
     
     return Response.json(
       { 

@@ -1,16 +1,91 @@
-[01:14:34.781] Server  WARN    ⚠ You are using an experimental edge runtime, the API might change.
-[01:14:34.794] Server  WARN    ⚠ You are using an experimental edge runtime, the API might change.
-[01:14:37.770] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'
-[01:14:37.830] Server  LOG     ✓ Compiled in 2.6s
-[01:14:37.844] Server  WARN    ⚠ Fast Refresh had to perform a full reload when ./mzprimer-nextjs-v1 /app/client/dashboard/page.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
-[01:14:37.935] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'
-[01:14:40.823] Server  LOG     ○ Compiling /_error ...
-[01:14:55.652] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'
-[01:14:55.673] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'
-[01:14:55.725] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'
-[01:14:55.833] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'
-[01:18:50.752] Server  WARN    ⚠ You are using an experimental edge runtime, the API might change.
-[01:20:00.364] Server  WARN    ⚠ You are using an experimental edge runtime, the API might change.
-[01:20:01.283] Server  WARN    ⚠ Fast Refresh had to perform a full reload when ./mzprimer-nextjs-v1 /app/client/dashboard/page.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
-[01:20:01.543] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'
-[01:23:16.908] Server  ERROR   ⨯ Error: ENOENT: no such file or directory, open '/Users/mezganimez/Downloads/mzprimer/mzprimer-nextjs-v1 /.next/dev/server/app/client/dashboard/page/build-manifest.json'
+[00:00:01.191] Server  WARN    ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+[00:00:01.237] Server  WARN    ⚠ You are using an experimental edge runtime, the API might change.
+[00:00:01.388] Server  WARN    ⚠ You are using an experimental edge runtime, the API might change.
+[00:00:01.392] Server  LOG     ✓ Ready in 1092ms
+[00:00:14.005] Server  WARN    ⚠ Cross origin request detected from 192.168.1.36 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+[00:00:14.135] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:14.185] Server  ERROR   (node:36586) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[00:00:19.779] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:00:19.779] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:00:19.779] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:00:19.779] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:00:20.058] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:00:20.058] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:00:20.359] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:00:20.360] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:00:20.469] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:00:20.469] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:00:22.341] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:00:22.342] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:00:30.448] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:00:30.448] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:01:16.844] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:06:17.949] Server  WARN    ⚠ You are using an experimental edge runtime, the API might change.
+[00:06:22.557] Server  LOG     ○ Compiling /client/dashboard ...
+[00:06:23.374] Server  WARN    ⚠ Fast Refresh had to perform a full reload when ./mzprimer-nextjs-v1 /app/client/dashboard/page.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[00:06:23.917] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:06:59.692] Server  WARN    ⚠ You are using an experimental edge runtime, the API might change.
+[00:06:59.943] Server  WARN    ⚠ Fast Refresh had to perform a full reload when ./mzprimer-nextjs-v1 /app/client/dashboard/page.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[00:06:59.964] Server  LOG     ✓ Compiled in 218ms
+[00:07:00.899] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:11:13.932] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:16:54.861] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:18:11.492] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:11.492] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:11.492] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:11.492] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:11.775] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:11.775] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:12.076] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:12.076] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:12.190] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:12.190] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:12.330] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:12.330] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:13.281] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:13.281] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:33.013] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:33.013] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:40.484] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:40.485] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:41.338] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:41.338] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:44.190] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:18:44.190] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:49.780] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:49.780] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:49.780] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:49.780] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:49.780] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:49.780] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:49.780] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:49.780] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:49.958] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:49.959] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:49.959] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:49.959] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:50.345] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:50.345] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:50.345] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:50.345] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:53.608] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:19:53.609] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:21:45.409] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:21:45.410] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:21:53.498] Server  LOG     ○ Compiling /prop-firm ...
+[00:21:55.479] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:21:55.479] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:21:55.479] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:21:55.479] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:21:56.077] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:21:56.077] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:21:56.428] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:21:56.429] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:21:57.280] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:21:57.280] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:22:02.000] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:22:02.005] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:22:03.153] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')
+[00:22:03.153] Browser ERROR   unhandledRejection: TypeError: Cannot read properties of undefined (reading 'match')

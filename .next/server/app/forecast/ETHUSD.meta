@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/forecast/layout,_N_T_/forecast/[symbol]/layout,_N_T_/forecast/[symbol]/page,_N_T_/forecast/ETHUSD"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/forecast/$d$symbol/__PAGE__",
+    "/forecast/$d$symbol",
+    "/forecast",
+    "/_index",
+    "/_head"
+  ]
+}

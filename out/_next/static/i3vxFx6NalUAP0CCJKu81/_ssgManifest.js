@@ -1,1 +1,0 @@
-self.__SSG_MANIFEST=new Set(["\u002Fanalysis\u002F[symbol]","\u002Fblog\u002F[slug]","\u002Fcalculator\u002F[symbol]","\u002Fforecast\u002F[symbol]","\u002Findicator\u002F[symbol]","\u002Fmomentum\u002F[symbol]","\u002Ftrade\u002F[symbol]","\u002Ftrend\u002F[symbol]","\u002Fvolatility\u002F[symbol]","\u002Fzones\u002F[symbol]"]);self.__SSG_MANIFEST_CB&&self.__SSG_MANIFEST_CB()

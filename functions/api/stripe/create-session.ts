@@ -3,7 +3,7 @@ import Stripe from "stripe";
 const SETUP_PRICE_MAP: Record<string, string> = {
   "10": "price_1SVbAXDoB4i1qeaLC32KJQ6L",
   "20": "price_1SVWWXDoB4i1qeaL2dquhtfv",
-  "30": "price_1SVWUlDoB4i1qeaLabDsRHo2",
+  "30": "price_1SSyUORmR6ESDQvo7dzPKmPt",
 };
 
 export async function onRequestPost(context: any) {

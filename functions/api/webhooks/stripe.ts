@@ -4,9 +4,9 @@ import Stripe from "stripe";
 import { execute, queryOne } from "../../../backend-lib/db-simple";
 
 const SETUP_CREDITS: Record<string, number> = {
-  "price_1SSyQORmR6ESDQvobwheaXws": 10,
-  "price_1SSyRGRmR6ESDQvoKgAI9CAN": 20,
-  "price_1SSyUORmR6ESDQvo7dzPKmPt": 30,
+  "price_1SVbAXDoB4i1qeaLC32KJQ6L": 10,
+  "price_1SVWWXDoB4i1qeaL2dquhtfv": 20,
+  "price_1SVWUlDoB4i1qeaLabDsRHo2": 30,
 };
 
 export async function onRequestPost(context: any) {

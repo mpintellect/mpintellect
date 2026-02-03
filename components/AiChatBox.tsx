@@ -767,14 +767,15 @@ useEffect(() => {
           
           const finalRR = (tpPrice && slPrice && entryPrice) ? 
             Math.abs(tpPrice - entryPrice) / Math.abs(entryPrice - slPrice) : 1.0;
-          
+          const token = localStorage.getItem('cf_token'); 
+
           // Save setup via Cloudflare API
           const saveResponse = await fetch('/api/setups', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('cf_token')}`,
-              'Content-Type': 'application/json'
-            },
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`, // This will now work with Step 1
+    'Content-Type': 'application/json'
+  },
             body: JSON.stringify({
               symbol: targetSymbol,
               entry_price: entryPrice,

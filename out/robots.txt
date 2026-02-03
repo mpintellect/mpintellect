@@ -1,9 +1,0 @@
-User-Agent: *
-Allow: /
-Disallow: /api/
-Disallow: /admin-console-x9z/
-Disallow: /client/
-Disallow: /_next/
-Disallow: /private/
-
-Sitemap: https://mzprimer.com/sitemap.xml

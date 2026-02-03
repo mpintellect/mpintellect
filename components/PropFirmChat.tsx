@@ -210,8 +210,12 @@ function QuickRegisterModal({
         // Store session
         localStorage.setItem('cf_token', data.token);
         localStorage.setItem('cf_user', JSON.stringify(user));
-        localStorage.setItem('cf_session_id', data.sessionId);
+        localStorage.setItem('cf_session_id', data.token);
         
+        // Clear trial count
+        localStorage.removeItem("MZP_PROP_TRIAL_COUNT");
+        
+        // Trigger success callback
         onSuccess(user, selectedPlan);
       } else {
         if (data.error.includes('already exists')) {
@@ -413,12 +417,14 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
   const [symbol, setSymbol] = useState<SymbolKey | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   
-  const { userId, setupCount, user, isLoading: userLoading } = useUser();
+  const { user, setupCount, loading: userLoading, userId, refreshUser } = useUser();
+  const { deductSetup } = useOneSetup();
   const router = useRouter();
   
   const chatRef = useRef<HTMLDivElement>(null);
-  const [trialCount, setTrialCount] = useState(0);
+  const scrollLocked = useRef(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [trialCount, setTrialCount] = useState(0);
 
   // Modal states
   const [showPricingModal, setShowPricingModal] = useState(false);
@@ -449,7 +455,6 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
   // ==========================================
   useEffect(() => {
     if (preselectedSymbol && ALL_SYMBOLS.includes(preselectedSymbol as SymbolKey)) {
-      // Small timeout ensures the modal animation finishes before analysis starts
       const timer = setTimeout(() => {
         startPropWorkflow(preselectedSymbol);
       }, 600);
@@ -510,20 +515,58 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
     }
   };
 
+  // ✅ CORRECTED: Handle plan selection like AiChatBox
   const handlePlanSelect = (plan: string) => {
     setSelectedPlan(plan);
     if (user) {
-      handleBuySetups(plan);
-      setShowPricingModal(false);
+      // If logged in, go to Stripe
+      handleBuySetups(plan, user.email);
     } else {
+      // If guest, show registration modal
       setShowPricingModal(false);
       setShowQuickRegister(true);
     }
   };
 
-  const handleQuickRegisterSuccess = (newUser: any, plan: string) => {
+  // ✅ CORRECTED: Handle quick registration success like AiChatBox
+  const handleQuickRegisterSuccess = async (userData: any, plan: string) => {
+    console.log("🎯 [PropFirmChat] Registration Successful");
+    
+    // Debug: Show what we received
+    console.log("📦 Registration data:", userData);
+    console.log("🔑 Token received:", userData.token?.substring(0, 20) + '...');
+    console.log("👤 User received:", userData.user);
+    
+    if (!userData.token || !userData.user) {
+      console.error("❌ Missing token or user in registration response");
+      return;
+    }
+    
+    // 1. Save credentials IMMEDIATELY
+    localStorage.setItem('cf_token', userData.token);
+    localStorage.setItem('cf_user', JSON.stringify(userData.user));
+    
+    // 2. CRITICAL: Clear trial count to prevent paywall
+    localStorage.removeItem("MZP_PROP_TRIAL_COUNT");
+    
+    // 3. Update local state
+    setTrialCount(0);
+    
+    // 4. Close all modals
     setShowQuickRegister(false);
-    handleBuySetups(plan, newUser.email);
+    setShowPricingModal(false);
+    
+    // 5. FORCE REDIRECT - don't wait for anything
+    console.log("🔀 Redirecting to dashboard with plan:", plan);
+    
+    // Use full URL to avoid any routing issues
+    const redirectUrl = `${window.location.origin}/client/dashboard?showPlans=true&plan=${plan}&new_user=true`;
+    console.log("📍 Redirect URL:", redirectUrl);
+    
+    // Hard redirect with timeout to ensure it happens
+    setTimeout(() => {
+      window.location.href = redirectUrl;
+    }, 100);
   };
 
   const handleRegisterFirst = () => {
@@ -607,23 +650,43 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
   // ⚡ WELCOME MESSAGE (when no preselected symbol)
   // ==========================================
   useEffect(() => {
-    if (!preselectedSymbol && messages.length === 0 && !userLoading) {
+    const hasAccess = user || trialCount < 2;
+    
+    if (!preselectedSymbol && messages.length === 0 && !userLoading && hasAccess) {
       setTimeout(() => {
-        setMessages([{
+        const welcomeMsg: ChatMessage = {
           sender: "ai",
           text: "🏆 **Prop Firm AI Assistant**\n\nI'm calibrated for FTMO, FundedNext, MyForexFunds & The5%ers rules.\n\nPlease select your Prop Firm:",
           actions: PROP_COMPANIES.map(c => ({ label: c.name, value: c.id }))
-        }]);
+        };
+
+        if (user) {
+          setMessages([
+            welcomeMsg,
+            { 
+              sender: "ai", 
+              text: `🎯 You have ${setupCount} setup credit${setupCount === 1 ? '' : 's'} available.`
+            }
+          ]);
+        } else {
+          setMessages([
+            welcomeMsg,
+            { 
+              sender: "ai", 
+              text: `🎉 You have ${2 - trialCount} free trial${2 - trialCount === 1 ? '' : 's'} remaining.`
+            }
+          ]);
+        }
         setStep(0);
       }, 500);
     }
-  }, [messages.length, userLoading, preselectedSymbol]);
+  }, [messages.length, userLoading, preselectedSymbol, user, setupCount, trialCount]);
 
   // ==========================================
   // 🔄 SCROLL HANDLING
   // ==========================================
   useEffect(() => {
-    if (chatRef.current) {
+    if (chatRef.current && !scrollLocked.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
   }, [messages]);
@@ -639,9 +702,23 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
     const maxRiskPerTrade = dailyLimit * 0.25; // Only risk 25% of daily limit per trade
 
     // Check access first
+    console.log("🔍 executePropAnalysis called with symbol:", targetSymbol);
+    console.log("  - user:", user);
+    console.log("  - trialCount:", trialCount);
+    console.log("  - !user && trialCount >= 2:", !user && trialCount >= 2);
+    
     if (!user && trialCount >= 2) {
+      console.log("❌ Blocked: !user && trialCount >= 2 is TRUE");
+      console.log("  - Showing pricing modal");
       setShowPricingModal(true);
       return;
+    }
+    
+    console.log("✅ Access granted or user has trials left");
+    // 🔥 CHECK: If user just registered, redirect to dashboard
+    if (localStorage.getItem('just_registered')) {
+        window.location.href = '/client/dashboard?showPlans=true';
+        return;
     }
 
     let proceed = false;
@@ -649,7 +726,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
 
     // Access Control Logic
     if (user) {
-      const result = await useOneSetup();
+      const result = await deductSetup(); 
       if (result === "ok") {
         proceed = true;
       } else if (result === "no-credits") {
@@ -690,6 +767,19 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
         return;
       }
     } else {
+      // 🔥 CHECK: Did user just register? (trial count cleared but user not yet loaded)
+      const hasJustRegistered = trialCount === 0 && localStorage.getItem('cf_token');
+      
+      if (hasJustRegistered) {
+        // User just registered but hook hasn't updated yet
+        // Show loading message or wait for user state
+        setMessages(prev => [
+          ...prev,
+          { sender: "ai", text: "🔄 Loading your account, please wait..." },
+        ]);
+        return; // Don't proceed yet
+      }
+      
       if (trialCount < 2) {
         newTrialCount = incrementTrialCount();
         setTrialCount(newTrialCount);
@@ -706,6 +796,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
       { sender: "user", text: `Analyze ${targetSymbol}` }
     ]);
     setIsTyping(true);
+    setStep(4); // Move to result state
 
     try {
       const setup = await fetchSetup(targetSymbol) as ExtendedTradeSetupData;
@@ -875,6 +966,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
         text: [{ title: block.title, content: block.content }]
       }));
 
+      scrollLocked.current = true;
       setMessages((prev) => [...prev, ...summaryCards]);
 
       // ✅ Saving logic
@@ -940,14 +1032,21 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
       ]);
     } finally {
       setIsTyping(false);
-      setStep(4);
     }
   };
 
   // ==========================================
   // 🎨 RENDER - WITH PAYWALL SUPPORT
   // ==========================================
-  const showPaywall = (!user && trialCount >= 2) || (user && setupCount <= 0);
+  const showPaywall = !userLoading && ((!user && trialCount >= 2) || (user && setupCount <= 0));
+  console.log("🔍 PropFirmChat showPaywall calculation:");
+  console.log("  - userLoading:", userLoading);
+  console.log("  - !user:", !user);
+  console.log("  - trialCount:", trialCount);
+  console.log("  - trialCount >= 2:", trialCount >= 2);
+  console.log("  - !user && trialCount >= 2:", !user && trialCount >= 2);
+  console.log("  - user && setupCount <= 0:", user && setupCount <= 0);
+  console.log("  - showPaywall result:", showPaywall);
 
   if (showPaywall && !userLoading) {
     return (
@@ -1012,6 +1111,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
       </div>
     );
   }
+
   if (userLoading) {
     return (
       <div className="chatbox-wrapper section">
@@ -1046,7 +1146,6 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
           onClose={() => setTicketData(null)} 
         />
       )}
-
 
       <div className="chatbox-body" ref={chatRef}>
         {messages.map((msg, idx) => (
@@ -1158,26 +1257,27 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
           </select>
         </div>
       )}
-
-      {/* STEP 4: RESET BUTTON */}
-      {step === 4 && (
-        <div className="chatbot-input">
-          <button 
-            onClick={() => {
-              setStep(0);
-              setSelectedFirm("");
-              setStage(null);
-              setCapital("");
-              setSymbol(preselectedSymbol && ALL_SYMBOLS.includes(preselectedSymbol as SymbolKey) ? preselectedSymbol as SymbolKey : null);
-              setMessages([]);
-              setTicketData(null);
-            }} 
-            className="chatbox-reset"
-          >
-            {showPaywall ? "Buy More Setups" : "Start New Prop Firm Analysis"}
-          </button>
-        </div>
-      )}
+  {/* STEP 4: RESET BUTTON - After analysis results */}
+{step === 4 && (
+  <div className="chatbot-input">
+    <button 
+      onClick={() => {
+        // Reset all state
+        setStep(0);
+        setSelectedFirm("");
+        setStage(null);
+        setCapital("");
+        setSymbol(null);
+        setMessages([]);
+        scrollLocked.current = false;
+        setTicketData(null);
+      }} 
+      className="chatbox-reset"
+    >
+      {showPaywall ? "Buy More Setups" : "Start New Prop Firm Analysis"}
+    </button>
+  </div>
+)}
     </div>
   );
 }

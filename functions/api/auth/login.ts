@@ -27,7 +27,7 @@ export async function onRequestPost(context: any) {
 
     // Get user from database
     const user = await env.DB.prepare(
-      `SELECT u.id, u.email, u.display_name, u.photo_url, 
+      `SELECT u.id, u.email, u.display_name, 
               u.email_verified, u.license_type, u.setup_count, u.referral_code,
               up.password_hash
        FROM users u
@@ -109,26 +109,17 @@ export async function onRequestPost(context: any) {
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Login successful',
-        token: token, // UUID token
+        token: token,
         user: {
           id: user.id,
           email: user.email,
           display_name: user.display_name,
-          photo_url: user.photo_url,
+          photo_url: user.photo_url || null, // Safe access
           license_type: user.license_type || 'free',
-          email_verified: Boolean(user.email_verified),
-          setup_count: user.setup_count || 0,
-          referral_code: user.referral_code
+          setup_count: user.setup_count || 0
         }
       }),
-      { 
-        status: 200,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      }
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
 
   } catch (error: any) {

@@ -13,41 +13,6 @@ import toast from "react-hot-toast";
 
 export const dynamic = "force-dynamic";
 
-// Email Verification Message
-function EmailVerificationMessage() {
-  const [sending, setSending] = useState(false);
-
-  const handleResend = async () => {
-    setSending(true);
-    try {
-      // TODO: Implement email verification resend with Cloudflare
-      toast.success("Verification email sent! Check your inbox.");
-    } catch (error) {
-      console.error("Error sending verification:", error);
-      toast.error("Failed to send verification email");
-    } finally {
-      setSending(false);
-    }
-  };
-
-  return (
-    <div className="verify-message">
-      <div className="verify-content">
-        <span>📧</span>
-        <div>
-          <strong>Verify your email</strong> - Check your inbox for the verification link.
-        </div>
-        <button 
-          onClick={handleResend}
-          disabled={sending}
-          className="verify-resend-btn"
-        >
-          {sending ? "Sending..." : "Resend"}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function DashboardContent() {
   const { user, loading, setupCount, refreshUser, logout: logoutFromHook } = useUser();
@@ -422,7 +387,7 @@ function DashboardContent() {
               <p>Ready to analyze the markets with AI-powered insights</p>
             </div>
 
-            <EmailVerificationMessage />
+            
 
             {/* Setup Credits Card */}
             <div className="status-card">

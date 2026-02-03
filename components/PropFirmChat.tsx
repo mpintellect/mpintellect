@@ -1120,7 +1120,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
     );
   }
 
-  return (
+    return (
     <div className="chatbox-wrapper section">
       {/* MODALS */}
       {showPricingModal && (
@@ -1146,6 +1146,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
           onClose={() => setTicketData(null)} 
         />
       )}
+
 
       <div className="chatbox-body" ref={chatRef}>
         {messages.map((msg, idx) => (
@@ -1181,7 +1182,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
                             handleFirmSelect(action.value);
                           } else if (step === 1) {
                             handleStageSelect(action.value);
-                          } else if (step === 3 && ALL_SYMBOLS.includes(action.value as SymbolKey)) {
+                          } else if (step === 3 && (action.value)) {
                             executePropAnalysis(action.value as SymbolKey);
                           }
                         }}
@@ -1242,7 +1243,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
             value={symbol || ""}
             onChange={(e) => {
               const selected = e.target.value;
-              if (ALL_SYMBOLS.includes(selected as SymbolKey)) {
+               {
                 executePropAnalysis(selected as SymbolKey);
               }
             }}
@@ -1257,27 +1258,26 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
           </select>
         </div>
       )}
-  {/* STEP 4: RESET BUTTON - After analysis results */}
-{step === 4 && (
-  <div className="chatbot-input">
-    <button 
-      onClick={() => {
-        // Reset all state
-        setStep(0);
-        setSelectedFirm("");
-        setStage(null);
-        setCapital("");
-        setSymbol(null);
-        setMessages([]);
-        scrollLocked.current = false;
-        setTicketData(null);
-      }} 
-      className="chatbox-reset"
-    >
-      {showPaywall ? "Buy More Setups" : "Start New Prop Firm Analysis"}
-    </button>
-  </div>
-)}
+
+      {/* STEP 4: RESET BUTTON */}
+      {step === 4 && (
+        <div className="chatbot-input">
+          <button 
+            onClick={() => {
+              setStep(0);
+              setSelectedFirm("");
+              setStage(null);
+              setCapital("");
+              setSymbol(preselectedSymbol && (preselectedSymbol) ? preselectedSymbol as SymbolKey : null);
+              setMessages([]);
+              setTicketData(null);
+            }} 
+            className="chatbox-reset"
+          >
+            {showPaywall ? "Buy More Setups" : "Start New Prop Firm Analysis"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

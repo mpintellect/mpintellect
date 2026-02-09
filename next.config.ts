@@ -1,23 +1,26 @@
 import type { NextConfig } from 'next';
 
+const isProd = process.env.NODE_ENV === 'production';
+
 const nextConfig: NextConfig = {
-  // 1. Static export for production, normal server for dev
-  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
+  // 1. Static export for production
+  output: isProd ? 'export' : undefined,
   typescript: { ignoreBuildErrors: true },
   images: { unoptimized: true },
   
-  // 2. THE PROXY: This connects your UI (3000) to your Database (8788)
+  // 2. THE PROXY: Only enabled in development. 
+  // In production (Cloudflare), the /functions folder handles /api automatically.
   async rewrites() {
+    if (isProd) return []; 
     return [
       {
         source: '/api/:path*',
-        destination: 'http://127.0.0.1:8788/api/:path*',
+        destination: 'http://localhost:8788/api/:path*',
       },
     ];
   },
   
-  // 3. Next.js 16 requirements
-  turbopack: {},
+  // 3. Webpack configuration (Next.js 16)
   webpack: (config: any) => {
     config.module.rules.push({ test: /\.svg$/, use: ['@svgr/webpack'] });
     return config;

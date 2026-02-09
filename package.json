@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npx next dev\" \"npx wrangler pages dev ./public --port 8788 --compatibility-flags=nodejs_compat --d1 DB=mzprimer-db --persist-to=./.wrangler/state\"",
-    "build": "next build --webpack",
-    "prebuild": "rm -rf .next out",
-    "init-db": "npx wrangler d1 execute mzprimer-db --local --file=./schema.sql --persist-to=./.wrangler/state"
+  "dev": "concurrently \"npx next dev\" \"npx wrangler pages dev ./public --port 8788 --compatibility-flags=nodejs_compat --d1 DB=mzprimer-db --persist-to=./.wrangler/state\"",
+  "build": "next build",
+  "pages:build": "npm run build",
+  "prebuild": "rm -rf .next out",
+  "init-db": "npx wrangler d1 execute mzprimer-db --local --file=./schema.sql --persist-to=./.wrangler/state"
 },
   "dependencies": {
     "@noble/hashes": "^2.0.0",

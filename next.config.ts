@@ -1,28 +1,26 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // Keep exactly as is - Cloudflare Pages needs this
+  // 1. Static export for production, normal server for dev
   output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
-  
   typescript: { ignoreBuildErrors: true },
+  images: { unoptimized: true },
   
-  images: {
-    unoptimized: true,
-    qualities: [75, 85],
-  },
-
-  // Add ONLY this for local development
+  // 2. THE PROXY: This connects your UI (3000) to your Database (8788)
   async rewrites() {
-    // Proxy API calls to wrangler during local dev
-    if (process.env.NODE_ENV === 'development') {
-      return [
-        {
-          source: '/api/:path*',
-          destination: 'http://localhost:8788/api/:path*',
-        },
-      ];
-    }
-    return [];
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://127.0.0.1:8788/api/:path*',
+      },
+    ];
+  },
+  
+  // 3. Next.js 16 requirements
+  turbopack: {},
+  webpack: (config: any) => {
+    config.module.rules.push({ test: /\.svg$/, use: ['@svgr/webpack'] });
+    return config;
   },
 };
 

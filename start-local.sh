@@ -1,27 +1,36 @@
 #!/bin/bash
-# start-local.sh - Complete local development setup
 
-echo "🚀 Starting MZPrimer Local Development..."
+echo "🚀 Starting integrated dev server..."
 
-# 1. Clean everything
-echo "🧹 Cleaning previous builds..."
-rm -rf .next out .wrangler/state/v3
+# Kill existing
+pkill -f "wrangler" 2>/dev/null
+pkill -f "next" 2>/dev/null
 
-# 2. Build the app
-echo "🔨 Building application..."
-npm run build
-
-# 3. Start Wrangler with D1
-echo "🌐 Starting Wrangler Pages Dev Server on port 8788..."
-echo ""
-echo "⚠️  IMPORTANT: When server starts, open a NEW terminal and run:"
-echo "   curl -X POST http://localhost:8788/init-db"
-echo ""
-echo "Then you can register at: http://localhost:8788/client/register"
-echo ""
-
-# Start the server (foreground, so you see logs)
-npx wrangler pages dev out \
-  --d1 DB=mzprimer-db \
+# Start the combined server
+npx wrangler pages dev ./public \
+  --port 8789 \
+  --proxy 3000 \
   --compatibility-flags=nodejs_compat \
-  --port 8788
+  --d1 DB=mzprimer-db \
+  --persist-to=./.wrangler/state \
+  --command "npx next dev" &
+
+# Wait for server to start
+sleep 5
+
+# Initialize database
+echo "🗄️ Initializing database..."
+curl -X POST http://localhost:8789/api/init-db
+
+echo ""
+echo "✅ READY!"
+echo "👉 Frontend (hot reload): http://localhost:3000"
+echo "👉 API server: http://localhost:8789"
+echo "👉 Database: Included and persistent"
+echo ""
+echo "📝 Edit any file and refresh browser!"
+echo "🛑 Press Ctrl+C in this terminal to stop"
+echo ""
+
+# Keep running
+wait

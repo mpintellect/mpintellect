@@ -1,6 +1,7 @@
 'use client';
+
 import { useState, useEffect } from 'react';
-import { X, BarChart2, BrainCircuit } from 'lucide-react';
+import { X, Share2, BrainCircuit } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function MarketPollModal({ data, onClose }: any) {
@@ -8,42 +9,54 @@ export default function MarketPollModal({ data, onClose }: any) {
   const [hasVoted, setHasVoted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 1. Initial Load
   useEffect(() => {
-    fetch(`/api/polls/${data.id}`).then(res => res.json()).then(res => {
-      if (res.success) setStats(res.poll);
-    });
+    async function init() {
+      const res = await fetch(`/api/polls/${data.id}`);
+      const json = await res.json();
+      if (json.success) setStats(json.poll);
+    }
+    init();
     if (localStorage.getItem(`voted_${data.id}`)) setHasVoted(true);
   }, [data.id]);
 
-  // 2. Voting Logic
   const handleVote = async (choice: 'low' | 'medium' | 'high') => {
+    if (loading || hasVoted) return;
+    
     setLoading(true);
     try {
       const token = localStorage.getItem('cf_token') || localStorage.getItem('mz_token');
       const userRaw = localStorage.getItem('cf_user') || localStorage.getItem('mz_user');
+      
       if (!token || !userRaw) {
-        toast.error("Please login to vote");
+        toast.error("Please log in to vote");
+        setLoading(false);
         return;
       }
+      
       const user = JSON.parse(userRaw);
 
       const res = await fetch(`/api/polls/${data.id}`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vote: choice, userId: user.id, userName: user.display_name })
+        headers: { 
+          'Authorization': `Bearer ${token}`, 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ 
+          vote: choice, 
+          userId: user.id, 
+          userName: user.display_name || 'Trader' 
+        })
       });
 
       const result = await res.json();
       if (result.success) {
-        // ✅ INSTANT EFFECT: Update stats from server response
         setStats(result.poll);
         setHasVoted(true);
         localStorage.setItem(`voted_${data.id}`, 'true');
-        toast.success("Thank you! Your vote has been recorded.");
+        toast.success("Vote recorded!");
       }
     } catch (e) {
-      toast.error("Vote failed. Try again.");
+      toast.error("Failed to submit vote");
     } finally {
       setLoading(false);
     }
@@ -51,61 +64,154 @@ export default function MarketPollModal({ data, onClose }: any) {
 
   const getPercent = (val: number) => stats.total === 0 ? 0 : Math.round((val / stats.total) * 100);
 
+  const handleShare = () => {
+    const text = `Market poll: ${data.headline}\n\nHigh: ${getPercent(stats.high)}%\nMedium: ${getPercent(stats.medium)}%\nLow: ${getPercent(stats.low)}%\n\nJoin the discussion at MZPrimer`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: 'Market Poll Results',
+        text: text,
+      });
+    } else {
+      navigator.clipboard.writeText(text);
+      toast.success("Results copied to clipboard");
+    }
+  };
+
   return (
-    <div className="poll-overlay fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="poll-card bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
-          <X size={24} />
-        </button>
+    <div className="market-poll-modal">
+      <div className="poll-card">
+        {/* Header */}
+        <div className="poll-header">
+          <div className="poll-symbol">{data.symbol || 'MARKET'}</div>
+          <button onClick={onClose} className="poll-close-btn">
+            <X size={20} />
+          </button>
+        </div>
 
-        <div className="p-8">
-          <div className="flex gap-2 text-[10px] font-bold text-blue-500 mb-4 uppercase tracking-widest">
-            <span className="px-2 py-1 bg-blue-500/10 rounded">{data.symbol}</span>
-            <span className="px-2 py-1 bg-zinc-800 rounded">LIVE_CONSENSUS</span>
+        {/* Content */}
+        <div className="poll-content">
+          {/* Headline */}
+          <h2 className="poll-headline">{data.headline || data.question}</h2>
+          <div className="poll-date">
+            <span>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+            <span>•</span>
+            <span>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
 
-          <h2 className="text-xl font-bold mb-4">{data.question}</h2>
+          {/* AI Insight */}
+          <div className="poll-ai-insight">
+            <div className="poll-ai-label">
+              <BrainCircuit size={16} />
+              News 
+            </div>
+            <p className="poll-ai-text">
+              {data.aiContext || "Market sentiment shows mixed signals with institutional positioning diverging from retail expectations."}
+            </p>
+          </div> 
 
-          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 mb-6">
-             <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 mb-2 uppercase">
-               <BrainCircuit size={14} /> AI Sentiment
-             </div>
-             <p className="text-sm text-zinc-400 leading-relaxed italic">"{data.aiContext}"</p>
-          </div>
-
+          {/* Voting / Results Section */}
           {!hasVoted ? (
-            <div className="space-y-4">
-              <p className="text-center text-xs font-bold text-zinc-500 uppercase">Rate expected market impact</p>
-              <div className="grid grid-cols-3 gap-3">
-                {['low', 'medium', 'high'].map((v) => (
-                  <button key={v} onClick={() => handleVote(v as any)} disabled={loading}
-                    className="py-4 rounded-xl border border-zinc-800 hover:border-blue-500 hover:bg-blue-500/5 font-bold uppercase transition-all">
-                    {loading ? '...' : v}
-                  </button>
-                ))}
+            <div className="poll-voting-section">
+              <h3 className="poll-voting-title">What's your impact projection on {data.symbol}?</h3>
+              
+              <div className="poll-options">
+                <button
+                  onClick={() => handleVote('low')}
+                  className={`poll-option low ${loading ? 'loading' : ''}`}
+                  disabled={loading}
+                >
+                  <span className="poll-emoji">📉</span>
+                  <span className="poll-option-label">Low Impact</span>
+                </button>
+
+                <button
+                  onClick={() => handleVote('medium')}
+                  className={`poll-option medium ${loading ? 'loading' : ''}`}
+                  disabled={loading}
+                >
+                  <span className="poll-emoji">⚖️</span>
+                  <span className="poll-option-label">Moderate</span>
+                </button>
+
+                <button
+                  onClick={() => handleVote('high')}
+                  className={`poll-option high ${loading ? 'loading' : ''}`}
+                  disabled={loading}
+                >
+                  <span className="poll-emoji">📈</span>
+                  <span className="poll-option-label">High Impact</span>
+                </button>
               </div>
+
+              <p className="poll-note">
+                Your vote contributes to real-time market sentiment analysis
+              </p>
             </div>
           ) : (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex justify-between items-end border-b border-zinc-800 pb-2">
-                <h3 className="text-green-400 font-bold">✓ VOTE_RECORDED</h3>
-                <span className="text-[10px] font-mono text-zinc-500">{stats.total} TOTAL_VOTES</span>
+            <div className="poll-results">
+              <div className="poll-results-header">
+                <h3 className="poll-results-title">Community Sentiment</h3>
+                <div className="poll-total-votes">{stats.total} votes</div>
               </div>
-              
-              {['high', 'medium', 'low'].map((label) => (
-                <div key={label}>
-                  <div className="flex justify-between text-xs font-bold mb-2 uppercase">
-                    <span className={label === 'high' ? 'text-red-400' : label === 'medium' ? 'text-yellow-400' : 'text-blue-400'}>{label} Impact</span>
-                    <span>{getPercent((stats as any)[label])}%</span>
-                  </div>
-                  <div className="h-2 w-full bg-black rounded-full overflow-hidden border border-zinc-800">
-                    <div className={`h-full transition-all duration-1000 ${label === 'high' ? 'bg-red-500' : label === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'}`} 
-                         style={{ width: `${getPercent((stats as any)[label])}%` }} />
-                  </div>
+
+              <div className="poll-result-bar">
+                <div className="poll-bar-header">
+                  <span className="poll-bar-label">High Impact</span>
+                  <span className="poll-bar-percent">{getPercent(stats.high)}%</span>
                 </div>
-              ))}
-              
-              <button onClick={onClose} className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 rounded-xl font-bold uppercase transition">Return to Intelligence</button>
+                <div className="poll-bar-track">
+                  <div 
+                    className="poll-bar-fill high"
+                    style={{ width: `${getPercent(stats.high)}%` }}
+                  />
+                </div>
+                <div className="poll-bar-count">{stats.high} votes</div>
+              </div>
+
+              <div className="poll-result-bar">
+                <div className="poll-bar-header">
+                  <span className="poll-bar-label">Moderate</span>
+                  <span className="poll-bar-percent">{getPercent(stats.medium)}%</span>
+                </div>
+                <div className="poll-bar-track">
+                  <div 
+                    className="poll-bar-fill medium"
+                    style={{ width: `${getPercent(stats.medium)}%` }}
+                  />
+                </div>
+                <div className="poll-bar-count">{stats.medium} votes</div>
+              </div>
+
+              <div className="poll-result-bar">
+                <div className="poll-bar-header">
+                  <span className="poll-bar-label">Low Impact</span>
+                  <span className="poll-bar-percent">{getPercent(stats.low)}%</span>
+                </div>
+                <div className="poll-bar-track">
+                  <div 
+                    className="poll-bar-fill low"
+                    style={{ width: `${getPercent(stats.low)}%` }}
+                  />
+                </div>
+                <div className="poll-bar-count">{stats.low} votes</div>
+              </div>
+
+              <div className="poll-actions">
+                <button onClick={handleShare} className="poll-share-btn">
+                  <Share2 size={16} />
+                  Share Results
+                </button>
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem(`voted_${data.id}`);
+                    setHasVoted(false);
+                  }}
+                  className="poll-change-vote"
+                >
+                  Change Vote
+                </button>
+              </div>
             </div>
           )}
         </div>

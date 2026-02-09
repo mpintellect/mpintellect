@@ -1,29 +1,30 @@
 import type { NextConfig } from 'next';
 
-const isProd = process.env.NODE_ENV === 'production';
-
 const nextConfig: NextConfig = {
-  // 1. Static export for production
-  output: isProd ? 'export' : undefined,
+  // Keep exactly as is - Cloudflare Pages needs this
+  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
+
   typescript: { ignoreBuildErrors: true },
-  images: { unoptimized: true },
-  
-  // 2. THE PROXY: Only enabled in development. 
-  // In production (Cloudflare), the /functions folder handles /api automatically.
-  async rewrites() {
-    if (isProd) return []; 
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'http://localhost:8788/api/:path*',
-      },
-    ];
+
+  images: {
+    unoptimized: true,
   },
-  
-  // 3. Webpack configuration (Next.js 16)
-  webpack: (config: any) => {
-    config.module.rules.push({ test: /\.svg$/, use: ['@svgr/webpack'] });
-    return config;
+
+  // Required for Next.js 16 to allow custom build flags/webpack fallbacks
+  turbopack: {},
+
+  // Add ONLY this for local development
+  async rewrites() {
+    // Proxy API calls to wrangler during local dev
+    if (process.env.NODE_ENV === 'development') {
+      return [
+        {
+          source: '/api/:path*',
+          destination: 'http://localhost:8788/api/:path*',
+        },
+      ];
+    }
+    return [];
   },
 };
 

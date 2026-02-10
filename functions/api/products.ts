@@ -1,25 +1,40 @@
-// app/api/products/route.ts
-import { NextResponse } from "next/server";
-import { PRODUCTS, ensureOrdersHydrated } from "../../app/lib/orders";
+// functions/api/products.ts
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+// 1. We define the products locally or import them from a LIGHTWEIGHT file. 
+// Avoid importing from 'app/lib/orders' if that file uses 'fs' or Node.js libs.
+const PRODUCTS_DATA = {
+  "ai-assistant-monthly": { id: "ai-assistant-monthly", name: "AI Assistant Monthly", priceUsd: 6, available: true, type: "subscription" },
+  "ai-assistant-pro": { id: "ai-assistant-pro", name: "AI Assistant Pro", priceUsd: 30, available: true, type: "subscription" },
+  "scalper-x1": { id: "scalper-x1", name: "Scalper X1 Robot", priceUsd: 199, available: true, type: "one_time" },
+  "fibonacci-pro": { id: "fibonacci-pro", name: "Fibonacci Pro", priceUsd: 149, available: true, type: "one_time" },
+  "trend-seeker-ai": { id: "trend-seeker-ai", name: "Trend Seeker AI", priceUsd: 129, available: true, type: "one_time" },
+  "hedge-matrix": { id: "hedge-matrix", name: "Hedge Matrix", priceUsd: 299, available: true, type: "one_time" },
+};
 
-const hasFilePath = (x: any): x is { filePath: string } =>
-  typeof x?.filePath === "string" && x.filePath.length > 0;
+const HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Content-Type": "application/json",
+};
 
-export async function GET() {
-  // make sure products/orders are hydrated (safe no-op if already done)
-  await ensureOrdersHydrated();
+export async function onRequestGet() {
+  try {
+    const list = Object.values(PRODUCTS_DATA)
+      .filter((p: any) => p.available)
+      .map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        priceUsd: p.priceUsd,
+        type: p.type,
+      }));
 
-  const list = Object.values(PRODUCTS)
-    .filter((p: any) => p.available)
-    .map((p: any) => ({
-      id: p.id,
-      name: p.name,
-      priceUsd: p.priceUsd,
-      type: hasFilePath(p) ? "one_time" : "subscription",
-    }));
-
-  return Response.json({ ok: true, products: list });
+    return new Response(JSON.stringify({ ok: true, products: list }), {
+      status: 200,
+      headers: HEADERS
+    });
+  } catch (error: any) {
+    return new Response(JSON.stringify({ ok: false, error: error.message }), {
+      status: 500,
+      headers: HEADERS
+    });
+  }
 }

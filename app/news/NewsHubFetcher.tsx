@@ -1,67 +1,38 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Search, Filter, Clock } from 'lucide-react';
-import NewsCard from '../../components/NewsCard';
-import { useNews } from '../../app/hooks/useNews';
+import { useState, useEffect } from 'react';
+import MarketPollModal from '../../components/news/MarketPollModal';
 
-const CATEGORIES = ["ALL", "FOREX", "CRYPTO", "STOCKS", "COMMODITIES"];
 
-export default function NewsHub() {
-  const { news, loading } = useNews();
-  const [activeCat, setActiveCat] = useState("ALL");
-  const [search, setSearch] = useState("");
+export default function NewsHubFetcher() {
+  const [news, setNews] = useState([]);
+  const [selected, setSelected] = useState<any>(null);
 
-  const filteredNews = news.filter(item => {
-    const matchesCat = activeCat === "ALL" || item.category === activeCat;
-    const matchesSearch = item.headline.toLowerCase().includes(search.toLowerCase());
-    return matchesCat && matchesSearch;
-  });
+  useEffect(() => {
+    fetch('https://data.mzprimer.com/news.json')
+      .then(res => res.json())
+      .then(setNews);
+  }, []);
 
   return (
-    <div className="news-hub-wrapper">
-      <header className="hub-header">
-        <div className="hub-title-area">
-          <h1 className="hub-title">Market Intelligence</h1>
-          <div className="hub-subtitle">
-            <span className="live-pulse"></span>
-            Real-time Institutional Feed
+    <div className="news-container">
+      <h1 className="text-2xl font-bold mb-8 border-b border-gray-800 pb-4">LIVE_INTEL_FEED</h1>
+      <div className="news-grid">
+        {news.map((item: any) => (
+          <div key={item.id} className="news-card" onClick={() => setSelected(item)}>
+            <div>
+              <div className="card-symbol">{item.symbol}</div>
+              <h2 className="card-headline">{item.headline}</h2>
+            </div>
+            <div className="card-meta">
+              <span>{item.source || 'Reuters'}</span>
+              <span>{new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+            </div>
           </div>
-        </div>
+        ))}
+      </div>
 
-        <div className="hub-controls">
-          <div className="search-box">
-            <Search size={16} className="search-icon" />
-            <input 
-              type="text" 
-              placeholder="Filter intelligence..." 
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <div className="category-strip">
-            {CATEGORIES.map(cat => (
-              <button 
-                key={cat}
-                className={`cat-btn ${activeCat === cat ? 'active' : ''}`}
-                onClick={() => setActiveCat(cat)}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
-
-      {loading ? (
-        <div className="hub-loading">Initialising data stream...</div>
-      ) : (
-        <div className="news-grid">
-          {filteredNews.map(item => (
-            <NewsCard key={item.id} data={item} />
-          ))}
-        </div>
-      )}
+      {selected && <MarketPollModal data={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }

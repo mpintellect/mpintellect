@@ -7,13 +7,13 @@ import { Menu, X } from 'lucide-react';
 const navItems = [
   { label: 'Home', href: '/' },
   { label: 'AI Chat', href: '/AIChat' },
+  { label: 'News', href: '/news' },
    { label: '🔴 LIVE MARKETS', href: '/markets' }, 
   { label: 'Prop Trading', href: '/prop-firm' },
   { label: 'Trading Robots', href: '/ai-robot' },
   { label: 'AI Assistant', href: '/tools/ai-assistant' },
   { label: 'Contact', href: '/#contacts' },
   { label: 'Privacy', href: '/legal' },
-  { label: 'Blog', href: '/blog' },
   { label: 'LOGIN', href: '/client/login' },
 ];
 

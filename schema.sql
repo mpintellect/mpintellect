@@ -170,3 +170,31 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_setups_user ON setups(user_id);
 CREATE INDEX IF NOT EXISTS idx_news_slug ON news_articles(slug);
 CREATE INDEX IF NOT EXISTS idx_push_endpoint ON push_subscriptions(endpoint);
+-- 11. Market Polls (Unified System)
+CREATE TABLE IF NOT EXISTS market_polls (
+  id TEXT PRIMARY KEY,
+  question TEXT,
+  symbol TEXT,
+  category TEXT,
+  votes_low INTEGER DEFAULT 0,
+  votes_medium INTEGER DEFAULT 0,
+  votes_high INTEGER DEFAULT 0,
+  total_votes INTEGER DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS poll_votes (
+  id TEXT PRIMARY KEY,
+  poll_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  user_name TEXT,
+  vote TEXT NOT NULL CHECK (vote IN ('low', 'medium', 'high')),
+  voted_at TEXT NOT NULL,
+  UNIQUE(poll_id, user_id),
+  FOREIGN KEY (poll_id) REFERENCES market_polls(id) ON DELETE CASCADE
+);
+
+-- 12. Poll Indexes
+CREATE INDEX IF NOT EXISTS idx_poll_votes_poll_id ON poll_votes(poll_id);
+CREATE INDEX IF NOT EXISTS idx_poll_votes_user_id ON poll_votes(user_id);

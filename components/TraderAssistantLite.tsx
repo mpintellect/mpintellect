@@ -139,7 +139,7 @@ function styleParams(style: StyleKey) {
   return                         { name: 'Balanced',         slPips: 20, rr: 2.0 };
 }
 
-function fmt(sUS30: SymbolKey, v: number) {
+function fmt(sym: SymbolKey, v: number) {
   return v.toFixed(DECIMALS[sym] ?? 2);
 }
 

@@ -1,5 +1,6 @@
 [
   {
+    "date": "2026-01-15",
     "id": "venezuela_us_oil_q1_2026",
     "symbol": "BRENT",
     "headline": "🛢️ Venezuela Infrastructure Shock?",
@@ -8,6 +9,8 @@
     "category": "Geopolitics"
   },
   {
+    
+    "date": "2026-01-15",
     "id": "iran_venezuela_crisis",
     "symbol": "XAUUSD",
     "headline": "⚠️ Iran-Venezuela Escalation",
@@ -16,6 +19,8 @@
     "category": "Macro Risk"
   },
   {
+    
+    "date": "2026-01-15", 
     "id": "central_bank_gold_2026",
     "symbol": "XAUUSD",
     "headline": "🏦 Central Bank Gold Rush",
@@ -32,6 +37,7 @@
     "category": "Geopolitics"
   },
   {
+    "date": "2026-01-15",
     "id": "venezuela_drug_crypto",
     "symbol": "BTCUSD",
     "headline": "💊 Narco-Capital Flight to Crypto?",
@@ -40,6 +46,8 @@
     "category": "Crypto Flow"
   },
   {
+    
+    "date": "2026-01-15",
     "id": "trump_venezuela_resale",
     "symbol": "BRENT",
     "headline": "📉 Trump Oil Strategy",
@@ -72,6 +80,7 @@
     "category": "Conflict"
   },
   {
+    "date": "2026-01-15",
     "id": "precious_metals_2026",
     "symbol": "XAGUSD",
     "headline": "🥈 Silver Breakout 2026?",
@@ -80,14 +89,16 @@
     "category": "Trend Analysis"
   },
   {
-    "id": "crypto_bounce_venezuela",
-    "symbol": "ETHUSD",
+    "date": "2026-01-15",
+    "id": "war_driven_crypto_bounce",
+    "symbol": "BTCUSD",
     "headline": "📈 War-Driven Crypto Bounce?",
     "question": "Is the recent crypto market bounce driven by capital flight from the Venezuela conflict?",
     "aiContext": "Correlation between geopolitical instability and Crypto buy-pressure has reached 0.85. Investors are using ETH and BTC as non-sovereign stores of value during regime changes.",
     "category": "Crypto Macro"
   },
   {
+    "date": "2026-01-15",
     "id": "middle_east_oil_diversion",
     "symbol": "BRENT",
     "headline": "🌍 Middle East Distraction?",

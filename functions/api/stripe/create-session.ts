@@ -24,10 +24,15 @@ export async function onRequestPost(context: any) {
     const origin = env.NEXT_PUBLIC_SITE_URL || url.origin;
     const isSub = lookupKey === "ai-assistant-monthly";
 
-    // ✅ FIXED SUCCESS URL
+    // ✅ SUCCESS URL
     const successUrl = isSub 
       ? `${origin}/tools/ai-assistant?active&session_id={CHECKOUT_SESSION_ID}`
       : `${origin}/client/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`;
+
+    // ✅ CANCEL URL - conditional based on product type
+    const cancelUrl = isSub 
+      ? `${origin}/checkout?status=canceled`  // AI Assistant monthly
+      : `${origin}/client/dashboard?status=canceled`; // Setups 10, 20, 30
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -35,7 +40,7 @@ export async function onRequestPost(context: any) {
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: email || undefined,
       success_url: successUrl,
-      cancel_url: `${origin}/checkout?status=canceled`,
+      cancel_url: cancelUrl,
       metadata: { userId: userId || email || "guest", plan: lookupKey },
     });
 

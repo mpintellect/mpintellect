@@ -3,9 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-  "build": "next build",
-  "test:prod": "npm run build && npx wrangler d1 export mzprimer-db --remote --output=./live_snap.sql && rm -rf ./.prod_db && npx wrangler d1 execute mzprimer-db --local --file=./live_snap.sql --persist-to=./.prod_db && npx wrangler pages dev out --d1 DB=mzprimer-db --persist-to=./.prod_db --port 8788 --compatibility-flags=nodejs_compat"
-},
+    "build": "next build --webpack",
+    "pages:build": "npm run build",
+    "prebuild": "rm -rf .next out",
+    "preview": "npm run build && npx wrangler pages dev out --compatibility-flags=nodejs_compat --d1 DB=074ccc04-d574-4164-8f48-0b6444b9db88",
+    "cf:dev": "npx wrangler pages dev --port 3000 --proxy 3001 --command \"next dev -p 3001\" --compatibility-flags=nodejs_compat --d1 DB=074ccc04-d574-4164-8f48-0b6444b9db88",
+    "test:functions": "npx wrangler pages dev --port 8788 --d1 DB=074ccc04-d574-4164-8f48-0b6444b9db88",
+    "db:pull": "npx wrangler d1 export mzprimer-db --remote --output=./live_backup.sql",
+    "dev": "concurrently \"npx next dev\" \"npx wrangler pages dev ./public --port 8788 --compatibility-flags=nodejs_compat --d1 DB=074ccc04-d574-4164-8f48-0b6444b9db88\"",
+    "test:live": "npm run build && npx wrangler pages deploy ./public --branch=live-test --commit-dirty=true"
+  }
+,
   "dependencies": {
     "@noble/hashes": "^2.0.0",
     "@noble/secp256k1": "^3.0.0",

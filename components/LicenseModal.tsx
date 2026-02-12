@@ -36,7 +36,7 @@ export default function LicenseModal({ open, value, onChange, onClose, onSave }:
     const { getDeviceFingerprint } = await import('@/app/utils/fingerprint.client');
     const fp = await getDeviceFingerprint();
 
-    const r = await fetch('/api/license/activate', {
+    const r = await fetch('/api/license-activate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key, fingerprint: fp }),

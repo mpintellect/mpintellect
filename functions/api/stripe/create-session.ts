@@ -4,96 +4,43 @@ const SETUP_PRICE_MAP: Record<string, string> = {
   "10": "price_1SVbAXDoB4i1qeaLC32KJQ6L",
   "20": "price_1SVWWXDoB4i1qeaL2dquhtfv",
   "30": "price_1SSyUORmR6ESDQvo7dzPKmPt",
-  "ai-assistant-monthly": "price_1S3xrHDoB4i1qeaLovARa0k0", // ✅ ADDED NEW PRICE
+  "ai-assistant-monthly": "price_1S2Zd3RmR6ESDQvoermVMV5l", 
 };
 
 export async function onRequestPost(context: any) {
   const { request, env } = context;
-
-  // 1. Initialize Stripe safely
-  const stripeKey = env.STRIPE_SECRET_KEY;
-  if (!stripeKey) {
-    return new Response(JSON.stringify({ error: "Stripe Secret Key missing in Cloudflare Functions settings" }), { 
-      status: 500, 
-      headers: { 'Content-Type': 'application/json' } 
-    });
-  }
-
-  const stripe = new Stripe(stripeKey, { 
+  const stripe = new Stripe(env.STRIPE_SECRET_KEY, { 
     // @ts-ignore
     apiVersion: "2024-06-20" 
   });
 
   try {
-    // 2. Safe JSON parsing
     const body = await request.json().catch(() => ({}));
-    
-    // UPDATED: Destructure both plan and productId to support existing and new checkout logic
-    const { userId, plan, email, productId, buyerName } = body;
-    
-    // Determine which key to use for the lookup
+    const { userId, plan, email, productId } = body;
     const lookupKey = plan || productId; 
     const priceId = SETUP_PRICE_MAP[lookupKey];
 
-    // FIX: If user is not logged in, we use 'guest' or email to prevent 400 error
-    const finalUserId = userId || email || "guest";
-
-    if (!priceId || !finalUserId) {
-      return new Response(JSON.stringify({ error: "Missing product selection or identifier", received: lookupKey }), { status: 400 });
-    }
-
-    // 3. THE CRITICAL FIX: Ensure Absolute URLs for Stripe
     const url = new URL(request.url);
     const origin = env.NEXT_PUBLIC_SITE_URL || url.origin;
+    const isSub = lookupKey === "ai-assistant-monthly";
 
-    console.log(`💰 Creating Stripe session for User: ${finalUserId}, Product: ${lookupKey}`);
-
-    // Detect if this is a subscription (Monthly AI Assistant) or a one-time payment (Credits)
-    const isSubscription = lookupKey === "ai-assistant-monthly";
+    // ✅ FIXED SUCCESS URL
+    const successUrl = isSub 
+      ? `${origin}/tools/ai-assistant?active&session_id={CHECKOUT_SESSION_ID}`
+      : `${origin}/client/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      mode: isSubscription ? "subscription" : "payment", // ✅ Uses subscription mode for the new price
+      mode: isSub ? "subscription" : "payment",
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: email || undefined,
-      success_url: `${origin}/client/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}&plan=${lookupKey}&action=checkout`,
-      cancel_url: `${origin}/client/dashboard?payment=canceled`,
-      metadata: { 
-        userId: finalUserId, 
-        plan: lookupKey,
-        buyerName: buyerName || "Anonymous"
-      },
+      success_url: successUrl,
+      cancel_url: `${origin}/checkout?status=canceled`,
+      metadata: { userId: userId || email || "guest", plan: lookupKey },
     });
 
-    // 4. Return with CORS headers
-    return new Response(JSON.stringify({ success: true, ok: true, url: session.url }), {
-      status: 200,
-      headers: { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      }
-    });
-
+    return new Response(JSON.stringify({ ok: true, url: session.url }), { status: 200 });
   } catch (error: any) {
-    console.error("❌ Stripe Production Error:", error.message);
-    return new Response(JSON.stringify({ 
-      error: "Stripe API Failure", 
-      details: error.message 
-    }), { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
-}
-
-// Handle pre-flight OPTIONS request for CORS
-export async function onRequestOptions() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400',
-    },
-  });
 }

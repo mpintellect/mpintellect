@@ -156,56 +156,66 @@ export default function TraderAssistantLite() {
 const [usageCount, setUsageCount] = useState(0);
 const [isSubscribed, setIsSubscribed] = useState(false);
 
-// load counters & subscription on mount
 useEffect(() => {
-  // 1) sync bits (counter)
+  // 1. Load local usage counters (Lite users)
   try {
     const raw = localStorage.getItem('mz_ai_uses');
     let u = Number.parseInt(raw ?? '0', 10);
-    if (!Number.isFinite(u) || u < 0 || u > 1000) u = 0; // clamp
+    if (!Number.isFinite(u) || u < 0) u = 0;
     setUsageCount(u);
   } catch {}
 
-  let mounted = true;
-  // 2) async bits (license + fingerprint)
-  (async () => {
+  // 2. Identify current state from URL
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session_id');
+  const activeFlag = params.get('active');
+
+async function handleLicenseSync() {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    const activeFlag = params.get('active');
+
+    // Helper to perform the actual fetch
+    const checkLicense = async (payload: object) => {
+      const res = await fetch('/api/license-activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      return await res.json();
+    };
+
     try {
-      const subFlag = localStorage.getItem('mz_ai_subscribed') === '1';
+      let result = null;
 
-      // license from localStorage (string)
-      const stored = (localStorage.getItem('mz_ai_license') || '').trim();
-      const storedValid = stored.length >= 10;
+      if (sessionId && activeFlag !== null) {
+        // 🔄 RETRY LOGIC: Try 3 times with 2-second delays
+        for (let i = 0; i < 3; i++) {
+          console.log(`🚀 Activation attempt ${i + 1}...`);
+          result = await checkLicense({ sessionId });
+          if (result.ok) break;
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s
+        }
+      } else {
+        const savedKey = localStorage.getItem('mz_ai_license');
+        if (savedKey) result = await checkLicense({ key: savedKey });
+      }
 
-      // license from helper (could be string or {key, expiresAt})
-      let helper: any = null;
-      try {
-        helper = await (typeof readLocalLicense === 'function' ? readLocalLicense() : null);
-      } catch {}
-      const helperKey   = typeof helper === 'string' ? helper : helper?.key;
-      const helperExp   = typeof helper === 'object' ? helper?.expiresAt : undefined;
-      const now         = Date.now();
-      const helperValid = !!helperKey && (!helperExp || Number(helperExp) > now);
+      if (result?.ok) {
+        setIsSubscribed(true);
+        localStorage.setItem('mz_ai_subscribed', '1');
+        localStorage.setItem('mz_ai_license', result.license.key);
+        if (sessionId) window.history.replaceState({}, document.title, window.location.pathname);
+      } else {
+        console.warn("Activation failed:", result?.error);
+      }
+    } catch (e) {
+      console.error("System error", e);
+    }
+  }
 
-      if (mounted) setIsSubscribed(Boolean(subFlag || storedValid || helperValid));
-
-      // optional soft device fingerprint
-      try {
-        const fp = await (typeof getDeviceFingerprint === 'function' ? getDeviceFingerprint() : Promise.resolve(''));
-        if (fp) localStorage.setItem('mz_ai_device', fp);
-      } catch {}
-    } catch {}
-  })();
-
-  return () => { mounted = false; };
+  handleLicenseSync();
 }, []);
-
-  // persist usage counter
-  useEffect(() => {
-  try {
-    localStorage.setItem(USAGE_KEY, String(usageCount));
-    for (const k of LEGACY_USAGE_KEYS) localStorage.setItem(k, String(usageCount));
-  } catch {}
-}, [usageCount]);
 
   // persist subscription flag
   useEffect(() => {
@@ -313,14 +323,18 @@ useEffect(() => {
     return Math.max(0.01, Math.round(lots * 100) / 100);
   }, [balance, price, leverage, spec.contract, targetMarginPct, lot]);
 
-  /* ---------- Actions ---------- */
+/* ---------- Actions ---------- */
   const onGetAssistant = () => {
+  // Trigger result view
   setShowResults(true);
+
+  // If user is subbed, we do nothing more (unlimited)
   if (isSubscribed) return;
-  // increment AFTER showing, so current click is never blurred
+
+  // If not subbed, increment local counter
   setUsageCount(prev => {
     const next = prev + 1;
-    try { localStorage.setItem('mz_ai_uses', String(next)); } catch {}
+    localStorage.setItem('mz_ai_uses', String(next));
     return next;
   });
 };
@@ -336,7 +350,7 @@ const needsPaywall = !isSubscribed && usageCount >= FREE_USES;
         fingerprint = typeof maybeFp === 'string' ? maybeFp : undefined;
       } catch {}
 
-      const res = await fetch('/api/license/activate', {
+      const res = await fetch('/api/license-activate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: licenseKey.trim(), fingerprint }),

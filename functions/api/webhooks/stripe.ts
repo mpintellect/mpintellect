@@ -1,19 +1,18 @@
-// functions/api/webhooks/stripe.ts
-
 import Stripe from "stripe";
-import { execute, queryOne } from "../../../backend-lib/db-simple";
-import { sendOrderConfirmation } from "../../../backend-lib/email";
+import { execute } from '../../../backend-lib/db-simple';
+import { sendOrderConfirmation } from '../../../backend-lib/email';
 
-// Ensure these match your Stripe Dashboard exactly
 const SETUP_CREDITS: Record<string, number> = {
-  "price_1SSyQORmR6ESDQvobwheaXws": 10,
-  "price_1SSyRGRmR6ESDQvoKgAI9CAN": 20,
+  "price_1SVbAXDoB4i1qeaLC32KJQ6L": 10,
+  "price_1SVWWXDoB4i1qeaL2dquhtfv": 20,
   "price_1SSyUORmR6ESDQvo7dzPKmPt": 30,
 };
 
+// Check this matches your create-session.ts
+const MONTHLY_PLAN_ID = "price_1S2Zd3RmR6ESDQvoermVMV5l"; 
+
 export async function onRequestPost(context: any) {
   const { request, env } = context;
-
   const stripe = new Stripe(env.STRIPE_SECRET_KEY, { 
     // @ts-ignore
     apiVersion: "2024-06-20",
@@ -24,83 +23,83 @@ export async function onRequestPost(context: any) {
   const body = await request.text();
 
   try {
-    // 1. Verify Signature (Async for Cloudflare)
-    const event = await stripe.webhooks.constructEventAsync(
-      body, 
-      sig, 
-      env.STRIPE_WEBHOOK_SECRET_CHATBOT
-    );
+    const event = await stripe.webhooks.constructEventAsync(body, sig, env.STRIPE_WEBHOOK_SECRET);
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-      
-      // 2. Await the database and email process
       await handleCheckoutCompleted(session, stripe, env);
     }
-
     return new Response(JSON.stringify({ received: true }), { status: 200 });
   } catch (err: any) {
-    console.error("❌ Webhook Signature Error:", err.message);
     return new Response(JSON.stringify({ error: err.message }), { status: 400 });
   }
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe: Stripe, env: any) {
-  const userId = session.metadata?.userId;
+  const userId = session.metadata?.userId || 'guest';
   const customerEmail = session.customer_details?.email || session.customer_email;
   const sessionId = session.id;
 
-  if (!userId || !customerEmail) {
-    console.error("❌ Metadata missing in Stripe session");
-    return;
-  }
+  if (!customerEmail) return;
 
   try {
-    // 1. Get Product Details from Stripe
     const lineItems = await stripe.checkout.sessions.listLineItems(sessionId);
     const priceId = lineItems.data[0]?.price?.id || "";
-    const setupsToAdd = SETUP_CREDITS[priceId] || 10;
-    const now = Date.now();
+    
+    let generatedKey: string | undefined = undefined;
+    let expiryDate: string | undefined = undefined;
+    let prodName = "Setup Plan";
 
-    console.log(`📡 D1: crediting ${setupsToAdd} setups to ${userId}`);
-
-    // 2. Update User Credits
+    // 1. ENSURE USER ROW EXISTS (Upsert for Guests)
+    // This creates the row if it's a new email, otherwise does nothing
     await execute(
-      "UPDATE users SET setup_count = setup_count + ?, updated_at = datetime('now'), last_purchase_at = ? WHERE id = ?",
-      [setupsToAdd, now, userId]
+      `INSERT OR IGNORE INTO users (id, email, created_at, updated_at, setup_count) VALUES (?, ?, datetime('now'), datetime('now'), 0)`,
+      [userId === 'guest' ? crypto.randomUUID() : userId, customerEmail]
     );
 
-    // 3. Record Purchase (FIXED: Fills all NOT NULL columns from your schema)
+    // === LOGIC A: MONTHLY SUBSCRIPTION (License Key) ===
+    if (priceId === MONTHLY_PLAN_ID) {
+      prodName = "AI Assistant Pro (1 Month)";
+      generatedKey = `MZ-PRO-${Math.random().toString(36).toUpperCase().substring(2, 10)}`;
+      
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      expiryDate = d.toISOString();
+
+      console.log(`🔑 GUEST LICENSE ACTIVATED: ${generatedKey} for ${customerEmail}`);
+
+      await execute(
+        `UPDATE users SET license_type = 'pro', license_key = ?, license_expires_at = ?, updated_at = datetime('now') WHERE email = ?`,
+        [generatedKey, expiryDate, customerEmail]
+      );
+    } 
+    // === LOGIC B: SETUP CREDITS (Stays working) ===
+    else {
+      const setupsToAdd = SETUP_CREDITS[priceId] || 10;
+      await execute(
+        "UPDATE users SET setup_count = setup_count + ?, updated_at = datetime('now') WHERE email = ?",
+        [setupsToAdd, customerEmail]
+      );
+    }
+
+    // AUDIT LOG
     await execute(
-      `INSERT INTO stripe_purchases (
-        user_id, stripe_session_id, price_id, setup_count, amount_paid, 
-        currency, customer_email, status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?)`,
-      [
-        userId,
-        sessionId,
-        priceId,
-        setupsToAdd,
-        (session.amount_total || 0) / 100,
-        session.currency?.toUpperCase() || 'EUR',
-        customerEmail,
-        now,
-        now
-      ]
+      `INSERT INTO stripe_purchases (user_id, stripe_session_id, price_id, setup_count, amount_paid, customer_email, status, created_at, updated_at) 
+       VALUES (?, ?, ?, ?, ?, ?, 'completed', datetime('now'), datetime('now'))`,
+      [userId, sessionId, priceId, (priceId === MONTHLY_PLAN_ID ? 999 : 10), (session.amount_total || 0) / 100, customerEmail]
     );
 
-    // 4. Send Confirmation Email (Awaited)
-    console.log(`📧 Sending receipt to: ${customerEmail}`);
+    // DISPATCH PROFESSIONAL EMAIL (Resend)
     await sendOrderConfirmation({
       to: customerEmail,
       orderId: sessionId,
-      productName: `${setupsToAdd} Setup Plan`,
+      productName: prodName,
       amountPaid: (session.amount_total || 0) / 100,
+      licenseKey: generatedKey,
+      licenseExpiry: expiryDate
     }, env);
 
-    console.log("✅ Webhook Handled Successfully");
-
   } catch (err: any) {
-    console.error("💥 handleCheckoutCompleted Fatal Error:", err.message);
+    console.error("💥 Webhook Error:", err.message);
   }
 }

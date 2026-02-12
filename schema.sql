@@ -198,3 +198,56 @@ CREATE TABLE IF NOT EXISTS poll_votes (
 -- 12. Poll Indexes
 CREATE INDEX IF NOT EXISTS idx_poll_votes_poll_id ON poll_votes(poll_id);
 CREATE INDEX IF NOT EXISTS idx_poll_votes_user_id ON poll_votes(user_id);
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  license_type TEXT DEFAULT 'basic',
+  license_key TEXT UNIQUE,
+  license_expires_at DATETIME,
+  setup_count INTEGER DEFAULT 10,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS stripe_purchases (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  stripe_session_id TEXT UNIQUE NOT NULL,
+  price_id TEXT NOT NULL,
+  setup_count INTEGER DEFAULT 0,
+  amount_paid DECIMAL(10,2) NOT NULL,
+  customer_email TEXT NOT NULL,
+  status TEXT DEFAULT 'pending',
+  license_key TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS license_activations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  license_key TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  user_email TEXT NOT NULL,
+  fingerprint TEXT,
+  activated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (license_key) REFERENCES users(license_key)
+);
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  display_name TEXT,
+  photo_url TEXT,
+  email_verified INTEGER DEFAULT 0,
+  license_type TEXT DEFAULT 'free', -- Ensure this is here
+  license_key TEXT,                 -- Ensure this is here
+  license_expires_at TEXT,          -- Ensure this is here
+  referral_code TEXT UNIQUE,
+  setup_count INTEGER DEFAULT 2,
+  trial_count INTEGER DEFAULT 0,
+  last_email_opened INTEGER,
+  email_engagement_count INTEGER DEFAULT 0,
+  last_purchase_at INTEGER,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);

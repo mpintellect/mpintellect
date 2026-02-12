@@ -588,7 +588,7 @@ const needsPaywall = !isSubscribed && usageCount >= FREE_USES;
               className="ta-btn"
               onClick={() => (window.location.href = '/checkout')}
             >
-              Subscribe – $6 / month
+              Subscribe – $10 / month
             </button>
             <button
               className="ta-link-btn"

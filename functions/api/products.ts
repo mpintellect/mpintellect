@@ -3,7 +3,7 @@
 // 1. We define the products locally or import them from a LIGHTWEIGHT file. 
 // Avoid importing from 'app/lib/orders' if that file uses 'fs' or Node.js libs.
 const PRODUCTS_DATA = {
-  "ai-assistant-monthly": { id: "ai-assistant-monthly", name: "AI Assistant Monthly", priceUsd: 6, available: true, type: "subscription" },
+  "ai-assistant-monthly": { id: "ai-assistant-monthly", name: "AI Assistant Monthly", priceUsd: 10, available: true, type: "subscription" },
   "ai-assistant-pro": { id: "ai-assistant-pro", name: "AI Assistant Pro", priceUsd: 30, available: true, type: "subscription" },
   "scalper-x1": { id: "scalper-x1", name: "Scalper X1 Robot", priceUsd: 199, available: true, type: "one_time" },
   "fibonacci-pro": { id: "fibonacci-pro", name: "Fibonacci Pro", priceUsd: 149, available: true, type: "one_time" },

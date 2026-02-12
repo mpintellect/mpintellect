@@ -9,7 +9,7 @@ const SETUP_CREDITS: Record<string, number> = {
 };
 
 // Check this matches your create-session.ts
-const MONTHLY_PLAN_ID = "price_1S2Zd3RmR6ESDQvoermVMV5l"; 
+const MONTHLY_PLAN_ID = "price_1S1bt8DoB4i1qeaL1PzseHYf"; 
 
 export async function onRequestPost(context: any) {
   const { request, env } = context;

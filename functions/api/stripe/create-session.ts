@@ -4,7 +4,7 @@ const SETUP_PRICE_MAP: Record<string, string> = {
   "10": "price_1SVbAXDoB4i1qeaLC32KJQ6L",
   "20": "price_1SVWWXDoB4i1qeaL2dquhtfv",
   "30": "price_1SSyUORmR6ESDQvo7dzPKmPt",
-  "ai-assistant-monthly": "price_1S2Zd3RmR6ESDQvoermVMV5l", 
+  "ai-assistant-monthly": "price_1S1bt8DoB4i1qeaL1PzseHYf", 
 };
 
 export async function onRequestPost(context: any) {

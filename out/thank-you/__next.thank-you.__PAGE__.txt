@@ -1,0 +1,6 @@
+1:"$Sreact.fragment"
+2:I[5554,["9755","static/chunks/app/thank-you/page-ba0f72a9a447f860.js"],"default"]
+3:I[90484,[],"OutletBoundary"]
+4:"$Sreact.suspense"
+0:{"buildId":"2_1pZ-yZ0lwACDfUCIa32","rsc":["$","$1","c",{"children":[["$","div",null,{"className":"checkout-wrap","children":[["$","h1",null,{"className":"checkout-title","children":"Thank you for your purchase! 🎉"}],["$","div",null,{"className":"checkout-card","children":[["$","h3",null,{"className":"checkout-card-title","children":"Payment received successfully"}],["$","div",null,{"className":"pending-info","children":[["$","p",null,{"children":"We're processing your order..."}],["$","p",null,{"children":"We've sent a confirmation email with your order details."}],["$","p",null,{"className":"small-text","children":"If you don't see the email within a few minutes, please check your spam folder."}]]}],["$","div",null,{"className":"support-section","children":[["$","h4",null,{"children":"Need help?"}],["$","p",null,{"children":["Contact us at ",["$","a",null,{"href":"mailto:contact@mzprimer.com","children":"contact@mzprimer.com"}]]}]]}]]}],["$","$L2",null,{}]]}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"loading":null,"isPartial":false}
+5:null

@@ -61,10 +61,16 @@ export default function UserAnalytics() {
   const [timeFilter, setTimeFilter] = useState<"ALL" | "WEEK" | "MONTH">("ALL");
   const [error, setError] = useState<string>("");
 
-  // Get user from localStorage (Cloudflare auth)
-  useEffect(() => {
+  // In AnalyticsSection.tsx, update the useEffect
+useEffect(() => {
+  const initializeAuth = async () => {
     const token = localStorage.getItem('cf_token');
     const userData = localStorage.getItem('cf_user');
+    
+    console.log("🔐 Auth check:", { 
+      token: token ? `${token.substring(0, 8)}...` : 'MISSING',
+      userData: userData ? 'exists' : 'MISSING' 
+    });
     
     if (!token || !userData) {
       console.log("❌ No user authenticated");
@@ -74,38 +80,66 @@ export default function UserAnalytics() {
 
     try {
       const user = JSON.parse(userData);
-      setUserId(user.id);
       
+      // ✅ FIX: Verify token is valid before fetching setups
+      const verifyResponse = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!verifyResponse.ok) {
+        console.log("❌ Token verification failed");
+        localStorage.removeItem('cf_token');
+        localStorage.removeItem('cf_user');
+        setLoading(false);
+        return;
+      }
+      
+      setUserId(user.id);
       fetchSetups(user.id);
     } catch (error) {
       console.error("❌ Error parsing user data:", error);
       setLoading(false);
     }
-  }, []);
+  };
 
-  // Fetch setups from Cloudflare API
-  const fetchSetups = async (userId: string) => {
+  initializeAuth();
+}, []);
+
+ const fetchSetups = async (passedUserId: string) => {
     try {
-      console.log("🔍 Fetching setups for user:", userId);
-      
-      const response = await fetch(`/api/setups?userId=${userId}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const token = window.localStorage.getItem('cf_token');
+      if (!token) {
+        setLoading(false);
+        return;
       }
+
+      // ✅ FIX: Send token in BOTH headers and URL to bypass proxy stripping
+      const response = await fetch(`/api/setups?userId=${passedUserId}&token=${token.trim()}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token.trim()}`,
+          'x-mz-token': token.trim(), // Custom header backup
+          'Content-Type': 'application/json'
+        }
+      });
       
+      if (response.status === 401) {
+        setError("Session expired. Please log in again.");
+        setLoading(false);
+        return;
+      }
+
       const data = await response.json();
-      
-      if (data.success && data.setups) {
-        console.log("🔍 Fetched setups:", data.setups.length);
-        
-        // Transform the data to match our interface
-        const transformedSetups: Setup[] = data.setups.map((setup: any) => ({
+      if (response.ok && data.success) {
+         const transformedSetups: Setup[] = data.setups.map((setup: any) => ({
           id: setup.id,
           symbol: setup.symbol,
-          entryPrice: parseFloat(setup.entry_price),
-          takeProfit: parseFloat(setup.take_profit),
-          stopLoss: parseFloat(setup.stop_loss),
+          entryPrice: parseFloat(setup.entry_price) || 0,
+          takeProfit: parseFloat(setup.take_profit) || 0,
+          stopLoss: parseFloat(setup.stop_loss) || 0,
           generatedAt: setup.generated_at || setup.created_at,
           createdAt: setup.created_at,
           status: setup.status,
@@ -114,15 +148,11 @@ export default function UserAnalytics() {
           riskReward: parseFloat(setup.risk_reward) || 1.5,
           userId: setup.user_id
         }));
-        
         setSetups(transformedSetups);
         setError("");
-      } else {
-        throw new Error(data.error || "Failed to fetch setups");
       }
     } catch (error: any) {
-      console.error("❌ Error fetching setups:", error);
-      setError(`Failed to load data: ${error.message}`);
+      setError("Failed to load setups.");
     } finally {
       setLoading(false);
     }
@@ -604,9 +634,9 @@ export default function UserAnalytics() {
               <XAxis dataKey="symbol" />
               <YAxis />
               <Tooltip 
-                formatter={(value: number) => [`$${value.toFixed(2)}`, "Profit"]}
-                labelFormatter={(label) => `Symbol: ${label}`}
-              />
+  formatter={(value: any) => [`$${Number(value || 0).toFixed(2)}`, "Profit"]}
+  labelFormatter={(label) => `Symbol: ${label}`}
+/>
               <Bar 
                 dataKey="profit" 
                 fill="#8884d8"
@@ -625,9 +655,9 @@ export default function UserAnalytics() {
               <XAxis dataKey="month" />
               <YAxis />
               <Tooltip 
-                formatter={(value: number) => [`$${value.toFixed(2)}`, "Profit"]}
-                labelFormatter={(label) => `Month: ${label}`}
-              />
+  formatter={(value: any) => [`$${Number(value || 0).toFixed(2)}`, "Profit"]}
+  labelFormatter={(label) => `Month: ${label}`}
+/>
               <Area 
                 type="monotone" 
                 dataKey="profit" 
@@ -647,7 +677,7 @@ export default function UserAnalytics() {
             <BarChart data={performanceData}>
               <XAxis dataKey="metric" />
               <YAxis />
-              <Tooltip formatter={(value: number) => [`${value.toFixed(1)}`, "Value"]} />
+              <Tooltip formatter={(value: any) => [Number(value || 0).toFixed(1), "Value"]} />
               <Bar dataKey="value" fill="#F59E0B" />
             </BarChart>
           </ResponsiveContainer>

@@ -1,1 +1,44 @@
-node_modules
+cat > .gitignore << 'EOF'
+# D1 database files - LOCAL ONLY
+.wrangler/
+.wrangler/**
+.wrangler/state/v3/d1/
+PROD_TEST/
+PROD_TEST/**
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite3
+*.db
+.prod_db/
+.prod_db/**
+.D1/
+
+# Local environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.dev.vars
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+EOF

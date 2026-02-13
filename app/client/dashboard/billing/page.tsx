@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, CreditCard, Receipt, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, CreditCard, ShieldCheck } from 'lucide-react';
 import BillingHistory from '@/components/BillingHistory';
 
 export default function BillingPage() {
@@ -10,55 +10,52 @@ export default function BillingPage() {
   return (
     <div className="billing-container relative">
       
-      {/* BACK BUTTON */}
+      {/* BACK BUTTON (Matches Referral UI) */}
       <div className="mb-8">
         <button 
           onClick={() => router.push('/client/dashboard')}
           className="btn-billing-back"
         >
           <ArrowLeft size={16} />
-          <span>Back to Dashboard</span>
+          <span className="ml-2">Dashboard</span>
         </button>
       </div>
 
-      {/* HEADER */}
+      {/* HEADER (Institutional Style) */}
       <div className="billing-header">
         <h1 className="billing-title">
           <CreditCard className="text-[#D4AF37]" size={28} /> 
-          Billing & Invoices
+          Billing Hub
         </h1>
         <p className="text-zinc-500 text-sm mt-2">
-          Manage your subscriptions, view receipts, and monitor your credits.
+          Review your institutional setup allocations and subscription status.
         </p>
       </div>
 
-      {/* ACTIVE STATUS CARD */}
-      <div className="billing-card-main flex justify-between items-center">
+      {/* STATUS CARD */}
+      <div className="billing-card-main flex justify-between items-center mb-6">
         <div>
-          <h3 className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Account Security</h3>
-          <p className="text-white text-sm flex items-center gap-2">
-            <ShieldCheck size={14} className="text-emerald-500" />
-            Verified Secure via Stripe Intelligence
+          <h3 className="text-[9px] uppercase tracking-[2px] text-zinc-600 font-bold mb-1">Billing Security</h3>
+          <p className="text-zinc-300 text-xs flex items-center gap-2">
+            <ShieldCheck size={14} className="text-[#D4AF37]" />
+            Transactions encrypted via Stripe-Relay
           </p>
         </div>
         <div className="text-right">
-           <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold block mb-1">System Status</span>
-           <span className="status-badge">Active</span>
+           <span className="status-badge">Account Verified</span>
         </div>
       </div>
 
-      {/* TRANSACTION TABLE */}
+      {/* TABLE CONTAINER */}
       <div className="billing-card-main">
-        <div className="flex items-center gap-2 mb-6">
-            <Receipt size={16} className="text-[#D4AF37]" />
-            <h2 className="text-xs uppercase font-bold tracking-widest text-white">Transaction History</h2>
-        </div>
         <BillingHistory />
       </div>
 
-      <p className="text-center text-[10px] text-zinc-600 uppercase tracking-widest mt-12">
-        MZPrimer Intelligence LTD • London • secure checkout
-      </p>
+      <div className="text-center opacity-30 mt-20">
+        <p className="text-[9px] uppercase tracking-[3px] text-zinc-500">
+          MZPrimer LTD • Institutional Billing System
+        </p>
+      </div>
     </div>
   );
 }

@@ -2,6 +2,14 @@
 
 import { useEffect, useState } from 'react';
 
+// Price ID Mapping based on your Webhook DNA
+const PRODUCT_MAP: Record<string, string> = {
+  "price_1SVbAXDoB4i1qeaLC32KJQ6L": "BASIC PLAN (10 AI Setups)",
+  "price_1SVWWXDoB4i1qeaL2dquhtfv": "PRO PLAN (20 AI Setups)",
+  "price_1SSyUORmR6ESDQvo7dzPKmPt": "ELITE PLAN (30 AI Setups)",
+  "price_1S1bt8DoB4i1qeaL1PzseHYf": "AI Assistant Pro (Monthly)"
+}; 
+
 export default function BillingHistory() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,30 +17,17 @@ export default function BillingHistory() {
   useEffect(() => {
     async function fetchHistory() {
       const token = localStorage.getItem('cf_token');
-      try {
-        const res = await fetch('/api/user/billing', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.success) setHistory(data.history);
-      } catch (e) {
-        console.error("Billing fetch error", e);
-      } finally {
-        setLoading(false);
-      }
+      const res = await fetch('/api/user/billing', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) setHistory(data.history);
+      setLoading(false);
     }
     fetchHistory();
   }, []);
 
-  if (loading) return <div className="py-10 text-center text-zinc-500 text-[10px] animate-pulse">SYNCING_LEDGER...</div>;
-
-  if (history.length === 0) {
-    return (
-      <div className="py-10 text-center border border-dashed border-zinc-900 rounded-lg">
-        <p className="text-zinc-600 text-[10px] uppercase tracking-widest">No transaction records found</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="py-10 text-center text-zinc-500 text-[10px] animate-pulse">SYNCING_TRANSACTIONS...</div>;
 
   return (
     <div className="overflow-x-auto">
@@ -40,28 +35,34 @@ export default function BillingHistory() {
         <thead>
           <tr>
             <th>Date</th>
-            <th>Product</th>
-            <th>Reference</th>
-            <th className="text-right">Amount</th>
+            <th>Purchased Product</th>
+            <th className="text-right">Allocation</th>
+            <th className="text-right">Price</th>
           </tr>
         </thead>
         <tbody>
-          {history.map((item: any, i) => (
+          {history.length > 0 ? history.map((item: any, i: number) => (
             <tr key={i}>
-              <td className="font-mono text-zinc-400">
-                {new Date(item.created_at * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              <td className="font-mono text-zinc-500 text-[11px]">
+                {new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </td>
               <td className="font-bold text-white">
-                {item.price_id.includes('monthly') ? 'AI Assistant PRO' : 'MZ Setup Bundle'}
+                {PRODUCT_MAP[item.price_id] || "MZ Setup Plan"}
               </td>
-              <td className="text-[10px] text-zinc-600 font-mono">
-                {item.stripe_session_id.substring(0, 14)}...
+              <td className="text-right font-mono text-zinc-400">
+                {item.setup_count === 999 ? "UNLIMITED" : `+${item.setup_count}`}
               </td>
               <td className="text-right amount-gold">
                 ${parseFloat(item.amount_paid).toFixed(2)}
               </td>
             </tr>
-          ))}
+          )) : (
+            <tr>
+              <td colSpan={4} className="py-12 text-center text-zinc-600 text-[10px] uppercase tracking-widest">
+                Zero Transactions Found
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

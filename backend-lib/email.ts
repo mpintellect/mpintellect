@@ -10,10 +10,48 @@ export interface OrderEmailDetails {
   customerName?: string;
   downloadUrl?: string; // ✅ New field for Robot file
 }
+export async function sendEmail(
+  details: { to: string; subject: string; html: string; text?: string },
+  env: any
+): Promise<void> {
+  const apiKey = env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error("❌ RESEND_API_KEY is missing");
+    return;
+  }
 
+  try {
+    console.log(`📧 Sending email via Resend to: ${details.to}`);
+    
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: env.EMAIL_FROM || 'MZPrimer <intelligence@mzprimer.com>',
+        to: [details.to],
+        subject: details.subject,
+        html: details.html,
+        text: details.text || '', // Add text fallback
+      }),
+    });
+
+    const responseData = await response.json();
+    
+    if (response.ok) {
+      console.log(`✅ Email sent successfully to ${details.to}`, responseData);
+    } else {
+      console.error("❌ Resend API Error:", responseData);
+    }
+  } catch (e: any) {
+    console.error("❌ Email System Failure:", e.message);
+  }
+}
 export async function sendOrderConfirmation(order: OrderEmailDetails, env: any): Promise<void> {
   const apiKey = env.RESEND_API_KEY;
-  const fromEmail = env.EMAIL_FROM || 'MZPrimer Intelligence <intelligence@mzprimer.com>';
+  const fromEmail = env.EMAIL_FROM || 'MZPrimer Intelligence Team <contact@mzprimer.com>';
 
   if (!apiKey) {
     console.error("❌ RESEND_API_KEY is missing");
@@ -277,10 +315,10 @@ function generateEmailHTML(
               <span style="color: #3a3f44;">•</span>
               <a href="https://mzprimer.com/privacy" style="color: #6b7280; font-size: 13px; text-decoration: none;">Privacy</a>
               <span style="color: #3a3f44;">•</span>
-              <a href="https://mzprimer.com/support" style="color: #6b7280; font-size: 13px; text-decoration: none;">Support</a>
+              <a href="https://mzprimer.com/contact" style="color: #6b7280; font-size: 13px; text-decoration: none;">Support</a>
             </div>
             <p style="margin: 0; color: #4b5563; font-size: 12px; text-align: center; letter-spacing: 0.3px;">
-              © ${new Date().getFullYear()} MZPrimer Intelligence LTD · All rights reserved
+              © ${new Date().getFullYear()} MZPrimer LTD · All rights reserved
             </p>
             ${isSubscription ? `
             <p style="margin: 16px 0 0; color: #d4af37; font-size: 10px; text-align: center; text-transform: uppercase; letter-spacing: 4px; opacity: 0.7;">

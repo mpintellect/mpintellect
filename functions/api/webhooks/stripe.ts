@@ -5,9 +5,9 @@ import { sendOrderConfirmation } from '../../../backend-lib/email';
 const SETUP_CREDITS: Record<string, number> = {
   "price_1SVbAXDoB4i1qeaLC32KJQ6L": 10,
   "price_1SVWWXDoB4i1qeaL2dquhtfv": 20,
-  "price_1SSyUORmR6ESDQvo7dzPKmPt": 30,
+  "price_1SVWUlDoB4i1qeaLabDsRHo2": 30,
 };
-const SCALPER_PRICE_ID = "price_1S2fSQRmR6ESDQvoNeQ2sFdD";
+const SCALPER_PRICE_ID = "price_1T0O51DoB4i1qeaLzAaAErAr";
 // Check this matches your create-session.ts
 const MONTHLY_PLAN_ID = "price_1S1bt8DoB4i1qeaL1PzseHYf"; 
 

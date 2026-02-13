@@ -41,7 +41,7 @@ export default function ContactSection() {
           For support, collaboration, or inquiries, contact us and our team will respond shortly.
         </p>
 
-        <form onSubmit={onSubmit} className="contact-form space-y-6 text-left">
+        <form onSubmit={onSubmit} className="contact-form space-y-6 text-left max-w-2xl mx-auto">
           {/* Honeypot (hidden from humans) */}
           <input
             type="text"
@@ -52,62 +52,105 @@ export default function ContactSection() {
             autoComplete="off"
           />
 
-          <div>
-            <label htmlFor="name" className="block mb-2 text-sm font-medium">Your Name</label>
-            <input
-              type="text"
-              id="name"
-              placeholder="John Doe"
-              className="w-full bg-zinc-900 border border-zinc-700 text-white text-sm rounded-md p-3 placeholder-gray-400 focus:outline-none focus:border-yellow-500 transition"
-              required
-              value={name}
-              onChange={(e)=>setName(e.target.value)}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block mb-2 text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Your Name</label>
+              <input
+                type="text"
+                placeholder="Client Name"
+                className="w-full bg-[#0a0a0a] border border-zinc-800 text-white text-sm rounded-none p-4 placeholder-zinc-700 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/20 transition"
+                required
+                value={name}
+                onChange={(e)=>setName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block mb-2 text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Email Address</label>
+              <input
+                type="email"
+                placeholder="client@institution.com"
+                className="w-full bg-[#0a0a0a] border border-zinc-800 text-white text-sm rounded-none p-4 placeholder-zinc-700 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/20 transition"
+                required
+                value={email}
+                onChange={(e)=>setEmail(e.target.value)}
+              />
+            </div>
           </div>
 
           <div>
-            <label htmlFor="email" className="block mb-2 text-sm font-medium">Your Email</label>
-            <input
-              type="email"
-              id="email"
-              placeholder="you@example.com"
-              className="w-full bg-zinc-900 border border-zinc-700 text-white text-sm rounded-md p-3 placeholder-gray-400 focus:outline-none focus:border-yellow-500 transition"
-              required
-              value={email}
-              onChange={(e)=>setEmail(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="message" className="block mb-2 text-sm font-medium">Your Message</label>
+            <label className="block mb-2 text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Inquiry Message</label>
             <textarea
-              id="message"
               rows={5}
-              placeholder="Write your message here..."
-              className="w-full bg-zinc-900 border border-zinc-700 text-white text-sm rounded-md p-3 placeholder-gray-400 focus:outline-none focus:border-yellow-500 transition"
+              placeholder="Briefly describe your inquiry..."
+              className="w-full bg-[#0a0a0a] border border-zinc-800 text-white text-sm rounded-none p-4 placeholder-zinc-700 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/20 transition"
               required
               value={message}
               onChange={(e)=>setMessage(e.target.value)}
             />
           </div>
 
-          <div className="text-center pt-2">
+          <div className="text-center pt-6">
             <button
               type="submit"
               disabled={sending}
-              className="btn-primary text-sm md:text-base disabled:opacity-60"
+              style={{
+                background: '#D4AF37',
+                color: '#000',
+                padding: '16px 48px',
+                fontWeight: '900',
+                textTransform: 'uppercase',
+                letterSpacing: '2px',
+                fontSize: '12px',
+                boxShadow: '0 10px 30px -10px rgba(212, 175, 55, 0.3)'
+              }}
+              className="disabled:opacity-40 hover:brightness-110 transition-all transform hover:scale-105 rounded-none"
             >
-              {sending ? 'Sending…' : 'Send Message'}
+              {sending ? 'TRANSMITTING...' : 'SEND INQUIRY'}
             </button>
+            <p className="text-[10px] text-zinc-700 mt-4 uppercase tracking-widest">
+              Institutional Grade • Secure Communication
+            </p>
           </div>
 
           {result && result.ok && (
-            <p className="text-green-400 text-center mt-2">Message sent successfully!</p>
+            <div className="mt-6 p-5 border border-[#D4AF37]/20 bg-[#D4AF37]/5 text-center animate-pulse">
+              <p className="text-[#D4AF37] text-xs uppercase tracking-widest font-bold">
+                ✓ MESSAGE TRANSMITTED SUCCESSFULLY
+              </p>
+              <p className="text-zinc-600 text-[10px] mt-2 uppercase tracking-wider">
+                Our team will respond within 24 hours
+              </p>
+            </div>
           )}
+          
           {result && !result.ok && (
-            <p className="text-red-400 text-center mt-2">{result.error}</p>
+            <div className="mt-6 p-5 border border-red-900/30 bg-red-900/10 text-center">
+              <p className="text-red-400 text-xs uppercase tracking-widest font-bold">
+                ✗ TRANSMISSION FAILED
+              </p>
+              <p className="text-zinc-600 text-[10px] mt-2 uppercase tracking-wider">
+                {result.error || 'Please try again or contact directly'}
+              </p>
+            </div>
           )}
         </form>
+
+        {/* Direct Contact Info */}
+        <div className="mt-16 pt-8 border-t border-zinc-900">
+          <div className="flex flex-col md:flex-row justify-center items-center gap-8 text-sm">
+            <div className="flex items-center gap-3">
+              <span className="text-[#D4AF37] text-lg">✉</span>
+              <a href="mailto:contact@mzprimer.com" className="text-zinc-400 hover:text-[#D4AF37] transition">
+                contact@mzprimer.com
+              </a>
+            </div>
+            <div className="hidden md:block w-px h-4 bg-zinc-800"></div>
+            <div className="flex items-center gap-3">
+              <span className="text-[#D4AF37] text-lg">📞</span>
+              <span className="text-zinc-400">+1 (212) 555-7890</span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

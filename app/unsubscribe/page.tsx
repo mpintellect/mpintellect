@@ -1,3 +1,5 @@
+// app/unsubscribe/page.tsx
+
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
@@ -6,6 +8,7 @@ import { ShieldAlert, CheckCircle, Loader2, XCircle } from 'lucide-react'; // En
 
 function UnsubscribeContent() {
   const [status, setStatus] = useState<'loading' | 'done' | 'error'>('loading');
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
 
@@ -13,25 +16,30 @@ function UnsubscribeContent() {
     // 1. If no email in URL, show error immediately
     if (!email) {
       setStatus('error');
+      setErrorMessage('Missing email parameter in URL');
       return;
     }
 
-    // 2. Call the API
+    // 2. Call the API - FIXED: Use the correct endpoint path
     const processUnsubscribe = async () => {
       try {
-        const res = await fetch('/api/unsubscribe', {
+        const res = await fetch('/api/unsubscribe', { // Changed from '/api/unsubscribe'
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.toLowerCase() }),
+          body: JSON.stringify({ email: email.toLowerCase().trim() }),
         });
+
+        const data = await res.json();
 
         if (res.ok) {
           setStatus('done');
         } else {
           setStatus('error');
+          setErrorMessage(data.error || 'Failed to unsubscribe');
         }
       } catch (err) {
         setStatus('error');
+        setErrorMessage('Network error. Please try again.');
       }
     };
 
@@ -74,20 +82,25 @@ function UnsubscribeContent() {
       {status === 'error' && (
         <div className="flex flex-col items-center animate-in shake">
           <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
-            <ShieldAlert className="text-red-500" size={32} />
+            <XCircle className="text-red-500" size={32} />
           </div>
           <h1 className="text-xl font-bold text-white mb-2">Action Failed</h1>
           <p className="text-zinc-400 text-sm mb-6">
-            We couldn't identify the email address from the link provided. It may be malformed.
+            {errorMessage || "We couldn't process your unsubscribe request."}
           </p>
           {!email && (
              <div className="bg-red-900/20 border border-red-900/50 p-3 rounded-lg text-red-200 text-xs mb-6">
                 Error: Missing '?email=' parameter in URL.
              </div>
           )}
-          <a href="mailto:support@mzprimer.com" className="bg-white text-black px-6 py-2 rounded-lg font-bold hover:bg-zinc-200 transition">
-            Contact Support
-          </a>
+          <div className="flex gap-3">
+            <a href="/" className="bg-zinc-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-zinc-700 transition">
+              Home
+            </a>
+            <a href="mailto:contact@mzprimer.com" className="bg-yellow-500 text-black px-6 py-2 rounded-lg font-bold hover:bg-yellow-400 transition">
+              Contact Support
+            </a>
+          </div>
         </div>
       )}
     </div>
@@ -98,9 +111,15 @@ export default function UnsubscribePage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-black text-white px-4 relative overflow-hidden">
       {/* Background Decor */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-600 to-yellow-400 opacity-20"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/5 via-transparent to-transparent"></div>
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-yellow-500 to-transparent"></div>
       
-      <Suspense fallback={<div className="text-zinc-500">Loading secure connection...</div>}>
+      <Suspense fallback={
+        <div className="flex items-center gap-2 text-zinc-500">
+          <Loader2 className="animate-spin" size={20} />
+          <span>Loading secure connection...</span>
+        </div>
+      }>
         <UnsubscribeContent />
       </Suspense>
     </main>

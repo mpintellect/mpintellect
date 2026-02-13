@@ -46,9 +46,12 @@ export default function SymbolNavigation({ symbol }: { symbol: string }) {
                Volatility Risk <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </Link>
 
-            <Link href={`/analysis/${cleanSymbol}`} className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 group">
-               Full Analysis <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
+            <Link 
+  href={`/analysis/${cleanSymbol.toLowerCase()}`} 
+  className="seo-chip-link border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 group"
+>
+  Full Analysis <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+</Link>
         </div>
 
         {/* --- AI CHAT CTA (-CHAT) --- */}

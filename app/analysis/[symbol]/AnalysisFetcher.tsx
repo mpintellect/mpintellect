@@ -8,6 +8,9 @@ export default function AnalysisFetcher({ symbol }: { symbol: string }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Create a lowercase version for display
+  const displaySymbol = symbol.toLowerCase();
 
   useEffect(() => {
     async function loadData() {
@@ -15,12 +18,12 @@ export default function AnalysisFetcher({ symbol }: { symbol: string }) {
         setLoading(true);
         setError(null);
         
-        // ✅ Normalize to UPPERCASE before hitting the API
+        // ✅ Normalize to UPPERCASE before hitting the API (API requirement)
         const apiSymbol = symbol.toUpperCase();
         const res = await fetch(`/api/symbol-data?symbol=${apiSymbol}`);
         
         if (!res.ok) {
-          throw new Error(`Symbol ${apiSymbol} not found in database.`);
+          throw new Error(`Symbol ${displaySymbol} not found in database.`); // Use lowercase in error message
         }
         
         const json = await res.json();
@@ -33,14 +36,14 @@ export default function AnalysisFetcher({ symbol }: { symbol: string }) {
       }
     }
     loadData();
-  }, [symbol]);
+  }, [symbol, displaySymbol]); // Add displaySymbol to dependencies if needed
 
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading analysis for {symbol}...</p>
+          <p className="text-gray-400">Loading analysis for {displaySymbol}...</p> {/* Use lowercase here */}
         </div>
       </div>
     );
@@ -64,5 +67,6 @@ export default function AnalysisFetcher({ symbol }: { symbol: string }) {
     );
   }
 
-  return <AnalysisClientView data={data} symbol={symbol} />;
+  // Pass the lowercase symbol to AnalysisClientView
+  return <AnalysisClientView data={data} symbol={displaySymbol} />;
 }

@@ -20341,95 +20341,6 @@ body {
   letter-spacing: 0.05em;
   font-family: 'Inter', monospace; /* Monospace looks better for dates */
 }
-/* --- BILLING CONTAINER SYSTEM --- */
-.billing-container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-
-.btn-billing-back {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: transparent;
-  border: 1px solid #1a1a1a;
-  color: #71717a;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.2s;
-  cursor: pointer;
-}
-
-.btn-billing-back:hover {
-  border-color: #D4AF37;
-  color: #D4AF37;
-  background: rgba(212, 175, 55, 0.05);
-}
-
-.billing-header {
-  margin-bottom: 2.5rem;
-  text-align: left;
-}
-
-.billing-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 24px;
-  font-weight: 800;
-  color: #fff;
-  text-transform: uppercase;
-  letter-spacing: -0.5px;
-}
-
-.billing-card-main {
-  background: #0a0a0a;
-  border: 1px solid #1a1a1a;
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 2rem;
-}
-
-.billing-table {
-  width: f-full;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.billing-table th {
-  text-align: left;
-  padding: 12px 16px;
-  color: #52525b;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  border-bottom: 1px solid #1a1a1a;
-}
-
-.billing-table td {
-  padding: 16px;
-  border-bottom: 1px solid #0f0f0f;
-  color: #e4e4e7;
-}
-
-.amount-gold {
-  color: #D4AF37;
-  font-weight: 700;
-  font-family: 'Inter', monospace;
-}
-
-.status-badge {
-  font-size: 9px;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-}
 /* --- BILLING HUB STYLES --- */
 .billing-container {
   max-width: 850px;
@@ -20474,4 +20385,237 @@ body {
   border-radius: 4px;
   text-transform: uppercase;
   letter-spacing: 1px;
+}
+/* Dashboard Header Styles */
+.simple-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 0.5rem 2rem;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+  transition: all 0.2s ease;
+}
+
+.simple-header.scrolled {
+  padding: 0.35rem 2rem;
+  background: rgba(0, 0, 0, 0.98);
+  border-bottom-color: rgba(212, 175, 55, 0.3);
+}
+
+/* Navigation Container */
+.header-nav {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Desktop Layout */
+.desktop-layout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+/* Navigation Buttons Group */
+.nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(20, 20, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 0.25rem;
+}
+
+/* Individual Nav Button */
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #a0a0a0;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.nav-btn svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.nav-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-btn:hover svg {
+  opacity: 1;
+}
+
+.nav-btn.active {
+  color: #000000;
+  background: #d4af37;
+  font-weight: 600;
+}
+
+.nav-btn.active svg {
+  opacity: 1;
+  color: #000000;
+}
+
+.nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Mobile Nav Button (hidden on desktop) */
+.mobile-nav-btn {
+  display: none;
+}
+
+/* User Section */
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* User Info Container */
+.user-info-simple {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.25rem 0.75rem 0.25rem 0.25rem;
+  background: rgba(20, 20, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 30px;
+}
+
+/* User Avatar */
+.user-avatar-small {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #d4af37;
+  color: #000000;
+  font-weight: 700;
+  font-size: 0.8rem;
+  border-radius: 50%;
+  text-transform: uppercase;
+}
+
+/* User Details */
+.user-details {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+/* User Email */
+.user-email-simple {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #ffffff;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Setup Count */
+.setup-count-simple {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #d4af37;
+  letter-spacing: 0.5px;
+}
+
+/* Logout Button */
+.logout-btn-simple {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #a0a0a0;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-btn-simple svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+.logout-btn-simple:hover {
+  color: #ff4d4d;
+  background: rgba(255, 77, 77, 0.1);
+  border-color: rgba(255, 77, 77, 0.2);
+}
+
+.logout-btn-simple:hover svg {
+  opacity: 1;
+}
+
+/* Responsive adjustments for smaller desktops */
+@media (max-width: 1200px) {
+  .simple-header {
+    padding: 0.5rem 1.5rem;
+  }
+  
+  .nav-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .user-email-simple {
+    max-width: 80px;
+  }
+}
+
+/* Hide on mobile - you can adjust this based on your mobile breakpoint */
+@media (max-width: 768px) {
+  .simple-header {
+    padding: 0.5rem 1rem;
+  }
+  
+  .nav-buttons {
+    display: none; /* Hide desktop nav on mobile */
+  }
+  
+  .mobile-nav-btn {
+    display: flex; /* Show mobile nav button */
+  }
+  
+  .user-email-simple {
+    display: none; /* Hide email on mobile */
+  }
+  
+  .logout-btn-simple span {
+    display: none; /* Hide text on mobile */
+  }
+  
+  .logout-btn-simple {
+    padding: 0.5rem;
+  }
 }

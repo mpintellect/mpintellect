@@ -10,6 +10,7 @@ import AiChatBox from "@/components/AiChatBox";
 import PropFirmChat from "@/components/PropFirmChat";
 import UserAnalytics from "./components/AnalyticsSection";
 import toast from "react-hot-toast";
+import BillingHistory from "@/components/BillingHistory";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ function DashboardContent() {
   const [buyLoading, setBuyLoading] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"10" | "20" | "30" | null>(null);
-  
+  const [activeTab, setActiveTab] = useState('main'); // 'main', 'analytics', 'billing'
   // View States
   const [activeTool, setActiveTool] = useState<'ai' | 'prop' | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -280,6 +281,12 @@ function DashboardContent() {
                 <CreditCard size={16} /> Purchase
               </button>
               <button 
+  className={`nav-btn ${activeTab === 'billing' ? 'active' : ''}`}
+  onClick={() => setActiveTab('billing')}
+>
+  <CreditCard size={14} /> Billing
+</button>
+              <button 
                 className="nav-btn"
                 onClick={() => router.push('/client/dashboard/refer')}
               >
@@ -352,6 +359,12 @@ function DashboardContent() {
                 <button className="mobile-nav-btn" onClick={() => {setShowPlanModal(true); setIsNavExpanded(false);}}>
                   <CreditCard size={16} /> Buy Setups
                 </button>
+                <button 
+  className={`nav-btn ${activeTab === 'billing' ? 'active' : ''}`}
+  onClick={() => setActiveTab('billing')}
+>
+  <CreditCard size={14} /> Billing
+</button>
                 <button className="mobile-nav-btn" onClick={() => router.push('/client/dashboard/refer')}>
                   👥 Refer Friends
                 </button>
@@ -387,7 +400,7 @@ function DashboardContent() {
               <p>Ready to analyze the markets with AI-powered insights</p>
             </div>
 
-            
+            {activeTab === 'billing' && <BillingHistory />}
 
             {/* Setup Credits Card */}
             <div className="status-card">

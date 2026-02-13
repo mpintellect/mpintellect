@@ -20493,3 +20493,28 @@ body {
   }
 }
 @media (max-width: 768px) { .mobile-layout { padding: 0.05rem 0.6rem !important; margin-top: -0.4rem !important; } .mobile-user-top { padding: 0.1rem 0 !important; margin-bottom: 0 !important; } }
+/* --- DASHBOARD BILLING TABLE --- */
+.billing-section {
+  background: #050505;
+  border: 1px solid #111;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.billing-section table th {
+  padding-bottom: 10px;
+}
+
+.billing-section table td {
+  padding: 12px 0;
+  border-bottom: 1px solid #0f0f0f;
+}
+
+/* Tiny scrollbar for the table overflow */
+.billing-section ::-webkit-scrollbar {
+  height: 4px;
+}
+.billing-section ::-webkit-scrollbar-thumb {
+  background: #1a1a1a;
+  border-radius: 10px;
+}

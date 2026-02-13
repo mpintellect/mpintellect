@@ -2,8 +2,7 @@
 import { execute, queryOne } from '../../backend-lib/db-simple';
 
 export const PRODUCTS = {
-  aiAssistantMonthly: { id: "ai-assistant-monthly", name: "AI Assistant – Monthly", priceUsd: 6 },
-  aiAssistantPro: { id: "ai-assistant-pro", name: "AI Assistant – Pro Monthly", priceUsd: 30 },
+  aiAssistantMonthly: { id: "ai-assistant-monthly", name: "AI Assistant – Monthly", priceUsd: 10 },
   scalperX1: { id: "scalper-x1", name: "Scalper X1", priceUsd: 15 }
 } as any;
 

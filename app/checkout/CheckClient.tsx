@@ -27,7 +27,6 @@ export default function CheckoutClient() {
       searchParams.get('pid');
     const allowed: ProductId[] = [
       'ai-assistant-monthly',
-      'ai-assistant-pro',
       'scalper-x1',
       'fibonacci-pro',
       'trend-seeker-ai',

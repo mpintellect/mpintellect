@@ -400,7 +400,7 @@ function DashboardContent() {
               <p>Ready to analyze the markets with AI-powered insights</p>
             </div>
 
-            {activeTab === 'billing' && <BillingHistory />}
+           
 
             {/* Setup Credits Card */}
             <div className="status-card">

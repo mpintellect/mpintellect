@@ -3,7 +3,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   // Keep exactly as is - Cloudflare Pages needs this
   output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
-
+  trailingSlash: true,
   typescript: { ignoreBuildErrors: true },
 
   images: {

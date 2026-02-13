@@ -14,10 +14,13 @@ export default function AnalysisFetcher({ symbol }: { symbol: string }) {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`/api/symbol-data?symbol=${encodeURIComponent(symbol)}`);
+        
+        // ✅ Normalize to UPPERCASE before hitting the API
+        const apiSymbol = symbol.toUpperCase();
+        const res = await fetch(`/api/symbol-data?symbol=${apiSymbol}`);
         
         if (!res.ok) {
-          throw new Error(`API error: ${res.status}`);
+          throw new Error(`Symbol ${apiSymbol} not found in database.`);
         }
         
         const json = await res.json();

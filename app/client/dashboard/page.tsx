@@ -280,12 +280,9 @@ function DashboardContent() {
               <button className="nav-btn" onClick={() => setShowPlanModal(true)}>
                 <CreditCard size={16} /> Purchase
               </button>
-              <button 
-  className={`nav-btn ${activeTab === 'billing' ? 'active' : ''}`}
-  onClick={() => setActiveTab('billing')}
->
-  <CreditCard size={14} /> Billing
-</button>
+              <button className="mobile-nav-btn" onClick={() => router.push('/client/dashboard/billing')}>
+                  Billing
+                </button>
               <button 
                 className="nav-btn"
                 onClick={() => router.push('/client/dashboard/refer')}
@@ -359,12 +356,10 @@ function DashboardContent() {
                 <button className="mobile-nav-btn" onClick={() => {setShowPlanModal(true); setIsNavExpanded(false);}}>
                   <CreditCard size={16} /> Buy Setups
                 </button>
-                <button 
-  className={`nav-btn ${activeTab === 'billing' ? 'active' : ''}`}
-  onClick={() => setActiveTab('billing')}
->
-  <CreditCard size={14} /> Billing
-</button>
+                
+<button className="mobile-nav-btn" onClick={() => router.push('/client/dashboard/billing')}>
+                  Billing
+                </button>
                 <button className="mobile-nav-btn" onClick={() => router.push('/client/dashboard/refer')}>
                   👥 Refer Friends
                 </button>

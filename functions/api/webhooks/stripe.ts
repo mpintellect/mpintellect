@@ -7,7 +7,7 @@ const SETUP_CREDITS: Record<string, number> = {
   "price_1SVWWXDoB4i1qeaL2dquhtfv": 20,
   "price_1SSyUORmR6ESDQvo7dzPKmPt": 30,
 };
-const SCALPER_PRICE_ID = "price_1T0O51DoB4i1qeaLzAaAErAr";
+const SCALPER_PRICE_ID = "price_1S2fSQRmR6ESDQvoNeQ2sFdD";
 // Check this matches your create-session.ts
 const MONTHLY_PLAN_ID = "price_1S1bt8DoB4i1qeaL1PzseHYf"; 
 

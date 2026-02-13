@@ -24,9 +24,9 @@ export async function onRequestPost(context: any) {
     const url = new URL(request.url);
     const origin = env.NEXT_PUBLIC_SITE_URL || url.origin;
     const isSub = lookupKey === "ai-assistant-monthly";
-
+    const isRobot = lookupKey === "scalper-x1";
     // ✅ SUCCESS URL
-    const successUrl = isSub 
+    const successUrl = isSub || isRobot
       ? `${origin}/tools/ai-assistant?active&session_id={CHECKOUT_SESSION_ID}`
       : `${origin}/client/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`;
 

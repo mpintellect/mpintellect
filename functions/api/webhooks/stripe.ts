@@ -7,7 +7,7 @@ const SETUP_CREDITS: Record<string, number> = {
   "price_1SVWWXDoB4i1qeaL2dquhtfv": 20,
   "price_1SSyUORmR6ESDQvo7dzPKmPt": 30,
 };
-
+const SCALPER_PRICE_ID = "price_1T0O51DoB4i1qeaLzAaAErAr";
 // Check this matches your create-session.ts
 const MONTHLY_PLAN_ID = "price_1S1bt8DoB4i1qeaL1PzseHYf"; 
 
@@ -73,6 +73,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe:
         [generatedKey, expiryDate, customerEmail]
       );
     } 
+
     // === LOGIC B: SETUP CREDITS (Stays working) ===
     else {
       const setupsToAdd = SETUP_CREDITS[priceId] || 10;
@@ -88,7 +89,24 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe:
        VALUES (?, ?, ?, ?, ?, ?, 'completed', datetime('now'), datetime('now'))`,
       [userId, sessionId, priceId, (priceId === MONTHLY_PLAN_ID ? 999 : 10), (session.amount_total || 0) / 100, customerEmail]
     );
+if (priceId === SCALPER_PRICE_ID) {
+    prodName = "MZPrimer Scalper X1 (V.1)";
+    
+    // Mark ownership in DB
+    await execute("UPDATE users SET has_scalper_x1 = 1 WHERE email = ?", [customerEmail]);
 
+    // ✅ Generate the SECURE link for the email
+    // This link only works if the session_id exists in the stripe_purchases table
+    const secureDownloadLink = `https://mzprimer.com/api/download-robot?session_id=${sessionId}`;
+
+    await sendOrderConfirmation({
+      to: customerEmail,
+      orderId: sessionId,
+      productName: prodName,
+      amountPaid: (session.amount_total || 0) / 100,
+      downloadUrl: secureDownloadLink // Passed to the Gold email template
+    }, env);
+}
     // DISPATCH PROFESSIONAL EMAIL (Resend)
     await sendOrderConfirmation({
       to: customerEmail,

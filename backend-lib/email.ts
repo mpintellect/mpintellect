@@ -1,3 +1,5 @@
+// backend-lib/email.ts
+
 export interface OrderEmailDetails {
   to: string;
   orderId: string;
@@ -6,14 +8,12 @@ export interface OrderEmailDetails {
   licenseKey?: string;
   licenseExpiry?: string;
   customerName?: string;
+  downloadUrl?: string; // ✅ New field for Robot file
 }
 
-/**
- * Sends a professional order confirmation via Resend HTTP API
- */
 export async function sendOrderConfirmation(order: OrderEmailDetails, env: any): Promise<void> {
   const apiKey = env.RESEND_API_KEY;
-  const fromEmail = env.EMAIL_FROM || 'MZPrimer <onboarding@resend.dev>';
+  const fromEmail = env.EMAIL_FROM || 'MZPrimer Intelligence <intelligence@mzprimer.com>';
 
   if (!apiKey) {
     console.error("❌ RESEND_API_KEY is missing");
@@ -21,16 +21,25 @@ export async function sendOrderConfirmation(order: OrderEmailDetails, env: any):
   }
 
   const isSubscription = !!order.licenseKey;
+  const isRobot = !!order.downloadUrl; // ✅ Detects if it's a bot purchase
   
-  const ctaLink = isSubscription
-    ? "https://mzprimer.com/tools/ai-assistant?active"
-    : "https://mzprimer.com/client/dashboard";
+  // CTA Link Logic
+  let ctaLink = "https://mzprimer.com/client/dashboard";
+  let ctaText = "ACCESS DASHBOARD";
 
-  const ctaText = isSubscription ? "ACTIVATE AI ASSISTANT" : "ACCESS DASHBOARD";
+  if (isSubscription) {
+    ctaLink = "https://mzprimer.com/tools/ai-assistant?active";
+    ctaText = "ACTIVATE AI ASSISTANT";
+  } else if (isRobot) {
+    ctaLink = order.downloadUrl!; // Points directly to the secure download link
+    ctaText = "DOWNLOAD EX5 ROBOT";
+  }
 
-  const subject = isSubscription
-    ? `AI Pro Activated: Your License Key Inside`
-    : `Order Confirmed: ${order.productName}`;
+  const subject = isRobot 
+    ? `Software Delivery: ${order.productName} is ready` 
+    : isSubscription 
+      ? `AI Pro Activated: Your License Key Inside` 
+      : `Order Confirmed: ${order.productName}`;
 
   const expiryDate = order.licenseExpiry
     ? new Date(order.licenseExpiry).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -51,8 +60,8 @@ export async function sendOrderConfirmation(order: OrderEmailDetails, env: any):
         from: fromEmail,
         to: [order.to],
         subject: subject,
-        html: generateEmailHTML(order, isSubscription, expiryDate, customerName, ctaLink, ctaText),
-        text: generatePlainText(order, isSubscription, expiryDate, ctaLink),
+        html: generateEmailHTML(order, isSubscription, isRobot, expiryDate, customerName, ctaLink, ctaText),
+        text: generatePlainText(order, isSubscription, isRobot, expiryDate, ctaLink),
         headers: {
           "X-Entity-ID": `MZP-${order.orderId.substring(0, 8)}`,
         }
@@ -62,10 +71,11 @@ export async function sendOrderConfirmation(order: OrderEmailDetails, env: any):
     const responseData = await response.json();
     
     if (response.ok) {
-      console.log(`✅ Email sent successfully to ${order.to}`, responseData);
+      console.log(`✅ Professional email dispatched to ${order.to}`, responseData);
     } else {
       console.error("❌ Resend API Error:", responseData);
       
+      // FALLBACK for license keys
       if (order.licenseKey) {
         console.log(`🔑 FALLBACK - License key for ${order.to}: ${order.licenseKey}`);
       }
@@ -73,6 +83,7 @@ export async function sendOrderConfirmation(order: OrderEmailDetails, env: any):
   } catch (e: any) {
     console.error("❌ Email System Failure:", e.message);
     
+    // FALLBACK for license keys
     if (order.licenseKey) {
       console.log(`🔑 FALLBACK - License key for ${order.to}: ${order.licenseKey}`);
     }
@@ -82,6 +93,7 @@ export async function sendOrderConfirmation(order: OrderEmailDetails, env: any):
 function generateEmailHTML(
   order: OrderEmailDetails,
   isSubscription: boolean,
+  isRobot: boolean,
   expiryDate: string | null,
   customerName: string,
   ctaLink: string,
@@ -113,15 +125,15 @@ function generateEmailHTML(
             <!-- STATUS BADGE - GOLD -->
             <div style="display: inline-block; background: rgba(212, 175, 55, 0.08); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 100px; padding: 8px 20px; margin-bottom: 24px;">
               <span style="color: #d4af37; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
-                ${isSubscription ? '⚡ PRO LICENSE' : '✓ ORDER CONFIRMED'}
+                ${isRobot ? '⚡ ROBOT DEPLOYMENT' : isSubscription ? '⚡ PRO LICENSE' : '✓ ORDER CONFIRMED'}
               </span>
             </div>
             
             <!-- HEADLINE -->
             <h1 style="margin: 0 0 16px; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; color: #ffffff;">
-              ${isSubscription ? 'AI Trader Assistant' : 'Payment Successful'}
+              ${isRobot ? 'Scalper X1 Ready' : isSubscription ? 'AI Trader Assistant' : 'Payment Successful'}
               <span style="display: block; font-size: 18px; font-weight: 400; color: #a1a1aa; margin-top: 8px;">
-                ${isSubscription ? 'Professional License Activated' : order.productName}
+                ${isRobot ? 'Institutional Grade Robot' : isSubscription ? 'Professional License Activated' : order.productName}
               </span>
             </h1>
             
@@ -132,12 +144,49 @@ function generateEmailHTML(
             
             <!-- MESSAGE -->
             <p style="margin: 0 0 32px; font-size: 16px; color: #cbd5e1; line-height: 1.6;">
-              ${isSubscription 
-                ? `Your institutional-grade trading intelligence subscription is now active. You have <strong style="color: #d4af37;">unlimited access</strong> to AI-powered market analysis.`
-                : `Thank you for your purchase. Your trading setups have been credited to your account and are ready for immediate use.`
+              ${isRobot 
+                ? `Your institutional grade robot <b style="color: #d4af37;">${order.productName}</b> has been provisioned. You can download the protected .ex5 file below.`
+                : isSubscription 
+                  ? `Your institutional-grade trading intelligence subscription is now active. You have <strong style="color: #d4af37;">unlimited access</strong> to AI-powered market analysis.`
+                  : `Thank you for your purchase. Your trading setups have been credited to your account and are ready for immediate use.`
               }
             </p>
-            
+
+            ${isRobot ? `
+            <!-- ROBOT DOWNLOAD CARD - PREMIUM GOLD -->
+            <div style="background: linear-gradient(165deg, #0f0f0f, #080808); border-radius: 20px; padding: 28px; border: 1px solid rgba(212, 175, 55, 0.35); margin-bottom: 32px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
+              
+              <!-- DECORATIVE GOLD DOT -->
+              <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                <div style="width: 8px; height: 8px; background: #d4af37; border-radius: 50%; margin-right: 12px; box-shadow: 0 0 12px #d4af37;"></div>
+                <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; color: #d4af37;">Secure Download</span>
+              </div>
+              
+              <!-- FILE DETAILS -->
+              <div style="background: #000000; border-radius: 14px; padding: 20px; border: 1px solid #2a2a2a; margin-bottom: 20px;">
+                <p style="margin: 0 0 10px 0; color: #9ca3af; font-size: 14px;">File:</p>
+                <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600; word-break: break-all;">
+                  MZPrimer_${order.productName.replace(/\s+/g, '_')}_V.1.ex5
+                </p>
+              </div>
+              
+              <!-- DOWNLOAD BUTTON -->
+              <div style="text-align: center;">
+                <a href="${ctaLink}" 
+                   style="display: inline-block; background: #d4af37; color: #000000; text-decoration: none; padding: 16px 40px; border-radius: 100px; font-weight: 800; font-size: 15px; letter-spacing: 2px; text-transform: uppercase; border: 1px solid #f9e076; box-shadow: 0 12px 30px -8px rgba(212, 175, 55, 0.3);">
+                  DOWNLOAD SOFTWARE →
+                </a>
+              </div>
+              
+              <!-- SECURITY NOTE -->
+              <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #1e1e1e;">
+                <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                  <span style="color: #d4af37;">🔒</span> Secure, encrypted download • Link expires in 24 hours
+                </p>
+              </div>
+            </div>
+            ` : ''}
+
             ${isSubscription && order.licenseKey ? `
             <!-- LICENSE KEY CARD - PREMIUM GOLD -->
             <div style="background: linear-gradient(165deg, #0f0f0f, #080808); border-radius: 20px; padding: 28px; border: 1px solid rgba(212, 175, 55, 0.35); margin-bottom: 32px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
@@ -167,7 +216,7 @@ function generateEmailHTML(
             </div>
             ` : ''}
             
-            ${!isSubscription ? `
+            ${!isSubscription && !isRobot ? `
             <!-- SETUP CREDITS CARD - DARK ELEGANT -->
             <div style="background: #0a0a0a; border-radius: 20px; padding: 24px; border: 1px solid #2a2a2a; margin-bottom: 32px;">
               <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -194,7 +243,8 @@ function generateEmailHTML(
               </div>
             </div>
             
-            <!-- CTA BUTTON - GOLD / BLACK -->
+            ${!isRobot ? `
+            <!-- CTA BUTTON - GOLD / BLACK (for non-robot purchases) -->
             <div style="text-align: center;">
               <a href="${ctaLink}" 
                  style="display: inline-block; background: #d4af37; color: #000000; text-decoration: none; padding: 18px 48px; border-radius: 100px; font-weight: 800; font-size: 16px; letter-spacing: 3px; text-transform: uppercase; border: 1px solid #f9e076; box-shadow: 0 12px 30px -8px rgba(212, 175, 55, 0.3);">
@@ -204,14 +254,17 @@ function generateEmailHTML(
                 Secure • Instant access
               </p>
             </div>
+            ` : ''}
             
             <!-- SECURITY NOTE -->
             <div style="margin-top: 32px; padding: 16px; background: rgba(212, 175, 55, 0.02); border-radius: 12px; border: 1px solid rgba(212, 175, 55, 0.1);">
               <p style="margin: 0; color: #9ca3af; font-size: 13px; text-align: center;">
                 <span style="color: #d4af37; font-size: 14px;">🔒</span> 
-                ${isSubscription 
-                  ? 'This license key is uniquely generated for your account. Please keep it confidential.'
-                  : 'Your purchase is securely recorded on our institutional infrastructure.'}
+                ${isRobot 
+                  ? 'This download link is uniquely generated for your account and will expire in 24 hours.'
+                  : isSubscription 
+                    ? 'This license key is uniquely generated for your account. Please keep it confidential.'
+                    : 'Your purchase is securely recorded on our institutional infrastructure.'}
               </p>
             </div>
             
@@ -243,20 +296,28 @@ function generateEmailHTML(
 }
 
 function generatePlainText(
-  order: OrderEmailDetails,
-  isSubscription: boolean,
+  order: OrderEmailDetails, 
+  isSubscription: boolean, 
+  isRobot: boolean, 
   expiryDate: string | null,
   ctaLink: string
 ): string {
   let text = `
-MZPRIMER - ${isSubscription ? 'PRO LICENSE ACTIVATED' : 'ORDER CONFIRMATION'}
+MZPRIMER - ${isRobot ? 'ROBOT DELIVERY' : isSubscription ? 'PRO LICENSE ACTIVATED' : 'ORDER CONFIRMATION'}
 ========================================
 Order ID: ${order.orderId}
 Amount: $${order.amountPaid.toFixed(2)}
 Date: ${new Date().toLocaleDateString()}
 `;
 
-  if (isSubscription && order.licenseKey) {
+  if (isRobot && order.downloadUrl) {
+    text += `
+    
+YOUR DOWNLOAD LINK: ${ctaLink}
+
+This link will expire in 24 hours for security reasons.
+`;
+  } else if (isSubscription && order.licenseKey) {
     text += `
     
 YOUR LICENSE KEY: ${order.licenseKey}
@@ -274,7 +335,7 @@ Access your dashboard: ${ctaLink}
   text += `
 
 Thank you for choosing MZPrimer!
-Questions? Contact support@mzprimer.com`;
+Questions? Contact contact@mzprimer.com`;
 
   return text;
 }

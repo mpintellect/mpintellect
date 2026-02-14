@@ -19791,47 +19791,52 @@ body {
 /* ============================================
    DASHBOARD HEADER - ULTRA-MINIMALIST DESIGN
    ============================================ */
-/* ==========================================
-   ✦ TINY ELEGANT HEADER - ZEN MINIMAL
-   Ultra-compact, refined, whisper-thin
-   ========================================== */
-
 :root {
-  /* Minimalist Palette - Warm Neutrals */
-  --bg-deep: #0C0C0C;           /* Deep charcoal */
-  --bg-surface: #111111;         /* Rich black */
-  --border-subtle: #2A2A2A;      /* Almost invisible */
-  --border-focus: #5C5C5C;       /* Quiet gray */
-  --text-primary: #EDEDED;        /* Soft white */
-  --text-muted: #8E8E8E;          /* Warm gray */
-  --text-very-muted: #5E5E5E;     /* Whisper gray */
-  --accent-stone: #7E7E7E;        /* Medium gray */
-  --accent-charcoal: #3D3D3D;      /* Dark gray */
-  --accent-logout: #A65A5A;        /* Dusty rose for logout */
+  /* Elegant Palette - Luxurious Deep Tones */
+  --bg-deep: #0A0F1C;           /* Midnight navy */
+  --bg-surface: #141B2B;         /* Deep indigo */
+  --bg-soft: #1E2639;             /* Rich navy */
+  --border-subtle: #2A3348;       /* Muted indigo */
+  --border-elegant: #3E4A62;      /* Soft steel */
+  --text-primary: #F0F3FA;        /* Crisp white with blue tint */
+  --text-secondary: #B8C1D4;       /* Lavender gray */
+  --text-muted: #8893AA;           /* Dusty periwinkle */
+  --accent-gold: #D4AF37;          /* Warm gold */
+  --accent-rose: #C4A2A2;          /* Dusty rose */
+  --accent-plum: #8E6C88;          /* Muted plum */
+  --accent-teal: #5F9EA0;          /* Cadet blue */
   
-  /* Spacing - Ultra compact */
-  --space-xxs: 2px;
-  --space-xs: 4px;
-  --space-sm: 6px;
-  --space-md: 8px;
-  --space-lg: 12px;
-  --space-xl: 16px;
+  /* Spacing - Refined proportions */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 20px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
   
-  /* Typography */
-  --text-xs: 9px;
-  --text-sm: 10px;
-  --text-base: 11px;
-  --text-lg: 12px;
+  /* Typography - Elegant scale */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
   
-  /* Borders */
-  --radius-sm: 2px;
-  --radius-md: 3px;
-  --radius-lg: 4px;
-  --radius-full: 20px;
+  /* Borders - Soft and refined */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-full: 30px;
+  
+  /* Shadows */
+  --shadow-soft: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+  --shadow-elegant: 0 15px 35px -10px rgba(0, 0, 0, 0.4);
+  --shadow-inner: inset 0 1px 2px rgba(255, 255, 255, 0.05);
 }
 
 /* ==========================================
-   🏗️ BASE HEADER - THIN & TINY
+   🏗️ BASE HEADER - ELEGANT & REFINED
    ========================================== */
 
 .simple-header {
@@ -19839,20 +19844,39 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  height: 48px; /* Extremely compact */
-  background: var(--bg-deep);
-  backdrop-filter: blur(4px);
+  height: 72px;
+  background: linear-gradient(135deg, var(--bg-deep) 0%, var(--bg-surface) 100%);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border-subtle);
   z-index: 1000;
   display: flex;
   align-items: center;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-soft);
+}
+
+.simple-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    var(--accent-gold) 20%, 
+    var(--accent-teal) 50%, 
+    var(--accent-rose) 80%, 
+    transparent
+  );
+  opacity: 0.3;
 }
 
 .simple-header.scrolled {
-  height: 44px;
+  height: 64px;
   background: var(--bg-surface);
-  border-bottom-color: var(--border-focus);
+  border-bottom-color: var(--border-elegant);
+  box-shadow: var(--shadow-elegant);
 }
 
 .header-nav {
@@ -19860,84 +19884,124 @@ body {
   max-width: 1440px;
   margin: 0 auto;
   padding: 0 var(--space-xl);
+  position: relative;
 }
 
 /* ==========================================
-   🖥️ DESKTOP LAYOUT - MINIMAL
+   🖥️ DESKTOP LAYOUT - LUXURIOUS
    ========================================== */
 
 .desktop-layout {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-lg);
+  gap: var(--space-xl);
   width: 100%;
 }
 
-/* Navigation - Ultra compact */
+/* Brand/Logo area (you can add this) */
+.header-brand {
+  font-size: var(--text-lg);
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  position: relative;
+  padding-right: var(--space-xl);
+}
+
+.header-brand::after {
+  content: '';
+  position: absolute;
+  right: var(--space-lg);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 24px;
+  background: linear-gradient(to bottom, 
+    transparent, 
+    var(--accent-gold) 20%, 
+    var(--accent-teal) 80%, 
+    transparent
+  );
+}
+
+/* Navigation - Elegant spacing */
 .nav-buttons {
   display: flex;
   align-items: center;
-  gap: var(--space-xxs);
-  background: transparent;
-  border: none;
-  padding: 0;
+  gap: var(--space-xs);
+  background: var(--bg-soft);
+  padding: var(--space-xs);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-inner);
 }
 
 .nav-btn {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-sm) var(--space-lg);
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-xl);
   background: transparent;
   border: none;
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  font-size: var(--text-xs);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
   font-weight: 400;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
+  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
   line-height: 1;
+  position: relative;
+  overflow: hidden;
 }
 
 .nav-btn svg {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   stroke: currentColor;
-  stroke-width: 1.5;
+  stroke-width: 1.8;
   fill: none;
-  opacity: 0.7;
+  transition: transform 0.2s ease;
 }
 
 .nav-btn:hover {
   color: var(--text-primary);
-  background: transparent;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .nav-btn:hover svg {
-  opacity: 1;
+  transform: scale(1.1);
 }
 
 .nav-btn.active {
   color: var(--text-primary);
-  background: transparent;
+  background: linear-gradient(135deg, 
+    rgba(212, 175, 55, 0.1) 0%, 
+    rgba(95, 158, 160, 0.1) 100%
+  );
   font-weight: 500;
-  position: relative;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.nav-btn.active::after {
+.nav-btn.active::before {
   content: '';
   position: absolute;
-  bottom: -4px;
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 12px;
-  height: 1.5px;
-  background: var(--text-primary);
+  width: 20px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-gold), var(--accent-teal));
   border-radius: var(--radius-full);
+  transition: width 0.2s ease;
+}
+
+.nav-btn.active:hover::before {
+  width: 40px;
 }
 
 .nav-btn:disabled {
@@ -19945,99 +20009,134 @@ body {
   cursor: not-allowed;
 }
 
-/* User Section - Minimal */
+/* User Section - Sophisticated */
 .user-section {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: var(--space-lg);
 }
 
-/* User Info - Tiny pill */
+/* User Info - Elegant card */
 .user-info-simple {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-xxs) var(--space-sm) var(--space-xxs) var(--space-xxs);
-  background: transparent;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-lg) var(--space-xs) var(--space-xs);
+  background: var(--bg-soft);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
+  box-shadow: var(--shadow-inner);
+  transition: all 0.2s ease;
+}
+
+.user-info-simple:hover {
+  border-color: var(--border-elegant);
+  background: var(--bg-surface);
 }
 
 .user-avatar-small {
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--border-focus);
+  background: linear-gradient(135deg, var(--accent-plum), var(--accent-teal));
   color: var(--text-primary);
   font-weight: 400;
-  font-size: var(--text-xs);
-  border-radius: 50%;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-full);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .user-details {
   display: flex;
   align-items: baseline;
-  gap: var(--space-xs);
+  gap: var(--space-sm);
   line-height: 1;
 }
 
 .user-email-simple {
   color: var(--text-primary);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: 400;
-  max-width: 100px;
+  max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  opacity: 0.9;
+  letter-spacing: 0.3px;
 }
 
 .setup-count-simple {
-  color: var(--text-very-muted);
+  color: var(--text-muted);
   font-size: var(--text-xs);
   font-weight: 300;
-  padding-left: var(--space-xs);
+  padding-left: var(--space-sm);
   border-left: 1px solid var(--border-subtle);
+  font-style: italic;
 }
 
-/* Logout Button - Micro */
+/* Logout Button - Refined */
 .logout-btn-simple {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-sm) var(--space-lg);
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-xl);
   background: transparent;
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  color: var(--text-very-muted);
-  font-size: var(--text-xs);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
   font-weight: 400;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   line-height: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.logout-btn-simple::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(196, 162, 162, 0.1), 
+    transparent
+  );
+  transition: left 0.5s ease;
 }
 
 .logout-btn-simple svg {
-  width: 11px;
-  height: 11px;
+  width: 14px;
+  height: 14px;
   stroke: currentColor;
-  stroke-width: 1.5;
+  stroke-width: 1.8;
   fill: none;
+  transition: transform 0.2s ease;
 }
 
 .logout-btn-simple:hover {
-  color: var(--accent-logout);
-  border-color: var(--accent-logout);
-  background: transparent;
+  color: var(--accent-rose);
+  border-color: var(--accent-rose);
+  background: rgba(196, 162, 162, 0.05);
+}
+
+.logout-btn-simple:hover::before {
+  left: 100%;
+}
+
+.logout-btn-simple:hover svg {
+  transform: translateX(2px);
 }
 
 /* ==========================================
-   📱 MOBILE LAYOUT - COMPACT
+   📱 MOBILE LAYOUT - LUXURIOUS
    ========================================== */
 
 .mobile-layout {
@@ -20050,122 +20149,168 @@ body {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: var(--space-xs) 0;
+  padding: var(--space-sm) 0;
 }
 
 .user-info-mobile-top {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: var(--space-md);
   flex: 1;
 }
 
 .user-avatar-mobile {
-  width: 28px;
-  height: 28px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--border-focus);
+  background: linear-gradient(135deg, var(--accent-plum), var(--accent-teal));
   color: var(--text-primary);
   font-weight: 400;
-  font-size: var(--text-sm);
-  border-radius: 50%;
+  font-size: var(--text-base);
+  border-radius: var(--radius-full);
   text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .user-details-mobile {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-xs);
+  flex-direction: column;
+  gap: var(--space-xxs);
 }
 
 .user-email-mobile {
   color: var(--text-primary);
   font-weight: 400;
   font-size: var(--text-sm);
-  letter-spacing: 0.2px;
+  letter-spacing: 0.3px;
 }
 
 .setup-count-mobile {
-  color: var(--text-very-muted);
+  color: var(--text-muted);
   font-size: var(--text-xs);
   font-weight: 300;
-  padding-left: var(--space-xs);
-  border-left: 1px solid var(--border-subtle);
+  font-style: italic;
 }
 
-/* Mobile Toggle - Tiny */
+/* Mobile Toggle - Elegant */
 .nav-toggle-btn {
-  background: transparent;
+  background: var(--bg-soft);
   border: 1px solid var(--border-subtle);
-  color: var(--text-muted);
-  padding: var(--space-xs) var(--space-lg);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  padding: var(--space-sm) var(--space-xl);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
   font-weight: 400;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
+  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   line-height: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-toggle-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(212, 175, 55, 0.1), 
+    transparent
+  );
+  transition: left 0.5s ease;
 }
 
 .nav-toggle-btn:hover {
-  border-color: var(--border-focus);
+  border-color: var(--border-elegant);
   color: var(--text-primary);
 }
 
-/* Mobile Navigation - Minimal grid */
+.nav-toggle-btn:hover::before {
+  left: 100%;
+}
+
+/* Mobile Navigation - Elegant grid */
 .mobile-nav-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-xs);
-  margin-top: var(--space-md);
-  padding-top: var(--space-md);
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
   border-top: 1px solid var(--border-subtle);
-  animation: fadeIn 0.2s ease;
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .mobile-nav-btn {
   padding: var(--space-md) var(--space-sm);
-  background: transparent;
+  background: var(--bg-soft);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  font-size: var(--text-xs);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
   font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   text-align: center;
   line-height: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.mobile-nav-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.02), 
+    transparent
+  );
+  transition: left 0.5s ease;
 }
 
 .mobile-nav-btn:hover {
-  border-color: var(--border-focus);
+  border-color: var(--border-elegant);
   color: var(--text-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-nav-btn:hover::before {
+  left: 100%;
 }
 
 .mobile-nav-btn.active {
   color: var(--text-primary);
-  border-color: var(--text-primary);
+  border-color: var(--accent-gold);
+  background: linear-gradient(135deg, 
+    rgba(212, 175, 55, 0.1) 0%, 
+    rgba(95, 158, 160, 0.1) 100%
+  );
   font-weight: 500;
-  background: transparent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .mobile-nav-btn.logout {
   grid-column: span 2;
-  color: var(--accent-logout);
-  border-color: rgba(166, 90, 90, 0.3);
-  margin-top: var(--space-xxs);
+  color: var(--accent-rose);
+  border-color: rgba(196, 162, 162, 0.3);
+  margin-top: var(--space-xs);
 }
 
 .mobile-nav-btn.logout:hover {
-  border-color: var(--accent-logout);
-  color: var(--accent-logout);
-  background: transparent;
+  border-color: var(--accent-rose);
+  color: var(--accent-rose);
+  background: rgba(196, 162, 162, 0.1);
 }
 
 .mobile-nav-btn:disabled {
@@ -20173,27 +20318,28 @@ body {
   cursor: not-allowed;
 }
 
-/* Mobile Logout - Micro */
+/* Mobile Logout - Refined */
 .logout-btn-mobile {
-  padding: var(--space-xs) var(--space-md);
+  padding: var(--space-sm) var(--space-lg);
   background: transparent;
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  color: var(--text-very-muted);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
   font-size: var(--text-xs);
   font-weight: 400;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   line-height: 1;
 }
 
 .logout-btn-mobile:hover {
-  color: var(--accent-logout);
-  border-color: var(--accent-logout);
+  color: var(--accent-rose);
+  border-color: var(--accent-rose);
+  background: rgba(196, 162, 162, 0.05);
 }
 
 /* ==========================================
-   📱 RESPONSIVE - CLEAN BREAKS
+   📱 RESPONSIVE - ELEGANT BREAKS
    ========================================== */
 
 /* Desktop */
@@ -20211,7 +20357,7 @@ body {
 @media (max-width: 768px) {
   .simple-header {
     height: auto;
-    min-height: 48px;
+    min-height: 64px;
     padding: var(--space-xs) 0;
   }
   
@@ -20230,11 +20376,11 @@ body {
   }
   
   .cabinet-main {
-    padding-top: 60px;
+    padding-top: 80px;
   }
   
   .user-email-mobile {
-    max-width: 120px;
+    max-width: 140px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -20244,50 +20390,50 @@ body {
 /* Small mobile */
 @media (max-width: 480px) {
   .simple-header {
-    min-height: 44px;
+    min-height: 60px;
   }
   
   .user-email-mobile {
-    max-width: 90px;
+    max-width: 110px;
   }
   
   .nav-toggle-btn {
-    padding: var(--space-xxs) var(--space-sm);
-    font-size: 8px;
+    padding: var(--space-xs) var(--space-lg);
+    font-size: var(--text-xs);
   }
   
   .mobile-nav-btn {
     padding: var(--space-sm) var(--space-xs);
-    font-size: 8px;
+    font-size: var(--text-xs);
   }
   
   .user-avatar-mobile {
-    width: 24px;
-    height: 24px;
-    font-size: 8px;
+    width: 36px;
+    height: 36px;
+    font-size: var(--text-sm);
   }
   
   .user-email-mobile {
-    font-size: 9px;
+    font-size: var(--text-xs);
   }
   
   .setup-count-mobile {
-    font-size: 8px;
+    font-size: 9px;
   }
   
   .cabinet-main {
-    padding-top: 56px;
+    padding-top: 72px;
   }
 }
 
 /* ==========================================
-   ✨ MICRO-ANIMATIONS
+   ✨ ELEGANT ANIMATIONS
    ========================================== */
 
-@keyframes fadeIn {
+@keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-2px);
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
@@ -20295,25 +20441,55 @@ body {
   }
 }
 
-/* Subtle dot for active state */
-.nav-btn.active .dot-indicator {
-  display: inline-block;
-  width: 2px;
-  height: 2px;
-  background: var(--text-primary);
-  border-radius: 50%;
-  margin-left: var(--space-xxs);
+@keyframes shimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
-/* Optional: Very subtle hover effect on nav items */
-.nav-btn::before {
-  display: none;
-}
-
-/* Clean, minimal focus states */
+/* Elegant focus states */
 .nav-btn:focus-visible,
 .mobile-nav-btn:focus-visible,
 .logout-btn-simple:focus-visible {
-  outline: 1px solid var(--border-focus);
+  outline: 2px solid var(--accent-gold);
   outline-offset: 2px;
+  border-radius: var(--radius-full);
+}
+
+/* Subtle gradient overlays */
+.simple-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    var(--accent-gold) 0%, 
+    var(--accent-teal) 50%, 
+    var(--accent-rose) 100%
+  );
+  opacity: 0.2;
+}
+
+/* Loading shimmer effect */
+.simple-header.loading {
+  background: linear-gradient(
+    90deg,
+    var(--bg-deep) 25%,
+    var(--bg-soft) 50%,
+    var(--bg-deep) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }

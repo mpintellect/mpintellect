@@ -19792,41 +19792,46 @@ body {
    DASHBOARD HEADER - ULTRA-MINIMALIST DESIGN
    ============================================ */
 /* ==========================================
-   🌙 ELEGANT DASHBOARD HEADER - DEEP OCEAN
-   Premium Navy Blue with Warm Amber Accents
+   ✦ TINY ELEGANT HEADER - ZEN MINIMAL
+   Ultra-compact, refined, whisper-thin
    ========================================== */
 
 :root {
-  /* Deep Ocean Color Palette */
-  --primary-dark: #0B1A2E;        /* Deep navy */
-  --primary-deep: #1A2F4A;        /* Rich blue */
-  --primary-medium: #234567;       /* Classic navy */
-  --accent-amber: #F4B740;         /* Warm amber */
-  --accent-amber-light: #FFD966;   /* Soft gold */
-  --accent-coral: #FF7F5C;          /* Warm coral for logout */
-  --surface-dark: #0F212E;          /* Dark teal-blue */
-  --surface-medium: #1E3A5F;        /* Medium blue */
-  --glass-bg: rgba(15, 33, 46, 0.85);
-  --glass-border: rgba(244, 183, 64, 0.15);
-  --text-primary: #F0F5FA;          /* Soft white */
-  --text-secondary: #B8C7D9;        /* Muted blue-gray */
-  --text-dim: #8A9BB0;               /* Subtle blue-gray */
+  /* Minimalist Palette - Warm Neutrals */
+  --bg-deep: #0C0C0C;           /* Deep charcoal */
+  --bg-surface: #111111;         /* Rich black */
+  --border-subtle: #2A2A2A;      /* Almost invisible */
+  --border-focus: #5C5C5C;       /* Quiet gray */
+  --text-primary: #EDEDED;        /* Soft white */
+  --text-muted: #8E8E8E;          /* Warm gray */
+  --text-very-muted: #5E5E5E;     /* Whisper gray */
+  --accent-stone: #7E7E7E;        /* Medium gray */
+  --accent-charcoal: #3D3D3D;      /* Dark gray */
+  --accent-logout: #A65A5A;        /* Dusty rose for logout */
   
-  /* Spacing */
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
+  /* Spacing - Ultra compact */
+  --space-xxs: 2px;
+  --space-xs: 4px;
+  --space-sm: 6px;
+  --space-md: 8px;
+  --space-lg: 12px;
+  --space-xl: 16px;
   
-  /* Shadows */
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
-  --shadow-glow: 0 4px 20px rgba(244, 183, 64, 0.2);
+  /* Typography */
+  --text-xs: 9px;
+  --text-sm: 10px;
+  --text-base: 11px;
+  --text-lg: 12px;
+  
+  /* Borders */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-full: 20px;
 }
 
 /* ==========================================
-   🏗️ BASE HEADER STRUCTURE
+   🏗️ BASE HEADER - THIN & TINY
    ========================================== */
 
 .simple-header {
@@ -19834,237 +19839,205 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  height: 72px;
-  background: linear-gradient(135deg, var(--glass-bg) 0%, rgba(10, 25, 40, 0.95) 100%);
-  backdrop-filter: blur(16px) saturate(180%);
-  border-bottom: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-sm);
+  height: 48px; /* Extremely compact */
+  background: var(--bg-deep);
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid var(--border-subtle);
   z-index: 1000;
   display: flex;
   align-items: center;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .simple-header.scrolled {
-  height: 64px;
-  background: rgba(10, 22, 35, 0.98);
-  border-bottom-color: var(--accent-amber);
-  box-shadow: var(--shadow-md);
+  height: 44px;
+  background: var(--bg-surface);
+  border-bottom-color: var(--border-focus);
 }
 
 .header-nav {
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
-  padding: 0 var(--spacing-xl);
+  padding: 0 var(--space-xl);
 }
 
 /* ==========================================
-   🖥️ DESKTOP LAYOUT
+   🖥️ DESKTOP LAYOUT - MINIMAL
    ========================================== */
 
 .desktop-layout {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-xl);
+  gap: var(--space-lg);
   width: 100%;
 }
 
-/* Navigation Button Group */
+/* Navigation - Ultra compact */
 .nav-buttons {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  background: rgba(26, 47, 74, 0.4);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(244, 183, 64, 0.1);
-  border-radius: 16px;
-  padding: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  gap: var(--space-xxs);
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .nav-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 22px;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-lg);
   background: transparent;
   border: none;
-  border-radius: 12px;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  font-weight: 500;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 400;
   letter-spacing: 0.3px;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+  transition: all 0.15s ease;
   white-space: nowrap;
-  position: relative;
-  overflow: hidden;
-}
-
-.nav-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at center, rgba(244, 183, 64, 0.1) 0%, transparent 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  line-height: 1;
 }
 
 .nav-btn svg {
-  width: 18px;
-  height: 18px;
+  width: 12px;
+  height: 12px;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 1.5;
   fill: none;
-  transition: all 0.25s ease;
+  opacity: 0.7;
 }
 
 .nav-btn:hover {
   color: var(--text-primary);
-  background: rgba(244, 183, 64, 0.08);
-  transform: translateY(-1px);
+  background: transparent;
 }
 
-.nav-btn:hover::before {
+.nav-btn:hover svg {
   opacity: 1;
 }
 
 .nav-btn.active {
-  color: var(--primary-dark);
-  background: var(--accent-amber);
-  font-weight: 600;
-  box-shadow: var(--shadow-glow);
+  color: var(--text-primary);
+  background: transparent;
+  font-weight: 500;
+  position: relative;
 }
 
-.nav-btn.active svg {
-  stroke: var(--primary-dark);
-  stroke-width: 2;
+.nav-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 1.5px;
+  background: var(--text-primary);
+  border-radius: var(--radius-full);
 }
 
 .nav-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
-  pointer-events: none;
 }
 
-/* User Section */
+/* User Section - Minimal */
 .user-section {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--space-md);
 }
 
-/* User Info Card */
+/* User Info - Tiny pill */
 .user-info-simple {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 6px 20px 6px 6px;
-  background: linear-gradient(135deg, rgba(26, 47, 74, 0.6) 0%, rgba(15, 33, 46, 0.8) 100%);
-  border: 1px solid rgba(244, 183, 64, 0.15);
-  border-radius: 40px;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  gap: var(--space-xs);
+  padding: var(--space-xxs) var(--space-sm) var(--space-xxs) var(--space-xxs);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
 }
 
 .user-avatar-small {
-  width: 38px;
-  height: 38px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--accent-amber) 0%, var(--accent-amber-light) 100%);
-  color: var(--primary-dark);
-  font-weight: 700;
-  font-size: 1rem;
+  background: var(--border-focus);
+  color: var(--text-primary);
+  font-weight: 400;
+  font-size: var(--text-xs);
   border-radius: 50%;
   text-transform: uppercase;
-  box-shadow: 0 2px 12px rgba(244, 183, 64, 0.4);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .user-details {
   display: flex;
-  flex-direction: column;
-  line-height: 1.4;
+  align-items: baseline;
+  gap: var(--space-xs);
+  line-height: 1;
 }
 
 .user-email-simple {
   color: var(--text-primary);
-  font-size: 0.85rem;
-  font-weight: 500;
-  max-width: 150px;
+  font-size: var(--text-xs);
+  font-weight: 400;
+  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  letter-spacing: 0.2px;
+  opacity: 0.9;
 }
 
 .setup-count-simple {
-  color: var(--accent-amber);
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  color: var(--text-very-muted);
+  font-size: var(--text-xs);
+  font-weight: 300;
+  padding-left: var(--space-xs);
+  border-left: 1px solid var(--border-subtle);
 }
 
-.setup-count-simple::before {
-  content: '●';
-  color: var(--accent-amber);
-  font-size: 0.5rem;
-  opacity: 0.8;
-}
-
-/* Logout Button */
+/* Logout Button - Micro */
 .logout-btn-simple {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 22px;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-lg);
   background: transparent;
-  border: 1.5px solid rgba(255, 127, 92, 0.2);
-  border-radius: 40px;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  font-weight: 500;
-  letter-spacing: 0.5px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-very-muted);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  letter-spacing: 0.3px;
   cursor: pointer;
-  transition: all 0.25s ease;
-  backdrop-filter: blur(4px);
+  transition: all 0.15s ease;
+  line-height: 1;
 }
 
 .logout-btn-simple svg {
-  width: 18px;
-  height: 18px;
+  width: 11px;
+  height: 11px;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 1.5;
   fill: none;
-  transition: all 0.25s ease;
 }
 
 .logout-btn-simple:hover {
-  color: var(--accent-coral);
-  background: rgba(255, 127, 92, 0.08);
-  border-color: var(--accent-coral);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 127, 92, 0.15);
-}
-
-.logout-btn-simple:hover svg {
-  stroke: var(--accent-coral);
-  transform: translateX(2px);
+  color: var(--accent-logout);
+  border-color: var(--accent-logout);
+  background: transparent;
 }
 
 /* ==========================================
-   📱 MOBILE LAYOUT
+   📱 MOBILE LAYOUT - COMPACT
    ========================================== */
 
 .mobile-layout {
@@ -20077,175 +20050,150 @@ body {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: var(--spacing-sm) 0;
+  padding: var(--space-xs) 0;
 }
 
 .user-info-mobile-top {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-sm);
   flex: 1;
 }
 
 .user-avatar-mobile {
-  width: 44px;
-  height: 44px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--accent-amber) 0%, var(--accent-amber-light) 100%);
-  color: var(--primary-dark);
-  font-weight: 700;
-  font-size: 1.1rem;
+  background: var(--border-focus);
+  color: var(--text-primary);
+  font-weight: 400;
+  font-size: var(--text-sm);
   border-radius: 50%;
-  box-shadow: 0 2px 16px rgba(244, 183, 64, 0.4);
   text-transform: uppercase;
 }
 
 .user-details-mobile {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  gap: var(--space-xs);
 }
 
 .user-email-mobile {
   color: var(--text-primary);
-  font-weight: 600;
-  font-size: 1rem;
-  margin-bottom: 2px;
+  font-weight: 400;
+  font-size: var(--text-sm);
   letter-spacing: 0.2px;
 }
 
 .setup-count-mobile {
-  color: var(--accent-amber);
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  color: var(--text-very-muted);
+  font-size: var(--text-xs);
+  font-weight: 300;
+  padding-left: var(--space-xs);
+  border-left: 1px solid var(--border-subtle);
 }
 
-.setup-count-mobile::before {
-  content: '●';
-  color: var(--accent-amber);
-  font-size: 0.6rem;
-}
-
-/* Mobile Toggle Button */
+/* Mobile Toggle - Tiny */
 .nav-toggle-btn {
-  background: linear-gradient(135deg, rgba(26, 47, 74, 0.6) 0%, rgba(15, 33, 46, 0.8) 100%);
-  border: 1px solid rgba(244, 183, 64, 0.3);
-  color: var(--accent-amber);
-  padding: 10px 20px;
-  border-radius: 30px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  padding: var(--space-xs) var(--space-lg);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  letter-spacing: 0.3px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.25s ease;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s ease;
+  line-height: 1;
 }
 
 .nav-toggle-btn:hover {
-  background: rgba(244, 183, 64, 0.15);
-  border-color: var(--accent-amber);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(244, 183, 64, 0.2);
+  border-color: var(--border-focus);
+  color: var(--text-primary);
 }
 
-/* Mobile Navigation Grid */
+/* Mobile Navigation - Minimal grid */
 .mobile-nav-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(244, 183, 64, 0.15);
-  animation: slideUpFade 0.4s ease-out;
+  gap: var(--space-xs);
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-subtle);
+  animation: fadeIn 0.2s ease;
 }
 
 .mobile-nav-btn {
-  padding: 16px 12px;
-  background: linear-gradient(135deg, rgba(26, 47, 74, 0.5) 0%, rgba(15, 33, 46, 0.7) 100%);
-  border: 1px solid rgba(244, 183, 64, 0.15);
-  border-radius: 16px;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  font-weight: 600;
+  padding: var(--space-md) var(--space-sm);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.3px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.15s ease;
   text-align: center;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  line-height: 1;
 }
 
 .mobile-nav-btn:hover {
-  background: rgba(244, 183, 64, 0.12);
-  border-color: rgba(244, 183, 64, 0.4);
+  border-color: var(--border-focus);
   color: var(--text-primary);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(244, 183, 64, 0.15);
 }
 
 .mobile-nav-btn.active {
-  background: linear-gradient(135deg, var(--accent-amber) 0%, var(--accent-amber-light) 100%);
-  color: var(--primary-dark);
-  border-color: var(--accent-amber);
-  font-weight: 700;
-  box-shadow: 0 4px 16px rgba(244, 183, 64, 0.3);
+  color: var(--text-primary);
+  border-color: var(--text-primary);
+  font-weight: 500;
+  background: transparent;
 }
 
 .mobile-nav-btn.logout {
   grid-column: span 2;
-  background: linear-gradient(135deg, rgba(255, 127, 92, 0.08) 0%, rgba(255, 127, 92, 0.15) 100%);
-  color: var(--accent-coral);
-  border-color: rgba(255, 127, 92, 0.25);
-  margin-top: 8px;
+  color: var(--accent-logout);
+  border-color: rgba(166, 90, 90, 0.3);
+  margin-top: var(--space-xxs);
 }
 
 .mobile-nav-btn.logout:hover {
-  background: rgba(255, 127, 92, 0.18);
-  border-color: var(--accent-coral);
-  color: var(--accent-coral);
+  border-color: var(--accent-logout);
+  color: var(--accent-logout);
+  background: transparent;
 }
 
 .mobile-nav-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.3;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
-/* Mobile Logout Button (alternative) */
+/* Mobile Logout - Micro */
 .logout-btn-mobile {
-  padding: 10px 18px;
+  padding: var(--space-xs) var(--space-md);
   background: transparent;
-  border: 1.5px solid rgba(255, 127, 92, 0.2);
-  border-radius: 30px;
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  font-weight: 600;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-very-muted);
+  font-size: var(--text-xs);
+  font-weight: 400;
   cursor: pointer;
-  transition: all 0.25s ease;
-  white-space: nowrap;
-  backdrop-filter: blur(4px);
+  transition: all 0.15s ease;
+  line-height: 1;
 }
 
 .logout-btn-mobile:hover {
-  color: var(--accent-coral);
-  border-color: var(--accent-coral);
-  background: rgba(255, 127, 92, 0.08);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 127, 92, 0.15);
+  color: var(--accent-logout);
+  border-color: var(--accent-logout);
 }
 
 /* ==========================================
-   📱 RESPONSIVE BREAKPOINTS
+   📱 RESPONSIVE - CLEAN BREAKS
    ========================================== */
 
 /* Desktop */
@@ -20263,9 +20211,8 @@ body {
 @media (max-width: 768px) {
   .simple-header {
     height: auto;
-    min-height: 76px;
-    padding: 12px 0;
-    background: linear-gradient(135deg, rgba(10, 22, 35, 0.98) 0%, rgba(15, 33, 46, 0.98) 100%);
+    min-height: 48px;
+    padding: var(--space-xs) 0;
   }
   
   .desktop-layout {
@@ -20275,19 +20222,19 @@ body {
   .mobile-layout {
     display: flex !important;
     flex-direction: column;
-    padding: 0 var(--spacing-md);
+    padding: 0 var(--space-md);
   }
   
   .header-nav {
-    padding: 0 var(--spacing-md);
+    padding: 0 var(--space-md);
   }
   
   .cabinet-main {
-    padding-top: 92px;
+    padding-top: 60px;
   }
   
   .user-email-mobile {
-    max-width: 160px;
+    max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -20296,36 +20243,51 @@ body {
 
 /* Small mobile */
 @media (max-width: 480px) {
+  .simple-header {
+    min-height: 44px;
+  }
+  
   .user-email-mobile {
-    max-width: 120px;
+    max-width: 90px;
   }
   
   .nav-toggle-btn {
-    padding: 8px 16px;
-    font-size: 0.75rem;
+    padding: var(--space-xxs) var(--space-sm);
+    font-size: 8px;
   }
   
   .mobile-nav-btn {
-    padding: 14px 8px;
-    font-size: 0.75rem;
-    letter-spacing: 0.5px;
+    padding: var(--space-sm) var(--space-xs);
+    font-size: 8px;
   }
   
   .user-avatar-mobile {
-    width: 38px;
-    height: 38px;
-    font-size: 0.95rem;
+    width: 24px;
+    height: 24px;
+    font-size: 8px;
+  }
+  
+  .user-email-mobile {
+    font-size: 9px;
+  }
+  
+  .setup-count-mobile {
+    font-size: 8px;
+  }
+  
+  .cabinet-main {
+    padding-top: 56px;
   }
 }
 
 /* ==========================================
-   ✨ ANIMATIONS
+   ✨ MICRO-ANIMATIONS
    ========================================== */
 
-@keyframes slideUpFade {
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(-2px);
   }
   to {
     opacity: 1;
@@ -20333,19 +20295,25 @@ body {
   }
 }
 
-/* Optional: Add a subtle pulse to active items */
-@keyframes softPulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(244, 183, 64, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(244, 183, 64, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(244, 183, 64, 0);
-  }
+/* Subtle dot for active state */
+.nav-btn.active .dot-indicator {
+  display: inline-block;
+  width: 2px;
+  height: 2px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  margin-left: var(--space-xxs);
 }
 
-.nav-btn.active {
-  animation: softPulse 2s infinite;
+/* Optional: Very subtle hover effect on nav items */
+.nav-btn::before {
+  display: none;
+}
+
+/* Clean, minimal focus states */
+.nav-btn:focus-visible,
+.mobile-nav-btn:focus-visible,
+.logout-btn-simple:focus-visible {
+  outline: 1px solid var(--border-focus);
+  outline-offset: 2px;
 }

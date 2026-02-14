@@ -17297,24 +17297,6 @@ select {
   color: #000 !important;
 }
 
-/* --- 2. TINY ELEGANT HEADER (Full Width) --- */
-.simple-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 54px; /* Tiny & Elegant height */
-  background: rgba(5, 5, 5, 0.95);
-  backdrop-filter: blur(15px);
-  border-bottom: 1px solid var(--gold-border);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-}
-
-.header-nav { width: 100%; }
-
-
 /* Dashboard Card Standard */
 .action-card {
   background: var(--matte-black);
@@ -18052,43 +18034,6 @@ input[type="number"] {
 .btn-gold:hover { transform: translateY(-2px); background: var(--gold-soft); }
 .btn-ghost-gold:hover { background: rgba(212, 175, 55, 0.05); }
 
-/* --- 2. HEADER & MENU FIXES --- */
-.simple-header {
-  height: 54px;
-  width: 100%;
-  position: fixed;
-  top: 0;
-  z-index: 1000;
-  background: rgba(5, 5, 5, 0.9);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--gold-border);
-}
-
-@media (max-width: 768px) {
-  .desktop-layout { display: none !important; } /* HIDES DESKTOP MENU ON MOBILE */
-  
-  .mobile-nav-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    background: #0d0d0d;
-    padding: 15px;
-    border-radius: 12px;
-    margin-top: 10px;
-    border: 1px solid var(--gold-border);
-  }
-  
-  .mobile-nav-btn {
-    padding: 14px;
-    background: #111;
-    color: #fff;
-    border: 1px solid #222;
-    border-radius: 8px;
-    text-align: left;
-    font-weight: 600;
-  }
-  .mobile-nav-btn.logout { color: var(--ruby); border-color: rgba(239, 68, 68, 0.2); }
-}
 
 /* --- 4. IMMERSIVE MODAL OVERLAY (BLUR) --- */
 .immersive-modal-overlay {
@@ -18269,104 +18214,6 @@ body.modal-open {
    🌑 INSTITUTIONAL MONOCHROME NAV
    ========================================== */
 
-/* 1. Navigation Button Group */
-.nav-buttons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.nav-btn {
-  background: transparent;
-  border: 1px solid transparent;
-  color: #71717a; /* Muted Silver/Gray */
-  padding: 8px 18px;
-  font-size: 10px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.2em; /* HIGH ELEGANCE TRACKING */
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  border-radius: 4px;
-}
-
-/* Hover: Ghost Silver */
-.nav-btn:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-/* Active State: The Institutional Switch */
-.nav-btn.active {
-  background: #ffffff !important; /* Pure White */
-  color: #000000 !important;      /* Pure Black */
-  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
-}
-
-/* 2. User Section - Monochrome Edition */
-.user-info-simple {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #000;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 4px 14px 4px 4px;
-  border-radius: 100px;
-}
-
-.user-avatar-small {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: #ffffff; /* White Avatar */
-  color: #000000;      /* Black Initials */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
-  font-size: 10px;
-}
-
-.user-email-simple {
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.setup-count-simple {
-  color: #71717a;
-  font-size: 9px;
-  font-weight: 800;
-  border-left: 1px solid #333;
-  padding-left: 10px;
-}
-
-/* 3. Logout - Sharp Contrast */
-.logout-btn-simple {
-  background: transparent;
-  border: 1px solid #fff; /* White Border */
-  color: #fff;
-  font-size: 9px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.logout-btn-simple:hover {
-  background: #fff;
-  color: #000;
-}
-.simple-header {
-  background: rgba(0, 0, 0, 0.9); /* Darker backdrop for B&W contrast */
-  backdrop-filter: blur(20px) saturate(150%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
 /* === MODAL OVERLAY & CONTAINER === */
 .modal-overlay {
   position: fixed;
@@ -19152,262 +18999,7 @@ body.modal-open {
     flex: 0 0 150px !important;
   }
 }
-/* ==========================================
-   📱 MOBILE LAYOUT STYLES
-   ========================================== */
 
-/* Mobile Layout - Hidden by default on desktop */
-.mobile-layout {
-  display: none;
-  flex-direction: column;
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-}
-
-/* Mobile User Top Section */
-.mobile-user-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.4rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  margin-bottom: 0.1rem;
-  width: 100%;
-}
-
-.user-info-mobile-top {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex: 1;
-}
-
-.user-avatar-mobile {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #FACC15, #d97706);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
-  font-size: 0.75rem;
-  color: #000000;
-  flex-shrink: 0;
-  box-shadow: 0 0 8px rgba(250, 204, 21, 0.2);
-}
-
-.user-details-mobile {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.user-email-mobile {
-  color: #FFFFFF;
-  font-weight: 700;
-  font-size: 0.85rem;
-  margin-bottom: 0.1rem;
-}
-
-.setup-count-mobile {
-  color: #A1A1AA;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-}
-
-/* Mobile Navigation Buttons */
-.mobile-nav-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.4rem;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  animation: slideDownMobile 0.3s ease-out;
-}
-
-.mobile-nav-btn {
-  padding: 0.75rem 0.5rem;
-  background: #0d0d0d;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: #FFFFFF;
-  font-size: 0.75rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.mobile-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(212, 175, 55, 0.3);
-}
-
-.mobile-nav-btn.active {
-  background: rgba(217, 119, 6, 0.1);
-  border-color: rgba(217, 119, 6, 0.3);
-  color: #F59E0B;
-}
-
-.mobile-nav-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.mobile-nav-btn.logout {
-  background: rgba(120, 113, 108, 0.1);
-  color: #A8A29E;
-  grid-column: span 2;
-  border-color: rgba(239, 68, 68, 0.2);
-}
-
-.mobile-nav-btn.logout:hover {
-  background: rgba(120, 113, 108, 0.2);
-  border-color: rgba(239, 68, 68, 0.3);
-}
-
-/* Toggle Button */
-.nav-toggle-btn-small {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  color: rgba(212, 175, 55, 0.9);
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  font-size: 0.7rem;
-  font-weight: 900;
-  cursor: pointer;
-  letter-spacing: 0.1em;
-  transition: all 0.2s ease;
-}
-
-.nav-toggle-btn-small:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(212, 175, 55, 0.5);
-}
-
-/* Logout Button */
-.logout-btn-mobile {
-  background: rgba(120, 113, 108, 0.1);
-  color: #A8A29E;
-  border: 1px solid transparent;
-  padding: 0.2rem 0.8rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.logout-btn-mobile:hover {
-  background: rgba(120, 113, 108, 0.2);
-  border-color: rgba(120, 113, 108, 0.3);
-}
-
-/* ==========================================
-   🖥️ DESKTOP LAYOUT STYLES
-   ========================================== */
-
-/* Desktop Layout - Hidden by default on mobile */
-.desktop-layout {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 2rem;
-  width: 100%;
-}
-
-.nav-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.user-section {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.user-info-simple {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.75rem;
-  color: #D1D5DB;
-}
-
-/* ==========================================
-   📱 MOBILE RESPONSIVE BREAKPOINTS
-   ========================================== */
-
-@media (max-width: 768px) {
-  /* Hide desktop layout on mobile */
-  .desktop-layout {
-    display: none !important;
-  }
-  
-  /* Show mobile layout on mobile */
-  .mobile-layout {
-    display: flex !important;
-  }
-  
-  /* Fix header height for mobile */
-  .simple-header {
-    height: auto !important;
-    min-height: 60px;
-    padding: 10px 0;
-  }
-  
-  /* Adjust main content padding */
-  .cabinet-main {
-    padding-top: 80px;
-  }
-  
-  /* Mobile dropdown menu */
-  .mobile-nav-dropdown {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    animation: slideDownMobile 0.3s ease-out;
-  }
-}
-
-/* ==========================================
-   🖥️ DESKTOP RESPONSIVE BREAKPOINTS
-   ========================================== */
-
-@media (min-width: 769px) {
-  /* Hide mobile layout on desktop */
-  .mobile-layout {
-    display: none !important;
-  }
-  
-  /* Show desktop layout on desktop */
-  .desktop-layout {
-    display: flex;
-  }
-}
-
-/* ==========================================
-   🎬 ANIMATIONS
-   ========================================== */
-
-@keyframes slideDownMobile {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 /* ==========================================
    🏛️ EXECUTIVE DASHBOARD: BLACK, WHITE & GOLD
    Theme: Institutional Minimalism
@@ -19433,125 +19025,6 @@ body {
   font-family: 'Inter', sans-serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-}
-
-/* --- 2. HEADER & NAVIGATION --- */
-.simple-header {
-  position: fixed;
-  top: 0; left: 0; width: 100%;
-  height: 56px;
-  background: rgba(5, 5, 5, 0.9);
-  backdrop-filter: blur(15px);
-  border-bottom: 1px solid var(--gold-border);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-}
-
-/* Desktop Only Navigation */
-@media (min-width: 769px) {
-  .desktop-layout {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
-    padding: 0 24px;
-  }
-
-  .nav-buttons { display: flex; gap: 6px; }
-
-  .nav-btn {
-    background: transparent;
-    color: var(--text-dim);
-    font-size: 10px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    padding: 8px 14px;
-    border-radius: 4px;
-    transition: 0.2s;
-  }
-
-  .nav-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
-  .nav-btn.active { color: var(--gold-primary); background: rgba(212, 175, 55, 0.05); }
-}
-
-/* --- 3. MOBILE MENU & NAVIGATION --- */
-@media (max-width: 768px) {
-  .desktop-layout { display: none !important; }
-  
-  .simple-header { height: auto; padding: 12px 0; }
-  
-  .mobile-layout { width: 100%; padding: 0 15px; display: flex; flex-direction: column; }
-  
-  .mobile-user-top { display: flex; justify-content: space-between; align-items: center; }
-
-  .nav-toggle-btn {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--gold-border);
-    color: var(--gold-primary);
-    padding: 6px 14px;
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: 0.1em;
-    border-radius: 4px;
-  }
-
-  .mobile-nav-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .mobile-nav-btn {
-    background: #0a0a0a;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    color: #fff;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    text-align: center;
-  }
-
-  .mobile-nav-btn.active { background: var(--gold-primary); color: #000; border: none; }
-  
-  /* Mobile Logout Specific */
-  .mobile-nav-btn.logout {
-    grid-column: span 2;
-    background: rgba(239, 68, 68, 0.05);
-    color: var(--ruby);
-    border-color: rgba(239, 68, 68, 0.1);
-    margin-top: 4px;
-  }
-}
-
-/* --- 4. EXECUTIVE LOGOUT BUTTON (Header) --- */
-.logout-btn-simple {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-dim);
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-left: 1rem;
-}
-
-.logout-btn-simple:hover {
-  border-color: var(--ruby);
-  color: var(--ruby);
-  background: rgba(239, 68, 68, 0.05);
 }
 
 /* --- 5. DATA CARDS (Petite Style) --- */
@@ -19701,47 +19174,6 @@ body {
   color: var(--gold-primary) !important;
 }
 
-/* --- 3. TINY ELEGANT HEADER --- */
-.simple-header {
-  position: fixed;
-  top: 0; left: 0; width: 100%;
-  height: 54px;
-  background: rgba(5, 5, 5, 0.9);
-  backdrop-filter: blur(15px);
-  border-bottom: 1px solid var(--gold-border);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-}
-
-/* Desktop Navigation */
-.desktop-layout {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-  padding: 0 24px;
-}
-
-.nav-buttons { display: flex; gap: 8px; }
-
-.nav-btn {
-  background: transparent;
-  color: var(--text-dim);
-  font-size: 10px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  padding: 8px 16px;
-  border-radius: 4px;
-  transition: 0.2s;
-}
-
-.nav-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
-.nav-btn.active { color: var(--gold-primary); background: rgba(212, 175, 55, 0.05); }
-
 /* --- 4. STATUS CARD (CREDITS) --- */
 .status-card {
   background: var(--matte-black);
@@ -19829,36 +19261,6 @@ body {
 
 /* --- 7. MOBILE REFINEMENT --- */
 @media (max-width: 768px) {
-  .desktop-layout { display: none !important; }
-  
-  .simple-header { height: auto; padding: 12px 0; }
-  
-  .mobile-layout { width: 100%; padding: 0 15px; display: flex; flex-direction: column; }
-  
-  .mobile-user-top { display: flex; justify-content: space-between; align-items: center; }
-
-  .mobile-nav-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .mobile-nav-btn {
-    background: #0d0d0d;
-    border: 1px solid var(--gold-border);
-    color: #fff;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    text-align: center;
-  }
-  
-  .mobile-nav-btn.active { background: var(--gold-primary); color: #000; }
 
   .purchase-grid { justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
   .purchase-option { flex: 0 0 170px; }
@@ -20386,88 +19788,111 @@ body {
   text-transform: uppercase;
   letter-spacing: 1px;
 }
-/* Dashboard Header Styles */
+/* ============================================
+   DASHBOARD HEADER - TINY ELEGANT DESIGN
+   ============================================ */
+
+/* CSS Variables */
+:root {
+  --gold-primary: #d4af37;
+  --gold-border: rgba(212, 175, 55, 0.2);
+  --text-dim: #8f8f95;
+  --ruby: #ef4444;
+  --bg-deep: #050505;
+  --bg-card: rgba(15, 15, 15, 0.8);
+}
+
+/* --- 1. MAIN HEADER CONTAINER --- */
 .simple-header {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  z-index: 50;
-  padding: 0.5rem 2rem;
-  background: rgba(0, 0, 0, 0.95);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+  width: 100%;
+  height: 54px; /* Fixed tiny height */
+  background: rgba(5, 5, 5, 0.92);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--gold-border);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
   transition: all 0.2s ease;
 }
 
 .simple-header.scrolled {
-  padding: 0.35rem 2rem;
   background: rgba(0, 0, 0, 0.98);
   border-bottom-color: rgba(212, 175, 55, 0.3);
+  height: 50px;
 }
 
-/* Navigation Container */
 .header-nav {
-  max-width: 1400px;
+  width: 100%;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
-/* Desktop Layout */
+/* --- 2. DESKTOP LAYOUT --- */
 .desktop-layout {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 2rem;
+  align-items: center;
+  padding: 0 24px;
+  width: 100%;
+  height: 54px;
 }
 
-/* Navigation Buttons Group */
+/* --- 3. NAVIGATION BUTTONS GROUP --- */
 .nav-buttons {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  background: rgba(20, 20, 20, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  padding: 0.25rem;
+  gap: 2px;
+  background: rgba(10, 10, 10, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  padding: 2px;
 }
 
-/* Individual Nav Button */
+/* --- 4. INDIVIDUAL NAV BUTTONS (TINY TYPOGRAPHY) --- */
 .nav-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #a0a0a0;
   background: transparent;
   border: none;
-  border-radius: 6px;
+  color: #8f8f95;
+  font-size: 9px; /* Extremely small, elegant */
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.2em; /* High tracking for sophistication */
+  padding: 6px 14px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .nav-btn svg {
-  width: 14px;
-  height: 14px;
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
+  width: 12px;
+  height: 12px;
+  opacity: 0.6;
+  stroke-width: 1.5;
 }
 
+/* Hover State - Subtle Brightening */
 .nav-btn:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .nav-btn:hover svg {
   opacity: 1;
 }
 
+/* Active State - Institutional White/Gold */
 .nav-btn.active {
+  background: #ffffff;
   color: #000000;
-  background: #d4af37;
-  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
 }
 
 .nav-btn.active svg {
@@ -20475,117 +19900,256 @@ body {
   color: #000000;
 }
 
+/* Disabled State */
 .nav-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
   pointer-events: none;
 }
 
-/* Mobile Nav Button (hidden on desktop) */
-.mobile-nav-btn {
-  display: none;
-}
-
-/* User Section */
+/* --- 5. USER SECTION (MONOCHROME ELEGANCE) --- */
 .user-section {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 12px;
 }
 
 /* User Info Container */
 .user-info-simple {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.25rem 0.75rem 0.25rem 0.25rem;
-  background: rgba(20, 20, 20, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 10px;
+  background: rgba(10, 10, 10, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 3px 14px 3px 3px;
   border-radius: 30px;
 }
 
-/* User Avatar */
+/* Avatar - Pure White with Black Initial */
 .user-avatar-small {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #000000;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #d4af37;
-  color: #000000;
-  font-weight: 700;
-  font-size: 0.8rem;
-  border-radius: 50%;
+  font-weight: 900;
+  font-size: 10px;
   text-transform: uppercase;
 }
 
-/* User Details */
+/* User Details Container */
 .user-details {
   display: flex;
-  flex-direction: column;
-  line-height: 1.2;
+  align-items: baseline;
+  gap: 10px;
 }
 
-/* User Email */
+/* Email - Truncated */
 .user-email-simple {
-  font-size: 0.75rem;
-  font-weight: 500;
   color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Setup Count */
+/* Setup Count - Subtle Gray */
 .setup-count-simple {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: #d4af37;
-  letter-spacing: 0.5px;
+  color: #6b6b73;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding-left: 10px;
 }
 
-/* Logout Button */
+/* --- 6. LOGOUT BUTTON (SHARP CONTRAST) --- */
 .logout-btn-simple {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #a0a0a0;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #a0a0a8;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  padding: 6px 14px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .logout-btn-simple svg {
-  width: 14px;
-  height: 14px;
-  opacity: 0.7;
+  width: 12px;
+  height: 12px;
+  opacity: 0.6;
 }
 
 .logout-btn-simple:hover {
-  color: #ff4d4d;
-  background: rgba(255, 77, 77, 0.1);
-  border-color: rgba(255, 77, 77, 0.2);
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
 }
 
 .logout-btn-simple:hover svg {
   opacity: 1;
 }
 
-/* Responsive adjustments for smaller desktops */
+/* --- 7. MOBILE LAYOUT (HIDDEN ON DESKTOP) --- */
+.mobile-layout {
+  display: none;
+  width: 100%;
+  padding: 0 16px;
+}
+
+/* Mobile User Top Bar */
+.mobile-user-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 8px 0;
+}
+
+.user-info-mobile-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar-mobile {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 11px;
+}
+
+.user-details-mobile {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-email-mobile {
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.setup-count-mobile {
+  color: #6b6b73;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* Mobile Navigation Toggle */
+.nav-toggle-btn-small {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--gold-border);
+  color: var(--gold-primary);
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Mobile Navigation Grid */
+.mobile-nav-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  animation: slideDown 0.2s ease-out;
+}
+
+.mobile-nav-btn {
+  background: #0d0d0d;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 12px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.mobile-nav-btn.active {
+  background: #ffffff;
+  color: #000000;
+}
+
+.mobile-nav-btn.logout {
+  grid-column: span 2;
+  background: rgba(239, 68, 68, 0.05);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.15);
+}
+
+.mobile-nav-btn.logout:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Mobile Logout Button */
+.logout-btn-mobile {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #a0a0a8;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* --- 8. ANIMATIONS --- */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- 9. RESPONSIVE BREAKPOINTS --- */
+
+/* Desktop Medium Screens */
 @media (max-width: 1200px) {
-  .simple-header {
-    padding: 0.5rem 1.5rem;
+  .desktop-layout {
+    padding: 0 16px;
   }
   
   .nav-btn {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.75rem;
+    padding: 6px 10px;
+    font-size: 8px;
+    letter-spacing: 0.15em;
   }
   
   .user-email-simple {
@@ -20593,29 +20157,35 @@ body {
   }
 }
 
-/* Hide on mobile - you can adjust this based on your mobile breakpoint */
+/* Mobile Breakpoint */
 @media (max-width: 768px) {
+  /* Hide desktop layout */
+  .desktop-layout {
+    display: none !important;
+  }
+  
+  /* Show mobile layout */
+  .mobile-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Adjust header for mobile */
   .simple-header {
-    padding: 0.5rem 1rem;
+    height: auto;
+    min-height: 60px;
+    padding: 4px 0;
   }
   
-  .nav-buttons {
-    display: none; /* Hide desktop nav on mobile */
+  /* Adjust main content padding for mobile */
+  .cabinet-main {
+    padding-top: 70px;
   }
-  
-  .mobile-nav-btn {
-    display: flex; /* Show mobile nav button */
-  }
-  
-  .user-email-simple {
-    display: none; /* Hide email on mobile */
-  }
-  
-  .logout-btn-simple span {
-    display: none; /* Hide text on mobile */
-  }
-  
-  .logout-btn-simple {
-    padding: 0.5rem;
+}
+
+/* --- 10. FALLBACK FOR IE/EDGE --- */
+@supports not (backdrop-filter: blur(20px)) {
+  .simple-header {
+    background: #0a0a0a;
   }
 }

@@ -19791,439 +19791,141 @@ body {
 /* ============================================
    DASHBOARD HEADER - ULTRA-MINIMALIST DESIGN
    ============================================ */
+/* Ultra-Luxury Minimal (Apple/Porsche Inspired) */
 
-/* CSS Variables - Clean Monochrome Palette */
 :root {
-  --bg-header: #0c0c0c;
-  --border-light: rgba(255, 255, 255, 0.06);
-  --text-primary: #ffffff;
-  --text-secondary: #7a7a7a;
-  --text-muted: #4a4a4a;
-  --accent-gold: #c6a13b;
-  --accent-red: #e85c5c;
-  --hover-bg: rgba(255, 255, 255, 0.02);
-  --active-bg: #1a1a1a;
+  --color-bg: #f8f8f8;
+  --color-fg: #0d0d0d;
+  --color-accent: #d4af37; /* refined gold */
+  --color-accent-soft: rgba(212, 175, 55, 0.15);
+  --radius-soft: 14px;
+  --radius-full: 999px;
+  --shadow-soft: 0 8px 20px rgba(0,0,0,0.06);
+  --shadow-hover: 0 12px 28px rgba(0,0,0,0.08);
+  --transition: 250ms cubic-bezier(.25,.1,.25,1);
+  --font-sans: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* --- 1. MAIN HEADER CONTAINER --- */
-.simple-header {
-  position: fixed;
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* HEADER */
+
+.premium-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 40px;
+  background: #ffffffcc;
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  box-shadow: var(--shadow-soft);
+  position: sticky;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 48px;
-  background: var(--bg-header);
-  border-bottom: 1px solid var(--border-light);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  transition: all 0.15s ease;
+  z-index: 999;
 }
 
-.simple-header.scrolled {
-  background: #080808;
-  border-bottom-color: rgba(255, 255, 255, 0.02);
+.premium-header .logo {
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: -0.5px;
 }
 
-.header-nav {
-  width: 100%;
-  max-width: 1440px;
-  margin: 0 auto;
-}
-
-/* --- 2. DESKTOP LAYOUT --- */
-.desktop-layout {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  width: 100%;
-  height: 48px;
-}
-
-/* --- 3. NAVIGATION BUTTONS GROUP --- */
-.nav-buttons {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-/* --- 4. INDIVIDUAL NAV BUTTONS --- */
-.nav-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.3px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  opacity: 0.75;
-}
-
-.nav-btn svg {
-  width: 13px;
-  height: 13px;
-  opacity: 0.6;
-  stroke-width: 1.2;
-}
-
-/* Hover State - Gentle Brightening */
-.nav-btn:hover {
-  color: var(--text-primary);
-  background: var(--hover-bg);
-  opacity: 1;
-}
-
-.nav-btn:hover svg {
-  opacity: 0.9;
-}
-
-/* Active State - Minimal Highlight */
-.nav-btn.active {
-  color: var(--text-primary);
-  background: var(--active-bg);
-  opacity: 1;
+.premium-header nav a {
+  margin-left: 28px;
+  font-size: 1rem;
   font-weight: 500;
+  text-decoration: none;
+  color: var(--color-fg);
+  opacity: 0.75;
+  transition: opacity var(--transition);
 }
 
-.nav-btn.active svg {
-  opacity: 1;
-  color: var(--text-primary);
-}
-
-/* Disabled State */
-.nav-btn:disabled {
-  opacity: 0.3;
-  cursor: default;
-  pointer-events: none;
-}
-
-/* --- 5. USER SECTION --- */
-.user-section {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* User Info Container - Minimal */
-.user-info-simple {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: transparent;
-  border: 1px solid var(--border-light);
-  padding: 3px 3px 3px 3px;
-  border-radius: 24px;
-}
-
-/* Avatar - Minimal Circle */
-.user-avatar-small {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: #222;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 300;
-  font-size: 11px;
-  text-transform: uppercase;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* User Details Container */
-.user-details {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding-right: 6px;
-}
-
-/* Email - Minimal */
-.user-email-simple {
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 300;
-  letter-spacing: 0.2px;
-  max-width: 90px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Setup Count - Minimal Tag */
-.setup-count-simple {
-  color: var(--text-muted);
-  font-size: 9px;
-  font-weight: 300;
-  text-transform: lowercase;
-  background: rgba(255, 255, 255, 0.03);
-  padding: 2px 6px;
-  border-radius: 12px;
-  letter-spacing: 0.2px;
-}
-
-/* --- 6. LOGOUT BUTTON --- */
-.logout-btn-simple {
-  background: transparent;
-  border: 1px solid var(--border-light);
-  color: var(--text-muted);
-  font-size: 10px;
-  font-weight: 300;
-  letter-spacing: 0.3px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  opacity: 0.7;
-}
-
-.logout-btn-simple svg {
-  width: 12px;
-  height: 12px;
-  opacity: 0.5;
-}
-
-.logout-btn-simple:hover {
-  border-color: rgba(232, 92, 92, 0.3);
-  color: var(--accent-red);
-  background: rgba(232, 92, 92, 0.02);
+.premium-header nav a:hover {
   opacity: 1;
 }
 
-.logout-btn-simple:hover svg {
-  opacity: 0.9;
-}
+/* BUTTONS */
 
-/* --- 7. MOBILE LAYOUT --- */
-.mobile-layout {
-  display: none;
-  width: 100%;
-  padding: 0 16px;
-}
-
-/* Mobile User Top Bar */
-.mobile-user-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 8px 0;
-}
-
-.user-info-mobile-top {
-  display: flex;
+.btn-primary {
+  display: inline-flex;
   align-items: center;
   gap: 10px;
-}
-
-.user-avatar-mobile {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #222;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 300;
-  font-size: 11px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.user-details-mobile {
-  display: flex;
-  flex-direction: column;
-}
-
-.user-email-mobile {
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 300;
-}
-
-.setup-count-mobile {
-  color: var(--text-muted);
-  font-size: 8px;
-  font-weight: 300;
-  margin-top: 2px;
-}
-
-/* Mobile Navigation Toggle */
-.nav-toggle-btn-small {
-  background: transparent;
-  border: 1px solid var(--border-light);
-  color: var(--text-secondary);
-  font-size: 10px;
-  font-weight: 300;
-  letter-spacing: 0.3px;
-  padding: 6px 12px;
-  border-radius: 20px;
+  padding: 12px 26px;
+  background: var(--color-accent);
+  color: #fff;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  border: none;
+  box-shadow: var(--shadow-soft);
   cursor: pointer;
-  opacity: 0.8;
+  transition: var(--transition);
 }
 
-.nav-toggle-btn-small:hover {
-  opacity: 1;
-  background: var(--hover-bg);
+.btn-primary:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
 }
 
-/* Mobile Navigation Grid */
-.mobile-nav-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border-light);
-  animation: fadeIn 0.2s ease;
+/* CARDS */
+
+.card {
+  background: #fff;
+  padding: 30px;
+  border-radius: var(--radius-soft);
+  box-shadow: var(--shadow-soft);
+  transition: var(--transition);
+  border: 1px solid rgba(0,0,0,0.04);
 }
 
-.mobile-nav-btn {
-  background: transparent;
-  border: 1px solid var(--border-light);
-  color: var(--text-secondary);
-  font-size: 10px;
-  font-weight: 300;
-  letter-spacing: 0.3px;
-  padding: 10px 8px;
-  border-radius: 20px;
-  cursor: pointer;
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* INPUTS */
+
+input[type="text"],
+input[type="email"],
+input[type="number"],
+textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--radius-soft);
+  border: 1px solid rgba(0,0,0,0.1);
+  background: #fff;
+  font-size: 1rem;
+  transition: var(--transition);
+}
+
+input:focus, textarea:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 4px var(--color-accent-soft);
+  outline: none;
+}
+
+/* ACCENT TAGS */
+
+.tag-gold {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: .85rem;
+}
+
+/* FOOTER */
+
+.footer {
+  padding: 40px;
   text-align: center;
-  transition: all 0.15s ease;
-  opacity: 0.8;
-}
-
-.mobile-nav-btn:hover {
-  opacity: 1;
-  background: var(--hover-bg);
-  color: var(--text-primary);
-}
-
-.mobile-nav-btn.active {
-  background: var(--active-bg);
-  color: var(--text-primary);
-  opacity: 1;
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.mobile-nav-btn.logout {
-  grid-column: span 2;
-  border-color: rgba(232, 92, 92, 0.15);
-  color: rgba(232, 92, 92, 0.8);
-}
-
-.mobile-nav-btn.logout:hover {
-  border-color: rgba(232, 92, 92, 0.3);
-  color: var(--accent-red);
-  background: rgba(232, 92, 92, 0.02);
-}
-
-/* Mobile Logout Button */
-.logout-btn-mobile {
-  background: transparent;
-  border: 1px solid var(--border-light);
-  color: var(--text-muted);
-  font-size: 9px;
-  font-weight: 300;
-  padding: 5px 10px;
-  border-radius: 20px;
-  cursor: pointer;
-}
-
-/* --- 8. ANIMATIONS --- */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* --- 9. RESPONSIVE BREAKPOINTS --- */
-
-/* Desktop Medium Screens */
-@media (max-width: 1200px) {
-  .desktop-layout {
-    padding: 0 16px;
-  }
-  
-  .nav-btn {
-    padding: 6px 10px;
-    font-size: 10px;
-  }
-  
-  .user-email-simple {
-    max-width: 70px;
-  }
-}
-
-/* Mobile Breakpoint */
-@media (max-width: 768px) {
-  .desktop-layout {
-    display: none !important;
-  }
-  
-  .mobile-layout {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .simple-header {
-    height: auto;
-    min-height: 56px;
-  }
-}
-
-/* --- 10. ADDITIONAL ELEMENTS --- */
-
-/* Simple Divider */
-.header-divider {
-  width: 1px;
-  height: 20px;
-  background: var(--border-light);
-  margin: 0 4px;
-}
-
-/* Subtle Glow on Active */
-.nav-btn.active {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-}
-
-/* Focus States for Accessibility */
-.nav-btn:focus-visible,
-.logout-btn-simple:focus-visible,
-.mobile-nav-btn:focus-visible {
-  outline: 1px solid rgba(255, 255, 255, 0.2);
-  outline-offset: 2px;
-}
-
-/* --- 11. BILLING BUTTON SPECIAL STYLE --- */
-.nav-btn[data-billing="true"] {
-  position: relative;
-}
-
-.nav-btn[data-billing="true"]::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: transparent;
+  color: rgba(0,0,0,0.5);
+  font-size: 0.9rem;
 }

@@ -19792,182 +19792,640 @@ body {
    DASHBOARD HEADER - ULTRA-MINIMALIST DESIGN
    ============================================ */
 
+/* ============================================
+   DASHBOARD HEADER - HIGH-CONTRAST BLACK & WHITE
+   ============================================ */
+
+/* CSS Variables - Pure Black & White */
 :root {
-  --header-h: 44px; /* Slimmer profile */
-  --bg-onyx: rgba(5, 5, 5, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.05);
-  --gold-primary: #D4AF37; /* Champagne Gold */
-  --gold-soft: rgba(212, 175, 55, 0.15);
-  --text-dim: #71717a;
+  --pure-black: #000000;
+  --pure-white: #ffffff;
+  --off-black: #111111;
+  --off-white: #f5f5f5;
+  --gray-100: #e5e5e5;
+  --gray-200: #cccccc;
+  --gray-300: #aaaaaa;
+  --gray-400: #888888;
+  --gray-500: #666666;
+  --gray-600: #444444;
+  --gray-700: #333333;
+  --gray-800: #222222;
+  --gray-900: #1a1a1a;
+  --border-thin: 1px solid #ffffff;
+  --border-thin-black: 1px solid #000000;
+  --shadow-hard: 4px 4px 0 #000000;
+  --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+/* --- 1. MAIN HEADER CONTAINER --- */
 .simple-header {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  height: var(--header-h);
-  background: var(--bg-onyx);
-  backdrop-filter: blur(12px); /* Premium feel */
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--glass-border);
-  z-index: 9999;
+  height: 56px;
+  background: var(--pure-white);
+  border-bottom: 2px solid var(--pure-black);
+  z-index: 2000;
   display: flex;
   align-items: center;
+  transition: all 0.1s linear;
 }
 
-/* --- DESKTOP NAV --- */
+.simple-header.scrolled {
+  background: var(--pure-black);
+  border-bottom: 2px solid var(--pure-white);
+}
+
+.header-nav {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* --- 2. DESKTOP LAYOUT --- */
 .desktop-layout {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 24px;
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
+  height: 56px;
 }
 
+/* --- 3. NAVIGATION BUTTONS GROUP --- */
 .nav-buttons {
   display: flex;
+  align-items: center;
   gap: 4px;
 }
 
+/* --- 4. INDIVIDUAL NAV BUTTONS --- */
 .nav-btn {
   background: transparent;
-  border: 1px solid transparent;
-  color: var(--text-dim);
-  font-size: 10px;
+  border: 2px solid transparent;
+  color: var(--gray-600);
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
-  padding: 6px 14px;
-  border-radius: 4px;
+  letter-spacing: 1px;
+  padding: 8px 16px;
   cursor: pointer;
+  transition: all 0.1s linear;
+  white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 .nav-btn svg {
-  width: 13px !important;
-  height: 13px !important;
-  stroke-width: 2.5px;
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+  color: var(--gray-600);
 }
 
-.nav-btn:hover:not(:disabled) {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.03);
+/* Header Background White State */
+.simple-header:not(.scrolled) .nav-btn:hover {
+  background: var(--pure-black);
+  color: var(--pure-white);
+  border: 2px solid var(--pure-black);
 }
 
-.nav-btn.active {
-  color: var(--gold-primary);
-  background: var(--gold-soft);
-  border: 1px solid rgba(212, 175, 55, 0.2);
+.simple-header:not(.scrolled) .nav-btn:hover svg {
+  color: var(--pure-white);
 }
 
-/* --- USER WIDGET --- */
+.simple-header:not(.scrolled) .nav-btn.active {
+  background: var(--pure-black);
+  color: var(--pure-white);
+  border: 2px solid var(--pure-black);
+  font-weight: 800;
+}
+
+.simple-header:not(.scrolled) .nav-btn.active svg {
+  color: var(--pure-white);
+}
+
+/* Header Background Black State (Scrolled) */
+.simple-header.scrolled .nav-btn {
+  color: var(--gray-400);
+}
+
+.simple-header.scrolled .nav-btn svg {
+  color: var(--gray-400);
+}
+
+.simple-header.scrolled .nav-btn:hover {
+  background: var(--pure-white);
+  color: var(--pure-black);
+  border: 2px solid var(--pure-white);
+}
+
+.simple-header.scrolled .nav-btn:hover svg {
+  color: var(--pure-black);
+}
+
+.simple-header.scrolled .nav-btn.active {
+  background: var(--pure-white);
+  color: var(--pure-black);
+  border: 2px solid var(--pure-white);
+  font-weight: 800;
+}
+
+.simple-header.scrolled .nav-btn.active svg {
+  color: var(--pure-black);
+}
+
+/* Disabled State */
+.nav-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+  pointer-events: none;
+  border: 2px solid transparent !important;
+}
+
+/* --- 5. USER SECTION --- */
 .user-section {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
+/* User Info Container */
 .user-info-simple {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 2px 4px 2px 2px;
-  background: #000;
-  border: 1px solid #1a1a1a;
-  border-radius: 100px;
+  gap: 12px;
+  padding: 4px 16px 4px 4px;
+  transition: all 0.1s linear;
 }
 
+/* Header Background White State */
+.simple-header:not(.scrolled) .user-info-simple {
+  background: var(--pure-black);
+}
+
+.simple-header:not(.scrolled) .user-info-simple .user-email-simple,
+.simple-header:not(.scrolled) .user-info-simple .setup-count-simple {
+  color: var(--pure-white);
+}
+
+/* Header Background Black State (Scrolled) */
+.simple-header.scrolled .user-info-simple {
+  background: var(--pure-white);
+}
+
+.simple-header.scrolled .user-info-simple .user-email-simple,
+.simple-header.scrolled .user-info-simple .setup-count-simple {
+  color: var(--pure-black);
+}
+
+/* Avatar */
 .user-avatar-small {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--gold-primary);
-  color: #000;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 900;
-  font-size: 10px;
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  transition: all 0.1s linear;
 }
 
+/* Header Background White State */
+.simple-header:not(.scrolled) .user-avatar-small {
+  background: var(--pure-white);
+  color: var(--pure-black);
+  border: 2px solid var(--pure-white);
+}
+
+/* Header Background Black State (Scrolled) */
+.simple-header.scrolled .user-avatar-small {
+  background: var(--pure-black);
+  color: var(--pure-white);
+  border: 2px solid var(--pure-black);
+}
+
+/* User Details */
+.user-details {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+/* User Email */
 .user-email-simple {
-  color: #fff;
   font-size: 11px;
   font-weight: 600;
-  max-width: 120px;
+  letter-spacing: 0.3px;
+  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* Setup Count */
 .setup-count-simple {
-  color: var(--gold-primary);
-  font-family: 'Inter', monospace;
   font-size: 10px;
-  font-weight: 800;
-  padding-right: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-left: 12px;
+  position: relative;
 }
 
-/* --- LOGOUT --- */
+.setup-count-simple::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 12px;
+}
+
+/* Header Background White State */
+.simple-header:not(.scrolled) .setup-count-simple::before {
+  background: var(--pure-white);
+}
+
+/* Header Background Black State (Scrolled) */
+.simple-header.scrolled .setup-count-simple::before {
+  background: var(--pure-black);
+}
+
+/* --- 6. LOGOUT BUTTON --- */
 .logout-btn-simple {
   background: transparent;
-  border: none;
-  color: var(--text-dim);
+  border: 2px solid transparent;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 6px 14px;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  transition: 0.2s;
+  transition: all 0.1s linear;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.logout-btn-simple:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+.logout-btn-simple svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
 }
 
-/* --- MOBILE --- */
+/* Header Background White State */
+.simple-header:not(.scrolled) .logout-btn-simple {
+  color: var(--pure-black);
+  border: 2px solid var(--pure-black);
+}
+
+.simple-header:not(.scrolled) .logout-btn-simple:hover {
+  background: var(--pure-black);
+  color: var(--pure-white);
+}
+
+.simple-header:not(.scrolled) .logout-btn-simple:hover svg {
+  color: var(--pure-white);
+}
+
+/* Header Background Black State (Scrolled) */
+.simple-header.scrolled .logout-btn-simple {
+  color: var(--pure-white);
+  border: 2px solid var(--pure-white);
+}
+
+.simple-header.scrolled .logout-btn-simple:hover {
+  background: var(--pure-white);
+  color: var(--pure-black);
+}
+
+.simple-header.scrolled .logout-btn-simple:hover svg {
+  color: var(--pure-black);
+}
+
+/* --- 7. MOBILE LAYOUT --- */
+.mobile-layout {
+  display: none;
+  width: 100%;
+  padding: 0 16px;
+}
+
+/* Mobile User Top Bar */
+.mobile-user-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 8px 0;
+}
+
+.user-info-mobile-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar-mobile {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+/* Header Background White State */
+.simple-header:not(.scrolled) .user-avatar-mobile {
+  background: var(--pure-black);
+  color: var(--pure-white);
+  border: 2px solid var(--pure-black);
+}
+
+/* Header Background Black State (Scrolled) */
+.simple-header.scrolled .user-avatar-mobile {
+  background: var(--pure-white);
+  color: var(--pure-black);
+  border: 2px solid var(--pure-white);
+}
+
+.user-details-mobile {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-email-mobile {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.setup-count-mobile {
+  font-size: 10px;
+  font-weight: 500;
+  margin-top: 2px;
+  opacity: 0.7;
+}
+
+/* Header Background White State */
+.simple-header:not(.scrolled) .user-email-mobile,
+.simple-header:not(.scrolled) .setup-count-mobile {
+  color: var(--pure-black);
+}
+
+/* Header Background Black State (Scrolled) */
+.simple-header.scrolled .user-email-mobile,
+.simple-header.scrolled .setup-count-mobile {
+  color: var(--pure-white);
+}
+
+/* Mobile Navigation Toggle */
+.nav-toggle-btn-small {
+  background: transparent;
+  border: 2px solid;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+/* Header Background White State */
+.simple-header:not(.scrolled) .nav-toggle-btn-small {
+  border-color: var(--pure-black);
+  color: var(--pure-black);
+}
+
+.simple-header:not(.scrolled) .nav-toggle-btn-small:hover {
+  background: var(--pure-black);
+  color: var(--pure-white);
+}
+
+/* Header Background Black State (Scrolled) */
+.simple-header.scrolled .nav-toggle-btn-small {
+  border-color: var(--pure-white);
+  color: var(--pure-white);
+}
+
+.simple-header.scrolled .nav-toggle-btn-small:hover {
+  background: var(--pure-white);
+  color: var(--pure-black);
+}
+
+/* Mobile Navigation Grid */
+.mobile-nav-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  animation: slideDown 0.2s ease;
+}
+
+/* Header Background White State */
+.simple-header:not(.scrolled) .mobile-nav-buttons {
+  border-top: 2px solid var(--pure-black);
+}
+
+/* Header Background Black State (Scrolled) */
+.simple-header.scrolled .mobile-nav-buttons {
+  border-top: 2px solid var(--pure-white);
+}
+
+.mobile-nav-btn {
+  background: transparent;
+  border: 2px solid;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.1s linear;
+}
+
+/* Header Background White State */
+.simple-header:not(.scrolled) .mobile-nav-btn {
+  border-color: var(--pure-black);
+  color: var(--pure-black);
+}
+
+.simple-header:not(.scrolled) .mobile-nav-btn:hover,
+.simple-header:not(.scrolled) .mobile-nav-btn.active {
+  background: var(--pure-black);
+  color: var(--pure-white);
+}
+
+/* Header Background Black State (Scrolled) */
+.simple-header.scrolled .mobile-nav-btn {
+  border-color: var(--pure-white);
+  color: var(--pure-white);
+}
+
+.simple-header.scrolled .mobile-nav-btn:hover,
+.simple-header.scrolled .mobile-nav-btn.active {
+  background: var(--pure-white);
+  color: var(--pure-black);
+}
+
+.mobile-nav-btn.logout {
+  grid-column: span 2;
+}
+
+/* Header Background White State */
+.simple-header:not(.scrolled) .mobile-nav-btn.logout:hover {
+  background: var(--pure-black);
+  color: var(--pure-white);
+}
+
+/* Header Background Black State (Scrolled) */
+.simple-header.scrolled .mobile-nav-btn.logout:hover {
+  background: var(--pure-white);
+  color: var(--pure-black);
+}
+
+/* Mobile Logout Button */
+.logout-btn-mobile {
+  background: transparent;
+  border: 2px solid;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+/* Header Background White State */
+.simple-header:not(.scrolled) .logout-btn-mobile {
+  border-color: var(--pure-black);
+  color: var(--pure-black);
+}
+
+/* Header Background Black State (Scrolled) */
+.simple-header.scrolled .logout-btn-mobile {
+  border-color: var(--pure-white);
+  color: var(--pure-white);
+}
+
+/* --- 8. ANIMATIONS --- */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- 9. RESPONSIVE BREAKPOINTS --- */
+
+/* Desktop Medium Screens */
+@media (max-width: 1200px) {
+  .desktop-layout {
+    padding: 0 16px;
+  }
+  
+  .nav-btn {
+    padding: 6px 12px;
+    font-size: 10px;
+  }
+  
+  .user-email-simple {
+    max-width: 80px;
+  }
+  
+  .user-details {
+    gap: 8px;
+  }
+}
+
+/* Mobile Breakpoint */
 @media (max-width: 768px) {
-  .desktop-layout { display: none; }
+  .desktop-layout {
+    display: none !important;
+  }
   
   .mobile-layout {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 0 16px;
-    height: 52px;
+    flex-direction: column;
   }
+  
+  .simple-header {
+    height: auto;
+    min-height: 64px;
+  }
+}
 
-  /* Improved Mobile Grid (Shown when menu toggled) */
-  .mobile-nav-buttons {
-    position: fixed;
-    top: 52px;
-    left: 0;
-    width: 100%;
-    background: #050505;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1px;
-    background: #111; /* Border color for the grid */
-    border-bottom: 1px solid #111;
-  }
+/* --- 10. ADDITIONAL ELEMENTS --- */
 
-  .mobile-nav-btn {
-    background: #050505;
-    color: var(--text-dim);
-    padding: 20px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    text-align: center;
-  }
+/* Bold Dividers */
+.header-divider {
+  width: 2px;
+  height: 20px;
+}
 
-  .mobile-nav-btn.active {
-    color: var(--gold-primary);
-    background: #0a0a0a;
-  }
+/* Header Background White State */
+.simple-header:not(.scrolled) .header-divider {
+  background: var(--pure-black);
+}
+
+/* Header Background Black State (Scrolled) */
+.simple-header.scrolled .header-divider {
+  background: var(--pure-white);
+}
+
+/* Focus States */
+.nav-btn:focus-visible,
+.logout-btn-simple:focus-visible,
+.mobile-nav-btn:focus-visible,
+.nav-toggle-btn-small:focus-visible {
+  outline: 3px solid;
+  outline-offset: 2px;
+}
+
+.simple-header:not(.scrolled) :focus-visible {
+  outline-color: var(--pure-black);
+}
+
+.simple-header.scrolled :focus-visible {
+  outline-color: var(--pure-white);
+}
+
+/* --- 11. TRANSITION EFFECTS --- */
+
+/* Invert on Hover */
+.nav-btn,
+.logout-btn-simple,
+.mobile-nav-btn,
+.nav-toggle-btn-small {
+  transition: all 0.1s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* Sharp Corners - No rounded edges */
+.nav-btn,
+.user-info-simple,
+.user-avatar-small,
+.logout-btn-simple,
+.mobile-nav-btn,
+.nav-toggle-btn-small {
+  border-radius: 0;
+}
+
+/* High Contrast Text */
+.user-email-simple,
+.setup-count-simple,
+.nav-btn,
+.logout-btn-simple {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

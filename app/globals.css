@@ -19791,141 +19791,183 @@ body {
 /* ============================================
    DASHBOARD HEADER - ULTRA-MINIMALIST DESIGN
    ============================================ */
-/* Ultra-Luxury Minimal (Apple/Porsche Inspired) */
 
 :root {
-  --color-bg: #f8f8f8;
-  --color-fg: #0d0d0d;
-  --color-accent: #d4af37; /* refined gold */
-  --color-accent-soft: rgba(212, 175, 55, 0.15);
-  --radius-soft: 14px;
-  --radius-full: 999px;
-  --shadow-soft: 0 8px 20px rgba(0,0,0,0.06);
-  --shadow-hover: 0 12px 28px rgba(0,0,0,0.08);
-  --transition: 250ms cubic-bezier(.25,.1,.25,1);
-  --font-sans: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --header-h: 44px; /* Slimmer profile */
+  --bg-onyx: rgba(5, 5, 5, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --gold-primary: #D4AF37; /* Champagne Gold */
+  --gold-soft: rgba(212, 175, 55, 0.15);
+  --text-dim: #71717a;
 }
 
-body {
-  background: var(--color-bg);
-  color: var(--color-fg);
-  font-family: var(--font-sans);
-  margin: 0;
-  padding: 0;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* HEADER */
-
-.premium-header {
+.simple-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--header-h);
+  background: var(--bg-onyx);
+  backdrop-filter: blur(12px); /* Premium feel */
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--glass-border);
+  z-index: 9999;
   display: flex;
   align-items: center;
+}
+
+/* --- DESKTOP NAV --- */
+.desktop-layout {
+  display: flex;
   justify-content: space-between;
-  padding: 28px 40px;
-  background: #ffffffcc;
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-  box-shadow: var(--shadow-soft);
-  position: sticky;
-  top: 0;
-  z-index: 999;
+  align-items: center;
+  padding: 0 24px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.premium-header .logo {
-  font-size: 1.6rem;
-  font-weight: 600;
-  letter-spacing: -0.5px;
+.nav-buttons {
+  display: flex;
+  gap: 4px;
 }
 
-.premium-header nav a {
-  margin-left: 28px;
-  font-size: 1rem;
-  font-weight: 500;
-  text-decoration: none;
-  color: var(--color-fg);
-  opacity: 0.75;
-  transition: opacity var(--transition);
+.nav-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.premium-header nav a:hover {
-  opacity: 1;
+.nav-btn svg {
+  width: 13px !important;
+  height: 13px !important;
+  stroke-width: 2.5px;
 }
 
-/* BUTTONS */
+.nav-btn:hover:not(:disabled) {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.03);
+}
 
-.btn-primary {
-  display: inline-flex;
+.nav-btn.active {
+  color: var(--gold-primary);
+  background: var(--gold-soft);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+/* --- USER WIDGET --- */
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-info-simple {
+  display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 26px;
-  background: var(--color-accent);
+  padding: 2px 4px 2px 2px;
+  background: #000;
+  border: 1px solid #1a1a1a;
+  border-radius: 100px;
+}
+
+.user-avatar-small {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--gold-primary);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 10px;
+}
+
+.user-email-simple {
   color: #fff;
+  font-size: 11px;
   font-weight: 600;
-  border-radius: var(--radius-full);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.setup-count-simple {
+  color: var(--gold-primary);
+  font-family: 'Inter', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  padding-right: 8px;
+}
+
+/* --- LOGOUT --- */
+.logout-btn-simple {
+  background: transparent;
   border: none;
-  box-shadow: var(--shadow-soft);
+  color: var(--text-dim);
   cursor: pointer;
-  transition: var(--transition);
+  padding: 8px;
+  border-radius: 50%;
+  transition: 0.2s;
 }
 
-.btn-primary:hover {
-  box-shadow: var(--shadow-hover);
-  transform: translateY(-2px);
+.logout-btn-simple:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
-/* CARDS */
+/* --- MOBILE --- */
+@media (max-width: 768px) {
+  .desktop-layout { display: none; }
+  
+  .mobile-layout {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0 16px;
+    height: 52px;
+  }
 
-.card {
-  background: #fff;
-  padding: 30px;
-  border-radius: var(--radius-soft);
-  box-shadow: var(--shadow-soft);
-  transition: var(--transition);
-  border: 1px solid rgba(0,0,0,0.04);
-}
+  /* Improved Mobile Grid (Shown when menu toggled) */
+  .mobile-nav-buttons {
+    position: fixed;
+    top: 52px;
+    left: 0;
+    width: 100%;
+    background: #050505;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: #111; /* Border color for the grid */
+    border-bottom: 1px solid #111;
+  }
 
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-hover);
-}
+  .mobile-nav-btn {
+    background: #050505;
+    color: var(--text-dim);
+    padding: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    text-align: center;
+  }
 
-/* INPUTS */
-
-input[type="text"],
-input[type="email"],
-input[type="number"],
-textarea {
-  width: 100%;
-  padding: 14px 16px;
-  border-radius: var(--radius-soft);
-  border: 1px solid rgba(0,0,0,0.1);
-  background: #fff;
-  font-size: 1rem;
-  transition: var(--transition);
-}
-
-input:focus, textarea:focus {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 4px var(--color-accent-soft);
-  outline: none;
-}
-
-/* ACCENT TAGS */
-
-.tag-gold {
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
-  font-weight: 600;
-  font-size: .85rem;
-}
-
-/* FOOTER */
-
-.footer {
-  padding: 40px;
-  text-align: center;
-  color: rgba(0,0,0,0.5);
-  font-size: 0.9rem;
+  .mobile-nav-btn.active {
+    color: var(--gold-primary);
+    background: #0a0a0a;
+  }
 }

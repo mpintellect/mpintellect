@@ -19743,594 +19743,246 @@ body {
   letter-spacing: 0.05em;
   font-family: 'Inter', monospace; /* Monospace looks better for dates */
 }
-/* --- BILLING HUB STYLES --- */
+/* ======================================================================================== *//* ======================================================================================== *//* ======================================================================================== *//* ======================================================================================== *//* ======================================================================================== *//* ======================================================================================== *//* ======================================================================================== */
+/* ============================================
+   BILLING SECTION - INSTITUTIONAL BLACK & GOLD
+   ============================================ */
+
+/* Billing Container */
 .billing-container {
-  max-width: 850px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 4rem 1.5rem;
+  padding: 24px 20px 60px;
+  position: relative;
+  background: transparent;
 }
 
-.billing-card-main {
-  background: #050505;
-  border: 1px solid #111;
-  padding: 2rem;
-  border-radius: 8px;
-}
-
-.billing-table th {
-  padding: 12px 15px;
-  border-bottom: 1px solid #111;
-  color: #52525b;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  text-align: left;
-}
-
-.billing-table td {
-  padding: 18px 15px;
-  border-bottom: 1px solid #0a0a0a;
-  font-size: 13px;
-}
-
-.amount-gold {
-  color: #D4AF37; /* Champagne Gold */
+/* --- BACK BUTTON (Matches Referral UI) --- */
+.btn-billing-back {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  color: #d4af37;
+  font-size: 11px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 8px 16px 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
+.btn-billing-back svg {
+  transition: transform 0.2s ease;
+}
+
+.btn-billing-back:hover {
+  border-color: #d4af37;
+  background: rgba(212, 175, 55, 0.05);
+}
+
+.btn-billing-back:hover svg {
+  transform: translateX(-3px);
+}
+
+/* --- BILLING HEADER --- */
+.billing-header {
+  margin-bottom: 32px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+  padding-bottom: 24px;
+}
+
+.billing-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin: 0;
+}
+
+.billing-title svg {
+  width: 28px;
+  height: 28px;
+  color: #d4af37;
+}
+
+.billing-header p {
+  color: #71717a;
+  font-size: 13px;
+  margin-top: 8px;
+  font-weight: 300;
+  letter-spacing: 0.3px;
+}
+
+/* --- MAIN CARD STYLE --- */
+.billing-card-main {
+  background: #0c0c0c;
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  transition: border-color 0.2s ease;
+}
+
+.billing-card-main:hover {
+  border-color: rgba(212, 175, 55, 0.3);
+}
+
+/* Card with flex layout */
+.billing-card-main.flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Card content typography */
+.billing-card-main h3 {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #52525b;
+  margin-bottom: 4px;
+}
+
+.billing-card-main p {
+  color: #d4d4d8;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.billing-card-main p svg {
+  width: 14px;
+  height: 14px;
+  color: #d4af37;
+}
+
+/* --- STATUS BADGE --- */
 .status-badge {
+  display: inline-block;
   background: rgba(212, 175, 55, 0.1);
-  color: #D4AF37;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: #d4af37;
   font-size: 9px;
   font-weight: 800;
-  padding: 4px 10px;
-  border-radius: 4px;
   text-transform: uppercase;
-  letter-spacing: 1px;
-}
-/* ============================================
-   DASHBOARD HEADER - ULTRA-MINIMALIST DESIGN
-   ============================================ */
-:root {
-  /* Elegant Palette - Deep & Sophisticated */
-  --bg-deep: #0B0F17;           /* Rich ebony */
-  --bg-surface: #131724;         /* Deep navy */
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-elegant: rgba(255, 255, 255, 0.12);
-  --text-primary: #FFFFFF;        /* Pure white */
-  --text-secondary: rgba(255, 255, 255, 0.8);
-  --text-muted: rgba(255, 255, 255, 0.55);
-  --text-very-muted: rgba(255, 255, 255, 0.35);
-  --accent-gold: #E5C687;         /* Warm gold */
-  --accent-silver: #A0AEC0;       /* Cool silver */
-  --accent-ivory: #F8F4E9;        /* Soft ivory */
-  
-  /* Typography - Elegant Sans-Serif */
-  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-weight-light: 300;
-  --font-weight-regular: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  
-  /* Spacing - Refined */
-  --space-xxs: 4px;
-  --space-xs: 8px;
-  --space-sm: 12px;
-  --space-md: 16px;
-  --space-lg: 20px;
-  --space-xl: 24px;
-  --space-xxl: 32px;
-  
-  /* Typography - Elegant scale */
-  --text-xs: 12px;
-  --text-sm: 13px;
-  --text-base: 14px;
-  --text-lg: 15px;
-  --text-xl: 16px;
-  
-  /* Borders - Soft */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-full: 100px;
-  
-  /* Shadows */
-  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.3);
-  --shadow-elegant: 0 8px 30px rgba(0, 0, 0, 0.4);
-}
-
-/* ==========================================
-   🏗️ BASE HEADER - ELEGANT & CLEAN
-   ========================================== */
-
-.simple-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 72px;
-  background: transparent;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--border-subtle);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  transition: all 0.3s ease;
-  font-family: var(--font-primary);
-}
-
-.simple-header.scrolled {
-  height: 64px;
-  background: var(--bg-deep);
-  border-bottom-color: var(--border-elegant);
-}
-
-.header-nav {
-  width: 100%;
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 0 var(--space-xl);
-}
-
-/* ==========================================
-   🖥️ DESKTOP LAYOUT - REFINED
-   ========================================== */
-
-.desktop-layout {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-xl);
-  width: 100%;
-}
-
-/* Navigation - Clean & Minimal */
-.nav-buttons {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  background: rgba(255, 255, 255, 0.02);
-  padding: 2px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border-subtle);
-}
-
-.nav-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-lg);
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-full);
-  color: var(--text-secondary);
-  font-family: var(--font-primary);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  letter-spacing: 1.5px;
+  padding: 6px 16px;
+  border-radius: 100px;
   white-space: nowrap;
-  line-height: 1;
 }
 
-.nav-btn svg {
-  width: 16px;
-  height: 16px;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  fill: none;
-  opacity: 0.8;
-}
-
-.nav-btn:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.nav-btn.active {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
-  position: relative;
-}
-
-.nav-btn.active::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 2px;
-  background: var(--accent-gold);
-  border-radius: var(--radius-full);
-  opacity: 0.8;
-}
-
-.nav-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-/* User Section - Clean */
-.user-section {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-}
-
-/* User Info - Elegant pill */
-.user-info-simple {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-xxs) var(--space-md) var(--space-xxs) var(--space-xxs);
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-full);
-  transition: all 0.2s ease;
-}
-
-.user-info-simple:hover {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: var(--border-elegant);
-}
-
-.user-avatar-small {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-  font-family: var(--font-primary);
-  font-weight: var(--font-weight-medium);
-  font-size: var(--text-sm);
-  border-radius: var(--radius-full);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-.user-details {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-sm);
-  line-height: 1;
-}
-
-.user-email-simple {
-  color: var(--text-primary);
-  font-family: var(--font-primary);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  letter-spacing: -0.01em;
-  opacity: 0.9;
-}
-
-.setup-count-simple {
-  color: var(--text-muted);
-  font-family: var(--font-primary);
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-regular);
-  padding-left: var(--space-sm);
-  border-left: 1px solid var(--border-subtle);
-  letter-spacing: -0.01em;
-}
-
-/* Logout Button - Refined */
-.logout-btn-simple {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-lg);
-  background: transparent;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-full);
-  color: var(--text-secondary);
-  font-family: var(--font-primary);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  line-height: 1;
-}
-
-.logout-btn-simple svg {
-  width: 15px;
-  height: 15px;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  fill: none;
-  opacity: 0.8;
-}
-
-.logout-btn-simple:hover {
-  color: var(--accent-gold);
-  border-color: var(--accent-gold);
-  background: rgba(229, 198, 135, 0.05);
-}
-
-.logout-btn-simple:hover svg {
-  opacity: 1;
-}
-
-/* ==========================================
-   📱 MOBILE LAYOUT - ELEGANT
-   ========================================== */
-
-.mobile-layout {
-  display: none;
-  width: 100%;
-}
-
-.mobile-user-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: var(--space-xs) 0;
-}
-
-.user-info-mobile-top {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  flex: 1;
-}
-
-.user-avatar-mobile {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
-  font-family: var(--font-primary);
-  font-weight: var(--font-weight-medium);
-  font-size: var(--text-base);
-  border-radius: var(--radius-full);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-.user-details-mobile {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.user-email-mobile {
-  color: var(--text-primary);
-  font-family: var(--font-primary);
-  font-weight: var(--font-weight-medium);
-  font-size: var(--text-sm);
-  letter-spacing: -0.01em;
-  line-height: 1.3;
-}
-
-.setup-count-mobile {
-  color: var(--text-muted);
-  font-family: var(--font-primary);
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-regular);
-  letter-spacing: -0.01em;
-}
-
-/* Mobile Toggle - Minimal */
-.nav-toggle-btn {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.nav-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--border-elegant);
-  color: var(--text-primary);
-}
-
-.nav-toggle-btn svg {
-  width: 20px;
-  height: 20px;
-  stroke: currentColor;
-  stroke-width: 1.5;
-}
-
-/* Mobile Navigation - Clean grid */
-.mobile-nav-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-sm);
-  margin-top: var(--space-lg);
-  padding-top: var(--space-lg);
-  border-top: 1px solid var(--border-subtle);
-  animation: fadeIn 0.25s ease;
-}
-
-.mobile-nav-btn {
-  padding: var(--space-md) var(--space-sm);
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  font-family: var(--font-primary);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  transition: all 0.2s ease;
+/* --- FOOTER NOTE --- */
+.billing-container .text-center {
   text-align: center;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-xs);
-}
-
-.mobile-nav-btn svg {
-  width: 16px;
-  height: 16px;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  opacity: 0.8;
-}
-
-.mobile-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: var(--border-elegant);
-  color: var(--text-primary);
-}
-
-.mobile-nav-btn.active {
-  color: var(--text-primary);
-  border-color: rgba(229, 198, 135, 0.3);
-  background: rgba(229, 198, 135, 0.05);
-}
-
-.mobile-nav-btn.logout {
-  grid-column: span 2;
-  color: var(--text-secondary);
-  border-color: var(--border-subtle);
-  margin-top: var(--space-xs);
-}
-
-.mobile-nav-btn.logout:hover {
-  color: var(--accent-gold);
-  border-color: var(--accent-gold);
-  background: rgba(229, 198, 135, 0.05);
-}
-
-.mobile-nav-btn:disabled {
   opacity: 0.3;
-  cursor: not-allowed;
-  pointer-events: none;
+  margin-top: 80px;
 }
 
-/* Mobile Logout */
-.logout-btn-mobile {
-  padding: var(--space-sm) var(--space-lg);
-  background: transparent;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-full);
-  color: var(--text-secondary);
-  font-family: var(--font-primary);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  line-height: 1;
+.billing-container .text-center p {
+  color: #71717a;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  font-weight: 400;
+  margin: 0;
 }
 
-.logout-btn-mobile:hover {
-  color: var(--accent-gold);
-  border-color: var(--accent-gold);
+/* --- BILLING HISTORY TABLE INTEGRATION --- */
+.billing-card-main:has(table) {
+  padding: 0;
+  overflow: hidden;
 }
 
-/* ==========================================
-   📱 RESPONSIVE - CLEAN BREAKS
-   ========================================== */
-
-/* Desktop */
-@media (min-width: 769px) {
-  .mobile-layout {
-    display: none !important;
-  }
-  
-  .desktop-layout {
-    display: flex !important;
-  }
+/* Table styling within billing card */
+.billing-card-main table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-/* Mobile */
+.billing-card-main th {
+  background: #050505;
+  color: #d4af37;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 16px 20px;
+  text-align: left;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+.billing-card-main td {
+  padding: 16px 20px;
+  color: #e5e5e5;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.billing-card-main tr:last-child td {
+  border-bottom: none;
+}
+
+.billing-card-main tr:hover td {
+  background: rgba(212, 175, 55, 0.02);
+}
+
+/* --- RESPONSIVE ADJUSTMENTS --- */
 @media (max-width: 768px) {
-  .simple-header {
-    height: auto;
-    min-height: 64px;
-    padding: var(--space-xs) 0;
-    background: var(--bg-deep);
+  .billing-container {
+    padding: 16px 16px 40px;
   }
   
-  .desktop-layout {
-    display: none !important;
+  .billing-title {
+    font-size: 22px;
   }
   
-  .mobile-layout {
-    display: flex !important;
+  .billing-card-main {
+    padding: 16px 18px;
+  }
+  
+  .billing-card-main.flex {
     flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
   }
   
-  .header-nav {
-    padding: 0 var(--space-md);
+  .status-badge {
+    align-self: flex-start;
   }
   
-  .cabinet-main {
-    padding-top: 80px;
+  .billing-card-main th,
+  .billing-card-main td {
+    padding: 12px 14px;
+    font-size: 11px;
   }
-  
-  .user-email-mobile {
-    max-width: 140px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+}
+
+@media (max-width: 480px) {
+  .billing-card-main table {
+    display: block;
+    overflow-x: auto;
     white-space: nowrap;
   }
-}
-
-/* Small mobile */
-@media (max-width: 480px) {
-  .simple-header {
-    min-height: 60px;
-  }
   
-  .user-email-mobile {
-    max-width: 110px;
-    font-size: var(--text-xs);
-  }
-  
-  .setup-count-mobile {
+  .btn-billing-back {
+    padding: 6px 14px 6px 10px;
     font-size: 10px;
   }
-  
-  .user-avatar-mobile {
-    width: 36px;
-    height: 36px;
-    font-size: var(--text-sm);
-  }
-  
-  .mobile-nav-btn {
-    padding: var(--space-sm) var(--space-xs);
-    font-size: var(--text-xs);
-  }
-  
-  .cabinet-main {
-    padding-top: 72px;
-  }
 }
 
-/* ==========================================
-   ✨ MICRO-ANIMATIONS
-   ========================================== */
-
+/* --- ANIMATIONS --- */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(-5px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -20338,22 +19990,397 @@ body {
   }
 }
 
-/* Elegant focus states */
-.nav-btn:focus-visible,
-.mobile-nav-btn:focus-visible,
-.logout-btn-simple:focus-visible,
-.nav-toggle-btn:focus-visible {
-  outline: 2px solid var(--accent-gold);
-  outline-offset: 2px;
+.billing-card-main {
+  animation: fadeIn 0.4s ease-out;
 }
 
-/* Subtle hover effect on navigation items */
-.nav-btn::before {
-  display: none;
+/* --- ADDITIONAL ELEMENTS --- */
+
+/* Divider line */
+.billing-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
+  margin: 24px 0;
 }
 
-/* Clean, minimal styling */
-* {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Small print */
+.billing-small-print {
+  color: #3f3f46;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Amount highlights */
+.billing-amount {
+  color: #d4af37;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* Date styling */
+.billing-date {
+  color: #71717a;
+  font-size: 11px;
+  font-weight: 300;
+}
+
+/* --- HOVER EFFECTS FOR INTERACTIVE ELEMENTS --- */
+.billing-card-main .interactive-item {
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.billing-card-main .interactive-item:hover {
+  background: rgba(212, 175, 55, 0.05);
+}
+
+/* --- STRIPE BRANDING CONSISTENCY --- */
+.stripe-element {
+  background: #0a0a0a;
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #ffffff;
+}
+
+.stripe-element:focus {
+  border-color: #d4af37;
+  outline: none;
+}
+
+/* --- EMPTY STATE STYLING --- */
+.billing-empty-state {
+  padding: 48px 24px;
+  text-align: center;
+  color: #52525b;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.billing-empty-state svg {
+  width: 32px;
+  height: 32px;
+  color: rgba(212, 175, 55, 0.2);
+  margin-bottom: 16px;
+}
+
+/* --- LOADING STATE --- */
+.billing-loading {
+  padding: 40px;
+  text-align: center;
+}
+
+.billing-loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(212, 175, 55, 0.1);
+  border-top-color: #d4af37;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- TOOLTIP STYLING --- */
+.billing-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.billing-tooltip:hover .tooltip-content {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.tooltip-content {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(5px);
+  background: #1a1a1a;
+  border: 1px solid #d4af37;
+  color: #ffffff;
+  font-size: 8px;
+  padding: 4px 8px;
+  white-space: nowrap;
+  border-radius: 2px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+/* ============================================
+   DASHBOARD HEADER - ULTRA-MINIMALIST DESIGN
+   ============================================ */
+/* --- Variables & Reset --- */
+:root {
+  --nav-bg: rgba(13, 17, 23, 0.8);
+  --nav-bg-scrolled: rgba(13, 17, 23, 0.95);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --text-main: #e6edf3;
+  --text-dim: #848d97;
+  --accent-color: #2f81f7;
+  --accent-hover: #4493f8;
+  --danger-color: #f85149;
+  --active-bg: rgba(47, 129, 247, 0.15);
+  --transition: all 0.2s ease-in-out;
+}
+
+.simple-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: var-transition;
+  backdrop-filter: blur(10px);
+  height: 70px;
+  display: flex;
+  align-items: center;
+}
+
+.simple-header.scrolled {
+  background: var(--nav-bg-scrolled);
+  border-bottom: 1px solid var(--border-color);
+  height: 60px;
+}
+
+.header-nav {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* --- Desktop Layout --- */
+.desktop-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+
+.nav-btn.active {
+  background: var(--active-bg);
+  color: var(--accent-color);
+  border-color: rgba(47, 129, 247, 0.3);
+}
+
+.nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+/* User Section */
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-info-simple {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 20px;
+  border-right: 1px solid var(--border-color);
+}
+
+.user-avatar-small {
+  width: 32px;
+  height: 32px;
+  background: var(--accent-color);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-email-simple {
+  font-size: 13px;
+  color: var(--text-main);
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.setup-count-simple {
+  font-size: 11px;
+  color: var(--accent-hover);
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.logout-btn-simple {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.logout-btn-simple:hover {
+  color: var(--danger-color);
+}
+
+/* --- Mobile Layout --- */
+.mobile-layout {
+  display: none; /* Hidden by default */
+}
+
+@media (max-width: 1024px) {
+  .desktop-layout {
+    display: none;
+  }
+
+  .mobile-layout {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .mobile-user-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .user-info-mobile-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .user-avatar-mobile {
+    width: 36px;
+    height: 36px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+  }
+
+  .user-email-mobile {
+    font-size: 14px;
+    color: var(--text-main);
+    font-weight: 600;
+  }
+
+  .setup-count-mobile {
+    font-size: 12px;
+    color: var(--accent-hover);
+  }
+
+  .nav-toggle-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .mobile-nav-buttons {
+    position: absolute;
+    top: 70px;
+    left: 0;
+    right: 0;
+    background: #0d1117;
+    border-bottom: 1px solid var(--border-color);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    animation: slideDown 0.3s ease-out;
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
+  }
+
+  .mobile-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    border-radius: 8px;
+    text-align: left;
+    font-size: 15px;
+    cursor: pointer;
+  }
+
+  .mobile-nav-btn:active {
+    background: var(--active-bg);
+  }
+
+  .mobile-nav-btn.logout {
+    margin-top: 10px;
+    border-top: 1px solid var(--border-color);
+    color: var(--danger-color);
+    padding-top: 20px;
+  }
+  
+  .mobile-nav-btn:disabled {
+    opacity: 0.5;
+  }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

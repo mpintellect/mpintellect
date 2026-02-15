@@ -49,7 +49,7 @@ export default function AIRobotCards() {
       short: 'Ultra-fast scalping built for tight spreads.',
       description:
         'Scalper X1 is designed to capture quick, frequent moves on liquid pairs. It uses volatility filters, spread checks, and time-of-day rules to avoid dead sessions. Works best on low-spread brokers (ECN), M5–M15 charts. Use sensible risk per trade and avoid news spikes.',
-      price: '$15',
+      price: '$45',
       available: true,
       href: '/checkout?bot=scalper', 
       features: ['MT5 Ready', '0.01–1.0 Lot Supported', 'Auto TP/SL', 'Backtested'],

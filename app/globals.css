@@ -10897,7 +10897,7 @@ body {
     animation: none !important;
   }
 }
-/* globals.css - Elegant Trade Signal Styles */
+/* globals.css - Elegant Trade Parameters Styles */
 
 /* Base Reset & Global Styles */
 * {
@@ -10994,7 +10994,7 @@ body {
   left: 100%;
 }
 
-/* Trade Signal Animations */
+/* Trade Parameters Animations */
 @keyframes signal-pulse {
   0%, 100% {
     transform: scale(1);
@@ -11298,7 +11298,7 @@ body {
   box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.2);
 }
 
-/* Trade Signal Specific Styles */
+/* Trade Parameters Specific Styles */
 .signal-strength {
   animation: signal-pulse 2s ease-in-out infinite;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -19166,6 +19166,7 @@ body {
   display: flex;
   min-height: 100vh;
   position: relative;
+  padding-bottom: 1rem;
 }
  
 /* ==========================================
@@ -19337,8 +19338,7 @@ body {
 
 /* User Section in Sidebar */
 .premium-user-section {
-  margin-top: auto;
-  padding-top: 2rem;
+  margin-top: 5rem;
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -21851,8 +21851,8 @@ button.px-4.py-2:hover {
   position: sticky;
   top: 64px;
   z-index: 40;
-  width: 96%;
-  max-width: 1400px;
+  width: 100%;
+  max-width: 1440px;
   margin: 10px auto;
   height: 44px;
   backdrop-filter: blur(12px);
@@ -22148,4 +22148,135 @@ button.px-4.py-2:hover {
 
 .news-terminal-slat:hover::after {
   opacity: 0.5;
+}
+@media (min-width: 769px) {
+  .premium-mobile-nav {
+    display: none;
+  }
+}
+/* Add this to your dashboard CSS file */
+
+/* Fix scrolling for AiChatBox and PropFirmChat inside dashboard */
+.premium-tool-content .chatbox-wrapper,
+.premium-tool-content .chatbox-wrapper.section,
+.premium-tool-content .chatbox-wrapper.full {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.premium-tool-content .chatbox-body {
+  flex: 1;
+  overflow-y: auto !important;
+  min-height: 0;
+  max-height: calc(100vh - 200px);
+  padding: 1rem;
+  scroll-behavior: smooth;
+}
+
+/* Ensure the chat messages container scrolls properly */
+.premium-tool-content .chat-msg {
+  margin-bottom: 1rem;
+}
+
+/* Fix for the chat input area to stay at bottom */
+.premium-tool-content .chatbox-input-group,
+.premium-tool-content .chatbot-input {
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: 1rem;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Force scrollbar to appear */
+.premium-tool-content .chatbox-body::-webkit-scrollbar {
+  width: 6px;
+  display: block !important;
+}
+
+.premium-tool-content .chatbox-body::-webkit-scrollbar-track {
+  background: var(--border-subtle);
+}
+
+.premium-tool-content .chatbox-body::-webkit-scrollbar-thumb {
+  background: var(--gold-soft);
+  border-radius: 3px;
+}
+
+/* Ensure the tool container allows scrolling */
+.premium-tool-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cta-button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.cta-button-primary {
+  background: var(--gold-matte, #c5a028);
+  color: black;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.cta-button-primary:hover {
+  background: var(--gold-soft, #8e793e);
+}
+
+.cta-button-secondary {
+  background: transparent;
+  color: var(--gold-matte, #c5a028);
+  border: 1px solid rgba(197, 160, 40, 0.3);
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.cta-button-secondary:hover {
+  border-color: var(--gold-matte, #c5a028);
+  background: rgba(197, 160, 40, 0.05);
+}
+@media (min-width: 1024px) {
+  .sticky-logo.dashboard-logo {
+    position: relative;
+    top: 30px;
+    left: 1rem;
+    z-index: 9999;
+    opacity: 1;
+    transition: all 0.3s ease;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Regular logo for non-dashboard pages */
+  .sticky-logo:not(.dashboard-logo) {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    /* other styles */
+  }
 }

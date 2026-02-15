@@ -146,8 +146,8 @@ export default function ContactSection() {
             </div>
             <div className="hidden md:block w-px h-4 bg-zinc-800"></div>
             <div className="flex items-center gap-3">
-              <span className="text-[#D4AF37] text-lg">📞</span>
-              <span className="text-zinc-400">+1 (212) 555-7890</span>
+              
+             
             </div>
           </div>
         </div>

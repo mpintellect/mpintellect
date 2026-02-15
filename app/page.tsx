@@ -4,7 +4,6 @@
 import { Suspense, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from 'lucide-react';
-import StickyLogo from '@/components/StickyLogo';
 import Navbar from '@/components/Navbar';
 import NotificationButton from '@/components/NotificationButton'; 
 import Hero from '@/components/Hero';
@@ -42,7 +41,7 @@ export default function Home() {
 
   return (
     <>
-      <StickyLogo />
+    
       <Navbar />
       <FundamentalTicker />
       <NotificationButton /> 

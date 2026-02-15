@@ -430,7 +430,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showQuickRegister, setShowQuickRegister] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>("");
-
+  const [showWelcome, setShowWelcome] = useState(false);
   // Signal Ticket State
   const [ticketData, setTicketData] = useState<{
     symbol: string;
@@ -646,42 +646,46 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
     setStep(3);
   };
 
-  // ==========================================
-  // ⚡ WELCOME MESSAGE (when no preselected symbol)
-  // ==========================================
-  useEffect(() => {
-    const hasAccess = user || trialCount < 2;
+// ==========================================
+// ⚡ WELCOME MESSAGE
+// ==========================================
+useEffect(() => {
+  const hasAccess = user || trialCount < 2;
+  
+  // Show welcome message when either:
+  // 1. Component mounts with no messages (initial load)
+  // 2. After reset button is clicked (showWelcome flag)
+  if ((!preselectedSymbol && messages.length === 0 && !userLoading && hasAccess) || showWelcome) {
+    // Clear the flag
+    if (showWelcome) setShowWelcome(false);
     
-    if (!preselectedSymbol && messages.length === 0 && !userLoading && hasAccess) {
-      setTimeout(() => {
-        const welcomeMsg: ChatMessage = {
-          sender: "ai",
-          text: "🏆 **Prop Firm AI Assistant**\n\nI'm calibrated for FTMO, FundedNext, MyForexFunds & The5%ers rules.\n\nPlease select your Prop Firm:",
-          actions: PROP_COMPANIES.map(c => ({ label: c.name, value: c.id }))
-        };
+    setTimeout(() => {
+      const welcomeMsg: ChatMessage = {
+        sender: "ai",
+        text: "🏆 **Prop Firm AI Assistant**\n\nI'm calibrated for FTMO, FundedNext, MyForexFunds & The5%ers rules.\n\nPlease select your Prop Firm:",
+        actions: PROP_COMPANIES.map(c => ({ label: c.name, value: c.id }))
+      };
 
-        if (user) {
-          setMessages([
-            welcomeMsg,
-            { 
-              sender: "ai", 
-              text: `🎯 You have ${setupCount} setup credit${setupCount === 1 ? '' : 's'} available.`
-            }
-          ]);
-        } else {
-          setMessages([
-            welcomeMsg,
-            { 
-              sender: "ai", 
-              text: `🎉 You have ${2 - trialCount} free trial${2 - trialCount === 1 ? '' : 's'} remaining.`
-            }
-          ]);
-        }
-        setStep(0);
-      }, 500);
-    }
-  }, [messages.length, userLoading, preselectedSymbol, user, setupCount, trialCount]);
-
+      if (user) {
+        setMessages([
+          welcomeMsg,
+          { 
+            sender: "ai", 
+            text: `🎯 You have ${setupCount} setup credit${setupCount === 1 ? '' : 's'} available.`
+          }
+        ]);
+      } else {
+        setMessages([
+          welcomeMsg,
+          { 
+            sender: "ai", 
+            text: `🎉 You have ${2 - trialCount} free trial${2 - trialCount === 1 ? '' : 's'} remaining.`
+          }
+        ]);
+      }
+    }, 500);
+  }
+}, [messages.length, userLoading, preselectedSymbol, user, setupCount, trialCount, showWelcome]);
   // ==========================================
   // 🔄 SCROLL HANDLING
   // ==========================================
@@ -722,73 +726,64 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
     }
 
     let proceed = false;
-    let newTrialCount = trialCount;
+    
 
-    // Access Control Logic
-    if (user) {
-      const result = await deductSetup(); 
-      if (result === "ok") {
-        proceed = true;
-      } else if (result === "no-credits") {
-        setMessages(prev => [
-          ...prev,
+ // Access Control Logic - CHECK only, don't deduct yet
+if (user) {
+  // Just check if user has credits, don't deduct yet
+  if (setupCount <= 0) {
+    setMessages(prev => [
+      ...prev,
+      {
+        sender: "ai",
+        text: [
           {
-            sender: "ai",
-            text: [
-              {
-                title: "❌ No Setups Left",
-                content: "You've used all your setup credits. Please buy more to continue.",
-              },
-            ],
+            title: "❌ No Setups Left",
+            content: "You've used all your setup credits. Please buy more to continue.",
           },
-        ]);
-        
-        // Add buy more setups button
-        setMessages(prev => [
-          ...prev,
+        ],
+      },
+    ]);
+    
+    // Add buy more setups button
+    setMessages(prev => [
+      ...prev,
+      {
+        sender: "ai",
+        text: [
           {
-            sender: "ai",
-            text: [
-              {
-                title: "🛒 Buy More Setups",
-                content: `<button onclick="window.location.href='/client/dashboard?showPlans=true'" style="background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
-                  View Pricing Plans
-                </button>`,
-              },
-            ],
+            title: "🛒 Buy More Setups",
+            content: `<button onclick="window.location.href='/client/dashboard?showPlans=true'" style="background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+              View Pricing Plans
+            </button>`,
           },
-        ]);
-        return;
-      } else {
-        setMessages(prev => [
-          ...prev,
-          { sender: "ai", text: "⚠️ Error verifying account. Try again." },
-        ]);
-        return;
-      }
-    } else {
-      // 🔥 CHECK: Did user just register? (trial count cleared but user not yet loaded)
-      const hasJustRegistered = trialCount === 0 && localStorage.getItem('cf_token');
-      
-      if (hasJustRegistered) {
-        // User just registered but hook hasn't updated yet
-        // Show loading message or wait for user state
-        setMessages(prev => [
-          ...prev,
-          { sender: "ai", text: "🔄 Loading your account, please wait..." },
-        ]);
-        return; // Don't proceed yet
-      }
-      
-      if (trialCount < 2) {
-        newTrialCount = incrementTrialCount();
-        setTrialCount(newTrialCount);
-        proceed = true;
-      } else {
-        setShowPricingModal(true);
-        return;
-      }
-    }
+        ],
+      },
+    ]);
+    return;
+  }
+  proceed = true;
+} else {
+  // 🔥 CHECK: Did user just register? (trial count cleared but user not yet loaded)
+  const hasJustRegistered = trialCount === 0 && localStorage.getItem('cf_token');
+  
+  if (hasJustRegistered) {
+    // User just registered but hook hasn't updated yet
+    // Show loading message or wait for user state
+    setMessages(prev => [
+      ...prev,
+      { sender: "ai", text: "🔄 Loading your account, please wait..." },
+    ]);
+    return; // Don't proceed yet
+  }
+  
+  if (trialCount < 2) {
+    proceed = true;
+  } else {
+    setShowPricingModal(true);
+    return;
+  }
+}
 
     setSymbol(targetSymbol);
     setMessages(prev => [
@@ -888,7 +883,51 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
       const targetProfitUSD = stage.target > 0 ? balance * stage.target : 0;
       const tradeProfitRatio = tpDistanceUSD / targetProfitUSD;
       const tradesNeeded = stage.target > 0 ? Math.ceil(targetProfitUSD / tpDistanceUSD) : 0;
-
+// ✅ DEDUCT SETUP ONLY AFTER SUCCESSFUL ANALYSIS
+if (user) {
+  const result = await deductSetup(); 
+  if (result !== "ok") {
+    console.error("Failed to deduct setup after analysis");
+    
+    // Show error message with CTA button to buy setups
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text: [
+          {
+            title: "❌ No Setups Left",
+            content: "You've used all your setup credits. Please buy more to continue using MZPrimer AI.",
+          },
+        ],
+      },
+      {
+        sender: "ai",
+        text: [
+          {
+            title: "🛒 Purchase Setups",
+            content: `<div class="cta-button-container">
+              <button onclick="window.location.href='/client/dashboard?showPlans=true'" class="cta-button-primary">
+                View Pricing Plans
+              </button>
+              <button onclick="window.location.href='/client/dashboard/billing'" class="cta-button-secondary">
+                Manage Billing
+              </button>
+            </div>`,
+          },
+        ],
+      },
+    ]);
+    
+    // STOP EXECUTION - don't show ticket or summary
+    setIsTyping(false);
+    return;
+  }
+} else {
+  // Increment trial count for guest
+  incrementTrialCount();
+  setTrialCount(prev => prev + 1);
+}
       // 🚀 SHOW SIGNAL TICKET POPUP
       setTicketData({
         symbol: targetSymbol,
@@ -913,7 +952,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
             `• Status: <span style="color:${riskPercentageOfDailyLimit <= 25 ? '#10b981' : '#f59e0b'}"><strong>${riskPercentageOfDailyLimit <= 25 ? '✓ SAFE' : '⚠ WARNING'}</strong></span> • Uses ${riskPercentageOfDailyLimit.toFixed(1)}% of daily allowance`,
         },
         {
-          title: "🎯 TRADE SIGNAL",
+          title: "🎯 Trade Parameters",
           content:
             `• Symbol: <strong>${targetSymbol} (${SYMBOL_NAMES[targetSymbol] || targetSymbol})</strong>\n` +
             `• Decision: ${
@@ -1011,20 +1050,20 @@ const saveResponse = await fetch('/api/setups', {
         }
       }
 
-      if (!user && newTrialCount >= 2) {
-        setMessages(prev => [
-          ...prev,
-          {
-            sender: "ai",
-            text: [
-              {
-                title: "🚫 TRIAL LIMIT REACHED",
-                content: "You've used all 2 free trials. Register and buy setups to continue using Prop Firm AI Assistant.",
-              },
-            ],
-          },
-        ]);
-      }
+    if (!user && trialCount >= 1) { // Check trialCount state instead
+  setMessages(prev => [
+    ...prev,
+    {
+      sender: "ai",
+      text: [
+        {
+          title: "🚫 TRIAL LIMIT REACHED",
+          content: "You've used all 2 free trials. Register and buy setups to continue using Prop Firm AI Assistant.",
+        },
+      ],
+    },
+  ]);
+}
 
     } catch (error: any) {
       console.error("❌ Error processing prop firm setup:", error?.message || error);
@@ -1260,26 +1299,34 @@ const saveResponse = await fetch('/api/setups', {
           </select>
         </div>
       )}
-
-      {/* STEP 4: RESET BUTTON */}
-      {step === 4 && (
-        <div className="chatbot-input">
-          <button 
-            onClick={() => {
-              setStep(0);
-              setSelectedFirm("");
-              setStage(null);
-              setCapital("");
-              setSymbol(preselectedSymbol && (preselectedSymbol) ? preselectedSymbol as SymbolKey : null);
-              setMessages([]);
-              setTicketData(null);
-            }} 
-            className="chatbox-reset"
-          >
-            {showPaywall ? "Buy More Setups" : "Start New Prop Firm Analysis"}
-          </button>
-        </div>
-      )}
+{step === 4 && (
+  <div className="chatbot-input">
+    <button 
+      onClick={() => {
+        // Reset all state
+        setStep(0);
+        setSelectedFirm("");
+        setStage(null);
+        setCapital("");
+        setSymbol(null);
+        setMessages([]);
+        setTicketData(null);
+        
+        // Force refresh trial count
+        if (!user) {
+          const currentTrials = getTrialCount();
+          setTrialCount(currentTrials);
+        }
+        
+        // Set flag to show welcome message
+        setShowWelcome(true);
+      }} 
+      className="chatbox-reset"
+    >
+      {(!user && trialCount >= 2) || (user && setupCount <= 0) ? "Buy More Setups" : "Start New Prop Firm Analysis"}
+    </button>
+  </div>
+)}
     </div>
   );
 }

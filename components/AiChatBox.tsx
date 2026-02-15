@@ -146,7 +146,8 @@ type SummaryBlock = {
 
 // Quick Registration Modal
 function QuickRegisterModal({ 
-  onClose, 
+  onClose,
+  onSuccess, 
   selectedPlan 
 }: { 
   onClose: () => void; 
@@ -196,30 +197,33 @@ function QuickRegisterModal({
       })
     });
 
-    const data = await response.json();
+  const data = await response.json();
 console.log("📝 Registration API response:", data);
-    if (data.success) {
-      console.log("✅ Quick registration success:", data);
-      console.log("✅ Registration SUCCESS!");
-      console.log("  - data.token:", data.token);
-      console.log("  - data.user:", data.user);
-      console.log("  - data.user.setup_count:", data.user?.setup_count);
-      // 🔥 DO EVERYTHING HERE, don't rely on parent callback
-      localStorage.setItem('cf_token', data.token);
-      localStorage.setItem('cf_user', JSON.stringify(data.user));
-      localStorage.setItem('cf_session_id', data.token);
-      console.log("📝 After saving to localStorage:");
-      console.log("  - cf_token saved:", localStorage.getItem('cf_token') ? 'YES' : 'NO');
-      console.log("  - cf_user saved:", localStorage.getItem('cf_user') ? 'YES' : 'NO');
-      localStorage.removeItem("MZP_TRIAL_COUNT");
-      // 🔥 CLOSE MODAL
-      onClose();
-      
-      // 🔥 REDIRECT IMMEDIATELY
-      setTimeout(() => {
-        window.location.href = `/client/dashboard?showPlans=true&plan=${selectedPlan}`;
-      }, 50);
-      
+
+if (data.success) {
+  console.log("✅ Quick registration success:", data);
+  console.log("✅ Registration SUCCESS!");
+  console.log("  - data.token:", data.token);
+  console.log("  - data.user:", data.user);
+  console.log("  - data.user.setup_count:", data.user?.setup_count);
+  
+  // 🔥 SAVE TO LOCALSTORAGE
+  localStorage.setItem('cf_token', data.token);
+  localStorage.setItem('cf_user', JSON.stringify(data.user));
+  localStorage.setItem('cf_session_id', data.token);
+  console.log("📝 After saving to localStorage:");
+  console.log("  - cf_token saved:", localStorage.getItem('cf_token') ? 'YES' : 'NO');
+  console.log("  - cf_user saved:", localStorage.getItem('cf_user') ? 'YES' : 'NO');
+  
+  // 🔥 CLEAR TRIAL COUNT
+  localStorage.removeItem("MZP_TRIAL_COUNT");
+  
+  // 🔥 CALL THE PARENT CALLBACK with data and selectedPlan
+  // This will trigger handleQuickRegisterSuccess which sets trialCount to 0
+  onSuccess(data, selectedPlan);
+  
+  // 🔥 CLOSE MODAL
+  onClose();
         
       
       } else {
@@ -506,71 +510,60 @@ useEffect(() => {
     }
 
     let proceed = false;
-    let newTrialCount = trialCount;
+    
 
-    // Access Control Logic
-    if (user) {
-      const result = await deductSetup(); 
-      if (result === "ok") {
-        proceed = true;
-      } else if (result === "no-credits") {
-        setMessages((prev) => [
-          ...prev,
+ // Access Control Logic - CHECK only, don't deduct yet
+if (user) {
+  // Just check if user has credits, don't deduct yet
+  if (setupCount <= 0) {
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text: [
           {
-            sender: "ai",
-            text: [
-              {
-                title: "❌ No Setups Left",
-                content: "You've used all your setup credits. Please buy more to continue.",
-              },
-            ],
+            title: "❌ No Setups Left",
+            content: "You've used all your setup credits. Please buy more to continue.",
           },
-        ]);
-        setMessages((prev) => [
-          ...prev,
+        ],
+      },
+    ]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text: [
           {
-            sender: "ai",
-            text: [
-              {
-                title: "🛒 Buy More Setups",
-                content: `<button onclick="window.location.href='/client/dashboard?showPlans=true'" style="background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
-                  View Pricing Plans
-                </button>`,
-              },
-            ],
+            title: "🛒 Buy More Setups",
+            content: `<button onclick="window.location.href='/client/dashboard?showPlans=true'" style="background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+              View Pricing Plans
+            </button>`,
           },
-        ]);
-        return;
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          { sender: "ai", text: "⚠️ Error verifying account. Try again." },
-        ]);
-        return;
-      }
-      } else {
-      // 🔥 CHECK: Did user just register? (trial count cleared but user not yet loaded)
-      const hasJustRegistered = trialCount === 0 && localStorage.getItem('cf_token');
-      
-      if (hasJustRegistered) {
-        // User just registered but hook hasn't updated yet
-        // Show loading message or wait for user state
-        setMessages((prev) => [
-          ...prev,
-          { sender: "ai", text: "🔄 Loading your account, please wait..." },
-        ]);
-        return; // Don't proceed yet
-      }
-      
-      if (trialCount < 2) {
-        newTrialCount = incrementTrialCount();
-        setTrialCount(newTrialCount);
-        proceed = true;
-      } else {
-        setShowPricingModal(true);
-        return;
-      }
-    }
+        ],
+      },
+    ]);
+    return;
+  }
+  proceed = true;
+} else {
+  // 🔥 CHECK: Did user just register? (trial count cleared but user not yet loaded)
+  const hasJustRegistered = trialCount === 0 && localStorage.getItem('cf_token');
+  
+  if (hasJustRegistered) {
+    setMessages((prev) => [
+      ...prev,
+      { sender: "ai", text: "🔄 Loading your account, please wait..." },
+    ]);
+    return;
+  }
+  
+  if (trialCount < 2) {
+    proceed = true;
+  } else {
+    setShowPricingModal(true);
+    return;
+  }
+}
 
     // Set $1,000 as default capital for quick analysis
     const quickCapital = 1000;
@@ -669,7 +662,51 @@ useEffect(() => {
         : "✅ **CONFIRMED SETUP** – Trade looks promising.";
 
       const decision = setup.final_decision || "WAIT";
-
+// ✅ DEDUCT SETUP ONLY AFTER SUCCESSFUL ANALYSIS
+if (user) {
+  const result = await deductSetup(); 
+  if (result !== "ok") {
+    console.error("Failed to deduct setup after analysis");
+    
+    // Show error message with CTA button to buy setups
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text: [
+          {
+            title: "❌ No Setups Left",
+            content: "You've used all your setup credits. Please buy more to continue using MZPrimer AI.",
+          },
+        ],
+      },
+      {
+        sender: "ai",
+        text: [
+          {
+            title: "🛒 Purchase Setups",
+            content: `<div class="cta-button-container">
+              <button onclick="window.location.href='/client/dashboard?showPlans=true'" class="cta-button-primary">
+                View Pricing Plans
+              </button>
+              <button onclick="window.location.href='/client/dashboard/billing'" class="cta-button-secondary">
+                Manage Billing
+              </button>
+            </div>`,
+          },
+        ],
+      },
+    ]);
+    
+    // STOP EXECUTION - don't show ticket or summary
+    setIsTyping(false);
+    return;
+  }
+} else {
+  // Increment trial count for guest
+  incrementTrialCount();
+  setTrialCount(prev => prev + 1);
+}
       // 🚀 SHOW SIGNAL TICKET POPUP
       setTicketData({
         symbol: targetSymbol,
@@ -685,7 +722,7 @@ useEffect(() => {
       // Create summary blocks in the format you requested
       const summary: SummaryBlock[] = [
         {
-          title: "🎯 Trade Signal",
+          title: "🎯 Trade Parameters",
           content:
             `• Symbol: <strong>${targetSymbol} (${SYMBOL_NAMES[targetSymbol] || targetSymbol})</strong>\n` +
             `• Decision: ${
@@ -745,20 +782,20 @@ useEffect(() => {
       scrollLocked.current = true;
       setMessages((prev) => [...prev, ...summaryCards]);
 
-      if (!user && newTrialCount >= 2) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            sender: "ai",
-            text: [
-              {
-                title: "🚫 Trial Limit Reached",
-                content: "You've used all 2 free trials. Register and buy setups to continue using MZPrimer AI.",
-              },
-            ],
-          },
-        ]);
-      }
+    if (!user && trialCount >= 1) { // Check trialCount state instead
+  setMessages((prev) => [
+    ...prev,
+    {
+      sender: "ai",
+      text: [
+        {
+          title: "🚫 Trial Limit Reached",
+          content: "You've used all 2 free trials. Register and buy setups to continue using MZPrimer AI.",
+        },
+      ],
+    },
+  ]);
+}
 
       // ✅ Saving logic
       if (userId) {
@@ -881,6 +918,7 @@ const handleQuickRegisterSuccess = async (data: any, plan: string) => {
     
     // 2. CRITICAL: Clear trial count to prevent paywall
     localStorage.removeItem("MZP_TRIAL_COUNT");
+   
     
     // 3. Update local state
     setTrialCount(0);
@@ -1033,62 +1071,64 @@ const incrementTrial = async () => {
       }
 
       let proceed = false;
-      let newTrialCount = trialCount;
+      
+      
 
-      // Access Control Logic
-      if (user) {
-        const result = await deductSetup(); 
-        if (result === "ok") {
-          proceed = true;
-        } else if (result === "no-credits") {
-          setMessages((prev) => [
-            ...prev,
-            {
-              sender: "ai",
-              text: [
-                {
-                  title: "❌ No Setups Left",
-                  content: "You've used all your setup credits. Please buy more to continue.",
-                },
-              ],
-            },
-          ]);
-          
-          setMessages((prev) => [
-            ...prev,
-            {
-              sender: "ai",
-              text: [
-                {
-                  title: "🛒 Buy More Setups",
-                  content: `<button onclick="window.location.href='/client/dashboard?showPlans=true'" style="background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
-                    View Pricing Plans
-                  </button>`,
-                },
-              ],
-            },
-          ]);
-          setIsTyping(false);
-          return;
-        } else {
-          setMessages((prev) => [
-            ...prev,
-            { sender: "ai", text: "⚠️ Error verifying account. Try again." },
-          ]);
-          setIsTyping(false);
-          return;
-        }
-      } else {
-        if (trialCount < 2) {
-          newTrialCount = incrementTrialCount();
-          setTrialCount(newTrialCount);
-          proceed = true;
-        } else {
-          setShowPricingModal(true);
-          setIsTyping(false);
-          return;
-        }
-      }
+      
+// Access Control Logic - CHECK only, don't deduct yet
+if (user) {
+  // Just check if user has credits, don't deduct yet
+  if (setupCount <= 0) {
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text: [
+          {
+            title: "❌ No Setups Left",
+            content: "You've used all your setup credits. Please buy more to continue.",
+          },
+        ],
+      },
+    ]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text: [
+          {
+            title: "🛒 Buy More Setups",
+            content: `<button onclick="window.location.href='/client/dashboard?showPlans=true'" style="background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+              View Pricing Plans
+            </button>`,
+          },
+        ],
+      },
+    ]);
+    return;
+  }
+  proceed = true;
+} else {
+  // 🔥 CHECK: Did user just register? (trial count cleared but user not yet loaded)
+  const hasJustRegistered = trialCount === 0 && localStorage.getItem('cf_token');
+  
+  if (hasJustRegistered) {
+    // User just registered but hook hasn't updated yet
+    // Show loading message or wait for user state
+    setMessages((prev) => [
+      ...prev,
+      { sender: "ai", text: "🔄 Loading your account, please wait..." },
+    ]);
+    return; // Don't proceed yet
+  }
+  
+  if (trialCount < 2) {
+    proceed = true;
+  } else {
+    setShowPricingModal(true);
+    return;
+  }
+}
 
       setCapital(input);
       setMessages((prev) => [
@@ -1182,7 +1222,51 @@ const incrementTrial = async () => {
           : "✅ **CONFIRMED SETUP** – Trade looks promising.";
 
         const decision = setup.final_decision || "WAIT";
-
+// ✅ DEDUCT SETUP ONLY AFTER SUCCESSFUL ANALYSIS
+if (user) {
+  const result = await deductSetup(); 
+  if (result !== "ok") {
+    console.error("Failed to deduct setup after analysis");
+    
+    // Show error message with CTA button to buy setups
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text: [
+          {
+            title: "❌ No Setups Left",
+            content: "You've used all your setup credits. Please buy more to continue using MZPrimer AI.",
+          },
+        ],
+      },
+      {
+        sender: "ai",
+        text: [
+          {
+            title: "🛒 Purchase Setups",
+            content: `<div class="cta-button-container">
+              <button onclick="window.location.href='/client/dashboard?showPlans=true'" class="cta-button-primary">
+                View Pricing Plans
+              </button>
+              <button onclick="window.location.href='/client/dashboard/billing'" class="cta-button-secondary">
+                Manage Billing
+              </button>
+            </div>`,
+          },
+        ],
+      },
+    ]);
+    
+    // STOP EXECUTION - don't show ticket or summary
+    setIsTyping(false);
+    return;
+  }
+} else {
+  // Increment trial count for guest
+  incrementTrialCount();
+  setTrialCount(prev => prev + 1);
+}
         // 🚀 SHOW SIGNAL TICKET POPUP
         setTicketData({
           symbol: symbol,
@@ -1198,7 +1282,7 @@ const incrementTrial = async () => {
         // Create summary blocks in the format you requested
         const summary: SummaryBlock[] = [
           {
-            title: "🎯 Trade Signal",
+            title: "🎯 Trade Parameters",
             content:
               `• Symbol: <strong>${symbol} (${SYMBOL_NAMES[symbol] || symbol})</strong>\n` +
               `• Decision: ${
@@ -1258,20 +1342,20 @@ const incrementTrial = async () => {
         scrollLocked.current = true;
         setMessages((prev) => [...prev, ...summaryCards]);
 
-        if (!user && newTrialCount >= 2) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              sender: "ai",
-              text: [
-                {
-                  title: "🚫 Trial Limit Reached",
-                  content: "You've used all 2 free trials. Register and buy setups to continue using MZPrimer AI.",
-                },
-              ],
-            },
-          ]);
-        }
+       if (!user && trialCount >= 1) { // Check trialCount state instead
+  setMessages((prev) => [
+    ...prev,
+    {
+      sender: "ai",
+      text: [
+        {
+          title: "🚫 Trial Limit Reached",
+          content: "You've used all 2 free trials. Register and buy setups to continue using MZPrimer AI.",
+        },
+      ],
+    },
+  ]);
+}
 
         // ✅ Saving logic
         if (userId) {

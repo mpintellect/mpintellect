@@ -6,11 +6,11 @@ import Image from 'next/image';
 // Cache logo URL
 const LOGO_URL = '/logos/mzlogo.webp';
 
-export default function StickyLogo() {
+export default function StickyLogo({ isDashboard = false }) {
   return (
     <Link 
       href="/" 
-      className="sticky-logo visible"
+      className={`sticky-logo ${isDashboard ? 'dashboard-logo' : ''}`}
       aria-label="Go to homepage"
       prefetch={false}
     >

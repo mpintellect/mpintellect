@@ -84,7 +84,7 @@ You can expect a response within 24 hours during business days.
 Your message:
 "${message}"
 
-For urgent matters, please contact us directly at +1 (212) 555-7890.
+For urgent matters, please contact us directly at contact@mzprimer.com.
 
 Best regards,
 The MZPrimer Team

@@ -212,7 +212,7 @@ Explore our analysis: https://mzprimer.com/
 
 If you didn't subscribe, you can unsubscribe here: https://mzprimer.com/api/unsubscribe?email=${encodeURIComponent(email)}
 
-MZPRIMER INTELLIGENCE LTD
+MZPRIMER LTD
     `;
 
     await sendEmail({

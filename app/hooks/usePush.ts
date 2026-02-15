@@ -218,7 +218,7 @@ export function usePush() {
         body: JSON.stringify({
           targetUserId: userId,
           title: "✅ Signal Alert Active",
-          message: "AI monitoring activated. You'll receive real-time trade signals!",
+          message: "AI monitoring activated. You'll receive real-time Trade Parameterss!",
           icon: "/icons/icon-192x192.png",
           badge: "/icons/badge-72x72.png",
           tag: "welcome",

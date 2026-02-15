@@ -560,7 +560,7 @@ ${data.summary?.split('\n')[0] || 'AI analysis suggests trading opportunity.'}
             
             // Enhanced AI message with line-by-line formatting
             const body = `
-🎯 ${bestTrade.symbol} AI TRADE SIGNAL
+🎯 ${bestTrade.symbol} AI Trade Parameters
 💰 Entry: ${bestTrade.entry}
 ${bestTrade.action === 'BUY' ? '🟢 **BUY NOW**' : '🔴 **SELL NOW**'}
 📈 Trend: ${trendText} ${trendEmoji}

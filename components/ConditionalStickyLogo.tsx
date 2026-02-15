@@ -6,11 +6,8 @@ import StickyLogo from "@/components/StickyLogo";
 
 export default function ConditionalStickyLogo() {
   const pathname = usePathname();
+  const isDashboard = pathname?.startsWith("/client/dashboard");
 
-  // Hide StickyLogo if the path starts with /client/dashboard
-  if (pathname?.startsWith("/client/dashboard")) {
-    return <StickyLogo />;
-  }
-
-  return <StickyLogo />;
+  // Pass dashboard status as a prop to StickyLogo
+  return <StickyLogo isDashboard={isDashboard} />;
 }

@@ -21,7 +21,7 @@ const PRODUCTS: Product[] = [
   {
     id: 'scalper',
     name: 'Scalper X1',
-    priceUsd: 15,
+    priceUsd: 45,
     short: 'Ultra-fast scalping logic built for tight spreads.',
     description:
       'Scalper X1 is designed to capture quick, frequent moves on liquid pairs. It uses volatility filters, spread checks and time-of-day rules to avoid dead sessions. Works best on low-spread brokers (ECN), M5–M15 charts.',

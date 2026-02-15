@@ -4,28 +4,24 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/app/hooks/useUser";
-import { Globe, ArrowRight, Trophy, X, BarChart3, CreditCard, LogOut, Menu } from 'lucide-react';
+import { Globe, ArrowRight, Trophy, X, BarChart3, CreditCard, LogOut, Menu, Star, Zap, Shield, TrendingUp } from 'lucide-react';
 import { createPortal } from "react-dom";
 import AiChatBox from "@/components/AiChatBox";
 import PropFirmChat from "@/components/PropFirmChat";
 import UserAnalytics from "./components/AnalyticsSection";
 import toast from "react-hot-toast";
-import BillingHistory from "@/components/BillingHistory";
 
 export const dynamic = "force-dynamic";
-
 
 function DashboardContent() {
   const { user, loading, setupCount, refreshUser, logout: logoutFromHook } = useUser();
   const [buyLoading, setBuyLoading] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"10" | "20" | "30" | null>(null);
-  const [activeTab, setActiveTab] = useState('main'); // 'main', 'analytics', 'billing'
-  // View States
   const [activeTool, setActiveTool] = useState<'ai' | 'prop' | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [isNavExpanded, setIsNavExpanded] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -36,10 +32,8 @@ function DashboardContent() {
       setShowPlanModal(true);
     }
     
-    // Check if user just registered
     if (searchParams.get("status") === "new_user" || searchParams.get("new_user") === "true") {
       setShowPlanModal(true);
-      // Clean up the URL
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
@@ -48,38 +42,12 @@ function DashboardContent() {
   // Redirect if not authenticated
   useEffect(() => {
     if (!loading && !user) {
-      console.log("❌ No authenticated user, redirecting to login");
       router.push("/client/login");
     }
   }, [user, loading, router]);
 
-  // Handle scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      if (scrollTop > 50 && !isScrolled) setIsScrolled(true);
-      else if (scrollTop <= 50 && isScrolled) setIsScrolled(false);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isScrolled]);
-
-  // Auto-center PRO card on mobile
-  useEffect(() => {
-    const grid = document.querySelector(".purchase-grid");
-    if (!grid || window.innerWidth > 520) return;
-    const middleCard = grid.querySelector(".popular-plan");
-    if (middleCard) {
-      const middleCardOffset = (middleCard as HTMLElement).offsetLeft;
-      const gridVisibleWidth = grid.clientWidth;
-      const scrollTo = middleCardOffset - (gridVisibleWidth / 2) + ((middleCard as HTMLElement).offsetWidth / 2);
-      grid.scrollTo({ left: scrollTo, behavior: "smooth" });
-    }
-  }, [showPlanModal]);
-
   const handleLogout = async () => {
     try {
-      // Call logout API
       const token = localStorage.getItem('cf_token');
       if (token) {
         await fetch('/api/auth/logout', {
@@ -90,21 +58,15 @@ function DashboardContent() {
           }
         });
       }
-      
-      // Use the logout method from useUser hook
       logoutFromHook();
-      
-      // Redirect to login
       router.push("/client/login");
     } catch (error) {
       console.error("Logout error:", error);
-      // Still clear and redirect using hook's logout
       logoutFromHook();
       router.push("/client/login");
     }
   };
 
-  // Use setup credit
   const openTool = async (tool: 'ai' | 'prop') => {
     if (!user) {
       toast.error("Please login to use this feature");
@@ -124,7 +86,6 @@ function DashboardContent() {
         return;
       }
 
-      // Use setup credit via API
       const response = await fetch('/api/user/use-setup', {
         method: 'POST',
         headers: {
@@ -137,15 +98,11 @@ function DashboardContent() {
       const data = await response.json();
       
       if (data.success) {
-        // Refresh user data to update setup count
         await refreshUser();
-        
-        // Set active tool
         setActiveTool(tool);
         setShowAnalytics(false);
         setIsNavExpanded(false);
         document.body.style.overflow = 'hidden';
-        
         toast.success("Setup credit used. Starting analysis...");
       } else {
         toast.error(data.error || "Failed to use setup credit");
@@ -159,7 +116,7 @@ function DashboardContent() {
   const closeTool = () => {
     setActiveTool(null);
     document.body.style.overflow = 'auto';
-    refreshUser(); // Refresh setup count
+    refreshUser();
   };
 
   const openAnalytics = () => {
@@ -219,366 +176,444 @@ function DashboardContent() {
     window.open('https://www.litefinance.org/fr/?uid=967798214', '_blank', 'noopener,noreferrer');
   };
 
-  // Loading state
   if (loading) {
     return (
-      <div className="client-cabinet">
-        <div className="cabinet-loading">
-          <div className="loading-spinner"></div>
-          <p>Loading your cabinet...</p>
-        </div>
+      <div className="premium-loading">
+        <div className="premium-spinner"></div>
+        <p>Loading your dashboard...</p>
       </div>
     );
   }
 
-  // If no user after loading, show nothing (will redirect)
   if (!user) {
     return (
-      <div className="client-cabinet">
-        <div className="cabinet-loading">
-          <div className="loading-spinner"></div>
-          <p>Redirecting to login...</p>
-        </div>
+      <div className="premium-loading">
+        <div className="premium-spinner"></div>
+        <p>Redirecting to login...</p>
       </div>
     );
   }
 
   return (
-    <div className="client-cabinet">
-      {/* HEADER */}
-      <header className={`simple-header ${isScrolled ? 'scrolled' : ''}`}>
-        <nav className="header-nav">
-          {/* Desktop Layout */}
-          <div className="desktop-layout">
-            <div className="nav-buttons">
-              <button 
-                className={`nav-btn ${!showAnalytics && !activeTool ? 'active' : ''}`}
-                onClick={returnToDashboard}
-              >
-                <Trophy size={16} /> Dashboard
-              </button>
-              <button 
-                className="nav-btn" 
-                onClick={() => openTool('ai')}
-                disabled={setupCount <= 0}
-              >
-                🎯 AI Assistant {setupCount <= 0 && "(No Credits)"}
-              </button>
-              <button 
-                className="nav-btn" 
-                onClick={() => openTool('prop')}
-                disabled={setupCount <= 0}
-              >
-                🏆 Prop Firm {setupCount <= 0 && "(No Credits)"}
-              </button>
-              <button 
-                className={`nav-btn ${showAnalytics ? 'active' : ''}`}
-                onClick={openAnalytics}
-              >
-                <BarChart3 size={16} /> Analytics
-              </button>
-              <button className="nav-btn" onClick={() => setShowPlanModal(true)}>
-                <CreditCard size={16} /> Purchase
-              </button>
-              <button className="mobile-nav-btn" onClick={() => router.push('/client/dashboard/billing')}>
-                  Billing
-                </button>
-              <button 
-                className="nav-btn"
-                onClick={() => router.push('/client/dashboard/refer')}
-              >
-                👥 Refer
-              </button>
-            </div>
-            
-            <div className="user-section">
-              <div className="user-info-simple">
-                <div className="user-avatar-small">
-                  {user?.email?.charAt(0).toUpperCase()}
-                </div>
-                <div className="user-details">
-                  <span className="user-email-simple">
-                    {user?.email?.split('@')[0]}
-                  </span>
-                  <span className="setup-count-simple">
-                    {setupCount} INTEL
-                  </span>
-                </div>
-              </div>
-              <button onClick={handleLogout} className="logout-btn-simple">
-                <LogOut size={16} /> Logout
-              </button>
-            </div>
-          </div>
+    <div className="premium-dashboard">
+      {/* DESKTOP SIDEBAR - Now scrolls with page */}
+      <aside className="premium-sidebar">
+        <div className="premium-brand">
+          INTEL <span className="premium-brand-gold">TRADER</span>
+        </div>
 
-          {/* Mobile Layout */}
-          <div className="mobile-layout">
-            <div className="mobile-user-top">
-              <div className="user-info-mobile-top">
-                <div className="user-avatar-mobile">
-                  {user?.email?.charAt(0).toUpperCase()}
-                </div>
-                <div className="user-details-mobile">
-                  <div className="user-email-mobile">{user?.email?.split('@')[0]}</div>
-                  <div className="setup-count-mobile">Credits: {setupCount}</div>
-                </div>
-              </div>
-              <button 
-                className="nav-toggle-btn"
-                onClick={() => setIsNavExpanded(!isNavExpanded)}
-              >
-                {isNavExpanded ? <X size={20}/> : <Menu size={20} />}
-              </button>
-            </div>
-            
-            {isNavExpanded && (
-              <div className="mobile-nav-buttons">
-                <button className="mobile-nav-btn" onClick={returnToDashboard}>
-                  <Trophy size={16} /> Dashboard
-                </button>
-                <button 
-                  className="mobile-nav-btn" 
-                  onClick={() => openTool('ai')}
-                  disabled={setupCount <= 0}
-                >
-                  🎯 AI Assistant {setupCount <= 0 && "(No Credits)"}
-                </button>
-                <button 
-                  className="mobile-nav-btn" 
-                  onClick={() => openTool('prop')}
-                  disabled={setupCount <= 0}
-                >
-                  🏆 Prop Firm {setupCount <= 0 && "(No Credits)"}
-                </button>
-                <button className="mobile-nav-btn" onClick={openAnalytics}>
-                  <BarChart3 size={16} /> Analytics
-                </button>
-                <button className="mobile-nav-btn" onClick={() => {setShowPlanModal(true); setIsNavExpanded(false);}}>
-                  <CreditCard size={16} /> Buy Setups
-                </button>
-                
-<button className="mobile-nav-btn" onClick={() => router.push('/client/dashboard/billing')}>
-                  Billing
-                </button>
-                <button className="mobile-nav-btn" onClick={() => router.push('/client/dashboard/refer')}>
-                  👥 Refer Friends
-                </button>
-                <button className="mobile-nav-btn logout" onClick={handleLogout}>
-                  <LogOut size={16} /> Logout
-                </button>
-              </div>
-            )}
-          </div>
+        <nav className="premium-nav-menu desktop">
+          <button 
+            className={`premium-nav-item ${!showAnalytics && !activeTool ? 'active' : ''}`}
+            onClick={returnToDashboard}
+          >
+            <Trophy size={18} className="premium-nav-icon" /> 
+            <span>Portfolio</span>
+          </button>
+          
+          <button 
+            className="premium-nav-item" 
+            onClick={() => openTool('ai')}
+            disabled={setupCount <= 0}
+          >
+            <Zap size={18} className="premium-nav-icon" /> 
+            <span>AI Intelligence</span>
+            {setupCount <= 0 && <span className="premium-nav-badge">No Credits</span>}
+          </button>
+          
+          <button 
+            className="premium-nav-item" 
+            onClick={() => openTool('prop')}
+            disabled={setupCount <= 0}
+          >
+            <Shield size={18} className="premium-nav-icon" /> 
+            <span>Prop Firm</span>
+            {setupCount <= 0 && <span className="premium-nav-badge">No Credits</span>}
+          </button>
+          
+          <button 
+            className={`premium-nav-item ${showAnalytics ? 'active' : ''}`}
+            onClick={openAnalytics}
+          >
+            <TrendingUp size={18} className="premium-nav-icon" /> 
+            <span>Performance</span>
+          </button>
+          
+          <button className="premium-nav-item" onClick={() => setShowPlanModal(true)}>
+            <CreditCard size={18} className="premium-nav-icon" /> 
+            <span>Acquire Credits</span>
+          </button>
+          <button className="premium-nav-item" onClick={() => router.push('/client/dashboard/billing')}>
+            <CreditCard size={18} className="premium-nav-icon" /> 
+            <span>Billing</span>
+          </button>
+          <button className="premium-nav-item" onClick={() => router.push('/client/dashboard/refer')}>
+            <Star size={18} className="premium-nav-icon" /> 
+            <span>Refer</span>
+          </button>
         </nav>
-      </header>
-      
+
+        <div className="premium-user-section">
+          <div className="premium-user-info">
+            <p className="premium-username">{user?.email}</p>
+            <p className="premium-credits">{setupCount} CREDITS</p>
+          </div>
+          <button onClick={handleLogout} className="premium-nav-item" style={{ width: '100%', paddingLeft: 0 }}>
+            <LogOut size={16} /> <span>Sign Out</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* MOBILE NAVIGATION - Burger Menu */}
+      <nav className="premium-mobile-nav">
+        
+        
+        <button 
+          className={`premium-mobile-burger ${isMobileMenuOpen ? 'open' : ''}`}
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </nav>
+
+      {/* MOBILE MENU */}
+      <div className={`premium-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+        <div className="premium-mobile-items"style={{ paddingTop: '20px' }}>
+          <button 
+            className={`premium-mobile-item ${!showAnalytics && !activeTool ? 'active' : ''}`}
+            onClick={() => {
+              returnToDashboard();
+              setIsMobileMenuOpen(false);
+            }}
+          >
+            <Trophy size={18} className="premium-nav-icon" />
+            <span>Portfolio</span>
+          </button>
+          
+          <button 
+            className="premium-mobile-item"
+            onClick={() => {
+              openTool('ai');
+              setIsMobileMenuOpen(false);
+            }}
+            disabled={setupCount <= 0}
+          >
+            <Zap size={18} className="premium-nav-icon" />
+            <span>AI Intelligence</span>
+            {setupCount <= 0 && <span className="premium-mobile-badge">No Credits</span>}
+          </button>
+          
+          <button 
+            className="premium-mobile-item"
+            onClick={() => {
+              openTool('prop');
+              setIsMobileMenuOpen(false);
+            }}
+            disabled={setupCount <= 0}
+          >
+            <Shield size={18} className="premium-nav-icon" />
+            <span>Prop Firm</span>
+            {setupCount <= 0 && <span className="premium-mobile-badge">No Credits</span>}
+          </button>
+          
+          <button 
+            className={`premium-mobile-item ${showAnalytics ? 'active' : ''}`}
+            onClick={() => {
+              openAnalytics();
+              setIsMobileMenuOpen(false);
+            }}
+          >
+            <TrendingUp size={18} className="premium-nav-icon" />
+            <span>Performance</span>
+          </button>
+          
+          <button 
+            className="premium-mobile-item"
+            onClick={() => {
+              setShowPlanModal(true);
+              setIsMobileMenuOpen(false);
+            }}
+          >
+            <CreditCard size={18} className="premium-nav-icon" />
+            <span>Acquire Credits</span>
+          </button>
+          <button 
+            className="premium-mobile-item"
+            onClick={() => {
+              router.push('/client/dashboard/billing');
+              setIsMobileMenuOpen(false);
+            }}
+          >
+            <CreditCard size={18} className="premium-nav-icon" />
+            <span>Billing</span>
+          </button>
+          <button 
+            className="premium-mobile-item"
+            onClick={() => {
+              router.push('/client/dashboard/refer');
+              setIsMobileMenuOpen(false);
+            }}
+          >
+            <Star size={18} className="premium-nav-icon" />
+            <span>Refer</span>
+          </button>
+        </div>
+        
+        <div className="premium-mobile-user">
+          <div className="premium-mobile-username">{user?.email}</div>
+          <div className="premium-mobile-credits">{setupCount} CREDITS</div>
+          <button 
+            className="premium-mobile-logout"
+            onClick={() => {
+              handleLogout();
+              setIsMobileMenuOpen(false);
+            }}
+          >
+            <LogOut size={16} /> Sign Out
+          </button>
+        </div>
+      </div>
+
       {/* MAIN CONTENT */}
-      <main className="cabinet-main">
+      <main className="premium-main">
         {showAnalytics ? (
-          <div className="analytics-full-view">
-            <div className="analytics-header">
-              <h1>Analytics Dashboard</h1>
-              <p>Track your trading performance and progress</p>
-              <button className="back-to-dashboard-btn" onClick={returnToDashboard}>
-                ← Back to Dashboard
-              </button>
-            </div>
-            <div className="analytics-container">
-              <UserAnalytics />
-            </div>
+          <div className="premium-analytics-view">
+            <header style={{ marginBottom: '3rem' }}>
+              <h1 style={{ fontWeight: 300 }}>Analytics Overview</h1>
+              <button className="premium-action-btn" onClick={returnToDashboard}>Back</button>
+            </header>
+            <UserAnalytics />
           </div>
         ) : (
-          <div className="dashboard-view">
-            {/* Welcome Section */}
-            <div className="welcome-section">
-              <h1>Welcome back, {user?.email?.split('@')[0]}! 👋</h1>
-              <p>Ready to analyze the markets with AI-powered insights</p>
+          <div className="premium-content">
+            <div className="premium-welcome">
+              <h1>Welcome, <span>{user?.email?.split('@')[0]}</span></h1>
+            </div>
+<p>The markets are waiting for your next move. Each candle represents an opportunity to trade.</p>
+            <div className="premium-credits-card">
+              <span>AVAILABLE SETUPS</span>
+              <div className="premium-credits-number">{setupCount}</div>
             </div>
 
-           
-
-            {/* Setup Credits Card */}
-            <div className="status-card">
-              <div className="status-header">
-                <h2>Your Setup Credits</h2>
-                <div className={`status-badge ${setupCount > 0 ? 'active' : 'inactive'}`}>
-                  {setupCount > 0 ? 'Active' : 'No Credits'}
+            <div className="premium-actions-grid">
+              <div className="premium-action-card">
+                <h3>STANDARD AI</h3>
+                <p>Precision scalp setups based on institutional liquidity levels.</p>
+                <div className="premium-action-footer">
+                  <span className="premium-action-cost">1 credit/use</span>
+                  <button 
+                    onClick={() => openTool('ai')} 
+                    className={`premium-action-btn ${setupCount > 0 ? '' : 'disabled'}`}
+                    disabled={setupCount <= 0}
+                  >
+                    {setupCount > 0 ? 'Initialize' : 'No Credits'}
+                  </button>
                 </div>
               </div>
-              <div className="setup-count-display">
-                <span className="count-number">{setupCount}</span>
-                <span className="count-label">Available Setups</span>
-              </div>
-              {setupCount === 0 && (
-                <div className="warning-message">
-                  ⚠️ You need to purchase setups to use the AI Assistant
+
+              <div className="premium-action-card">
+                <h3>PROP FIRM</h3>
+                <p>Specialized risk-management AI designed for funding challenges.</p>
+                <div className="premium-action-footer">
+                  <span className="premium-action-cost">1 credit/use</span>
+                  <button 
+                    onClick={() => openTool('prop')} 
+                    className={`premium-action-btn ${setupCount > 0 ? '' : 'disabled'}`}
+                    disabled={setupCount <= 0}
+                  >
+                    {setupCount > 0 ? 'Initialize' : 'No Credits'}
+                  </button>
                 </div>
-              )}
-            </div>
-
-            {/* Actions Grid */}
-            <div className="actions-grid">
-              {/* Standard AI Assistant */}
-              <div className="action-card primary-action">
-                <div className="action-icon">🎯</div>
-                <h3>Standard AI</h3> 
-                <p>Day trading & Scalping setups</p>
-                <button 
-                  onClick={() => openTool('ai')}
-                  disabled={setupCount <= 0}
-                  className={`action-btn ${setupCount > 0 ? 'primary' : 'disabled'}`}
-                >
-                  {setupCount > 0 ? 'Start Analysis' : 'No Setups'}
-                </button>
               </div>
 
-              {/* Prop Firm AI */}
-              <div className="action-card">
-                <div className="action-icon">🏆</div>
-                <h3>Prop Firm AI</h3>
-                <p>Pass your challenge with rule-based risk</p>
-                <button 
-                  onClick={() => openTool('prop')}
-                  disabled={setupCount <= 0}
-                  className={`action-btn ${setupCount > 0 ? 'secondary' : 'disabled'}`}
-                >
-                  {setupCount > 0 ? 'Launch Assistant' : 'No Setups'}
-                </button>
-              </div>
-
-              {/* Broker Gateway */}
-              <div className="action-card broker-card">
-                <div className="choice-icon-box icon-box-blue">
-                  <Globe size={24} />
+              <div className="premium-action-card premium-broker-card">
+                <div className="premium-badge-new">NEW</div>
+                <h3>BROKER GATEWAY</h3>
+                <p>Access authorized brokers to execute signals instantly.</p>
+                <div className="premium-action-footer">
+                  <span className="premium-action-cost">Free Access</span>
+                  <button onClick={handleBrokerGatewayClick} className="premium-broker-btn">
+                    Launch <ArrowRight size={14} />
+                  </button>
                 </div>
-                <div className="badge-new">NEW</div>
-                <h3 className="choice-title title-blue">Broker Gateway</h3>
-                <p className="choice-desc">Access authorized brokers to execute signals</p>
-                <button 
-                  onClick={handleBrokerGatewayClick}
-                  className="choice-btn choice-btn-primary"
-                >
-                  Launch Gateway <ArrowRight size={16} />
-                </button>
               </div>
 
-              {/* Analytics */}
-              <div className="action-card">
-                <div className="action-icon">📊</div>
-                <h3>Analytics</h3>
-                <p>View your performance</p>
-                <button 
-                  onClick={openAnalytics}
-                  className="action-btn secondary"
-                >
-                  View Stats
-                </button>
+              <div className="premium-action-card">
+                <h3>ANALYTICS</h3>
+                <p>Track your performance metrics and trading history.</p>
+                <div className="premium-action-footer">
+                  <span className="premium-action-cost">Free</span>
+                  <button onClick={openAnalytics} className="premium-action-btn secondary">
+                    View Stats
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Quick Purchase Section */}
-            <div className="purchase-section" id="purchase-section">
-              <h2>Quick Purchase</h2>
-              <div className="purchase-grid">
-                <div className="purchase-option">
-                  <div className="plan-name">Basic</div>
-                  <div className="plan-price">€4.50</div>
-                  <div className="plan-setups">10 Setups</div>
+            <div className="premium-purchase-section">
+              <h2>Purchase Credits</h2>
+              <p className="premium-section-subtitle">Choose the plan that fits your trading needs</p>
+              
+              <div className="premium-purchase-grid">
+                {/* Basic Plan */}
+                <div className="premium-plan-card">
+                  <h3 className="premium-plan-name">BASIC</h3>
+                  <p className="premium-plan-description">For occasional traders</p>
+                  <div className="premium-plan-price">€4.50</div>
+                  <div className="premium-plan-setups">10 Setups</div>
+                  <ul className="premium-plan-features">
+                    <li>✓ 10 setups </li>
+                    <li>✓ Advanced Analytics</li>
+                    <li>✓ 24/7 Support</li>
+                  </ul>
                   <button
                     onClick={() => handleBuySetups("10")}
                     disabled={buyLoading}
-                    className="purchase-btn"
+                    className="premium-plan-btn"
                   >
                     {buyLoading ? "Processing..." : "Buy Now"}
                   </button>
                 </div>
 
-                <div className="purchase-option popular-plan">
-                  <div className="popular-badge">Most Popular</div>
-                  <div className="plan-name">Pro</div>
-                  <div className="plan-price">€8.00</div>
-                  <div className="plan-setups">20 Setups</div>
+                {/* Pro Plan - Popular */}
+                <div className="premium-plan-card popular">
+                  <div className="premium-popular-badge">MOST POPULAR</div>
+                  <h3 className="premium-plan-name">PRO</h3>
+                  <p className="premium-plan-description">For active traders</p>
+                  <div className="premium-plan-price">€8.00</div>
+                  <div className="premium-plan-setups">20 Setups</div>
+                  <ul className="premium-plan-features">
+                    <li>✓ 20 setups </li>
+                    <li>✓ Advanced Analytics</li>
+                    <li>✓ 24/7 Support</li>
+                  </ul>
                   <button
                     onClick={() => handleBuySetups("20")}
                     disabled={buyLoading}
-                    className="purchase-btn primary"
+                    className="premium-plan-btn primary"
                   >
                     {buyLoading ? "Processing..." : "Buy Now"}
                   </button>
                 </div>
 
-                <div className="purchase-option">
-                  <div className="plan-name">Elite</div>
-                  <div className="plan-price">€12.00</div>
-                  <div className="plan-setups">30 Setups</div>
+                {/* Elite Plan */}
+                <div className="premium-plan-card">
+                  <h3 className="premium-plan-name">ELITE</h3>
+                  <p className="premium-plan-description">For professional traders</p>
+                  <div className="premium-plan-price">€12.00</div>
+                  <div className="premium-plan-setups">30 Setups</div>
+                  <ul className="premium-plan-features">
+                    <li>✓ 30 setups </li>
+                    <li>✓ Advanced Analytics</li>
+                    <li>✓ 24/7 Support</li>
+                  </ul>
                   <button
                     onClick={() => handleBuySetups("30")}
                     disabled={buyLoading}
-                    className="purchase-btn"
+                    className="premium-plan-btn"
                   >
                     {buyLoading ? "Processing..." : "Buy Now"}
                   </button>
                 </div>
               </div>
             </div>
+
+            
           </div>
         )}
       </main>
 
-      {/* PRICING MODAL */}
+      {/* Pricing Modal */}
       {showPlanModal && (
-        <div className="modal-overlay">
-          <div className="modal-content pricing-modal">
-            <div className="pricing-modal-header">
-              <h3 className="pricing-title">🎯 Choose Your Plan</h3>
-              <button className="close-modal" onClick={() => setShowPlanModal(false)}>✕</button>
+        <div className="premium-modal-overlay" onClick={() => setShowPlanModal(false)}>
+          <div className="premium-modal" onClick={e => e.stopPropagation()}>
+            <div className="premium-modal-header">
+              <h3>Choose Your Plan</h3>
+              <button className="premium-modal-close" onClick={() => setShowPlanModal(false)}>
+                <X size={20} />
+              </button>
             </div>
-            <div className="purchase-grid modal-plans-grid">
-              <div className={`purchase-option ${selectedPlan === "10" ? "selected" : ""}`} onClick={() => setSelectedPlan("10")}>
-                <div className="plan-name">Basic Plan</div>
-                <div className="plan-price">€4.50</div>
-                <div className="plan-setups">10 Setups</div>
-                <button className={`purchase-btn ${selectedPlan === "10" ? "primary" : ""}`}>Select</button>
+            
+            <div className="premium-modal-plans">
+              <div 
+                className={`premium-modal-plan ${selectedPlan === "10" ? "selected" : ""}`}
+                onClick={() => setSelectedPlan("10")}
+              >
+                <h4>Basic</h4>
+                <div className="premium-modal-price">€4.50</div>
+                <p>10 Setups</p>
+                <button className={`premium-modal-select ${selectedPlan === "10" ? "selected" : ""}`}>
+                  Select
+                </button>
               </div>
-              <div className={`purchase-option popular-plan ${selectedPlan === "20" ? "selected" : ""}`} onClick={() => setSelectedPlan("20")}>
-                <div className="popular-badge">Most Popular</div>
-                <div className="plan-name">Pro Plan</div>
-                <div className="plan-price">€8.00</div>
-                <div className="plan-setups">20 Setups</div>
-                <button className={`purchase-btn primary ${selectedPlan === "20" ? "selected" : ""}`}>Select</button>
+              
+              <div 
+                className={`premium-modal-plan popular ${selectedPlan === "20" ? "selected" : ""}`}
+                onClick={() => setSelectedPlan("20")}
+              >
+                <div className="premium-popular-tag">Best Value</div>
+                <h4>Pro</h4>
+                <div className="premium-modal-price">€8.00</div>
+                <p>20 Setups</p>
+                <button className={`premium-modal-select ${selectedPlan === "20" ? "selected" : ""}`}>
+                  Select
+                </button>
               </div>
-              <div className={`purchase-option ${selectedPlan === "30" ? "selected" : ""}`} onClick={() => setSelectedPlan("30")}>
-                <div className="plan-name">Elite Plan</div>
-                <div className="plan-price">€12.00</div>
-                <div className="plan-setups">30 Setups</div>
-                <button className={`purchase-btn ${selectedPlan === "30" ? 'primary' : ''}`}>Select</button>
+              
+              <div 
+                className={`premium-modal-plan ${selectedPlan === "30" ? "selected" : ""}`}
+                onClick={() => setSelectedPlan("30")}
+              >
+                <h4>Elite</h4>
+                <div className="premium-modal-price">€12.00</div>
+                <p>30 Setups</p>
+                <button className={`premium-modal-select ${selectedPlan === "30" ? "selected" : ""}`}>
+                  Select
+                </button>
               </div>
             </div>
-            <div className="modal-footer">
-              <button className="confirm-purchase-btn" disabled={!selectedPlan || buyLoading} onClick={() => selectedPlan && handleBuySetups(selectedPlan)}>
+            
+            <div className="premium-modal-footer">
+              <button 
+                className="premium-modal-btn secondary"
+                onClick={() => setShowPlanModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="premium-modal-btn primary"
+                disabled={!selectedPlan || buyLoading}
+                onClick={() => selectedPlan && handleBuySetups(selectedPlan)}
+              >
                 {buyLoading ? "Processing..." : "Proceed to Payment"}
               </button>
-              <button className="cancel-btn" onClick={() => setShowPlanModal(false)}>Cancel</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* IMMERSIVE PORTAL FOR TOOLS */}
+      {/* Immersive Tool Portal */}
       {activeTool && createPortal(
-        <div className="immersive-modal-overlay">
-          <div className="immersive-modal-container">
-            <div className="immersive-header">
-              <div className="tool-identity">
-                <span className="live-pulse"></span>
-                {activeTool === 'ai' ? 'AI Intel Terminal' : 'Prop Firm Security'}
+        <div className="premium-tool-overlay">
+          <div className="premium-tool-container">
+            <div className="premium-tool-header">
+              <div className="premium-tool-identity">
+                <span className="premium-tool-pulse"></span>
+                {activeTool === 'ai' ? 'AI Intel Terminal' : 'Prop Firm Security Mode'}
               </div>
-              <button onClick={closeTool} className="immersive-close-btn">
-                <X size={20} /> CLOSE
+              <button onClick={closeTool} className="premium-tool-close">
+                <X size={20} /> CLOSE TERMINAL
               </button>
             </div>
-            <div className="immersive-content">
-              {activeTool === 'ai' ? <AiChatBox mode="section" onClose={closeTool} autoStart={true} /> : <PropFirmChat onClose={closeTool} />}
+            <div className="premium-tool-content">
+              {activeTool === 'ai' ? (
+                <AiChatBox mode="section" onClose={closeTool} autoStart={true} />
+              ) : (
+                <PropFirmChat onClose={closeTool} />
+              )}
             </div>
           </div>
         </div>,
@@ -591,11 +626,9 @@ function DashboardContent() {
 export default function DashboardPage() {
   return (
     <Suspense fallback={
-      <div className="client-cabinet">
-        <div className="cabinet-loading">
-          <div className="loading-spinner"></div>
-          <p>Loading dashboard...</p>
-        </div>
+      <div className="premium-loading">
+        <div className="premium-spinner"></div>
+        <p>Loading dashboard...</p>
       </div>
     }>
       <DashboardContent />

@@ -14,6 +14,17 @@ export default function SlimScrollingTicker() {
   
   const [scrollPosition, setScrollPosition] = useState(0);
   const [trackWidth, setTrackWidth] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (!loading && news.length > 0 && trackRef.current) {
@@ -58,6 +69,11 @@ export default function SlimScrollingTicker() {
     };
   }, [loading, news.length, isPaused, trackWidth]);
 
+  // Handle news item click
+  const handleNewsClick = (item: NewsItem) => {
+    setSelectedNews(item);
+  };
+
   if (loading) {
     return (
       <div className="slim-ticker-container">
@@ -82,9 +98,9 @@ export default function SlimScrollingTicker() {
   return (
     <>
       <div 
-        className="slim-ticker-container"
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
+        className={`slim-ticker-container ${isPaused ? 'paused' : ''}`}
+        onMouseEnter={() => !isMobile && setIsPaused(true)}
+        onMouseLeave={() => !isMobile && setIsPaused(false)}
       >
         <div className="slim-ticker-bar">
           <div 
@@ -95,7 +111,7 @@ export default function SlimScrollingTicker() {
             {duplicatedNews.map((item, idx) => (
               <button
                 key={`${item.id}-${idx}`}
-                onClick={() => setSelectedNews(item)}
+                onClick={() => handleNewsClick(item)}
                 className="news-terminal-slat"
               >
                 <span className="slat-timestamp">
@@ -112,7 +128,10 @@ export default function SlimScrollingTicker() {
         </div>
 
         <button
-          onClick={() => setIsPaused(!isPaused)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsPaused(!isPaused);
+          }}
           className="slim-pause-btn"
         >
           {isPaused ? '▶' : '⏸'}

@@ -9,7 +9,7 @@ export default function ConditionalStickyLogo() {
 
   // Hide StickyLogo if the path starts with /client/dashboard
   if (pathname?.startsWith("/client/dashboard")) {
-    return null;
+    return <StickyLogo />;
   }
 
   return <StickyLogo />;

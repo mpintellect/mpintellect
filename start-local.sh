@@ -1,9 +1,16 @@
 #!/bin/bash
+# start-dev.sh
 
-# First, build the Next.js app to the 'out' directory
-echo "🏗️ Building Next.js application..."
-npm run pages:build
+# Watch for changes and rebuild
+echo "🏗️ Watching for changes and rebuilding..."
+npm run pages:build -- --watch &
 
-# Then serve it with wrangler
+# Store the watch process ID
+WATCH_PID=$!
+
+# Serve with live reload
 echo "🚀 Starting local development server on http://localhost:8788..."
-npx wrangler pages dev out --d1 DB=mzprimer-db --persist-to=./.wrangler/state/v3 --compatibility-flags=nodejs_compat --port 8788
+npx wrangler pages dev out --d1 DB=mzprimer-db --persist-to=./.wrangler/state/v3 --compatibility-flags=nodejs_compat --port 8788 --live-reload
+
+# Kill the watch process when done
+kill $WATCH_PID

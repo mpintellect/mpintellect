@@ -21,7 +21,7 @@ export default function ThankYouPage({
           <div className="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto border border-yellow-500/30">
             <span className="text-4xl">🎉</span>
           </div>
-        </div>
+        </div> 
 
         {/* Thank You Message */}
         <h1 className="text-3xl font-bold mb-4">Thank You for Your Purchase!</h1>

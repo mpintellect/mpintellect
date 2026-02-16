@@ -3,7 +3,7 @@ import { execute, queryOne } from '../../backend-lib/db-simple';
 
 export const PRODUCTS = {
   aiAssistantMonthly: { id: "ai-assistant-monthly", name: "AI Assistant – Monthly", priceUsd: 10 },
-  scalperX1: { id: "scalper-x1", name: "Scalper X1", priceUsd: 15 }
+  scalperX1: { id: "scalper-x1", name: "Scalper X1", priceUsd: 45 }
 } as any;
 
 /**

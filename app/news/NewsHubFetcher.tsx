@@ -9,7 +9,7 @@ export default function NewsHubFetcher() {
   const [selected, setSelected] = useState<any>(null);
 
   useEffect(() => {
-    fetch('https://data.mzprimer.com/news.json')
+    fetch('https://data.mzprimer.com/news-old.json')
       .then(res => res.json())
       .then(setNews);
   }, []);

@@ -54,7 +54,7 @@ export default function AiToolsSection() {
               Simulate and validate your strategy across historical data. Adjust parameters and discover performance trends before risking real capital.
             </p>
             <Link
-              href="/ai-robot"
+              href="/AIChat"
               className="ai-cta-button"
               data-cta="true"
               data-cta-name="Try Backtesting Tool"
@@ -73,7 +73,7 @@ export default function AiToolsSection() {
               Let AI analyze market conditions and recommend trading ideas that align with your style — from swing trades to scalping.
             </p>
             <Link
-              href="/ai-robot"
+              href="/AIChat"
               className="ai-cta-button"
               data-cta="true"
               data-cta-name="Meet Your AI Advisor"

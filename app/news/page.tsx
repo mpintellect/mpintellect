@@ -12,7 +12,7 @@ export default function FundamentalNewsHub() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/news')
+    fetch('/api/news-old')
       .then(r => r.json())
       .then(data => {
         const newsArray = Array.isArray(data) ? data : (data.news || []);

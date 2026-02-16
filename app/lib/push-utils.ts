@@ -1,5 +1,4 @@
 // app/lib/push-utils.ts
-// Utility function for converting URL-safe base64 to Uint8Array
 export function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding)
@@ -18,31 +17,17 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array {
 export const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
 
 // Type-safe function to get applicationServerKey
-function getApplicationServerKey(): ArrayBuffer | null {
+function getApplicationServerKey(): Uint8Array | null {
   if (!VAPID_PUBLIC_KEY) return null;
-  
   try {
-    // Convert to ArrayBuffer (not Uint8Array) for compatibility
-    const padding = '='.repeat((4 - (VAPID_PUBLIC_KEY.length % 4)) % 4);
-    const base64 = (VAPID_PUBLIC_KEY + padding)
-      .replace(/-/g, '+')
-      .replace(/_/g, '/');
-    
-    const rawData = atob(base64);
-    const buffer = new ArrayBuffer(rawData.length);
-    const view = new Uint8Array(buffer);
-    
-    for (let i = 0; i < rawData.length; ++i) {
-      view[i] = rawData.charCodeAt(i);
-    }
-    
-    return buffer;
+    return urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
   } catch (error) {
     console.error('Error converting VAPID key:', error);
     return null;
   }
 }
 
+// Subscribe to push notifications
 // Subscribe to push notifications
 export async function subscribeToPush(): Promise<{ success: boolean; subscription?: PushSubscription }> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -51,16 +36,20 @@ export async function subscribeToPush(): Promise<{ success: boolean; subscriptio
   }
 
   try {
-    const applicationServerKey = getApplicationServerKey();
-    if (!applicationServerKey) {
+    // 1. Call the function and store the result in a variable
+    const key = getApplicationServerKey(); 
+    
+    if (!key) {
       console.warn('VAPID public key not configured');
       return { success: false };
     }
 
     const registration = await navigator.serviceWorker.ready;
+
+    // 2. Use that variable with the "as any" cast
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: applicationServerKey
+      applicationServerKey: key as any // ✅ Now 'key' is defined and cast correctly
     });
 
     return { success: true, subscription };

@@ -1,8 +1,7 @@
-// sw.js - Service Worker with Logo Caching
+// sw.js - Institutional Grade Service Worker
 const CACHE_NAME = 'mzprimer-v1';
 const LOGO_CACHE_NAME = 'mzprimer-logos-v1';
 
-// Logo URLs to cache
 const LOGO_URLS = [
   '/logos/mzlogo.webp',
   '/logos/icon-192.png',
@@ -16,179 +15,68 @@ const LOGO_URLS = [
   '/logos/pci.svg'
 ];
 
-// Install event - Cache logos
+// 1. Install - Cache Assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(LOGO_CACHE_NAME).then((cache) => {
-      console.log('Caching logos...');
-      return cache.addAll(LOGO_URLS);
-    }).then(() => {
-      console.log('Logo cache complete');
-      return self.skipWaiting();
-    })
+    caches.open(LOGO_CACHE_NAME).then((cache) => cache.addAll(LOGO_URLS))
+    .then(() => self.skipWaiting()) // Force activation
   );
 });
 
-// Activate event - Clean up old caches
+// 2. Activate - Cleanup & Claim
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== LOGO_CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
+    caches.keys().then((keys) => Promise.all(
+      keys.map((k) => (k !== LOGO_CACHE_NAME && k !== CACHE_NAME) && caches.delete(k))
+    )).then(() => self.clients.claim()) // Take control immediately
   );
 });
 
-// Fetch event - Serve logos from cache first
+// 3. Fetch - Cache First for Logos
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  
-  // Check if this is a logo request
-  const isLogoRequest = url.pathname.startsWith('/logos/');
-  
-  if (isLogoRequest) {
+  if (url.pathname.startsWith('/logos/')) {
     event.respondWith(
-      caches.open(LOGO_CACHE_NAME).then((cache) => {
-        return cache.match(event.request).then((response) => {
-          // Return cached logo or fetch new
-          return response || fetch(event.request).then((fetchResponse) => {
-            // Cache the new logo for future use
-            cache.put(event.request, fetchResponse.clone());
-            return fetchResponse;
-          });
-        });
-      })
+      caches.match(event.request).then((res) => res || fetch(event.request))
     );
-    return;
   }
-  
-  // For non-logo requests, use network-first strategy
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
-  );
 });
 
-// Push notifications
-self.addEventListener('push', function (event) {
+// 4. Push - Combined Logic
+self.addEventListener('push', (event) => {
   if (!event.data) return;
-  
   const data = event.data.json();
+
   const options = {
-    body: data.body || 'New trading insights available',
-    icon: '/logos/icon-192.png', // Use cached PWA icon
+    body: data.body || data.message || 'New market intelligence available.',
+    icon: '/logos/icon-192.png',
     badge: '/logos/icon-192.png',
     vibrate: [100, 50, 100],
-    data: {
-      url: data.url || '/',
-      timestamp: Date.now()
-    },
-    actions: data.actions || [
-      {
-        action: 'view',
-        title: 'View'
-      },
-      {
-        action: 'dismiss',
-        title: 'Dismiss'
-      }
+    tag: data.tag || 'mz-signal',
+    data: { url: data.url || data.data?.url || '/' },
+    actions: [
+      { action: 'view', title: '📈 View Intel' },
+      { action: 'dismiss', title: 'Dismiss' }
     ]
   };
-  
+
   event.waitUntil(
-    self.registration.showNotification(data.title || 'MZPrimer Alert', options)
+    self.registration.showNotification(data.title || 'MZ Intelligence', options)
   );
 });
 
-self.addEventListener('notificationclick', function (event) {
+// 5. Notification Click
+self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  
-  if (event.action === 'dismiss') {
-    return;
-  }
-  
+  if (event.action === 'dismiss') return;
+
+  const targetUrl = event.notification.data.url;
   event.waitUntil(
-    clients.matchAll({ 
-      type: 'window',
-      includeUncontrolled: true 
-    }).then((windowClients) => {
-      const url = event.notification.data.url || '/';
-      
-      // Check if window is already open
-      for (let client of windowClients) {
-        if (client.url === url && 'focus' in client) {
-          return client.focus();
-        }
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsList) => {
+      for (const client of clientsList) {
+        if (client.url === targetUrl && 'focus' in client) return client.focus();
       }
-      
-      // Open new window
-      if (clients.openWindow) {
-        return clients.openWindow(url);
-      }
+      if (clients.openWindow) return clients.openWindow(targetUrl);
     })
-  );
-});
-// public/sw.js
-self.addEventListener('push', function(event) {
-  if (!event.data) return;
-  
-  const data = event.data.json();
-  
-  const options = {
-    body: data.body || 'New notification',
-    icon: data.icon || '/icons/icon-192x192.png',
-    badge: data.badge || '/icons/badge-72x72.png',
-    tag: data.tag || 'default',
-    data: data.data || {},
-    requireInteraction: data.requireInteraction || false,
-    actions: data.actions || []
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'MZPrimer', options)
-  );
-});
-
-self.addEventListener('notificationclick', function(event) {
-  event.notification.close();
-  
-  const url = event.notification.data?.url || '/';
-  
-  event.waitUntil(
-    clients.matchAll({ type: 'window' }).then(windowClients => {
-      // Check if there's already a window/tab open with the target URL
-      for (let client of windowClients) {
-        if (client.url === url && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      // If not, open a new window/tab
-      if (clients.openWindow) {
-        return clients.openWindow(url);
-      }
-    })
-  );
-});
-
-self.addEventListener('pushsubscriptionchange', function(event) {
-  event.waitUntil(
-    self.registration.pushManager.subscribe(event.oldSubscription.options)
-      .then(function(subscription) {
-        // Send new subscription to server
-        return fetch('/api/push/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            subscription: subscription.toJSON()
-          })
-        });
-      })
   );
 });

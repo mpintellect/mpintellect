@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import StickyLogo from './StickyLogo';
 
 interface Stats {
   riskReward?: string;
@@ -132,7 +131,7 @@ export default function AIRobotCards() {
   return (
     <section id="ai-robots" className="ai-robot-section">
       <div className="section-header">
-        <StickyLogo />
+    
         <h1 className="section-title">🤖 AI Robots Marketplace</h1>
         <p className="section-description">
           Choose your trading assistant and receive it instantly via email after payment.
@@ -151,7 +150,7 @@ export default function AIRobotCards() {
             <p className="robot-short">{bot.short}</p>
             <ul className="robot-features">
               {bot.features.map((f, i) => (
-                <li key={i}>✅ {f}</li>
+                <li key={i}> {f}</li>
               ))}
             </ul>
             <div className="robot-card-footer">

@@ -143,7 +143,7 @@ export default function TradingAssistantBridge() {
                </span>
             ) : (
                <>
-                 <span className="live-dot" /> <span className="text-zinc-400">AI TRADING SIGNAL</span>
+                 <span className="live-dot" /> <span className="text-zinc-400">AI ASSISTANT</span>
                  <span className="w-px h-3 bg-white/10 mx-2"></span> <span className="text-yellow-500 font-bold">LIVE</span>
                </>
             )}

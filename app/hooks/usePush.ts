@@ -88,123 +88,93 @@ export function usePush() {
     }
   };
 
-  // 4. CHECK AND REGISTER SERVICE WORKER
-  const registerServiceWorker = async () => {
+ // 4. CHECK AND REGISTER SERVICE WORKER (Improved)
+const registerServiceWorker = async () => {
     if ('serviceWorker' in navigator) {
       try {
-        // Register service worker
         const registration = await navigator.serviceWorker.register('/sw.js');
-        console.log('Service Worker registered:', registration);
-        return registration;
+        
+        // ✅ CRITICAL FIX: Wait for the worker to be "Ready"
+        // This stops the AbortError by ensuring a worker is active before subscribing
+        const activeRegistration = await navigator.serviceWorker.ready;
+        
+        console.log('Service Worker Live:', activeRegistration.active?.state);
+        return activeRegistration;
       } catch (error) {
-        console.error('Service Worker registration failed:', error);
+        console.error('SW Registration Error:', error);
         throw error;
       }
     }
     throw new Error('Service Workers not supported');
   };
 
-  // 5. SUBSCRIBE TO PUSH NOTIFICATIONS
-  const subscribeToPush = async () => {
-    if (!isSupported) {
-      console.log("Push notifications not supported in this browser");
-      alert("Push notifications are not supported in your browser. Please try a modern browser like Chrome or Firefox.");
+// 5. SUBSCRIBE TO PUSH NOTIFICATIONS (Improved)
+const subscribeToPush = async () => {
+  if (!isSupported) {
+    alert("Push notifications are not supported in your browser.");
+    return;
+  }
+  
+  setLoading(true);
+
+  try {
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!vapidKey) throw new Error("VAPID public key is not configured");
+
+    // 1. Ensure worker is registered AND active
+    const registration = await registerServiceWorker();
+    
+    if (!registration.active) {
+      throw new Error("Service worker failed to activate in time. Please refresh and try again.");
+    }
+
+    // 2. Check for existing subscription
+    let existingSub = await registration.pushManager.getSubscription();
+    
+    if (existingSub) {
+      console.log("Already subscribed");
+      setSubscription(existingSub);
+      setLoading(false);
       return;
     }
-    
-    setLoading(true);
 
-    try {
-      // Get current user (check localStorage)
-      let currentUser = user;
-      const userStr = localStorage.getItem("cf_user");
-      if (userStr && !currentUser) {
-        currentUser = JSON.parse(userStr);
-        setUser(currentUser);
-      }
+    // 3. Subscribe with the active registration
+    const sub = await registration.pushManager.subscribe({
+  userVisibleOnly: true,
+  // ✅ Directly call the utility and cast the result
+  applicationServerKey: urlBase64ToUint8Array(vapidKey) as any,
+});
 
-      // Get VAPID public key
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!vapidKey) {
-        throw new Error("VAPID public key is not configured");
-      }
+    // 4. Save to Cloudflare D1 via your API
+    const saveResponse = await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('cf_token') || ''}`
+      },
+      body: JSON.stringify({
+        subscription: JSON.parse(JSON.stringify(sub)),
+        deviceInfo: navigator.userAgent
+      })
+    });
 
-      // Register service worker
-      const registration = await registerServiceWorker();
-      
-      // Check if already subscribed
-      let existingSub = await registration.pushManager.getSubscription();
-      if (existingSub) {
-        console.log("Already subscribed to push notifications");
-        setSubscription(existingSub);
-        
-        // Sync with server if we have a user
-        if (currentUser?.id) {
-          await syncSubscriptionWithServer(existingSub, currentUser);
-        }
-        
-        // Send welcome notification
-        await sendWelcomeNotification(currentUser?.id);
-        setLoading(false);
-        return;
-      }
+    if (!saveResponse.ok) throw new Error('Failed to save to server');
 
-      // Subscribe to push
-      const sub = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
-      });
+    setSubscription(sub);
+    alert("🎉 Signals Activated!");
 
-      // Save subscription to server
-      const saveResponse = await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('cf_token') || ''}`
-        },
-        body: JSON.stringify({
-          subscription: JSON.parse(JSON.stringify(sub)),
-          userData: currentUser ? {
-            userId: currentUser.id,
-            email: currentUser.email,
-            displayName: currentUser.displayName || currentUser.email?.split('@')[0]
-          } : null,
-          deviceInfo: navigator.userAgent
-        })
-      });
-
-      if (!saveResponse.ok) {
-        throw new Error('Failed to save subscription to server');
-      }
-
-      // Update local state
-      setSubscription(sub);
-      
-      // Send welcome notification if user is logged in
-      if (currentUser?.id) {
-        await sendWelcomeNotification(currentUser.id);
-      }
-
-      console.log("✅ Successfully subscribed to push notifications");
-      
-      // Show success message
-      alert("🎉 Push notifications activated! You'll now receive signal alerts.");
-
-    } catch (error: any) {
-      console.error("Subscribe Error:", error);
-      
-      // User-friendly error messages
-      if (error.message.includes('denied') || error.message.includes('permission')) {
-        alert("⚠️ Permission denied. Please allow notifications in your browser settings.");
-      } else if (error.message.includes('VAPID')) {
-        alert("⚠️ Push notifications are not properly configured.");
-      } else {
-        alert("Activation failed: " + error.message);
-      }
-    } finally {
-      setLoading(false);
+  } catch (error: any) {
+    console.error("Subscribe Error:", error);
+    // Handle the AbortError specifically
+    if (error.name === 'AbortError') {
+      alert("⚠️ Activation timed out. Please try one more time.");
+    } else {
+      alert("Activation failed: " + error.message);
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   // 6. SEND WELCOME NOTIFICATION
   const sendWelcomeNotification = async (userId?: string) => {

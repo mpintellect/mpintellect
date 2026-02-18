@@ -1,6 +1,21 @@
-// app/hooks/usePush.ts - CLOUDFLARE VERSION
+// app/hooks/usePush.ts
 import { useState, useEffect } from 'react';
-import { urlBase64ToUint8Array } from '../lib/push-utils'; 
+
+// Helper function to convert base64 to Uint8Array
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 export function usePush() {
   const [isSupported, setIsSupported] = useState(false);
@@ -64,11 +79,13 @@ export function usePush() {
     try {
       console.log("🔄 Syncing push subscription with server...");
       
+      const token = localStorage.getItem('cf_token') || '';
+      
       const response = await fetch('/api/push/sync', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('cf_token') || ''}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           userId: currentUser.id,
@@ -88,114 +105,200 @@ export function usePush() {
     }
   };
 
- // 4. CHECK AND REGISTER SERVICE WORKER (Improved)
-const registerServiceWorker = async () => {
-    if ('serviceWorker' in navigator) {
-      try {
-        const registration = await navigator.serviceWorker.register('/sw.js');
-        
-        // ✅ CRITICAL FIX: Wait for the worker to be "Ready"
-        // This stops the AbortError by ensuring a worker is active before subscribing
-        const activeRegistration = await navigator.serviceWorker.ready;
-        
-        console.log('Service Worker Live:', activeRegistration.active?.state);
-        return activeRegistration;
-      } catch (error) {
-        console.error('SW Registration Error:', error);
-        throw error;
-      }
-    }
-    throw new Error('Service Workers not supported');
-  };
+  // 4. REGISTER SERVICE WORKER WITH TIMEOUT
+  const registerServiceWorker = async () => {
+    if (!('serviceWorker' in navigator)) throw new Error('SW_NOT_SUPPORTED');
 
-// 5. SUBSCRIBE TO PUSH NOTIFICATIONS (Improved)
-const subscribeToPush = async () => {
-  if (!isSupported) {
-    alert("Push notifications are not supported in your browser.");
-    return;
-  }
-  
-  setLoading(true);
-
-  try {
-    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    if (!vapidKey) throw new Error("VAPID public key is not configured");
-
-    // 1. Ensure worker is registered AND active
-    const registration = await registerServiceWorker();
+    console.log("📡 SW: Registering...");
     
-    if (!registration.active) {
-      throw new Error("Service worker failed to activate in time. Please refresh and try again.");
-    }
-
-    // 2. Check for existing subscription
-    let existingSub = await registration.pushManager.getSubscription();
-    
-    if (existingSub) {
-      console.log("Already subscribed");
-      setSubscription(existingSub);
-      setLoading(false);
-      return;
-    }
-
-    // 3. Subscribe with the active registration
-    const sub = await registration.pushManager.subscribe({
-  userVisibleOnly: true,
-  // ✅ Directly call the utility and cast the result
-  applicationServerKey: urlBase64ToUint8Array(vapidKey) as any,
-});
-
-    // 4. Save to Cloudflare D1 via your API
-    const saveResponse = await fetch('/api/push/subscribe', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('cf_token') || ''}`
-      },
-      body: JSON.stringify({
-        subscription: JSON.parse(JSON.stringify(sub)),
-        deviceInfo: navigator.userAgent
-      })
+    const registration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/'
     });
 
-    if (!saveResponse.ok) throw new Error('Failed to save to server');
+    console.log("📡 SW: Waiting for ready state...");
+    
+    // Wait for the service worker to be ready with timeout
+    const readyPromise = navigator.serviceWorker.ready;
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error("SW_TIMEOUT")), 10000)
+    );
 
-    setSubscription(sub);
-    alert("🎉 Signals Activated!");
-
-  } catch (error: any) {
-    console.error("Subscribe Error:", error);
-    // Handle the AbortError specifically
-    if (error.name === 'AbortError') {
-      alert("⚠️ Activation timed out. Please try one more time.");
-    } else {
-      alert("Activation failed: " + error.message);
+    const activeRegistration = await Promise.race([readyPromise, timeoutPromise]);
+    
+    if (!activeRegistration.active) {
+      throw new Error("SW_INACTIVE");
     }
-  } finally {
-    setLoading(false);
-  }
-};
+    
+    console.log('📡 SW: Live -', activeRegistration.active?.state);
+    return activeRegistration;
+  };
+
+  // 5. SUBSCRIBE TO PUSH NOTIFICATIONS
+  const subscribeToPush = async () => {
+    if (!isSupported) {
+      alert("Push notifications are not supported in your browser.");
+      return;
+    }
+    
+    setLoading(true);
+    console.log("🚀 STARTING_PUSH_ACTIVATION");
+
+    try {
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidKey) throw new Error("MISSING_VAPID_KEY");
+
+      // 1. Register and Wait with timeout
+      const registration = await registerServiceWorker();
+      console.log("📡 SW: Active and Ready");
+
+      // 2. Check for existing subscription
+      let existingSub = await registration.pushManager.getSubscription();
+      
+      if (existingSub) {
+        console.log("Already subscribed");
+        setSubscription(existingSub);
+        
+        // Sync with server
+        if (user?.id) {
+          await syncSubscriptionWithServer(existingSub, user);
+        }
+        
+        setLoading(false);
+        alert("🎉 You're already subscribed to signals!");
+        return;
+      }
+
+      // 3. Request Permission Explicitly
+      console.log("🔔 Requesting notification permission...");
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') throw new Error("PERMISSION_DENIED");
+
+      // 4. Subscribe - Fix TypeScript error
+      console.log("📡 SW: Attempting Subscription...");
+      
+      // Convert VAPID key to Uint8Array then get buffer as ArrayBuffer
+      const uint8Array = urlBase64ToUint8Array(vapidKey);
+      const applicationServerKey = uint8Array.buffer as ArrayBuffer;
+      
+      const sub = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: applicationServerKey
+      });
+
+      console.log("📡 SW: Subscription Object Created");
+
+      // 5. Save to Cloudflare D1 via the correct endpoint
+      console.log("💾 Saving subscription to server...");
+      const token = localStorage.getItem('cf_token') || '';
+      
+      // Safely convert subscription to JSON for D1 storage
+      let subscriptionData: any;
+      try {
+        if (typeof sub.toJSON === 'function') {
+          subscriptionData = sub.toJSON();
+        } else {
+          // Manual conversion for older browsers
+          subscriptionData = {
+            endpoint: sub.endpoint,
+            expirationTime: sub.expirationTime,
+            keys: {
+              p256dh: arrayBufferToBase64(sub.getKey('p256dh')!),
+              auth: arrayBufferToBase64(sub.getKey('auth')!)
+            }
+          };
+        }
+      } catch (e) {
+        console.error("Error converting subscription:", e);
+        throw new Error("SUBSCRIPTION_CONVERSION_FAILED");
+      }
+      
+      // Using the Cloudflare Function endpoint
+      const saveResponse = await fetch('/api/push/register', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          subscription: subscriptionData,
+          token: token,
+          deviceInfo: navigator.userAgent,
+          userData: user ? {
+            userId: user.id,
+            email: user.email,
+            displayName: user.displayName || user.email?.split('@')[0]
+          } : undefined
+        })
+      });
+
+      if (!saveResponse.ok) {
+        const errorData = await saveResponse.json().catch(() => ({}));
+        console.error("Server save failed:", errorData);
+        throw new Error(errorData.error || "SERVER_SAVE_FAILED");
+      }
+
+      setSubscription(sub);
+      console.log("✅ PUSH_SUCCESS");
+      
+      // Send welcome notification if user is logged in
+      if (user?.id) {
+        await sendWelcomeNotification(user.id);
+      }
+      
+      alert("🎉 Signals Activated!");
+
+    } catch (error: any) {
+      console.error("❌ PUSH_CRASH:", error.message || error);
+      
+      // Handle specific error cases
+      if (error.message === "SW_TIMEOUT") {
+        alert("⚠️ Connection Timeout. Please refresh and try again.");
+      } else if (error.message === "PERMISSION_DENIED") {
+        alert("⚠️ Please enable notifications in your browser settings.");
+      } else if (error.message === "MISSING_VAPID_KEY") {
+        alert("⚠️ Push notification configuration is missing.");
+      } else if (error.message === "SERVER_SAVE_FAILED") {
+        alert("⚠️ Failed to save to server. Please try again.");
+      } else if (error.name === 'AbortError' || error.message === "SW_INACTIVE") {
+        alert("⚠️ Activation timed out. Please try again.");
+      } else if (error.message === "SW_NOT_SUPPORTED") {
+        alert("⚠️ Your browser doesn't support notifications.");
+      } else {
+        alert(`Error: ${error.message || "Unknown error"}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper to convert ArrayBuffer to Base64 for D1 storage
+  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  };
 
   // 6. SEND WELCOME NOTIFICATION
   const sendWelcomeNotification = async (userId?: string) => {
     try {
+      const token = localStorage.getItem('cf_token') || '';
+      
       const response = await fetch('/api/push/send', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('cf_token') || ''}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           targetUserId: userId,
           title: "✅ Signal Alert Active",
-          message: "AI monitoring activated. You'll receive real-time Trade Parameterss!",
-          icon: "/icons/icon-192x192.png",
-          badge: "/icons/badge-72x72.png",
+          message: "AI monitoring activated. You'll receive real-time Trade Parameters!",
+          icon: "/logos/icon-192.png",
+          badge: "/logos/icon-192.png",
           tag: "welcome",
-          data: {
-            url: "/client/dashboard",
-            timestamp: new Date().toISOString()
-          }
+          url: "/client/dashboard"
         })
       });
 
@@ -212,18 +315,21 @@ const subscribeToPush = async () => {
     if (!subscription) return;
 
     try {
+      setLoading(true);
+      
       // Unsubscribe from push service
       const success = await subscription.unsubscribe();
       if (success) {
         console.log("Successfully unsubscribed from push notifications");
         setSubscription(null);
         
-        // Notify server
+        // Notify server to remove from D1
+        const token = localStorage.getItem('cf_token') || '';
+        
         await fetch('/api/push/unsubscribe', {
           method: 'POST',
           headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('cf_token') || ''}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             endpoint: subscription.endpoint
@@ -235,12 +341,15 @@ const subscribeToPush = async () => {
     } catch (error) {
       console.error("Error unsubscribing:", error);
       alert("Failed to unsubscribe from push notifications.");
+    } finally {
+      setLoading(false);
     }
   };
 
   // 8. CHECK PERMISSION STATUS
   const checkPermission = () => {
     if (!isSupported) return 'unsupported';
+    if (!('Notification' in window)) return 'unsupported';
     
     if (Notification.permission === 'granted') {
       return 'granted';
@@ -265,7 +374,7 @@ const subscribeToPush = async () => {
   };
 }
 
-// Helper hook for components that need push notification status
+// Helper hook for components
 export function usePushStatus() {
   const { 
     isSupported, 

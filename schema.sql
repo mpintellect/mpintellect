@@ -1,5 +1,6 @@
 -- 1. Users Table (Consolidated with all fields)
-CREATE TABLE IF NOT EXISTS users (
+
+CREATE TABLE users (
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   display_name TEXT,
@@ -14,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   last_purchase_at INTEGER,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
-);
+, license_key TEXT, license_expires_at TEXT, has_scalper_x1 INTEGER DEFAULT 0)
 
 -- 2. Auth & Sessions
 CREATE TABLE IF NOT EXISTS user_passwords (
@@ -93,7 +94,7 @@ CREATE TABLE IF NOT EXISTS newsletter_subscribers (
 );
 
 -- 6. Stripe & Payments
-CREATE TABLE IF NOT EXISTS stripe_purchases (
+CREATE TABLE stripe_purchases (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id TEXT NOT NULL,
   stripe_session_id TEXT UNIQUE,
@@ -104,9 +105,9 @@ CREATE TABLE IF NOT EXISTS stripe_purchases (
   customer_email TEXT NOT NULL,
   status TEXT DEFAULT 'completed',
   created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL, license_key TEXT,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
+)
 
 CREATE TABLE IF NOT EXISTS setup_credits_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -171,18 +172,7 @@ CREATE INDEX IF NOT EXISTS idx_setups_user ON setups(user_id);
 CREATE INDEX IF NOT EXISTS idx_news_slug ON news_articles(slug);
 CREATE INDEX IF NOT EXISTS idx_push_endpoint ON push_subscriptions(endpoint);
 -- 11. Market Polls (Unified System)
-CREATE TABLE IF NOT EXISTS market_polls (
-  id TEXT PRIMARY KEY,
-  question TEXT,
-  symbol TEXT,
-  category TEXT,
-  votes_low INTEGER DEFAULT 0,
-  votes_medium INTEGER DEFAULT 0,
-  votes_high INTEGER DEFAULT 0,
-  total_votes INTEGER DEFAULT 0,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
-);
+CREATE TABLE market_polls (id TEXT PRIMARY KEY, question TEXT, symbol TEXT, category TEXT, votes_low INTEGER DEFAULT 0, votes_medium INTEGER DEFAULT 0, votes_high INTEGER DEFAULT 0, total_votes INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT)
 
 CREATE TABLE IF NOT EXISTS poll_votes (
   id TEXT PRIMARY KEY,
@@ -251,3 +241,21 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+-- Create push_subscriptions table in Cloudflare D1
+CREATE TABLE push_subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  endpoint TEXT NOT NULL UNIQUE,
+  subscription_data TEXT NOT NULL,
+  user_id TEXT,
+  email TEXT,
+  display_name TEXT,
+  device_info TEXT,
+  status TEXT DEFAULT 'active',
+  created_at INTEGER,
+  updated_at INTEGER
+)
+
+-- Create index for faster lookups
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON push_subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_endpoint ON push_subscriptions(endpoint);
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_status ON push_subscriptions(status);

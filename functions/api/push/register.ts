@@ -1,6 +1,6 @@
 // app/api/push/register/route.ts - CLOUDFLARE VERSION
 import { NextResponse } from "next/server";
-import { getDb, queryOne, execute } from "@/backend-lib/db-simple";
+import { getDb, queryOne, execute } from "../../../backend-lib/db-simple";
 import { verifyCloudflareToken } from "../../../app/lib/cloudflare/auth";
 
 export const dynamic = 'force-dynamic';

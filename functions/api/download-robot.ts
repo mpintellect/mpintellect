@@ -5,35 +5,131 @@ export async function onRequestGet(context: any) {
   const url = new URL(request.url);
   const sessionId = url.searchParams.get("session_id");
 
-  if (!sessionId) return new Response("Forbidden: Missing Session ID", { status: 403 });
+  console.log("📥 Download request for session:", sessionId);
+
+  if (!sessionId) {
+    return new Response(JSON.stringify({ error: "Missing Session ID" }), { 
+      status: 403,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 
   try {
-    // 1. Check D1 Database: Did this user actually pay for this session?
-    const purchase: any = await env.DB.prepare(
-      "SELECT status, price_id FROM stripe_purchases WHERE stripe_session_id = ?"
-    ).bind(sessionId).first();
-
-    // 2. Security Check: Block if not paid or wrong product
-    const SCALPER_PRICE_ID = "price_1T2EdfDoB4i1qeaLM647it0F";
-    
-    if (!purchase || purchase.status !== 'completed' || purchase.price_id !== SCALPER_PRICE_ID) {
-      return new Response("Access Denied: Invalid Purchase", { status: 401 });
+    // Check if R2 binding exists
+    if (!env.VAULT) {
+      console.error("❌ R2 binding 'VAULT' is not configured");
+      return new Response(JSON.stringify({ 
+        error: "Storage not configured",
+        details: "R2 bucket binding is missing"
+      }), { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    // 3. Fetch from Private R2 Bucket
-    const file = await env.VAULT.get("MZPrimer_Scalper_X1_V.1.ex5");
+    // 1. Check D1 Database
+    console.log("🔍 Checking purchase in database...");
+    const purchase: any = await env.DB.prepare(
+      "SELECT status, price_id, user_id FROM stripe_purchases WHERE stripe_session_id = ?"
+    ).bind(sessionId).first();
 
-    if (!file) return new Response("File Not Found", { status: 404 });
+    console.log("Purchase found:", purchase);
 
-    // 4. Stream the file directly to the browser
+    // 2. Security Check
+    const SCALPER_PRICE_ID = "price_1S3JU6DoB4i1qeaLMYVILAMD";
+    
+    if (!purchase) {
+      return new Response(JSON.stringify({ error: "Purchase not found" }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (purchase.status !== 'completed') {
+      return new Response(JSON.stringify({ error: "Payment not completed" }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (purchase.price_id !== SCALPER_PRICE_ID) {
+      return new Response(JSON.stringify({ error: "Invalid product" }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 3. Update user flag
+    if (purchase.user_id) {
+      await env.DB.prepare(
+        "UPDATE users SET has_scalper_x1 = 1 WHERE id = ? OR email = ?"
+      ).bind(purchase.user_id, purchase.user_id).run();
+      console.log("✅ Updated user flag for:", purchase.user_id);
+    }
+
+    // 4. Try to get the file directly
+    const fileName = "MZPrimer_Scalper_X1_V.1.ex5";
+    console.log(`📦 Attempting to fetch: ${fileName}`);
+    
+    const file = await env.VAULT.get(fileName);
+
+    if (!file) {
+      console.log("❌ File not found. Listing all files...");
+      
+      // List all files for debugging
+      let fileList: string[] = [];
+      try {
+        const objects = await env.VAULT.list();
+        fileList = objects.objects.map((obj: any) => obj.key);
+        console.log("Files in bucket:", fileList);
+      } catch (listError: any) {
+        console.error("Failed to list bucket:", listError.message);
+      }
+      
+      return new Response(JSON.stringify({ 
+        error: "Robot file not found in storage",
+        available_files: fileList,
+        requested_file: fileName
+      }), { 
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log("✅ File found, streaming to client");
+
+    // 5. Log the download
+    try {
+      await env.DB.prepare(`
+        INSERT INTO download_logs (session_id, user_id, robot_name, ip_address, downloaded_at)
+        VALUES (?, ?, ?, ?, datetime('now'))
+      `).bind(
+        sessionId,
+        purchase.user_id || null,
+        fileName,
+        request.headers.get('CF-Connecting-IP') || 'unknown'
+      ).run();
+    } catch (logError: any) {
+      console.error('Failed to log download:', logError.message);
+    }
+
+    // 6. Stream the file
     const headers = new Headers();
     file.writeHttpMetadata(headers);
     headers.set("Content-Type", "application/octet-stream");
-    headers.set("Content-Disposition", 'attachment; filename="MZPrimer_Scalper_X1_V.1.ex5"');
+    headers.set("Content-Disposition", `attachment; filename="${fileName}"`);
+    headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
 
     return new Response(file.body, { headers });
 
-  } catch (e: any) {
-    return new Response("Server Error: " + e.message, { status: 500 });
+  } catch (error: any) {
+    console.error("💥 Download error:", error);
+    return new Response(JSON.stringify({ 
+      error: "Server Error", 
+      message: error.message 
+    }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }

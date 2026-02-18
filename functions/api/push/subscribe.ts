@@ -1,98 +1,69 @@
-// functions/api/push/subscribe.ts (Move from app/api/push/subscribe/route.ts)
+// functions/api/push/subscribe.ts
 
-import { getDb, queryOne, execute } from '@/backend-lib/db-simple';
+const HEADERS = {
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
 
-/**
- * FIXED: 
- * 1. Removed Next.js specific 'NextRequest' type.
- * 2. Changed to 'onRequestPost' for Cloudflare Functions.
- * 3. Extracted 'request' from the 'context' argument.
- */
+export async function onRequestOptions() {
+  return new Response(null, { status: 204, headers: HEADERS });
+}
+
 export async function onRequestPost(context: any) {
-  const { request } = context;
+  const { request, env } = context;
 
   try {
-    // FIXED: Use the extracted 'request' object
     const body = await request.json();
     const { subscription, userData, deviceInfo } = body;
     
-    if (!subscription || !subscription.endpoint) {
-      return Response.json(
-        { success: false, error: 'Invalid subscription data' },
-        { status: 400 }
-      );
+    if (!subscription?.endpoint) {
+      return new Response(JSON.stringify({ error: 'Invalid subscription' }), { status: 400, headers: HEADERS });
     }
 
-    const db = getDb();
     const endpoint = subscription.endpoint;
-    
-    if (!db) {
-      return Response.json(
-        { success: false, error: 'Database not available' },
-        { status: 500 }
-      );
-    }
-    
-    // Check if subscription already exists
-    const existing = await queryOne(
-      'SELECT id FROM push_subscriptions WHERE endpoint = ?',
-      [endpoint]
-    );
-
     const now = Date.now();
+    const subData = JSON.stringify(subscription);
     
+    // 1. Check if exists
+    const existing = await env.DB.prepare('SELECT id FROM push_subscriptions WHERE endpoint = ?').bind(endpoint).first();
+
     if (existing) {
-      // Update existing subscription
-      const updateResult = await execute(`
+      await env.DB.prepare(`
         UPDATE push_subscriptions 
         SET subscription_data = ?, user_id = ?, email = ?, 
-            display_name = ?, device_info = ?, updated_at = ?
+            display_name = ?, device_info = ?, updated_at = ?, status = 'active'
         WHERE endpoint = ?
-      `, [
-        JSON.stringify(subscription),
+      `).bind(
+        subData,
         userData?.userId || null,
         userData?.email || null,
         userData?.displayName || null,
         deviceInfo || null,
         now,
         endpoint
-      ]);
-      
-      if (!updateResult.success) {
-        throw new Error('Failed to update subscription');
-      }
+      ).run();
     } else {
-      // Insert new subscription
-      const insertResult = await execute(`
+      await env.DB.prepare(`
         INSERT INTO push_subscriptions 
-        (endpoint, subscription_data, user_id, email, display_name, 
-         device_info, status, created_at, updated_at)
+        (endpoint, subscription_data, user_id, email, display_name, device_info, status, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)
-      `, [
+      `).bind(
         endpoint,
-        JSON.stringify(subscription),
+        subData,
         userData?.userId || null,
         userData?.email || null,
         userData?.displayName || null,
         deviceInfo || null,
         now,
         now
-      ]);
-      
-      if (!insertResult.success) {
-        throw new Error('Failed to insert subscription');
-      }
+      ).run();
     }
 
-    return Response.json({
-      success: true,
-      message: 'Subscription saved successfully'
-    });
-  } catch (error) {
-    console.error('Error saving push subscription:', error);
-    return Response.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ success: true }), { status: 200, headers: HEADERS });
+  } catch (error: any) {
+    console.error('Push Subscribe Error:', error.message);
+    return new Response(JSON.stringify({ error: 'Internal Error' }), { status: 500, headers: HEADERS });
   }
 }

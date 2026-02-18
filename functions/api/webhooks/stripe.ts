@@ -8,7 +8,7 @@ const SETUP_CREDITS: Record<string, number> = {
   "price_1T2EgUDoB4i1qeaLQz2d00qE": 30,
 };
 
-const SCALPER_PRICE_ID = "price_1T2EdfDoB4i1qeaLM647it0F";
+const SCALPER_PRICE_ID = "price_1S3JU6DoB4i1qeaLMYVILAMD";
 const MONTHLY_PLAN_ID = "price_1T2EiJDoB4i1qeaLFXPjBoCY"; 
 
 export async function onRequestPost(context: any) {

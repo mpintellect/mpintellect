@@ -23,7 +23,8 @@ export async function onRequestPost(context: any) {
   const body = await request.text();
 
   try {
-    const event = await stripe.webhooks.constructEventAsync(body, sig, env.STRIPE_WEBHOOK_SECRET);
+    // ✅ SYNCED: Uses your specified variable name
+    const event = await stripe.webhooks.constructEventAsync(body, sig, env.STRIPE_WEBHOOK_SECRET_CHATBOT);
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
@@ -36,10 +37,7 @@ export async function onRequestPost(context: any) {
   }
 }
 
-// ... (keep constants at top)
-
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe: Stripe, env: any) {
-  // Use lowercase for everything to avoid SQLite case-sensitivity bugs
   const userId = session.metadata?.userId || 'guest';
   const customerEmail = (session.customer_details?.email || session.customer_email || "").toLowerCase();
   const sessionId = session.id;
@@ -50,68 +48,64 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe:
     const lineItems = await stripe.checkout.sessions.listLineItems(sessionId);
     const priceId = lineItems.data[0]?.price?.id || "";
     
-    // 1. DIRECT DATABASE LOOKUP (Bypass wrappers)
-    // We search for the user record using the live D1 binding 'env.DB'
-    const userRecord: any = await env.DB.prepare(
-      "SELECT id, setup_count, email FROM users WHERE id = ? OR LOWER(email) = LOWER(?)"
-    ).bind(userId, customerEmail).first();
+    // 1. ENSURE USER RECORD EXISTS (Sync by ID or Email)
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO users (id, email, created_at, updated_at, setup_count, license_type) VALUES (?, ?, datetime('now'), datetime('now'), 0, 'free')"
+    ).bind(userId === 'guest' ? crypto.randomUUID() : userId, customerEmail).run();
 
-    if (!userRecord) {
-      console.log(`⚠️ User ${customerEmail} not found. Creating a guest record...`);
-      const newId = userId !== 'guest' ? userId : crypto.randomUUID();
-      await env.DB.prepare(
-        "INSERT INTO users (id, email, setup_count, created_at, updated_at) VALUES (?, ?, 0, datetime('now'), datetime('now'))"
-      ).bind(newId, customerEmail).run();
-    }
-
-    // Refresh user data after potential insert
+    // Get fresh user record
     const targetUser: any = await env.DB.prepare(
       "SELECT id, setup_count FROM users WHERE id = ? OR LOWER(email) = LOWER(?)"
     ).bind(userId, customerEmail).first();
 
-    let generatedKey, expiryDate, secureDownloadLink, prodName = "Asset";
-    let newSetupCount = targetUser.setup_count || 0;
+    let generatedKey: string | undefined;
+    let expiryDate: string | undefined;
+    let secureDownloadLink: string | undefined;
+    let prodName = "Digital Asset";
+    let setupsToLog = 0;
 
-    // === LOGIC A: MONTHLY ===
+    // === LOGIC A: MONTHLY PRO SUBSCRIPTION ===
     if (priceId === MONTHLY_PLAN_ID) {
-      prodName = "AI Assistant Pro";
+      prodName = "AI Assistant Pro (1 Month)";
       generatedKey = `MZ-PRO-${Math.random().toString(36).toUpperCase().substring(2, 10)}`;
-      const d = new Date(); d.setDate(d.getDate() + 30); expiryDate = d.toISOString();
+      setupsToLog = 999;
       
+      const d = new Date(); d.setDate(d.getDate() + 30);
+      expiryDate = d.toISOString();
+
       await env.DB.prepare(
         "UPDATE users SET license_type = 'pro', license_key = ?, license_expires_at = ?, updated_at = datetime('now') WHERE id = ?"
       ).bind(generatedKey, expiryDate, targetUser.id).run();
     } 
-    // === LOGIC B: ROBOT ===
+
+    // === LOGIC B: SCALPER ROBOT ===
     else if (priceId === SCALPER_PRICE_ID) {
-      prodName = "Scalper X1";
-      secureDownloadLink = `https://mzprimer.com/api/download-robot?session_id=${sessionId}`;
-      await env.DB.prepare("UPDATE users SET has_scalper_x1 = 1 WHERE id = ?").bind(targetUser.id).run();
+        prodName = "MZPrimer Scalper X1 (V.1)";
+        secureDownloadLink = `https://mzprimer.com/api/download-robot?session_id=${sessionId}`;
+        
+        await env.DB.prepare(
+            "UPDATE users SET has_scalper_x1 = 1, updated_at = datetime('now') WHERE id = ?"
+        ).bind(targetUser.id).run();
     }
-    // === LOGIC C: SETUPS (The Fix) ===
+
+    // === LOGIC C: SETUP CREDITS (10, 20, 30) ===
     else if (SETUP_CREDITS[priceId]) {
       const setupsToAdd = SETUP_CREDITS[priceId];
-      newSetupCount += setupsToAdd;
+      setupsToLog = setupsToAdd;
       prodName = `${setupsToAdd} AI Setup Bundle`;
 
-      console.log(`📊 FULFILLMENT: Updating User ${targetUser.id} (${customerEmail})`);
-      console.log(`📈 Credits: ${targetUser.setup_count} -> ${newSetupCount}`);
-
-      // Perform direct update
-      const updateResult = await env.DB.prepare(
-        "UPDATE users SET setup_count = ?, updated_at = datetime('now') WHERE id = ?"
-      ).bind(newSetupCount, targetUser.id).run();
-
-      console.log(`📡 D1 Result: ${updateResult.success ? '✅ Success' : '❌ Failed'}`);
+      await env.DB.prepare(
+        "UPDATE users SET setup_count = setup_count + ?, updated_at = datetime('now') WHERE id = ?"
+      ).bind(setupsToAdd, targetUser.id).run();
     }
 
-    // 2. AUDIT LOG (Always use targetUser.id for consistency)
+    // 2. AUDIT LOG (Consistent with your Schema)
     await env.DB.prepare(
-      `INSERT INTO stripe_purchases (user_id, stripe_session_id, price_id, setup_count, amount_paid, customer_email, status, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, ?, ?, 'completed', datetime('now'), datetime('now'))`
-    ).bind(targetUser.id, sessionId, priceId, (SETUP_CREDITS[priceId] || 0), (session.amount_total || 0) / 100, customerEmail).run();
+      `INSERT INTO stripe_purchases (user_id, stripe_session_id, price_id, setup_count, amount_paid, customer_email, status, created_at, updated_at, license_key) 
+       VALUES (?, ?, ?, ?, ?, ?, 'completed', datetime('now'), datetime('now'), ?)`
+    ).bind(targetUser.id, sessionId, priceId, setupsToLog, (session.amount_total || 0) / 100, customerEmail, generatedKey || null).run();
 
-    // 3. DISPATCH EMAIL
+    // 3. DISPATCH ONE UNIFIED EMAIL (Using Gold & Black Template)
     await sendOrderConfirmation({
       to: customerEmail,
       orderId: sessionId,
@@ -122,7 +116,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe:
       downloadUrl: secureDownloadLink
     }, env);
 
+    console.log(`✅ FULFILLMENT SUCCESSFUL for ${customerEmail}`);
+
   } catch (err: any) {
-    console.error("💥 WEBHOOK CRITICAL ERROR:", err.message);
+    console.error("💥 handleCheckoutCompleted Fatal Error:", err.message);
   }
 }

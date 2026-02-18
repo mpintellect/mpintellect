@@ -26,8 +26,8 @@
 		},
 		{
 			"bucket_name": "mzprimer-ads",
-			"binding": "mzprimer_ads",
-			"remote": true
+			"binding": "mzprimer_ads"	
+			
 		}
 	]
 }

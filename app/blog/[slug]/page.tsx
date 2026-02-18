@@ -2,10 +2,14 @@ import { notFound } from 'next/navigation';
 import { getRemoteBlogPosts } from '@/app/lib/blog-data';
 import Link from 'next/link';
 
+// ✅ This ensures Next.js knows exactly which paths to build
 export async function generateStaticParams() {
   const posts = await getRemoteBlogPosts();
   return posts.map((p) => ({ slug: p.slug }));
 }
+
+// ✅ Keep this to ensure static behavior
+export const dynamic = 'force-static';
 
 export default async function BlogPostPage({ params }: any) {
   const { slug } = await params;

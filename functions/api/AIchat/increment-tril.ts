@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDB } from "@/backend-lib/db-simple";
+import { getDB } from "../../../backend-lib/db-simple";
 
 export async function POST(req: NextRequest) {
   try {

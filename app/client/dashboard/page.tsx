@@ -67,56 +67,32 @@ function DashboardContent() {
     }
   };
 
-  const openTool = async (tool: 'ai' | 'prop') => {
+// ✅ 1. Only opens the tool. DOES NOT deduct credits yet.
+  const openTool = (tool: 'ai' | 'prop') => {
     if (!user) {
       toast.error("Please login to use this feature");
       return;
     }
     
+    // We only CHECK if they have credits here to prevent entering an empty tool.
     if (setupCount <= 0) {
       toast.error("No setups available. Please purchase more setups.");
       return;
     }
 
-    try {
-      const token = localStorage.getItem('cf_token');
-      if (!token) {
-        toast.error("Please login again");
-        router.push("/client/login");
-        return;
-      }
-
-      const response = await fetch('/api/user/use-setup', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ userId: user.id })
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        await refreshUser();
-        setActiveTool(tool);
-        setShowAnalytics(false);
-        setIsNavExpanded(false);
-        document.body.style.overflow = 'hidden';
-        toast.success("Setup credit used. Starting analysis...");
-      } else {
-        toast.error(data.error || "Failed to use setup credit");
-      }
-    } catch (error) {
-      console.error("Error using setup:", error);
-      toast.error("Failed to start analysis");
-    }
+    // Just open the terminal. 
+    // The credit is deducted inside AiChatBox.tsx ONLY when analysis is successful.
+    setActiveTool(tool);
+    setShowAnalytics(false);
+    setIsNavExpanded(false);
+    document.body.style.overflow = 'hidden';
   };
 
+  // ✅ 2. Closes the tool and refreshes the data to show the new credit count
   const closeTool = () => {
     setActiveTool(null);
     document.body.style.overflow = 'auto';
-    refreshUser();
+    refreshUser(); // This ensures the dashboard sees the deduction made by the tool
   };
 
   const openAnalytics = () => {
@@ -131,6 +107,7 @@ function DashboardContent() {
     setIsNavExpanded(false);
   };
 
+  // ✅ 3. Fixed handleBuySetups - streamlined
   const handleBuySetups = async (plan: string = "10") => {
     if (!user) {
       toast.error("Please log in to purchase setups.");
@@ -153,18 +130,14 @@ function DashboardContent() {
         }),
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
       const data = await response.json();
       if (data.url) {
         window.location.href = data.url;
       } else {
-        throw new Error("Checkout URL not received.");
+        throw new Error("Checkout session failed.");
       }
     } catch (error) {
-      console.error("Buy setup error:", error);
+      console.error("Stripe Redirect Error:", error);
       toast.error("Failed to start checkout. Please try again.");
     } finally {
       setBuyLoading(false);

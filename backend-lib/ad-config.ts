@@ -1,0 +1,34 @@
+// backend-lib/ad-config.ts
+
+export type SymbolDef = {
+  id: string;
+  name: string;
+  category: 'Forex' | 'Crypto' | 'Metals' | 'Indices' | 'Energy' | 'Robots';
+};
+
+export const AD_SYMBOLS: SymbolDef[] = [
+  { id: 'EURUSD', name: 'EUR/USD', category: 'Forex' },
+  { id: 'GBPUSD', name: 'GBP/USD', category: 'Forex' },
+  { id: 'USDJPY', name: 'USD/JPY', category: 'Forex' },
+  { id: 'XAUUSD', name: 'Gold (XAU/USD)', category: 'Metals' },
+  { id: 'BTCUSD', name: 'Bitcoin (BTC)', category: 'Crypto' },
+  { id: 'ETHUSD', name: 'Ethereum (ETH)', category: 'Crypto' },
+  { id: 'US500', name: 'S&P 500 Index', category: 'Indices' },
+  { id: 'USTEC', name: 'Nasdaq 100', category: 'Indices' },
+  { id: 'US30', name: 'Dow Jones 30', category: 'Indices' },
+  { id: 'BRENT', name: 'Crude Oil (Brent)', category: 'Energy' },
+  { id: 'SCALPER_X1', name: 'Scalper V1_X1 Bot', category: 'Robots' }, // ✅ Added new bot
+];
+
+export const LANDING_HOST = 'https://mzprimer.com';
+
+/**
+ * CSV Utility: Properly escapes values for Catalog CSV standards
+ */
+export function csvEscape(value: string): string {
+  const v = (value || '').toString();
+  if (v.includes('"') || v.includes(',') || v.includes('\n')) {
+    return `"${v.replace(/"/g, '""')}"`;
+  }
+  return `"${v}"`;
+}

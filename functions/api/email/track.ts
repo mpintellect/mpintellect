@@ -1,6 +1,6 @@
 // app/api/track/email-open/route.ts - CLOUDFLARE VERSION
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, execute } from "@/backend-lib/db-simple";
+import { getDb, execute } from "../../../backend-lib/db-simple";
 
 export const dynamic = 'force-dynamic';
 

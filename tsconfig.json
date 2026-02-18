@@ -34,12 +34,12 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "env.d.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
+    "functions", // ✅ EXCLUDE functions from the Next.js build
     ".next",
     "out"
   ]

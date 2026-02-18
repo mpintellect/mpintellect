@@ -1738,67 +1738,6 @@ h1.page-title {
 }
 /* === DESKTOP NAVBAR (Premium Style) === */
 
-.navbar-desktop {
-  display: none; /* Hidden on mobile */
-}
-
-@media (min-width: 768px) {
-  .navbar-desktop {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    padding: 0 2rem;
-    height: 70px; /* Fixed height for consistency */
-    
-    /* Glassmorphism Background */
-    background: rgba(5, 5, 5, 0.85);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    z-index: 50;
-    gap: 2rem;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Link Styling */
-  .navbar-desktop a {
-    font-size: 0.9rem;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    color: #A1A1AA; /* Muted text by default */
-    text-decoration: none;
-    transition: all 0.2s ease;
-    position: relative;
-  }
-
-  /* Hover Effect */
-  .navbar-desktop a:hover {
-    color: #FFFFFF;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-  }
-
-  /* Gold accent for Login/Special links if you add a specific class later */
-  .navbar-desktop a[href*="login"] {
-    color: #FACC15;
-    font-weight: 600;
-    border: 1px solid rgba(250, 204, 21, 0.3);
-    padding: 6px 16px;
-    border-radius: 20px;
-    background: rgba(250, 204, 21, 0.05);
-  }
-
-  .navbar-desktop a[href*="login"]:hover {
-    background: rgba(250, 204, 21, 0.15);
-    box-shadow: 0 0 15px rgba(250, 204, 21, 0.2);
-    color: #FACC15;
-    text-shadow: none;
-  }
-}
 
 /* === SUBSCRIPTION BUTTONS === */
 .subscribe-button,
@@ -18782,55 +18721,7 @@ button.px-4.py-2:hover {
 @media (min-width: 1025px) {
   .premium-main { margin-left: 0 !important; }
 }
-/* === Sticky Logo Positioning === */
-.sticky-logo {
-  position: fixed;
-  top: 0.4rem;
-  left: 1rem;
-  z-index: 9999;
-  opacity: 1;
-  transition: all 0.3s ease;
-  width: 48px; /* Match burger menu width */
-  height: 48px; /* Match burger menu height */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
-/* Move to right corner on mobile */
-@media (max-width: 767px) {
-  .sticky-logo {
-    left: auto; /* Reset left */
-    right: 0.4rem; /* Position in right corner */
-  }
-}
-
-/* Optional fade-in logic */
-.sticky-logo.hidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.95);
-}
-
-.sticky-logo.visible {
-  opacity: 1;
-  pointer-events: auto;
-  transform: scale(1);
-}
-
-.sticky-logo-img {
-  width: 100%;
-  height: 80px;
-  margin-top: -10px;
-  object-fit: contain;
-}
-:root {
-  --gold-soft: #8e793e;
-  --gold-matte: #c5a028;
-  --border-subtle: rgba(255, 255, 255, 0.04);
-  --text-dim: #888888;
-  --transition-fast: all 0.2s ease;
-}
 /* ==========================================
    📱 MAIN PAGE MOBILE MENU - COMPLETE STYLE
    ========================================== */
@@ -19150,7 +19041,7 @@ button.px-4.py-2:hover {
 .slim-ticker-container {
   background: transparent !important;
   position: sticky;
-  top: 64px;
+  top: 40px;
   z-index: 40;
   width: 100%;
   max-width: 1440px;
@@ -19561,7 +19452,7 @@ button.px-4.py-2:hover {
 @media (min-width: 1024px) {
   .sticky-logo.dashboard-logo {
     position: relative;
-    top: 30px;
+    top: 50px;
     left: 1rem;
     z-index: 9999;
     opacity: 1;
@@ -29089,5 +28980,167 @@ circle {
   .bar-fill {
     animation: none;
     transition: none;
+  }
+}
+/* ==========================================
+   🧭 NAVBAR - BLACK & GOLD DASHBOARD EDITION
+   ========================================== */
+
+/* Desktop Navbar */
+.navbar-desktop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2, 8px);
+  padding: var(--space-2, 8px) var(--space-4, 16px);
+  background: rgba(5, 5, 5, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(197, 160, 40, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Navbar Links */
+.navbar-desktop a {
+  color: var(--text-dim, #888888);
+  font-size: var(--text-xs, 12px);
+  font-weight: var(--weight-medium, 500);
+  letter-spacing: var(--tracking-wide, 0.02em);
+  text-decoration: none;
+  text-transform: uppercase;
+  padding: var(--space-1, 4px) var(--space-2, 8px);
+  border-radius: var(--radius-sm, 2px);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+/* Gold Hover Effect */
+.navbar-desktop a:hover {
+  color: var(--gold-matte, #c5a028);
+  background: rgba(197, 160, 40, 0.05);
+}
+
+/* Active Link Indicator (optional - add className="active" to active link) */
+.navbar-desktop a.active {
+  color: var(--gold-matte, #c5a028);
+  border-bottom: 2px solid var(--gold-matte, #c5a028);
+}
+
+/* Special Styling for LIVE MARKETS link */
+.navbar-desktop a[href="/markets"] {
+  color: #f59e0b;
+  font-weight: var(--weight-bold, 700);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: rgba(245, 158, 11, 0.05);
+  padding: var(--space-1, 4px) var(--space-2, 8px);
+  border-radius: var(--radius-full, 20px);
+}
+
+.navbar-desktop a[href="/markets"]:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+/* Special Styling for LOGIN button */
+.navbar-desktop a[href="/client/login"] {
+  border: 1px solid var(--gold-border, rgba(197, 160, 40, 0.3));
+  background: transparent;
+  padding: var(--space-1, 4px) var(--space-3, 12px);
+  border-radius: var(--radius-full, 20px);
+  margin-left: var(--space-1, 4px);
+}
+
+.navbar-desktop a[href="/client/login"]:hover {
+  background: rgba(197, 160, 40, 0.1);
+  border-color: var(--gold-matte, #c5a028);
+  color: var(--gold-matte, #c5a028);
+}
+
+/* Responsive - Hide on mobile (since you have mobile menu) */
+@media (max-width: 1024px) {
+  .navbar-desktop {
+    display: none;
+  }
+}
+
+/* For larger screens, adjust spacing */
+@media (min-width: 1440px) {
+  .navbar-desktop {
+    gap: var(--space-3, 12px);
+    padding: var(--space-2, 8px) var(--space-8, 32px);
+  }
+  
+  .navbar-desktop a {
+    font-size: var(--text-sm, 13px);
+  }
+}
+
+/* Scroll effect - optional (add className="scrolled" with JS) */
+.navbar-desktop.scrolled {
+  background: rgba(5, 5, 5, 0.95);
+  border-bottom-color: var(--gold-matte, #c5a028);
+  padding: var(--space-1, 4px) var(--space-4, 16px);
+}
+/* === Sticky Logo Positioning === */
+.sticky-logo {
+  position: fixed;
+  z-index: 99999;
+  top: 1rem;
+  left: 1rem;
+  opacity: 1;
+  transition: all 0.3s ease;
+  width: 40px; /* Match burger menu width */
+  height: 40px; /* Match burger menu height */
+  display: flex;
+}
+/* Move to right corner on mobile */
+@media (max-width: 767px) {
+  .sticky-logo {
+    left: auto; /* Reset left */
+    right: 0.4rem; /* Position in right corner */
+  }
+}
+
+/* Optional fade-in logic */
+.sticky-logo.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.95);
+}
+
+.sticky-logo.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.sticky-logo-img {
+  width: 100%;
+  height: 80px;
+  margin-top: -10px;
+  object-fit: contain;
+}
+:root {
+  --gold-soft: #8e793e;
+  --gold-matte: #c5a028;
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --text-dim: #888888;
+  --transition-fast: all 0.2s ease;
+}
+@media (min-width: 768px) {
+  .sticky-logo {
+    display: none; /* Hide on desktop */
+  }
+}
+/* Hide on desktop main page only */
+@media (min-width: 1025px) {
+  body:not(.dashboard-page) .sticky-logo {
+    display: none !important;
   }
 }

@@ -3,13 +3,13 @@ import { execute } from '../../../backend-lib/db-simple';
 import { sendOrderConfirmation } from '../../../backend-lib/email';
 
 const SETUP_CREDITS: Record<string, number> = {
-  "price_1SSyQORmR6ESDQvobwheaXws": 10,
-  "price_1SVWWXDoB4i1qeaL2dquhtfv": 20,
-  "price_1SSyUORmR6ESDQvo7dzPKmPt": 30,
+  "price_1T2EeZDoB4i1qeaLoOlPHUNU": 10,
+  "price_1T2EfODoB4i1qeaLiNO8SKeZ": 20,
+  "price_1T2EgUDoB4i1qeaLQz2d00qE": 30,
 };
 
-const SCALPER_PRICE_ID = "price_1T0O51DoB4i1qeaLzAaAErAr";
-const MONTHLY_PLAN_ID = "price_1S1bt8DoB4i1qeaL1PzseHYf"; 
+const SCALPER_PRICE_ID = "price_1T2EdfDoB4i1qeaLM647it0F";
+const MONTHLY_PLAN_ID = "price_1T2EiJDoB4i1qeaLFXPjBoCY"; 
 
 export async function onRequestPost(context: any) {
   const { request, env } = context;

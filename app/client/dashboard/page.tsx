@@ -435,7 +435,7 @@ function DashboardContent() {
                 <div className="premium-plan-card">
                   <h3 className="premium-plan-name">BASIC</h3>
                   <p className="premium-plan-description">For occasional traders</p>
-                  <div className="premium-plan-price">€4.50</div>
+                  <div className="premium-plan-price">$5.00</div>
                   <div className="premium-plan-setups">10 Setups</div>
                   <ul className="premium-plan-features">
                     <li>✓ 10 setups </li>
@@ -456,7 +456,7 @@ function DashboardContent() {
                   <div className="premium-popular-badge">MOST POPULAR</div>
                   <h3 className="premium-plan-name">PRO</h3>
                   <p className="premium-plan-description">For active traders</p>
-                  <div className="premium-plan-price">€8.00</div>
+                  <div className="premium-plan-price">$9.50</div>
                   <div className="premium-plan-setups">20 Setups</div>
                   <ul className="premium-plan-features">
                     <li>✓ 20 setups </li>
@@ -476,7 +476,7 @@ function DashboardContent() {
                 <div className="premium-plan-card">
                   <h3 className="premium-plan-name">ELITE</h3>
                   <p className="premium-plan-description">For professional traders</p>
-                  <div className="premium-plan-price">€12.00</div>
+                  <div className="premium-plan-price">$15.00</div>
                   <div className="premium-plan-setups">30 Setups</div>
                   <ul className="premium-plan-features">
                     <li>✓ 30 setups </li>
@@ -516,7 +516,7 @@ function DashboardContent() {
                 onClick={() => setSelectedPlan("10")}
               >
                 <h4>Basic</h4>
-                <div className="premium-modal-price">€4.50</div>
+                <div className="premium-modal-price">$5.00</div>
                 <p>10 Setups</p>
                 <button className={`premium-modal-select ${selectedPlan === "10" ? "selected" : ""}`}>
                   Select
@@ -529,7 +529,7 @@ function DashboardContent() {
               >
                 <div className="premium-popular-tag">Best Value</div>
                 <h4>Pro</h4>
-                <div className="premium-modal-price">€8.00</div>
+                <div className="premium-modal-price">$9.50</div>
                 <p>20 Setups</p>
                 <button className={`premium-modal-select ${selectedPlan === "20" ? "selected" : ""}`}>
                   Select
@@ -541,7 +541,7 @@ function DashboardContent() {
                 onClick={() => setSelectedPlan("30")}
               >
                 <h4>Elite</h4>
-                <div className="premium-modal-price">€12.00</div>
+                <div className="premium-modal-price">$15.00</div>
                 <p>30 Setups</p>
                 <button className={`premium-modal-select ${selectedPlan === "30" ? "selected" : ""}`}>
                   Select

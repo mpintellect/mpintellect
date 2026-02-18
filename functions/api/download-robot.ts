@@ -14,7 +14,7 @@ export async function onRequestGet(context: any) {
     ).bind(sessionId).first();
 
     // 2. Security Check: Block if not paid or wrong product
-    const SCALPER_PRICE_ID = "price_1T0O51DoB4i1qeaLzAaAErAr";
+    const SCALPER_PRICE_ID = "price_1T2EdfDoB4i1qeaLM647it0F";
     
     if (!purchase || purchase.status !== 'completed' || purchase.price_id !== SCALPER_PRICE_ID) {
       return new Response("Access Denied: Invalid Purchase", { status: 401 });

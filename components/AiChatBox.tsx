@@ -350,9 +350,9 @@ function PricingPlansModal({
   }, []);
 
   const plans = [
-    { id: "10", name: "Basic Plan", setups: "10 Setups", price: "€4.50", popular: false },
-    { id: "20", name: "Pro Plan", setups: "20 Setups", price: "€8.00", popular: true },
-    { id: "30", name: "Elite Plan", setups: "30 Setups", price: "€12.00", popular: false }
+    { id: "10", name: "Basic Plan", setups: "10 Setups", price: "$5.00", popular: false },
+    { id: "20", name: "Pro Plan", setups: "20 Setups", price: "$9.50", popular: true },
+    { id: "30", name: "Elite Plan", setups: "30 Setups", price: "$15.00", popular: false }
   ];
 
   const modalContent = (

@@ -36,7 +36,7 @@ export default function AIRobotCards() {
       short: 'Unlimited Assistant scenarios & updates.',
       description:
         'Get full access to the AI Assistant with all features, regular updates, and priority improvements every month.',
-      price: '$6/mo',
+      price: '$10/mo',
       available: true,
       href: '/checkout?product=ai-assistant-monthly',
       badge: 'Subscription',
@@ -48,7 +48,7 @@ export default function AIRobotCards() {
       short: 'Ultra-fast scalping built for tight spreads.',
       description:
         'Scalper X1 is designed to capture quick, frequent moves on liquid pairs. It uses volatility filters, spread checks, and time-of-day rules to avoid dead sessions. Works best on low-spread brokers (ECN), M5–M15 charts. Use sensible risk per trade and avoid news spikes.',
-      price: '$45',
+      price: '$50',
       available: true,
       href: '/checkout?bot=scalper', 
       features: ['MT5 Ready', '0.01–1.0 Lot Supported', 'Auto TP/SL', 'Backtested'],

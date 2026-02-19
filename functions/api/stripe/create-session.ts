@@ -3,7 +3,7 @@ import Stripe from "stripe";
 // MASTER PRICE MAPPING (Must match product IDs exactly)
 const PRODUCT_PRICE_MAP: Record<string, string> = {
   // Tools (Subscriptions)
-  "ai-assistant-monthly": "price_1T2EiJDoB4i1qeaLFXPjBoCY",
+  "ai-assistant-monthly": "price_1S2Zd3RmR6ESDQvoermVMV5l",
   
 
   // Robots (One-Time)

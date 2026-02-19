@@ -7,7 +7,7 @@ const PRODUCT_MAP: Record<string, string> = {
   "price_1T2EeZDoB4i1qeaLoOlPHUNU": "BASIC PLAN (10 AI Setups)",
   "price_1T2EfODoB4i1qeaLiNO8SKeZ": "PRO PLAN (20 AI Setups)",
   "price_1SSyUORmR6ESDQvo7dzPKmPt": "ELITE PLAN (30 AI Setups)",
-  "price_1T2EiJDoB4i1qeaLFXPjBoCY": "AI Assistant Pro (Monthly)"
+  "price_1S2Zd3RmR6ESDQvoermVMV5l": "AI Assistant Pro (Monthly)"
 }; 
 
 export default function BillingHistory() {

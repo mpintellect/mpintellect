@@ -136,27 +136,37 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 );
 
 -- 8. Referrals
+-- 8. REFERRALS - CORRECTED VERSION
+
+
+-- Create referral_codes table (simplified - we store code directly in users table)
+-- Actually, we don't need this separate table since referral_code is already in users
+
+-- Create referrals table (tracks who referred whom)
 CREATE TABLE IF NOT EXISTS referrals (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  referrer_id TEXT,
-  referred_id TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  referrer_id TEXT NOT NULL,
+  referred_id TEXT NOT NULL UNIQUE, -- One user can only be referred once
+  status TEXT DEFAULT 'completed',
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (referrer_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (referred_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS referral_codes (
-  code TEXT PRIMARY KEY,
-  owner_id TEXT,
-  is_active INTEGER DEFAULT 1,
-  expires_at TEXT,
-  created_at TEXT
-);
-
+-- Create referral_redemptions table (for manual code redemption)
 CREATE TABLE IF NOT EXISTS referral_redemptions (
-  id TEXT PRIMARY KEY,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id TEXT NOT NULL,
   referral_code TEXT NOT NULL,
-  redeemed_at TEXT NOT NULL
+  redeemed_at TEXT NOT NULL,
+  setups_added INTEGER DEFAULT 5,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer_id ON referrals(referrer_id);
+CREATE INDEX IF NOT EXISTS idx_referrals_referred_id ON referrals(referred_id);
+CREATE INDEX IF NOT EXISTS idx_referral_redemptions_user_id ON referral_redemptions(user_id);
 
 -- 9. Logs & Analytics
 CREATE TABLE IF NOT EXISTS seo_logs (

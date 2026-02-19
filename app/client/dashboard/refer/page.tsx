@@ -97,7 +97,7 @@ export default function ReferPage() {
   };
 
   const referralLink = typeof window !== "undefined" 
-    ? `${window.location.origin}/register?ref=${referralCode}` 
+    ? `${window.location.origin}/client/register?ref=${referralCode}` 
     : `https://mzprimer.com/client/register?ref=${referralCode}`;
 
   const handleCopy = () => {

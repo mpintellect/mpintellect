@@ -36,29 +36,30 @@ export async function onRequestPost(context: any) {
     console.log("🔍 Event ID:", event.id);
     console.log("🔍 Event created:", new Date(event.created * 1000).toISOString());
 
-  if (event.type === "checkout.session.completed") {
-  const session = event.data.object as any;
-  console.log("💰 Checkout completed - Full session data:", JSON.stringify({
-    id: session.id,
-    email: session.customer_email || session.customer_details?.email,
-    metadata: session.metadata,
-    amount: session.amount_total,
-    payment_status: session.payment_status,
-    status: session.status,
-    customer_details: session.customer_details
-  }, null, 2));
-  
-  // ✅ FIX: Actually call the fulfillment function
-  console.log("⏱️ Calling handleCheckoutCompleted...");
-  await handleCheckoutCompleted(session, env);
-  console.log("✅ handleCheckoutCompleted finished");
-  
-} else {
-  console.log("⚠️ Ignoring non-checkout event:", event.type);
-}
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as any;
+      console.log("💰 Checkout completed - Full session data:", JSON.stringify({
+        id: session.id,
+        email: session.customer_email || session.customer_details?.email,
+        metadata: session.metadata,
+        amount: session.amount_total,
+        payment_status: session.payment_status,
+        status: session.status,
+        customer_details: session.customer_details
+      }, null, 2));
+      
+      // ✅ Call the fulfillment function
+      console.log("⏱️ Calling handleCheckoutCompleted...");
+      await handleCheckoutCompleted(session, env);
+      console.log("✅ handleCheckoutCompleted finished");
+      
+    } else {
+      console.log("⚠️ Ignoring non-checkout event:", event.type);
+    }
     
     console.log("✅ Returning 200 response to Stripe");
     return new Response(JSON.stringify({ received: true }), { status: 200 });
+    
   } catch (err: any) {
     console.error("❌ Webhook Signature Error:", err.message);
     console.error("❌ Error stack:", err.stack);
@@ -94,7 +95,6 @@ async function handleCheckoutCompleted(session: any, env: any) {
 
     // 1. Ensure User exists
     console.log("📡 Step 1: Ensuring user exists...");
-    console.log(`📡 Running: INSERT OR IGNORE INTO users (id, email, ...) VALUES (${userId}, ${customerEmail})`);
     
     try {
       const userResult = await env.DB.prepare(
@@ -103,7 +103,6 @@ async function handleCheckoutCompleted(session: any, env: any) {
       console.log("✅ User ensure result:", userResult);
     } catch (dbError: any) {
       console.error("❌ Database error in user insert:", dbError.message);
-      console.error("❌ Error stack:", dbError.stack);
       throw dbError;
     }
     console.log("✅ User ensured");
@@ -114,7 +113,6 @@ async function handleCheckoutCompleted(session: any, env: any) {
       secureDownloadLink = `https://mzprimer.com/api/download-robot?session_id=${sessionId}`;
       
       console.log("📡 Step 2: Updating user with robot flag...");
-      console.log(`📡 Running: UPDATE users SET has_scalper_x1 = 1 WHERE id = ${userId} OR email = ${customerEmail}`);
       
       try {
         const updateResult = await env.DB.prepare("UPDATE users SET has_scalper_x1 = 1, updated_at = datetime('now') WHERE id = ? OR email = ?")
@@ -136,8 +134,6 @@ async function handleCheckoutCompleted(session: any, env: any) {
       expiryDate = d.toISOString();
       
       console.log("📡 Step 2: Updating user with pro license...");
-      console.log(`📡 Generated license key: ${generatedKey}`);
-      console.log(`📡 Expiry date: ${expiryDate}`);
       
       try {
         const updateResult = await env.DB.prepare(
@@ -151,7 +147,7 @@ async function handleCheckoutCompleted(session: any, env: any) {
       console.log("✅ Pro License updated in DB");
     }
 
-    // 4. LOGIC: SETUP BUNDLES
+    // 4. LOGIC: SETUP BUNDLES (10, 20, 30 credits)
     else if (["10", "20", "30"].includes(productId)) {
       const setups = parseInt(productId);
       setupsToLog = setups;
@@ -169,22 +165,17 @@ async function handleCheckoutCompleted(session: any, env: any) {
         throw dbError;
       }
       console.log(`✅ Added ${setups} credits in DB`);
-    } else {
+    } 
+    
+    // 5. LOGIC: UNKNOWN PRODUCT
+    else {
       console.log("⚠️ Unknown productId:", productId);
+      prodName = productId || "MZ Intelligence Product";
     }
 
-    // 5. AUDIT LOG
+    // 6. AUDIT LOG
     console.log("📡 Step 3: Creating audit log...");
-    const nowTs = new Date().toISOString().replace('T', ' ').substring(0, 19);;
-    console.log(`📡 Inserting into stripe_purchases:`, {
-      userId,
-      sessionId,
-      productId,
-      setupsToLog,
-      amount: (session.amount_total || 0) / 100,
-      customerEmail,
-      nowTs
-    });
+    const nowTs = new Date().toISOString().replace('T', ' ').substring(0, 19);
     
     try {
       const auditResult = await env.DB.prepare(
@@ -198,39 +189,39 @@ async function handleCheckoutCompleted(session: any, env: any) {
     }
     console.log("✅ Audit log created");
 
-    // 6. ✅ DISPATCH EMAIL - USING EMBEDDED FUNCTION
+    // 7. ✅ DISPATCH EMAIL - FOR ALL PURCHASE TYPES (FIXED)
     console.log("📧 Step 4: Preparing to dispatch email...");
+    console.log("📧 Product type:", productId);
     console.log("📧 secureDownloadLink exists:", !!secureDownloadLink);
     console.log("📧 generatedKey exists:", !!generatedKey);
     
-    if (secureDownloadLink || generatedKey) {
-      console.log(`📧 Calling sendOrderConfirmationEmbedded to ${customerEmail}...`);
-      console.log(`📧 Email details:`, {
+    // Send email for ALL successful purchases (robots, subscriptions, AND setup bundles)
+    console.log(`📧 Calling sendOrderConfirmationEmbedded to ${customerEmail}...`);
+    console.log(`📧 Email details:`, {
+      to: customerEmail,
+      orderId: sessionId,
+      productName: prodName,
+      amountPaid: (session.amount_total || 0) / 100,
+      hasLicenseKey: !!generatedKey,
+      hasDownloadUrl: !!secureDownloadLink,
+      isSetupBundle: !secureDownloadLink && !generatedKey && productId.match(/^\d+$/) // Numbers only = setup bundle
+    });
+    
+    try {
+      await sendOrderConfirmationEmbedded({
         to: customerEmail,
         orderId: sessionId,
         productName: prodName,
         amountPaid: (session.amount_total || 0) / 100,
-        hasLicenseKey: !!generatedKey,
-        hasDownloadUrl: !!secureDownloadLink
-      });
-      
-      try {
-        await sendOrderConfirmationEmbedded({
-          to: customerEmail,
-          orderId: sessionId,
-          productName: prodName,
-          amountPaid: (session.amount_total || 0) / 100,
-          licenseKey: generatedKey,
-          licenseExpiry: expiryDate,
-          downloadUrl: secureDownloadLink
-        }, env);
-        console.log("✅ Email dispatch completed");
-      } catch (emailError: any) {
-        console.error("❌ Email dispatch error:", emailError.message);
-        console.error("❌ Email error stack:", emailError.stack);
-      }
-    } else {
-      console.log("⚠️ No email sent - no download link or license key");
+        licenseKey: generatedKey,
+        licenseExpiry: expiryDate,
+        downloadUrl: secureDownloadLink,
+        customerName: session.metadata?.buyerName
+      }, env);
+      console.log("✅ Email dispatch completed");
+    } catch (emailError: any) {
+      console.error("❌ Email dispatch error:", emailError.message);
+      console.error("❌ Email error stack:", emailError.stack);
     }
 
     console.log(`✨ FULFILLMENT COMPLETE for ${customerEmail}`);
@@ -261,19 +252,13 @@ interface OrderEmailDetails {
 
 async function sendOrderConfirmationEmbedded(order: OrderEmailDetails, env: any): Promise<void> {
   console.log("📧 ENTERING sendOrderConfirmationEmbedded");
-  console.log("📧 Time:", new Date().toISOString());
   
   const apiKey = env.RESEND_API_KEY;
   const fromEmail = env.EMAIL_FROM || 'MZPrimer Intelligence Team <contact@mzprimer.com>';
 
-  console.log("📧 DEBUG - Email function variables:");
   console.log("📧 apiKey exists:", !!apiKey);
-  console.log("📧 apiKey length:", apiKey ? apiKey.length : 0);
-  console.log("📧 fromEmail:", fromEmail);
   console.log("📧 order.to:", order.to);
   console.log("📧 order.productName:", order.productName);
-  console.log("📧 order.licenseKey exists:", !!order.licenseKey);
-  console.log("📧 order.downloadUrl exists:", !!order.downloadUrl);
 
   if (!apiKey) {
     console.error("❌ RESEND_API_KEY is missing - cannot send email");
@@ -282,9 +267,11 @@ async function sendOrderConfirmationEmbedded(order: OrderEmailDetails, env: any)
 
   const isSubscription = !!order.licenseKey;
   const isRobot = !!order.downloadUrl;
+  const isSetupBundle = !isSubscription && !isRobot;
   
   console.log("📧 isSubscription:", isSubscription);
   console.log("📧 isRobot:", isRobot);
+  console.log("📧 isSetupBundle:", isSetupBundle);
   
   // CTA Link Logic
   let ctaLink = "https://mzprimer.com/client/dashboard";
@@ -293,48 +280,36 @@ async function sendOrderConfirmationEmbedded(order: OrderEmailDetails, env: any)
   if (isSubscription) {
     ctaLink = "https://mzprimer.com/tools/ai-assistant?active";
     ctaText = "ACTIVATE AI ASSISTANT";
-    console.log("📧 Using subscription CTA:", ctaLink);
   } else if (isRobot) {
     ctaLink = order.downloadUrl!;
     ctaText = "DOWNLOAD EX5 ROBOT";
-    console.log("📧 Using robot CTA:", ctaLink);
-  } else {
-    console.log("📧 Using default dashboard CTA");
-  }
+  } // else isSetupBundle - keep default dashboard link
 
   const subject = isRobot 
-    ? `Software Delivery: ${order.productName} is ready` 
+    ? `⚡ Software Delivery: ${order.productName} is ready` 
     : isSubscription 
-      ? `AI Pro Activated: Your License Key Inside` 
-      : `Order Confirmed: ${order.productName}`;
-
-  console.log("📧 Email subject:", subject);
+      ? `🔑 AI Pro Activated: Your License Key Inside` 
+      : `✅ Order Confirmed: ${order.productName}`;
 
   const expiryDate = order.licenseExpiry
     ? new Date(order.licenseExpiry).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : null;
 
   const customerName = order.customerName || order.to.split('@')[0] || 'Trader';
-  console.log("📧 customerName:", customerName);
 
   try {
     console.log("📧 Making fetch request to Resend API...");
-    console.log("📧 Request URL: https://api.resend.com/emails");
-    console.log("📧 Request headers: Authorization: Bearer [hidden], Content-Type: application/json");
     
     const emailBody = {
       from: fromEmail,
       to: [order.to],
       subject: subject,
-      html: generateEmailHTML(order, isSubscription, isRobot, expiryDate, customerName, ctaLink, ctaText),
-      text: generatePlainText(order, isSubscription, isRobot, expiryDate, ctaLink),
+      html: generateEmailHTML(order, isSubscription, isRobot, isSetupBundle, expiryDate, customerName, ctaLink, ctaText),
+      text: generatePlainText(order, isSubscription, isRobot, isSetupBundle, expiryDate, ctaLink),
       headers: {
         "X-Entity-ID": `MZP-${order.orderId.substring(0, 8)}`,
       }
     };
-    
-    console.log("📧 Request body prepared, HTML length:", emailBody.html.length);
-    console.log("📧 Text length:", emailBody.text.length);
     
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -346,10 +321,8 @@ async function sendOrderConfirmationEmbedded(order: OrderEmailDetails, env: any)
     });
 
     console.log("📧 Resend response status:", response.status);
-    console.log("📧 Resend response status text:", response.statusText);
     
     const responseData = await response.json();
-    console.log("📧 Resend response data:", JSON.stringify(responseData, null, 2));
     
     if (response.ok) {
       console.log(`✅ Email sent successfully to ${order.to}`, responseData);
@@ -360,16 +333,23 @@ async function sendOrderConfirmationEmbedded(order: OrderEmailDetails, env: any)
       if (order.licenseKey) {
         console.log(`🔑 FALLBACK - License key for ${order.to}: ${order.licenseKey}`);
       }
+      // FALLBACK for download links
+      if (order.downloadUrl) {
+        console.log(`📥 FALLBACK - Download link for ${order.to}: ${order.downloadUrl}`);
+      }
     }
   } catch (e: any) {
-    console.error("❌ Email System Failure - Exception caught:");
-    console.error("❌ Error name:", e.name);
-    console.error("❌ Error message:", e.message);
-    console.error("❌ Error stack:", e.stack);
+    console.error("❌ Email System Failure:", e.message);
     
-    // FALLBACK for license keys
+    // FALLBACK for all purchase types
     if (order.licenseKey) {
-      console.log(`🔑 FALLBACK - License key for ${order.to}: ${order.licenseKey}`);
+      console.log(`🔑 FALLBACK - License key: ${order.licenseKey}`);
+    }
+    if (order.downloadUrl) {
+      console.log(`📥 FALLBACK - Download link: ${order.downloadUrl}`);
+    }
+    if (isSetupBundle) {
+      console.log(`📊 FALLBACK - Setup bundle purchased: ${order.productName}`);
     }
   }
   
@@ -380,11 +360,16 @@ function generateEmailHTML(
   order: OrderEmailDetails,
   isSubscription: boolean,
   isRobot: boolean,
+  isSetupBundle: boolean,
   expiryDate: string | null,
   customerName: string,
   ctaLink: string,
   ctaText: string
 ): string {
+  const badgeText = isRobot ? '⚡ ROBOT DEPLOYMENT' : isSubscription ? '🔑 PRO LICENSE' : '✓ ORDER CONFIRMED';
+  const headline = isRobot ? 'Scalper X1 Ready' : isSubscription ? 'AI Trader Assistant' : 'Payment Successful';
+  const subheadline = isRobot ? 'Institutional Grade Robot' : isSubscription ? 'Professional License Activated' : order.productName;
+  
   return `
     <!DOCTYPE html>
     <html>
@@ -401,14 +386,14 @@ function generateEmailHTML(
           <div style="padding: 40px 32px;">
             <div style="display: inline-block; background: rgba(212, 175, 55, 0.08); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 100px; padding: 8px 20px; margin-bottom: 24px;">
               <span style="color: #d4af37; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">
-                ${isRobot ? '⚡ ROBOT DEPLOYMENT' : isSubscription ? '⚡ PRO LICENSE' : '✓ ORDER CONFIRMED'}
+                ${badgeText}
               </span>
             </div>
             
             <h1 style="margin: 0 0 16px; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; color: #ffffff;">
-              ${isRobot ? 'Scalper X1 Ready' : isSubscription ? 'AI Trader Assistant' : 'Payment Successful'}
+              ${headline}
               <span style="display: block; font-size: 18px; font-weight: 400; color: #a1a1aa; margin-top: 8px;">
-                ${isRobot ? 'Institutional Grade Robot' : isSubscription ? 'Professional License Activated' : order.productName}
+                ${subheadline}
               </span>
             </h1>
             
@@ -421,7 +406,7 @@ function generateEmailHTML(
                 ? `Your institutional grade robot <b style="color: #d4af37;">${order.productName}</b> has been provisioned. You can download the protected .ex5 file below.`
                 : isSubscription 
                   ? `Your institutional-grade trading intelligence subscription is now active. You have <strong style="color: #d4af37;">unlimited access</strong> to AI-powered market analysis.`
-                  : `Thank you for your purchase. Your trading setups have been credited to your account and are ready for immediate use.`
+                  : `Thank you for your purchase. Your ${order.productName} has been credited to your account and is ready for immediate use.`
               }
             </p>
 
@@ -434,7 +419,7 @@ function generateEmailHTML(
               <div style="background: #000000; border-radius: 14px; padding: 20px; margin-bottom: 20px;">
                 <p style="margin: 0 0 10px 0; color: #9ca3af; font-size: 14px;">File:</p>
                 <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600;">
-                  MZPrimer_Scalper_X1_V.1.ex5
+                  MZPrimer_${order.productName.replace(/\s+/g, '_')}_V.1.ex5
                 </p>
               </div>
               <div style="text-align: center;">
@@ -478,6 +463,14 @@ function generateEmailHTML(
                 <span style="color: #ffffff; font-size: 28px; font-weight: 700;">$${order.amountPaid.toFixed(2)}</span>
               </div>
             </div>
+            
+            <div style="text-align: center;">
+              <a href="${ctaLink}" 
+                 style="display: inline-block; background: #d4af37; color: #000000; text-decoration: none; padding: 18px 48px; border-radius: 100px; font-weight: 800; font-size: 16px; letter-spacing: 3px; text-transform: uppercase; border: 1px solid #f9e076;">
+                ${ctaText} →
+              </a>
+            </div>
+            
           </div>
           
           <div style="padding: 24px 32px; background: #050505; border-top: 1px solid #1a1a1a; border-radius: 0 0 24px 24px;">
@@ -495,7 +488,8 @@ function generateEmailHTML(
 function generatePlainText(
   order: OrderEmailDetails, 
   isSubscription: boolean, 
-  isRobot: boolean, 
+  isRobot: boolean,
+  isSetupBundle: boolean,
   expiryDate: string | null,
   ctaLink: string
 ): string {
@@ -526,6 +520,7 @@ Activate here: ${ctaLink}
     text += `
     
 Access your dashboard: ${ctaLink}
+Your ${order.productName} has been credited to your account.
 `;
   }
 

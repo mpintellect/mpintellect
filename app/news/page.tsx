@@ -66,6 +66,7 @@ export default function FundamentalNewsHub() {
         <span className="news-sub-label">Fundamental Analysis</span>
         <h1 className="news-main-title">Intelligence Feed</h1>
       </header>
+<p>The context changes everything. Leastes updates of geopolitical events, econmic news and more.</p>
 
       <div className="news-search-container">
         <Search size={18} className="text-zinc-600 ml-2" />

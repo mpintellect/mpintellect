@@ -1,5 +1,32 @@
 [
   {
+    "date": "2026-02-19",
+    "id": "iran_us_conflict_oil_gold_2026",
+    "symbol": "BRENT",
+    "headline": "⚔️ Geopolitical Escalation: Iran Strike Risk",
+    "question": "How would a strategic U.S. strike on Iran in March 2026 fundamentally re-price the Oil and Gold risk premiums?",
+    "aiContext": "A kinetic engagement in the Strait of Hormuz creates a binary risk environment. Despite de-escalation rhetoric in recent executive speeches, the 'proximity risk' to energy infrastructure suggests a move toward $80 Brent. Gold acts as the primary safe-haven beneficiary, detaching from yield correlations to price in direct conflict volatility.",
+    "category": "Macro"
+  },
+  {
+    "date": "2026-02-19",
+    "id": "gold_5k_fed_trajectory",
+    "symbol": "XAUUSD",
+    "headline": "🏆 The $5,000 Baseline: Fed Rate Path",
+    "question": "Will the Fed’s current interest rate trajectory support Gold's sustainment above the psychological $5,000 threshold?",
+    "aiContext": "Gold has successfully recaptured the 5k level as institutional capital rotates into hard assets. The Fed's rate path is no longer the sole driver; the market is now pricing in 'fiscal dominance.' While rate cuts provide the tailwind, the $5,000 mark is rapidly transitioning from a target to an institutional support floor for Q2 2026.",
+    "category": "Stocks"
+  },
+  {
+    "date": "2026-02-19",
+    "id": "trump_iran_policy_paradox",
+    "symbol": "OIL",
+    "headline": "🏛️ The Policy Paradox: Rhetoric vs. Reality",
+    "question": "Can the Gold-Oil ratio remain stable if diplomatic rhetoric fails to align with actual naval posturing in the Middle East?",
+    "aiContext": "History shows a divergence between diplomatic speeches and structural defense posture. Even if leadership seeks to avoid direct conflict, the military footprint near Iranian waters necessitates a 'volatility hedge.' Portfolio managers are aggressively pricing in dramatic shifts for Gold as the ultimate insurance policy against a failed diplomatic pivot.",
+    "category": "Geopolitics"
+  },
+  {
     "date": "2026-02-18",
     "id": "venezuela_us_oil_q1_2026",
     "symbol": "BRENT",

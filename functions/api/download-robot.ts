@@ -36,7 +36,7 @@ export async function onRequestGet(context: any) {
     console.log("Purchase found:", purchase);
 
     // 2. Security Check
-    const SCALPER_PRICE_ID = "price_1S2fSQRmR6ESDQvoNeQ2sFdD";
+    const SCALPER_PRICE_ID = "price_1S3JU6DoB4i1qeaLMYVILAMD";
     
     if (!purchase) {
       return new Response(JSON.stringify({ error: "Purchase not found" }), { 

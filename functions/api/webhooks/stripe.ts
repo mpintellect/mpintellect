@@ -8,6 +8,15 @@ import Stripe from "stripe";
 
 export async function onRequestPost(context: any) {
   const { request, env, waitUntil } = context;
+  
+  // DEBUG: Check environment variables at start
+  console.log("🔍 DEBUG - Environment check:");
+  console.log("🔍 STRIPE_SECRET_KEY exists:", !!env.STRIPE_SECRET_KEY);
+  console.log("🔍 STRIPE_WEBHOOK_SECRET_CHATBOT exists:", !!env.STRIPE_WEBHOOK_SECRET_CHATBOT);
+  console.log("🔍 RESEND_API_KEY exists:", !!env.RESEND_API_KEY);
+  console.log("🔍 EMAIL_FROM exists:", !!env.EMAIL_FROM);
+  console.log("🔍 DB binding exists:", !!env.DB);
+  
   const stripe = new Stripe(env.STRIPE_SECRET_KEY, { 
     // @ts-ignore
     apiVersion: "2024-06-20",
@@ -18,27 +27,40 @@ export async function onRequestPost(context: any) {
   const body = await request.text();
 
   console.log("🔔 Webhook received - signature present:", !!sig);
+  console.log("🔔 Body length:", body.length);
 
   try {
+    console.log("🔐 Attempting to verify webhook signature...");
     const event = await stripe.webhooks.constructEventAsync(body, sig, env.STRIPE_WEBHOOK_SECRET_CHATBOT);
-    console.log("✅ Event verified:", event.type);
+    console.log("✅ Event verified successfully:", event.type);
+    console.log("🔍 Event ID:", event.id);
+    console.log("🔍 Event created:", new Date(event.created * 1000).toISOString());
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as any;
-      console.log("💰 Checkout completed:", {
+      console.log("💰 Checkout completed - Full session data:", JSON.stringify({
         id: session.id,
         email: session.customer_email || session.customer_details?.email,
         metadata: session.metadata,
-        amount: session.amount_total
-      });
+        amount: session.amount_total,
+        payment_status: session.payment_status,
+        status: session.status,
+        customer_details: session.customer_details
+      }, null, 2));
       
       // ✅ Use waitUntil to ensure Cloudflare doesn't kill the process
+      console.log("⏱️ Scheduling fulfillment with waitUntil...");
       waitUntil(handleCheckoutCompleted(session, env));
-      console.log("⏱️ Fulfillment scheduled with waitUntil");
+      console.log("⏱️ Fulfillment scheduled");
+    } else {
+      console.log("⚠️ Ignoring non-checkout event:", event.type);
     }
+    
+    console.log("✅ Returning 200 response to Stripe");
     return new Response(JSON.stringify({ received: true }), { status: 200 });
   } catch (err: any) {
     console.error("❌ Webhook Signature Error:", err.message);
+    console.error("❌ Error stack:", err.stack);
     return new Response(JSON.stringify({ error: err.message }), { status: 400 });
   }
 }
@@ -48,6 +70,9 @@ export async function onRequestPost(context: any) {
 // ===========================================
 
 async function handleCheckoutCompleted(session: any, env: any) {
+  console.log("🚀 ENTERING handleCheckoutCompleted");
+  console.log("🚀 Time:", new Date().toISOString());
+  
   const customerEmail = (session.customer_details?.email || session.customer_email || "").toLowerCase();
   const sessionId = session.id;
 
@@ -55,7 +80,9 @@ async function handleCheckoutCompleted(session: any, env: any) {
   const productId = session.metadata?.productId || session.metadata?.plan;
   const userId = session.metadata?.userId || customerEmail;
 
-  console.log(`📡 Fulfilling: ${productId} for ${customerEmail}`);
+  console.log(`📡 Fulfilling: productId=${productId} for customerEmail=${customerEmail}`);
+  console.log(`📡 Session ID: ${sessionId}`);
+  console.log(`📡 User ID from metadata: ${userId}`);
 
   try {
     let generatedKey: string | undefined;
@@ -66,9 +93,18 @@ async function handleCheckoutCompleted(session: any, env: any) {
 
     // 1. Ensure User exists
     console.log("📡 Step 1: Ensuring user exists...");
-    await env.DB.prepare(
-      "INSERT OR IGNORE INTO users (id, email, created_at, updated_at, setup_count) VALUES (?, ?, datetime('now'), datetime('now'), 0)"
-    ).bind(userId, customerEmail).run();
+    console.log(`📡 Running: INSERT OR IGNORE INTO users (id, email, ...) VALUES (${userId}, ${customerEmail})`);
+    
+    try {
+      const userResult = await env.DB.prepare(
+        "INSERT OR IGNORE INTO users (id, email, created_at, updated_at, setup_count) VALUES (?, ?, datetime('now'), datetime('now'), 0)"
+      ).bind(userId, customerEmail).run();
+      console.log("✅ User ensure result:", userResult);
+    } catch (dbError: any) {
+      console.error("❌ Database error in user insert:", dbError.message);
+      console.error("❌ Error stack:", dbError.stack);
+      throw dbError;
+    }
     console.log("✅ User ensured");
 
     // 2. LOGIC: SCALPER ROBOT
@@ -77,8 +113,16 @@ async function handleCheckoutCompleted(session: any, env: any) {
       secureDownloadLink = `https://mzprimer.com/api/download-robot?session_id=${sessionId}`;
       
       console.log("📡 Step 2: Updating user with robot flag...");
-      await env.DB.prepare("UPDATE users SET has_scalper_x1 = 1, updated_at = datetime('now') WHERE id = ? OR email = ?")
-        .bind(userId, customerEmail).run();
+      console.log(`📡 Running: UPDATE users SET has_scalper_x1 = 1 WHERE id = ${userId} OR email = ${customerEmail}`);
+      
+      try {
+        const updateResult = await env.DB.prepare("UPDATE users SET has_scalper_x1 = 1, updated_at = datetime('now') WHERE id = ? OR email = ?")
+          .bind(userId, customerEmail).run();
+        console.log("✅ Robot update result:", updateResult);
+      } catch (dbError: any) {
+        console.error("❌ Database error in robot update:", dbError.message);
+        throw dbError;
+      }
       console.log("✅ Robot ownership updated in DB");
     } 
 
@@ -91,9 +135,18 @@ async function handleCheckoutCompleted(session: any, env: any) {
       expiryDate = d.toISOString();
       
       console.log("📡 Step 2: Updating user with pro license...");
-      await env.DB.prepare(
-        "UPDATE users SET license_type = 'pro', license_key = ?, license_expires_at = ?, updated_at = datetime('now') WHERE id = ? OR email = ?"
-      ).bind(generatedKey, expiryDate, userId, customerEmail).run();
+      console.log(`📡 Generated license key: ${generatedKey}`);
+      console.log(`📡 Expiry date: ${expiryDate}`);
+      
+      try {
+        const updateResult = await env.DB.prepare(
+          "UPDATE users SET license_type = 'pro', license_key = ?, license_expires_at = ?, updated_at = datetime('now') WHERE id = ? OR email = ?"
+        ).bind(generatedKey, expiryDate, userId, customerEmail).run();
+        console.log("✅ Pro license update result:", updateResult);
+      } catch (dbError: any) {
+        console.error("❌ Database error in pro update:", dbError.message);
+        throw dbError;
+      }
       console.log("✅ Pro License updated in DB");
     }
 
@@ -104,43 +157,90 @@ async function handleCheckoutCompleted(session: any, env: any) {
       prodName = `${setups} AI Setup Bundle`;
       
       console.log("📡 Step 2: Updating user with setup credits...");
-      await env.DB.prepare("UPDATE users SET setup_count = setup_count + ?, updated_at = datetime('now') WHERE id = ? OR email = ?")
-        .bind(setups, userId, customerEmail).run();
+      console.log(`📡 Adding ${setups} credits to user`);
+      
+      try {
+        const updateResult = await env.DB.prepare("UPDATE users SET setup_count = setup_count + ?, updated_at = datetime('now') WHERE id = ? OR email = ?")
+          .bind(setups, userId, customerEmail).run();
+        console.log("✅ Setup credits update result:", updateResult);
+      } catch (dbError: any) {
+        console.error("❌ Database error in setup credits update:", dbError.message);
+        throw dbError;
+      }
       console.log(`✅ Added ${setups} credits in DB`);
+    } else {
+      console.log("⚠️ Unknown productId:", productId);
     }
 
     // 5. AUDIT LOG
     console.log("📡 Step 3: Creating audit log...");
     const nowTs = Math.floor(Date.now() / 1000);
-    await env.DB.prepare(
-      `INSERT INTO stripe_purchases (user_id, stripe_session_id, price_id, setup_count, amount_paid, customer_email, status, created_at, updated_at, license_key) 
-       VALUES (?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?)`
-    ).bind(userId, sessionId, productId, setupsToLog, (session.amount_total || 0) / 100, customerEmail, nowTs, nowTs, generatedKey || null).run();
+    console.log(`📡 Inserting into stripe_purchases:`, {
+      userId,
+      sessionId,
+      productId,
+      setupsToLog,
+      amount: (session.amount_total || 0) / 100,
+      customerEmail,
+      nowTs
+    });
+    
+    try {
+      const auditResult = await env.DB.prepare(
+        `INSERT INTO stripe_purchases (user_id, stripe_session_id, price_id, setup_count, amount_paid, customer_email, status, created_at, updated_at, license_key) 
+         VALUES (?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?)`
+      ).bind(userId, sessionId, productId, setupsToLog, (session.amount_total || 0) / 100, customerEmail, nowTs, nowTs, generatedKey || null).run();
+      console.log("✅ Audit log result:", auditResult);
+    } catch (dbError: any) {
+      console.error("❌ Database error in audit log:", dbError.message);
+      throw dbError;
+    }
     console.log("✅ Audit log created");
 
     // 6. ✅ DISPATCH EMAIL - USING EMBEDDED FUNCTION
+    console.log("📧 Step 4: Preparing to dispatch email...");
+    console.log("📧 secureDownloadLink exists:", !!secureDownloadLink);
+    console.log("📧 generatedKey exists:", !!generatedKey);
+    
     if (secureDownloadLink || generatedKey) {
-      console.log(`📧 Step 4: Dispatching email to ${customerEmail}...`);
-      await sendOrderConfirmationEmbedded({
+      console.log(`📧 Calling sendOrderConfirmationEmbedded to ${customerEmail}...`);
+      console.log(`📧 Email details:`, {
         to: customerEmail,
         orderId: sessionId,
         productName: prodName,
         amountPaid: (session.amount_total || 0) / 100,
-        licenseKey: generatedKey,
-        licenseExpiry: expiryDate,
-        downloadUrl: secureDownloadLink
-      }, env);
-      console.log("✅ Email dispatched");
+        hasLicenseKey: !!generatedKey,
+        hasDownloadUrl: !!secureDownloadLink
+      });
+      
+      try {
+        await sendOrderConfirmationEmbedded({
+          to: customerEmail,
+          orderId: sessionId,
+          productName: prodName,
+          amountPaid: (session.amount_total || 0) / 100,
+          licenseKey: generatedKey,
+          licenseExpiry: expiryDate,
+          downloadUrl: secureDownloadLink
+        }, env);
+        console.log("✅ Email dispatch completed");
+      } catch (emailError: any) {
+        console.error("❌ Email dispatch error:", emailError.message);
+        console.error("❌ Email error stack:", emailError.stack);
+      }
     } else {
       console.log("⚠️ No email sent - no download link or license key");
     }
 
-    console.log(`✨ FULFILLMENT SUCCESSFUL for ${customerEmail}`);
+    console.log(`✨ FULFILLMENT COMPLETE for ${customerEmail}`);
 
   } catch (err: any) {
-    console.error("💥 handleCheckoutCompleted Error:", err.message);
-    console.error("Error stack:", err.stack);
+    console.error("💥 handleCheckoutCompleted Fatal Error:", err.message);
+    console.error("💥 Error stack:", err.stack);
+    console.error("💥 Error name:", err.name);
+    console.error("💥 Error code:", err.code);
   }
+  console.log("🚀 EXITING handleCheckoutCompleted");
 }
 
 // ===========================================
@@ -159,16 +259,31 @@ interface OrderEmailDetails {
 }
 
 async function sendOrderConfirmationEmbedded(order: OrderEmailDetails, env: any): Promise<void> {
+  console.log("📧 ENTERING sendOrderConfirmationEmbedded");
+  console.log("📧 Time:", new Date().toISOString());
+  
   const apiKey = env.RESEND_API_KEY;
   const fromEmail = env.EMAIL_FROM || 'MZPrimer Intelligence Team <contact@mzprimer.com>';
 
+  console.log("📧 DEBUG - Email function variables:");
+  console.log("📧 apiKey exists:", !!apiKey);
+  console.log("📧 apiKey length:", apiKey ? apiKey.length : 0);
+  console.log("📧 fromEmail:", fromEmail);
+  console.log("📧 order.to:", order.to);
+  console.log("📧 order.productName:", order.productName);
+  console.log("📧 order.licenseKey exists:", !!order.licenseKey);
+  console.log("📧 order.downloadUrl exists:", !!order.downloadUrl);
+
   if (!apiKey) {
-    console.error("❌ RESEND_API_KEY is missing");
+    console.error("❌ RESEND_API_KEY is missing - cannot send email");
     return;
   }
 
   const isSubscription = !!order.licenseKey;
   const isRobot = !!order.downloadUrl;
+  
+  console.log("📧 isSubscription:", isSubscription);
+  console.log("📧 isRobot:", isRobot);
   
   // CTA Link Logic
   let ctaLink = "https://mzprimer.com/client/dashboard";
@@ -177,9 +292,13 @@ async function sendOrderConfirmationEmbedded(order: OrderEmailDetails, env: any)
   if (isSubscription) {
     ctaLink = "https://mzprimer.com/tools/ai-assistant?active";
     ctaText = "ACTIVATE AI ASSISTANT";
+    console.log("📧 Using subscription CTA:", ctaLink);
   } else if (isRobot) {
     ctaLink = order.downloadUrl!;
     ctaText = "DOWNLOAD EX5 ROBOT";
+    console.log("📧 Using robot CTA:", ctaLink);
+  } else {
+    console.log("📧 Using default dashboard CTA");
   }
 
   const subject = isRobot 
@@ -188,14 +307,33 @@ async function sendOrderConfirmationEmbedded(order: OrderEmailDetails, env: any)
       ? `AI Pro Activated: Your License Key Inside` 
       : `Order Confirmed: ${order.productName}`;
 
+  console.log("📧 Email subject:", subject);
+
   const expiryDate = order.licenseExpiry
     ? new Date(order.licenseExpiry).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : null;
 
   const customerName = order.customerName || order.to.split('@')[0] || 'Trader';
+  console.log("📧 customerName:", customerName);
 
   try {
-    console.log(`📧 Sending email via Resend to: ${order.to}`);
+    console.log("📧 Making fetch request to Resend API...");
+    console.log("📧 Request URL: https://api.resend.com/emails");
+    console.log("📧 Request headers: Authorization: Bearer [hidden], Content-Type: application/json");
+    
+    const emailBody = {
+      from: fromEmail,
+      to: [order.to],
+      subject: subject,
+      html: generateEmailHTML(order, isSubscription, isRobot, expiryDate, customerName, ctaLink, ctaText),
+      text: generatePlainText(order, isSubscription, isRobot, expiryDate, ctaLink),
+      headers: {
+        "X-Entity-ID": `MZP-${order.orderId.substring(0, 8)}`,
+      }
+    };
+    
+    console.log("📧 Request body prepared, HTML length:", emailBody.html.length);
+    console.log("📧 Text length:", emailBody.text.length);
     
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -203,22 +341,17 @@ async function sendOrderConfirmationEmbedded(order: OrderEmailDetails, env: any)
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: [order.to],
-        subject: subject,
-        html: generateEmailHTML(order, isSubscription, isRobot, expiryDate, customerName, ctaLink, ctaText),
-        text: generatePlainText(order, isSubscription, isRobot, expiryDate, ctaLink),
-        headers: {
-          "X-Entity-ID": `MZP-${order.orderId.substring(0, 8)}`,
-        }
-      }),
+      body: JSON.stringify(emailBody),
     });
 
+    console.log("📧 Resend response status:", response.status);
+    console.log("📧 Resend response status text:", response.statusText);
+    
     const responseData = await response.json();
+    console.log("📧 Resend response data:", JSON.stringify(responseData, null, 2));
     
     if (response.ok) {
-      console.log(`✅ Professional email dispatched to ${order.to}`, responseData);
+      console.log(`✅ Email sent successfully to ${order.to}`, responseData);
     } else {
       console.error("❌ Resend API Error:", responseData);
       
@@ -228,13 +361,18 @@ async function sendOrderConfirmationEmbedded(order: OrderEmailDetails, env: any)
       }
     }
   } catch (e: any) {
-    console.error("❌ Email System Failure:", e.message);
+    console.error("❌ Email System Failure - Exception caught:");
+    console.error("❌ Error name:", e.name);
+    console.error("❌ Error message:", e.message);
+    console.error("❌ Error stack:", e.stack);
     
     // FALLBACK for license keys
     if (order.licenseKey) {
       console.log(`🔑 FALLBACK - License key for ${order.to}: ${order.licenseKey}`);
     }
   }
+  
+  console.log("📧 EXITING sendOrderConfirmationEmbedded");
 }
 
 function generateEmailHTML(

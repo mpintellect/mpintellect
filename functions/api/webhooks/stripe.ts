@@ -8,11 +8,11 @@ const SETUP_CREDITS: Record<string, number> = {
   "price_1T2EgUDoB4i1qeaLQz2d00qE": 30,
 };
 
-const SCALPER_PRICE_ID = "price_1S3JU6DoB4i1qeaLMYVILAMD";
+const SCALPER_PRICE_ID = "price_1S2fSQRmR6ESDQvoNeQ2sFdD";
 const MONTHLY_PLAN_ID = "price_1T2EiJDoB4i1qeaLFXPjBoCY"; 
 
 export async function onRequestPost(context: any) {
-  const { request, env } = context;
+  const { request, env, waitUntil } = context;
   const stripe = new Stripe(env.STRIPE_SECRET_KEY, { 
     // @ts-ignore
     apiVersion: "2024-06-20",
@@ -28,7 +28,7 @@ export async function onRequestPost(context: any) {
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-      await handleCheckoutCompleted(session, stripe, env);
+      waitUntil(handleCheckoutCompleted(session, stripe, env));
     }
     return new Response(JSON.stringify({ received: true }), { status: 200 });
   } catch (err: any) {
@@ -106,6 +106,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe:
     ).bind(targetUser.id, sessionId, priceId, setupsToLog, (session.amount_total || 0) / 100, customerEmail, generatedKey || null).run();
 
     // 3. DISPATCH ONE UNIFIED EMAIL (Using Gold & Black Template)
+   console.log("📧 Dispatching Email...");
+    
+    // ✅ YOU MUST AWAIT THIS CALL
     await sendOrderConfirmation({
       to: customerEmail,
       orderId: sessionId,
@@ -115,6 +118,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, stripe:
       licenseExpiry: expiryDate,
       downloadUrl: secureDownloadLink
     }, env);
+
+    console.log("✅ Fulfillment finished.");
+
+    // ONLY return the response AFTER the email is finished sending
+    return new Response(JSON.stringify({ received: true }), { status: 200 });
 
     console.log(`✅ FULFILLMENT SUCCESSFUL for ${customerEmail}`);
 

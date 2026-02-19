@@ -7,7 +7,7 @@ const PRODUCT_PRICE_MAP: Record<string, string> = {
   
 
   // Robots (One-Time)
-  "scalper-x1": "price_1S3JU6DoB4i1qeaLMYVILAMD", 
+  "scalper-x1": "price_1S2fSQRmR6ESDQvoNeQ2sFdD", 
   "fibonacci-pro": "price_1T2EfODoB4i1qeaLiNO8SKeZ",
   "trend-seeker-ai": "price_1T2EeZDoB4i1qeaLoOlPHUNU",
   "hedge-matrix": "price_1SSyUORmR6ESDQvo7dzPKmPt",

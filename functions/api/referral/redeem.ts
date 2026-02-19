@@ -1,91 +1,94 @@
-// functions/api/referral/redeem.ts (Move from app/api/referral/redeem/route.ts)
-
-import { getDB } from "../../../backend-lib/db-simple";
-
-/**
- * FIXED: 
- * 1. Removed Next.js imports (NextRequest, NextResponse).
- * 2. Added ': any' type to context.
- * 3. Destructured 'request' from context.
- * 4. Changed path to db-simple (Functions are in /root, not /app).
- */
+// functions/api/referral/redeem.ts
 export async function onRequestPost(context: any) {
-  const { request } = context;
+  const { request, env } = context;
 
   try {
     const body = await request.json();
+    // FIX: The frontend sends { userId, code } not { userId, referralCode }
     const { userId, code } = body;
     
+    console.log("🎁 Redeem request:", { userId, code });
+
     if (!userId || !code) {
-      return Response.json(
-        { success: false, error: "Missing userId or code" },
-        { status: 400 }
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing userId or code" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    const db = getDB();
-    if (!db) {
-      return Response.json(
-        { success: false, error: "Database not available" },
-        { status: 500 }
+    // Check if user is trying to use their own code
+    const user = await env.DB.prepare(
+      "SELECT referral_code FROM users WHERE id = ?"
+    ).bind(userId).first();
+
+    if (user && user.referral_code === code) {
+      return new Response(
+        JSON.stringify({ success: false, error: "You cannot use your own referral code" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Check if referral code exists and is valid
-    // Note: Bind current time to check expiration
-    const referral: any = await db.prepare(
-      `SELECT * FROM referral_codes 
-       WHERE code = ? AND is_active = 1 
-       AND (expires_at IS NULL OR expires_at > ?)`
-    ).bind(code, new Date().toISOString()).first();
+    // Find the referrer
+    const referrer = await env.DB.prepare(
+      "SELECT id FROM users WHERE referral_code = ?"
+    ).bind(code).first();
 
-    if (!referral) {
-      return Response.json(
-        { success: false, error: "Invalid or expired referral code" },
-        { status: 400 }
+    if (!referrer) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid referral code" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Check if user already redeemed this code
-    const existingRedemption = await db.prepare(
-      `SELECT id FROM referral_redemptions 
-       WHERE user_id = ? AND referral_code = ?`
-    ).bind(userId, code).first();
+    // Check if this referral was already used
+    const existing = await env.DB.prepare(
+      "SELECT id FROM referrals WHERE referred_id = ?"
+    ).bind(userId).first();
 
-    if (existingRedemption) {
-      return Response.json(
-        { success: false, error: "You have already redeemed this code" },
-        { status: 400 }
+    if (existing) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Referral already used" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Record redemption
-    const redemptionId = crypto.randomUUID();
-    await db.prepare(
-      `INSERT INTO referral_redemptions (
-        id, user_id, referral_code, redeemed_at
-      ) VALUES (?, ?, ?, ?)`
-    ).bind(redemptionId, userId, code, new Date().toISOString()).run();
+    const now = new Date().toISOString().replace('T', ' ').replace('Z', '');
 
-    // Give user setup credits (e.g., 5 extra setups)
-    await db.prepare(
-      `UPDATE users 
-       SET setup_count = setup_count + 5,
-           updated_at = ?
-       WHERE id = ?`
-    ).bind(new Date().toISOString(), userId).run();
+    // Create referral record
+    await env.DB.prepare(
+      `INSERT INTO referrals (referrer_id, referred_id, status, created_at)
+       VALUES (?, ?, 'completed', ?)`
+    ).bind(referrer.id, userId, now).run();
 
-    return Response.json({
-      success: true,
-      message: "Referral code redeemed successfully! You received 5 setup credits.",
-      creditsAdded: 5
-    });
-    
+    // Give referrer +5 setups
+    await env.DB.prepare(
+      "UPDATE users SET setup_count = setup_count + 5, updated_at = ? WHERE id = ?"
+    ).bind(now, referrer.id).run();
+
+    // Give user +5 setups
+    await env.DB.prepare(
+      "UPDATE users SET setup_count = setup_count + 5, updated_at = ? WHERE id = ?"
+    ).bind(now, userId).run();
+
+    // Get updated setup count
+    const updatedUser = await env.DB.prepare(
+      "SELECT setup_count FROM users WHERE id = ?"
+    ).bind(userId).first();
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: "Referral code redeemed successfully! You received 5 setup credits.",
+        newSetupCount: updatedUser.setup_count
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+
   } catch (error: any) {
-    console.error("Referral redemption error:", error);
-    return Response.json(
-      { success: false, error: "Failed to redeem referral code" },
-      { status: 500 }
+    console.error("💥 Referral redemption error:", error);
+    return new Response(
+      JSON.stringify({ success: false, error: "Failed to redeem referral code" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }

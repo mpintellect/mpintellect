@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation"; // Add this
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,18 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [referralCode, setReferralCode] = useState<string | null>(null); // Add this
+
+  const searchParams = useSearchParams(); // Add this
+
+  // Capture referral code from URL
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref) {
+      setReferralCode(ref);
+      console.log("🎁 Referral code detected:", ref);
+    }
+  }, [searchParams]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,19 +42,25 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      // Include referral code in the request if present
+      const requestBody: any = {
+        email,
+        password,
+        displayName: email.split("@")[0]
+      };
+      
+      if (referralCode) {
+        requestBody.referralCode = referralCode;
+      }
+
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password,
-          displayName: email.split("@")[0]
-        })
+        body: JSON.stringify(requestBody)
       });
 
       const data = await response.json();
 
-      // ⭐ FIX: Reliable validation instead of fragile data.success
       if (response.ok && data.token && data.user) {
         localStorage.setItem("cf_token", data.token);
         localStorage.setItem("cf_user", JSON.stringify(data.user));
@@ -57,7 +76,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // 🔥 Error mapping
+      // Error mapping
       if (data.error?.includes("already exists")) {
         setError("Email already in use. Please login instead.");
       } else {
@@ -84,6 +103,16 @@ export default function RegisterPage() {
             <h1 className="register-title">Create Account</h1>
             <p className="register-subtitle">Get started with AI-powered trading insights</p>
           </div>
+
+          {/* Show referral banner if code is present */}
+          {referralCode && (
+            <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <p className="text-yellow-400 text-sm text-center">
+                🎁 Referral code <span className="font-bold">{referralCode}</span> applied! 
+                You'll get +5 free setups when you register!
+              </p>
+            </div>
+          )}
 
           <form onSubmit={handleRegister} className="register-form">
             <div className="input-group">

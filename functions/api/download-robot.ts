@@ -35,10 +35,11 @@ export async function onRequestGet(context: any) {
 
     console.log("Purchase found:", purchase);
 
-    // 2. Security Check
-    const SCALPER_PRICE_ID = "price_1S2fSQRmR6ESDQvoNeQ2sFdD";
+    // 2. Security Check - FIXED: Use the slug "scalper-x1" instead of Stripe price ID
+    const SCALPER_SLUG = "scalper-x1";
     
     if (!purchase) {
+      console.log("❌ No purchase found for session:", sessionId);
       return new Response(JSON.stringify({ error: "Purchase not found" }), { 
         status: 401,
         headers: { 'Content-Type': 'application/json' }
@@ -46,20 +47,23 @@ export async function onRequestGet(context: any) {
     }
     
     if (purchase.status !== 'completed') {
+      console.log("❌ Purchase not completed. Status:", purchase.status);
       return new Response(JSON.stringify({ error: "Payment not completed" }), { 
         status: 401,
         headers: { 'Content-Type': 'application/json' }
       });
     }
     
-    if (purchase.price_id !== SCALPER_PRICE_ID) {
+    // FIXED: Check against the slug saved in DB (price_id column contains "scalper-x1")
+    if (purchase.price_id !== SCALPER_SLUG) {
+      console.error(`❌ Product mismatch: DB has ${purchase.price_id}, expected ${SCALPER_SLUG}`);
       return new Response(JSON.stringify({ error: "Invalid product" }), { 
         status: 401,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    // 3. Update user flag
+    // 3. Update user's has_scalper_x1 flag (just to be safe)
     if (purchase.user_id) {
       await env.DB.prepare(
         "UPDATE users SET has_scalper_x1 = 1 WHERE id = ? OR email = ?"

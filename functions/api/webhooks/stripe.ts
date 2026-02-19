@@ -36,24 +36,26 @@ export async function onRequestPost(context: any) {
     console.log("🔍 Event ID:", event.id);
     console.log("🔍 Event created:", new Date(event.created * 1000).toISOString());
 
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object as any;
-      console.log("💰 Checkout completed - Full session data:", JSON.stringify({
-        id: session.id,
-        email: session.customer_email || session.customer_details?.email,
-        metadata: session.metadata,
-        amount: session.amount_total,
-        payment_status: session.payment_status,
-        status: session.status,
-        customer_details: session.customer_details
-      }, null, 2));
-      
-
-    
-      console.log("⏱️ Fulfillment scheduled");
-    } else {
-      console.log("⚠️ Ignoring non-checkout event:", event.type);
-    }
+  if (event.type === "checkout.session.completed") {
+  const session = event.data.object as any;
+  console.log("💰 Checkout completed - Full session data:", JSON.stringify({
+    id: session.id,
+    email: session.customer_email || session.customer_details?.email,
+    metadata: session.metadata,
+    amount: session.amount_total,
+    payment_status: session.payment_status,
+    status: session.status,
+    customer_details: session.customer_details
+  }, null, 2));
+  
+  // ✅ FIX: Actually call the fulfillment function
+  console.log("⏱️ Calling handleCheckoutCompleted...");
+  await handleCheckoutCompleted(session, env);
+  console.log("✅ handleCheckoutCompleted finished");
+  
+} else {
+  console.log("⚠️ Ignoring non-checkout event:", event.type);
+}
     
     console.log("✅ Returning 200 response to Stripe");
     return new Response(JSON.stringify({ received: true }), { status: 200 });
@@ -173,7 +175,7 @@ async function handleCheckoutCompleted(session: any, env: any) {
 
     // 5. AUDIT LOG
     console.log("📡 Step 3: Creating audit log...");
-    const nowTs = Math.floor(Date.now() / 1000);
+    const nowTs = new Date().toISOString().replace('T', ' ').substring(0, 19);;
     console.log(`📡 Inserting into stripe_purchases:`, {
       userId,
       sessionId,

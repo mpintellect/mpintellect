@@ -104,8 +104,9 @@ CREATE TABLE stripe_purchases (
   currency TEXT DEFAULT 'EUR',
   customer_email TEXT NOT NULL,
   status TEXT DEFAULT 'completed',
-  created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL, license_key TEXT,
+  created_at TEXT NOT NULL,  -- Changed to TEXT
+  updated_at TEXT NOT NULL,
+  license_key TEXT,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 )
 

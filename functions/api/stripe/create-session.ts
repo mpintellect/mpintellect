@@ -3,19 +3,19 @@ import Stripe from "stripe";
 // MASTER PRICE MAPPING (Must match product IDs exactly)
 const PRODUCT_PRICE_MAP: Record<string, string> = {
   // Tools (Subscriptions)
-  "ai-assistant-monthly": "price_1S2Zd3RmR6ESDQvoermVMV5l",
+  "ai-assistant-monthly": "price_1T2EiJDoB4i1qeaLFXPjBoCY",
   
 
   // Robots (One-Time)
-  "scalper-x1": "price_1S2fSQRmR6ESDQvoNeQ2sFdD", 
+  "scalper-x1": "price_1T2EdfDoB4i1qeaLM647it0F", 
   "fibonacci-pro": "price_1T2EfODoB4i1qeaLiNO8SKeZ",
   "trend-seeker-ai": "price_1T2EeZDoB4i1qeaLoOlPHUNU",
-  "hedge-matrix": "price_1SSyUORmR6ESDQvo7dzPKmPt",
+  "hedge-matrix": "price_1T2EgUDoB4i1qeaLQz2d00qE",
 
   // Legacy Setup Bundles
   "10": "price_1T2EeZDoB4i1qeaLoOlPHUNU",
   "20": "price_1T2EfODoB4i1qeaLiNO8SKeZ",
-  "30": "price_1SSyUORmR6ESDQvo7dzPKmPt",
+  "30": "price_1T2EgUDoB4i1qeaLQz2d00qE",
 };
 
 export async function onRequestPost(context: any) {

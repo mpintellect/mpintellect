@@ -7,7 +7,7 @@ import Stripe from "stripe";
 // ===========================================
 
 export async function onRequestPost(context: any) {
-  const { request, env, waitUntil } = context;
+  const { request, env } = context;
   
   // DEBUG: Check environment variables at start
   console.log("🔍 DEBUG - Environment check:");
@@ -48,9 +48,8 @@ export async function onRequestPost(context: any) {
         customer_details: session.customer_details
       }, null, 2));
       
-      // ✅ Use waitUntil to ensure Cloudflare doesn't kill the process
-      console.log("⏱️ Scheduling fulfillment with waitUntil...");
-      waitUntil(handleCheckoutCompleted(session, env));
+
+    
       console.log("⏱️ Fulfillment scheduled");
     } else {
       console.log("⚠️ Ignoring non-checkout event:", event.type);

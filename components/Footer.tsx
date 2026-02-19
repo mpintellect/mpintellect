@@ -98,54 +98,54 @@ export default function Footer() {
     </div>
   ), []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  // Basic validation
+  if (!email || !email.includes('@')) {
+    setStatus('error');
+    return;
+  }
+  
+  setStatus('loading');
+  
+  try {
+    const res = await fetch('/api/subscribe', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      },
+      body: JSON.stringify({ 
+        email,
+        timestamp: new Date().toISOString(), // ✅ Changed from Date.now() to ISO string
+        source: 'footer'
+      }),
+    });
     
-    // Basic validation
-    if (!email || !email.includes('@')) {
-      setStatus('error');
-      return;
-    }
+    const data = await res.json();
     
-    setStatus('loading');
-    
-    try {
-      const res = await fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache' // Prevent API caching
-        },
-        body: JSON.stringify({ 
-          email,
-          timestamp: Date.now(),
-          source: 'footer'
-        }),
-      });
+    if (res.ok && data.success) {
+      setStatus('success');
+      setEmail('');
       
-      const data = await res.json();
-      
-      if (res.ok && data.success) {
-        setStatus('success');
-        setEmail('');
-        
-        // Reset success message after 3 seconds
-        setTimeout(() => {
-          setStatus('idle');
-        }, 3000);
-      } else {
-        throw new Error(data.error || 'Subscription failed');
-      }
-    } catch (error) {
-      console.error('Subscription error:', error);
-      setStatus('error');
-      
-      // Reset error message after 3 seconds
+      // Reset success message after 3 seconds
       setTimeout(() => {
         setStatus('idle');
       }, 3000);
+    } else {
+      throw new Error(data.error || 'Subscription failed');
     }
-  };
+  } catch (error) {
+    console.error('Subscription error:', error);
+    setStatus('error');
+    
+    // Reset error message after 3 seconds
+    setTimeout(() => {
+      setStatus('idle');
+    }, 3000);
+  }
+};
 
   return (
     <>

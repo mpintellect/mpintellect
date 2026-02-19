@@ -4,7 +4,7 @@ const path = require('path');
 
 async function generateIcons() {
   const sizes = [180, 192, 512];
-  const inputPath = path.join(__dirname, '../public/logos/mzlogo.webp');
+  const inputPath = path.join(__dirname, '..//logos/mzlogo.webp');
   const outputDir = path.join(__dirname, '../public/logos');
   
   try {

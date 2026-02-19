@@ -3,16 +3,16 @@ const CACHE_NAME = 'mzprimer-v1';
 const LOGO_CACHE_NAME = 'mzprimer-logos-v1';
 
 const LOGO_URLS = [
-  'public/logos/mzlogo.webp',
-  'public/logos/icon-192.png',
-  'public/logos/icon-512.png',
-  'public/logos/icon-180.png',
-  'public/logos/stripe.svg',
-  'public/logos/visa.svg',
-  'public/logos/mastercard.svg',
-  'public/logos/Applepay.svg',
-  'public/logos/google.svg',
-  'public/logos/pci.svg'
+  '/logos/mzlogo.webp',
+  '/logos/icon-192.png',
+  '/logos/icon-512.png',
+  '/logos/icon-180.png',
+  '/logos/stripe.svg',
+  '/logos/visa.svg',
+  '/logos/mastercard.svg',
+  '/logos/Applepay.svg',
+  '/logos/google.svg',
+  '/logos/pci.svg'
 ];
 
 // 1. Install - Cache Assets

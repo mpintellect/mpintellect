@@ -1,20 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation"; // Add this
+import { useSearchParams } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default function RegisterPage() {
+// Create a separate component that uses useSearchParams
+function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [referralCode, setReferralCode] = useState<string | null>(null); // Add this
+  const [referralCode, setReferralCode] = useState<string | null>(null);
 
-  const searchParams = useSearchParams(); // Add this
+  const searchParams = useSearchParams();
 
   // Capture referral code from URL
   useEffect(() => {
@@ -42,7 +43,6 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Include referral code in the request if present
       const requestBody: any = {
         email,
         password,
@@ -66,17 +66,13 @@ export default function RegisterPage() {
         localStorage.setItem("cf_user", JSON.stringify(data.user));
         localStorage.setItem("cf_session_id", data.sessionId || data.token);
 
-        // Clear trials on successful registration
         localStorage.removeItem("MZP_TRIAL_COUNT");
 
         console.log("✅ Registration successful — redirecting...");
-
-        // Hard redirect to dashboard
         window.location.href = "/client/dashboard?showPlans=true&status=new_user";
         return;
       }
 
-      // Error mapping
       if (data.error?.includes("already exists")) {
         setError("Email already in use. Please login instead.");
       } else {
@@ -92,6 +88,71 @@ export default function RegisterPage() {
   };
 
   return (
+    <>
+      {/* Show referral banner if code is present */}
+      {referralCode && (
+        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+          <p className="text-yellow-400 text-sm text-center">
+            🎁 Referral code <span className="font-bold">{referralCode}</span> applied! 
+            You'll get +5 free setups when you register!
+          </p>
+        </div>
+      )}
+
+      <form onSubmit={handleRegister} className="register-form">
+        <div className="input-group">
+          <input
+            type="email"
+            placeholder="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="register-input"
+            disabled={loading}
+          />
+        </div>
+
+        <div className="input-group">
+          <input
+            type="password"
+            placeholder="Password (min 6 characters)"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="register-input"
+            disabled={loading}
+          />
+        </div>
+
+        <div className="input-group">
+          <input
+            type="password"
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            className="register-input"
+            disabled={loading}
+          />
+        </div>
+
+        {error && (
+          <div className="error-box">
+            <p className="error-text">{error}</p>
+          </div>
+        )}
+
+        <button type="submit" disabled={loading} className="register-btn">
+          {loading ? "Creating Account..." : "Register"}
+        </button>
+      </form>
+    </>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function RegisterPage() {
+  return (
     <div className="register-page">
       <div className="register-glow glow-top-left"></div>
       <div className="register-glow glow-bottom-right"></div>
@@ -104,63 +165,10 @@ export default function RegisterPage() {
             <p className="register-subtitle">Get started with AI-powered trading insights</p>
           </div>
 
-          {/* Show referral banner if code is present */}
-          {referralCode && (
-            <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-              <p className="text-yellow-400 text-sm text-center">
-                🎁 Referral code <span className="font-bold">{referralCode}</span> applied! 
-                You'll get +5 free setups when you register!
-              </p>
-            </div>
-          )}
-
-          <form onSubmit={handleRegister} className="register-form">
-            <div className="input-group">
-              <input
-                type="email"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="register-input"
-                disabled={loading}
-              />
-            </div>
-
-            <div className="input-group">
-              <input
-                type="password"
-                placeholder="Password (min 6 characters)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="register-input"
-                disabled={loading}
-              />
-            </div>
-
-            <div className="input-group">
-              <input
-                type="password"
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="register-input"
-                disabled={loading}
-              />
-            </div>
-
-            {error && (
-              <div className="error-box">
-                <p className="error-text">{error}</p>
-              </div>
-            )}
-
-            <button type="submit" disabled={loading} className="register-btn">
-              {loading ? "Creating Account..." : "Register"}
-            </button>
-          </form>
+          {/* Wrap the form that uses useSearchParams in Suspense */}
+          <Suspense fallback={<div className="text-center py-8">Loading...</div>}>
+            <RegisterForm />
+          </Suspense>
 
           <div className="register-footer">
             <p className="footer-text">

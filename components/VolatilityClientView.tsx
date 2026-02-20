@@ -1,21 +1,98 @@
-// components/VolatilityClientView.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
 import { BarChart3, Activity, ShieldAlert, ArrowRight, TrendingUp, Bot } from 'lucide-react';
 import NotificationButton from '@/components/NotificationButton';
 import SymbolNavigation from '@/components/SymbolNavigation';
+import { SymbolData } from '@/app/lib/fetchData';
 
 interface VolatilityClientViewProps {
-  data: any;
+  data: SymbolData | null;
   symbol: string;
+  loading: boolean;
+  error: string | null;
+  onRefresh: () => Promise<void>;  // Callback to parent - NO FETCHING HERE
 }
 
-export default function VolatilityClientView({ data, symbol }: VolatilityClientViewProps) {
-  if (!data || !data.volatility) {
-    return <div className="min-h-screen bg-black flex items-center justify-center text-white">Loading...</div>;
+export default function VolatilityClientView({ 
+  data, 
+  symbol, 
+  loading, 
+  error, 
+  onRefresh 
+}: VolatilityClientViewProps) {
+  
+  const [lastUpdated, setLastUpdated] = useState<string>(new Date().toISOString());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Handle refresh - just calls parent callback
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await onRefresh();  // Parent does the actual fetch
+    setLastUpdated(new Date().toISOString());
+    setIsRefreshing(false);
+  };
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleRefresh();
+    }, 300000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, []); // Empty dependency - doesn't need symbol
+
+  // ---- LOADING STATE ----
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-purple-500 border-r-transparent"></div>
+          <p className="mt-4 text-zinc-400">Loading {symbol.toUpperCase()} volatility analysis...</p>
+        </div>
+      </div>
+    );
   }
 
+  // ---- ERROR STATE ----
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="text-red-400 text-4xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold mb-2">Volatility Data Unavailable</h1>
+          <p className="text-zinc-400 mb-4">{error}</p>
+          <button
+            onClick={handleRefresh}
+            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-md"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- NO DATA STATE ----
+  if (!data || !data.volatility) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-zinc-400">No volatility data available for {symbol.toUpperCase()}</p>
+          <button
+            onClick={handleRefresh}
+            className="mt-4 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-md"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- SUCCESS STATE (with data) ----
   const v = data.volatility;
+  const resolvedSymbol = data.symbol || symbol;
   
   // Dynamic Styling Logic
   const isHighRisk = v.volatility_score > 0.6;
@@ -33,7 +110,7 @@ export default function VolatilityClientView({ data, symbol }: VolatilityClientV
   
   const text = {
     context: `
-      The market state for ${data.symbol} is currently classified as "${v.volatility_regime?.toUpperCase() || 'NEUTRAL'}". 
+      The market state for ${resolvedSymbol} is currently classified as "${v.volatility_regime?.toUpperCase() || 'NEUTRAL'}". 
       The standardized Volatility Score is reading ${v.volatility_score?.toFixed(2) || '0.00'} (Scale 0-1). 
       ${(v.volatility_score || 0) < 0.3 
         ? "This low reading indicates price compression. Often referred to as the 'Calm before the Storm', this state frequently precedes explosive breakouts." 
@@ -41,7 +118,7 @@ export default function VolatilityClientView({ data, symbol }: VolatilityClientV
     `,
     stats: `
       The Daily Average True Range (ATR) represents the expected move over a 24-hour period. 
-      Currently, ${data.symbol} moves approximately ${fmt(v.current_atr || 0)} points per day. 
+      Currently, ${resolvedSymbol} moves approximately ${fmt(v.current_atr || 0)} points per day. 
       Compared to its historical baseline of ${fmt(v.avg_range || 0)}, volatility is ${(v.current_atr || 0) > (v.avg_range || 0) ? "expanding" : "contracting"}.
     `,
     strategy: `
@@ -61,12 +138,21 @@ export default function VolatilityClientView({ data, symbol }: VolatilityClientV
         </div>
         
         <h1 className="text-4xl md:text-6xl font-black mb-4 uppercase tracking-tighter text-white">
-           {data.symbol} <span className={accentColor}>{v.volatility_level || 'MEDIUM'} Vol</span>
+           {resolvedSymbol} <span className={accentColor}>{v.volatility_level || 'MEDIUM'} Vol</span>
         </h1>
         
-        <p className="text-zinc-400 text-lg max-w-xl mx-auto leading-relaxed">
-           Risk Management Profile & Range Expansion Analysis
-        </p>
+        <div className="flex items-center justify-center gap-4 mt-4">
+          <p className="text-zinc-400 text-sm">
+            Updated: {new Date(lastUpdated).toLocaleTimeString()}
+          </p>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="px-3 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 rounded-md disabled:opacity-50"
+          >
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 grid md:grid-cols-12 gap-8">
@@ -185,7 +271,7 @@ export default function VolatilityClientView({ data, symbol }: VolatilityClientV
       </section>
 
       {/* --- FOOTER --- */}
-      <SymbolNavigation symbol={symbol} />
+      <SymbolNavigation symbol={resolvedSymbol} />
 
     </div>
   );

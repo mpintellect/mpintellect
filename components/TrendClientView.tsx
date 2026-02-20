@@ -1,28 +1,98 @@
-// components/TrendClientView.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
 import { TrendingUp, Activity, Layers, ArrowRight, Gauge, Zap, Bot } from 'lucide-react';
 import NotificationButton from '@/components/NotificationButton';
 import SymbolNavigation from '@/components/SymbolNavigation';
+import { SymbolData } from '@/app/lib/fetchData';
 
 interface TrendClientViewProps {
-  data: any;
+  data: SymbolData | null;
   symbol: string;
+  loading: boolean;
+  error: string | null;
+  onRefresh: () => Promise<void>;  // Callback to parent - NO FETCHING HERE
 }
 
-export default function TrendClientView({ data, symbol }: TrendClientViewProps) {
-  if (!data || !data.trend) {
+export default function TrendClientView({ 
+  data, 
+  symbol, 
+  loading, 
+  error, 
+  onRefresh 
+}: TrendClientViewProps) {
+  
+  const [lastUpdated, setLastUpdated] = useState<string>(new Date().toISOString());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Handle refresh - just calls parent callback
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await onRefresh();  // Parent does the actual fetch
+    setLastUpdated(new Date().toISOString());
+    setIsRefreshing(false);
+  };
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleRefresh();
+    }, 300000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, []); // Empty dependency - doesn't need symbol
+
+  // ---- LOADING STATE ----
+  if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
         <div className="text-center">
-          <div className="w-12 h-12 border-t-2 border-yellow-500 border-solid rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="opacity-50 text-sm">Syncing live data for {symbol}...</p>
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-yellow-500 border-r-transparent"></div>
+          <p className="mt-4 text-zinc-400">Loading {symbol.toUpperCase()} trend analysis...</p>
         </div>
       </div>
     );
   }
 
+  // ---- ERROR STATE ----
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="text-red-400 text-4xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold mb-2">Trend Data Unavailable</h1>
+          <p className="text-zinc-400 mb-4">{error}</p>
+          <button
+            onClick={handleRefresh}
+            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-md"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- NO DATA STATE ----
+  if (!data || !data.trend) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-zinc-400">No trend data available for {symbol.toUpperCase()}</p>
+          <button
+            onClick={handleRefresh}
+            className="mt-4 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-md"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- SUCCESS STATE (with data) ----
   const t = data.trend;
+  const resolvedSymbol = data.symbol || symbol;
   
   const isBullish = t.trend?.toLowerCase() === 'bullish';
   
@@ -35,12 +105,13 @@ export default function TrendClientView({ data, symbol }: TrendClientViewProps) 
     ? "bg-gradient-to-br from-emerald-900/20 to-transparent" 
     : "bg-gradient-to-br from-rose-900/20 to-transparent";
 
-  // Generate report text
+  // Format function
   const fmt = (num: number) => num?.toLocaleString('en-US', { maximumFractionDigits: 10 }) || '0';
   
+  // Generate report text
   const text = {
     context: `
-      The overarching market structure for ${data.symbol} is currently ${t.trend || 'NEUTRAL'}. 
+      The overarching market structure for ${resolvedSymbol} is currently ${t.trend || 'NEUTRAL'}. 
       Our institutional trend algorithm calculates a Strength Score of ${t.trend_strength_score || 0}/100, 
       classifying this movement as "${t.trend_strength || 'NEUTRAL'}".
       ${(t.trend_strength_score || 0) > 75 
@@ -67,12 +138,21 @@ export default function TrendClientView({ data, symbol }: TrendClientViewProps) 
         </div>
         
         <h1 className="text-4xl md:text-6xl font-black mb-4 uppercase tracking-tighter text-white">
-           {data.symbol} <span className={accentColor}>{t.trend || 'NEUTRAL'}</span>
+           {resolvedSymbol} <span className={accentColor}>{t.trend || 'NEUTRAL'}</span>
         </h1>
         
-        <p className="text-zinc-400 text-lg max-w-xl mx-auto leading-relaxed">
-           Institutional Directional Bias & Structure Analysis
-        </p>
+        <div className="flex items-center justify-center gap-4 mt-4">
+          <p className="text-zinc-400 text-sm">
+            Updated: {new Date(lastUpdated).toLocaleTimeString()}
+          </p>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="px-3 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 rounded-md disabled:opacity-50"
+          >
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 grid md:grid-cols-12 gap-8">
@@ -159,7 +239,7 @@ export default function TrendClientView({ data, symbol }: TrendClientViewProps) 
                 <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-500 mb-4">
                     <Zap size={20} />
                 </div>
-                <h4 className="text-white font-bold text-lg mb-2">Track {data.symbol}</h4>
+                <h4 className="text-white font-bold text-lg mb-2">Track {resolvedSymbol}</h4>
                 <p className="text-xs text-zinc-400 mb-6 leading-relaxed px-2">
                     Our AI monitors trend strength shifts 24/7. Get instant alerts when market structure flips.
                 </p>
@@ -197,7 +277,8 @@ export default function TrendClientView({ data, symbol }: TrendClientViewProps) 
       </section>
 
       {/* --- FOOTER --- */}
-      <SymbolNavigation symbol={symbol} />
+      <SymbolNavigation symbol={resolvedSymbol} />
+
     </div>
   );
 }

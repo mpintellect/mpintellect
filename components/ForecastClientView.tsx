@@ -1,6 +1,6 @@
-// components/ForecastClientView.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
 import { BrainCircuit, Radar, ShieldCheck, ArrowRight, TrendingUp, Bot } from 'lucide-react';
 import NotificationButton from '@/components/NotificationButton';
 import SymbolNavigation from '@/components/SymbolNavigation';
@@ -8,9 +8,27 @@ import SymbolNavigation from '@/components/SymbolNavigation';
 interface ForecastClientViewProps {
   data: any;
   symbol: string;
+  onRefresh: () => Promise<void>;
 }
 
-export default function ForecastClientView({ data, symbol }: ForecastClientViewProps) {
+export default function ForecastClientView({ data, symbol, onRefresh }: ForecastClientViewProps) {
+  const [lastUpdated, setLastUpdated] = useState<string>(new Date().toISOString());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await onRefresh();
+    setLastUpdated(new Date().toISOString());
+    setIsRefreshing(false);
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleRefresh();
+    }, 300000);
+    return () => clearInterval(interval);
+  }, []);
+
   if (!data) {
     return (
       <div className="min-h-screen bg-black flex flex-col justify-center items-center text-zinc-500 font-mono gap-4">
@@ -78,6 +96,19 @@ export default function ForecastClientView({ data, symbol }: ForecastClientViewP
         <p className="text-zinc-400 text-sm md:text-base max-w-lg mx-auto opacity-70">
           Price Prediction for {formattedDate}
         </p>
+
+        <div className="flex items-center justify-center gap-4 mt-4">
+          <p className="text-zinc-400 text-sm">
+            Updated: {new Date(lastUpdated).toLocaleTimeString()}
+          </p>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="px-3 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 rounded-md disabled:opacity-50"
+          >
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 grid md:grid-cols-12 gap-8">

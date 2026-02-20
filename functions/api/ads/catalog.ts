@@ -7,7 +7,7 @@ export async function onRequestGet(context: any) {
   
   // 1. Identify which platform is asking for the catalog
   const platform = url.searchParams.get("platform") || "facebook"; 
-  const version = Math.floor(Date.now() / 3600000); // Updates every hour
+  const version = Math.floor(Date.now() / (12 * 3600000)); // Updates every hour
 
   // 2. Define columns based on platform
   const googleColumns = [

@@ -1,4 +1,3 @@
-// app/analysis/[symbol]/AnalysisFetcher.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -12,31 +11,32 @@ export default function AnalysisFetcher({ symbol }: { symbol: string }) {
   // Create a lowercase version for display
   const displaySymbol = symbol.toLowerCase();
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // ✅ Normalize to UPPERCASE before hitting the API (API requirement)
-        const apiSymbol = symbol.toUpperCase();
-        const res = await fetch(`/api/symbol-data?symbol=${apiSymbol}`);
-        
-        if (!res.ok) {
-          throw new Error(`Symbol ${displaySymbol} not found in database.`); // Use lowercase in error message
-        }
-        
-        const json = await res.json();
-        setData(json);
-      } catch (e: any) {
-        console.error("Failed to load analysis data", e);
-        setError(e.message || 'Failed to load data');
-      } finally {
-        setLoading(false);
+  const fetchSymbolData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // ✅ Normalize to UPPERCASE before hitting the API (API requirement)
+      const apiSymbol = symbol.toUpperCase();
+      const res = await fetch(`/api/symbol-data?symbol=${apiSymbol}`);
+      
+      if (!res.ok) {
+        throw new Error(`Symbol ${displaySymbol} not found in database.`); // Use lowercase in error message
       }
+      
+      const json = await res.json();
+      setData(json);
+    } catch (e: any) {
+      console.error("Failed to load analysis data", e);
+      setError(e.message || 'Failed to load data');
+    } finally {
+      setLoading(false);
     }
-    loadData();
-  }, [symbol, displaySymbol]); // Add displaySymbol to dependencies if needed
+  };
+
+  useEffect(() => {
+    fetchSymbolData();
+  }, [symbol]);
 
   if (loading) {
     return (
@@ -57,7 +57,7 @@ export default function AnalysisFetcher({ symbol }: { symbol: string }) {
           <h2 className="text-xl text-white mb-2">Error Loading Data</h2>
           <p className="text-gray-400 mb-4">{error}</p>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={fetchSymbolData}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
           >
             Retry
@@ -68,5 +68,5 @@ export default function AnalysisFetcher({ symbol }: { symbol: string }) {
   }
 
   // Pass the lowercase symbol to AnalysisClientView
-  return <AnalysisClientView data={data} symbol={displaySymbol} />;
+  return <AnalysisClientView data={data} symbol={displaySymbol} onRefresh={fetchSymbolData} />;
 }

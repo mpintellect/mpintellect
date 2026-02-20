@@ -1,15 +1,33 @@
-// components/IndicatorClientView.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Activity, Zap, TrendingUp, AlertTriangle, CheckCircle, ArrowRight, Gauge, Bot } from 'lucide-react';
 import SymbolNavigation from '@/components/SymbolNavigation';
 
 interface IndicatorClientViewProps {
   data: any;
   symbol: string;
+  onRefresh: () => Promise<void>;
 }
 
-export default function IndicatorClientView({ data, symbol }: IndicatorClientViewProps) {
+export default function IndicatorClientView({ data, symbol, onRefresh }: IndicatorClientViewProps) {
+  const [lastUpdated, setLastUpdated] = useState<string>(new Date().toISOString());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await onRefresh();
+    setLastUpdated(new Date().toISOString());
+    setIsRefreshing(false);
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleRefresh();
+    }, 300000);
+    return () => clearInterval(interval);
+  }, []);
+
   const text = generateIndicatorReport(data);
   const rsi = text.rsiValue;
 
@@ -37,6 +55,19 @@ export default function IndicatorClientView({ data, symbol }: IndicatorClientVie
         <p className="text-zinc-400 text-lg">
           Institutional momentum analysis measuring overbought/oversold conditions using RSI(14) logic.
         </p>
+
+        <div className="flex items-center justify-center gap-4 mt-4">
+          <p className="text-zinc-400 text-sm">
+            Updated: {new Date(lastUpdated).toLocaleTimeString()}
+          </p>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="px-3 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 rounded-md disabled:opacity-50"
+          >
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       {/* --- THE INDICATOR DASHBOARD --- */}

@@ -1,6 +1,6 @@
-// components/CalculatorClientView.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
 import { ShieldAlert, ArrowDown, ArrowUp, Calculator, ArrowRight, Zap, Bot } from 'lucide-react';
 import SymbolNavigation from '@/components/SymbolNavigation';
 import { formatPriceForSymbol } from '../app/lib/formatting';
@@ -8,9 +8,27 @@ import { formatPriceForSymbol } from '../app/lib/formatting';
 interface CalculatorClientViewProps {
   data: any;
   symbol: string;
+  onRefresh: () => Promise<void>;
 }
 
-export default function CalculatorClientView({ data, symbol }: CalculatorClientViewProps) {
+export default function CalculatorClientView({ data, symbol, onRefresh }: CalculatorClientViewProps) {
+  const [lastUpdated, setLastUpdated] = useState<string>(new Date().toISOString());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await onRefresh();
+    setLastUpdated(new Date().toISOString());
+    setIsRefreshing(false);
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleRefresh();
+    }, 300000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Extract data with safety checks
   const v = data?.volatility;
   const currentPrice = data?.trend?.current_price || 0;
@@ -33,6 +51,19 @@ export default function CalculatorClientView({ data, symbol }: CalculatorClientV
         <p className="text-zinc-400 max-w-xl mx-auto text-lg">
             Calculated live using institutional volatility data. Current Market Volatility (ATR): <span className="text-white font-mono font-bold">{atrString}</span>
         </p>
+
+        <div className="flex items-center justify-center gap-4 mt-4">
+          <p className="text-zinc-400 text-sm">
+            Updated: {new Date(lastUpdated).toLocaleTimeString()}
+          </p>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="px-3 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 rounded-md disabled:opacity-50"
+          >
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       <div className="max-w-5xl mx-auto">

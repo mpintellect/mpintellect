@@ -8,37 +8,37 @@ export default function TradeFetcher({ symbol }: { symbol: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const response = await fetch(`/api/data-proxy?symbol=${symbol}`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        if (result.error) {
-          throw new Error(result.error);
-        }
-        
-        setData(result);
-      } catch (err) {
-        console.error(`Error loading ${symbol} trade data:`, err);
-        setError(err instanceof Error ? err.message : 'Failed to load data');
-      } finally {
-        setLoading(false);
+  const fetchSymbolData = async () => {
+    try {
+      setLoading(true); 
+      setError(null);
+      
+      const cleanSymbol = symbol.replace(/[-_/]/g, '').toUpperCase();
+      const response = await fetch(`/api/symbol-data?symbol=${cleanSymbol}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status}`);
       }
-    };
+      
+      const result = await response.json();
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      setData(result);
+    } catch (err) {
+      console.error(`Error loading ${symbol} trade data:`, err);
+      setError(err instanceof Error ? err.message : 'Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
+  useEffect(() => {
+    fetchSymbolData();
   }, [symbol]);
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -50,7 +50,6 @@ export default function TradeFetcher({ symbol }: { symbol: string }) {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -69,7 +68,6 @@ export default function TradeFetcher({ symbol }: { symbol: string }) {
     );
   }
 
-  // No data state
   if (!data) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -80,6 +78,5 @@ export default function TradeFetcher({ symbol }: { symbol: string }) {
     );
   }
 
-  // Success - render the client view
-  return <TradeClientView data={data} symbol={symbol} />;
+  return <TradeClientView data={data} symbol={symbol} onRefresh={fetchSymbolData} />;
 }

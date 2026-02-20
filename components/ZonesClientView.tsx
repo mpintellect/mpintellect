@@ -1,11 +1,11 @@
-// components/ZonesClientView.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { BoxSelect, Minimize2, Target } from 'lucide-react';
 import NotificationButton from '@/components/NotificationButton';
 import SymbolNavigation from '@/components/SymbolNavigation';
-import { formatPriceForSymbol, getSymbolDecimals } from '../app/lib/formatting';
+import { formatPriceForSymbol } from '../app/lib/formatting';
+import { SymbolData } from '@/app/lib/fetchData';
 
 interface ZoneData {
   support_zone: number;
@@ -28,18 +28,84 @@ interface TrendData {
 }
 
 interface ZonesClientViewProps {
-  data: {
-    zones: ZoneData;
-    trend: TrendData;
-    symbol: string;
-  };
+  data: SymbolData | null;
   symbol: string;
+  loading: boolean;
+  error: string | null;
+  onRefresh: () => Promise<void>;  // Callback to parent - NO FETCHING HERE
 }
 
-export default function ZonesClientView({ data, symbol }: ZonesClientViewProps) {
+export default function ZonesClientView({ 
+  data, 
+  symbol, 
+  loading, 
+  error, 
+  onRefresh 
+}: ZonesClientViewProps) {
+  
   const [lastUpdated, setLastUpdated] = useState<string>(new Date().toISOString());
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+
+  // Handle refresh - just calls parent callback
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await onRefresh();  // Parent does the actual fetch
+    setLastUpdated(new Date().toISOString());
+    setIsRefreshing(false);
+  };
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleRefresh();
+    }, 300000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, []); // Empty dependency - doesn't need symbol
+
+  // ---- LOADING STATE ----
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-orange-500 border-r-transparent"></div>
+          <p className="mt-4 text-zinc-400">Loading {symbol.toUpperCase()} zone data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- ERROR STATE ----
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="text-red-400 text-4xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold mb-2">Data Unavailable</h1>
+          <p className="text-zinc-400 mb-4">{error}</p>
+          <button
+            onClick={handleRefresh}
+            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-md"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- NO DATA STATE ----
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-zinc-400">No data available for {symbol.toUpperCase()}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- SUCCESS STATE (with data) ----
   const z = data.zones;
   const currentPrice = data.trend?.current_price || 0;
   const resolvedSymbol = data.symbol || symbol;
@@ -52,36 +118,11 @@ export default function ZonesClientView({ data, symbol }: ZonesClientViewProps) 
     pricePct = Math.max(0, Math.min(100, pricePct));
   }
 
-  // Format numbers
+  // Format numbers with proper symbol cleaning
   const formatNumber = (num: number) => {
-  return formatPriceForSymbol(symbol, num);
-};
-  // Refresh data
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      const res = await fetch(`/api/data-proxy?symbol=${symbol}`);
-      if (res.ok) {
-        const newData = await res.json();
-        // Update state or trigger parent refresh
-        setLastUpdated(new Date().toISOString());
-        // Note: In real implementation, you'd lift state up or use context
-      }
-    } catch (error) {
-      console.error('Failed to refresh:', error);
-    } finally {
-      setIsRefreshing(false);
-    }
+    const cleanSymbol = resolvedSymbol.replace(/[-_/]/g, '').toUpperCase();
+    return formatPriceForSymbol(cleanSymbol, num);
   };
-
-  // Auto-refresh every 5 minutes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      handleRefresh();
-    }, 300000); // 5 minutes
-
-    return () => clearInterval(interval);
-  }, [symbol]);
 
   return (
     <div className="min-h-screen bg-black text-white pb-24 font-sans selection:bg-orange-500/30">

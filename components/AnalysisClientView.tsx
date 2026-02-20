@@ -1,6 +1,6 @@
-// components/AnalysisClientView.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
 import { 
   Activity, ArrowRight, Gauge, Layers, 
   Cpu, Thermometer, Box, LineChart, Bot,
@@ -14,9 +14,27 @@ import { formatPriceForSymbol } from '../app/lib/formatting';
 interface AnalysisClientViewProps {
   data: any;
   symbol: string;
+  onRefresh: () => Promise<void>;
 }
 
-export default function AnalysisClientView({ data, symbol }: AnalysisClientViewProps) {
+export default function AnalysisClientView({ data, symbol, onRefresh }: AnalysisClientViewProps) {
+  const [lastUpdated, setLastUpdated] = useState<string>(new Date().toISOString());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await onRefresh();
+    setLastUpdated(new Date().toISOString());
+    setIsRefreshing(false);
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleRefresh();
+    }, 300000);
+    return () => clearInterval(interval);
+  }, []);
+
   if (!data || !data.trend) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-black text-gray-200">
@@ -30,6 +48,12 @@ export default function AnalysisClientView({ data, symbol }: AnalysisClientViewP
           </span>
           . Please try another symbol or refresh the page.
         </p>
+        <button
+          onClick={handleRefresh}
+          className="mt-4 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-md"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -61,6 +85,19 @@ export default function AnalysisClientView({ data, symbol }: AnalysisClientViewP
                 <p className="text-zinc-400 text-sm mt-2 max-w-lg">
                     Full Market Structure Deconstruction
                 </p>
+                
+                <div className="flex items-center gap-4 mt-2">
+                  <p className="text-zinc-400 text-xs">
+                    Updated: {new Date(lastUpdated).toLocaleTimeString()}
+                  </p>
+                  <button
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className="px-2 py-0.5 text-[10px] bg-zinc-800 hover:bg-zinc-700 rounded disabled:opacity-50"
+                  >
+                    {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                  </button>
+                </div>
             </div>
             
             <div className="text-right">

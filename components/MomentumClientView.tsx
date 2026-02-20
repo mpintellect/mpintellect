@@ -1,6 +1,6 @@
-// components/MomentumClientView.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Zap, Activity, Waves, ArrowRight, GaugeCircle, Bot } from 'lucide-react';
 import NotificationButton from '@/components/NotificationButton';
 import SymbolNavigation from '@/components/SymbolNavigation';
@@ -8,9 +8,27 @@ import SymbolNavigation from '@/components/SymbolNavigation';
 interface MomentumClientViewProps {
   data: any;
   symbol: string;
+  onRefresh: () => Promise<void>;
 }
 
-export default function MomentumClientView({ data, symbol }: MomentumClientViewProps) {
+export default function MomentumClientView({ data, symbol, onRefresh }: MomentumClientViewProps) {
+  const [lastUpdated, setLastUpdated] = useState<string>(new Date().toISOString());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await onRefresh();
+    setLastUpdated(new Date().toISOString());
+    setIsRefreshing(false);
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleRefresh();
+    }, 300000);
+    return () => clearInterval(interval);
+  }, []);
+
   if (!data || !data.momentum) {
     return <div className="min-h-screen bg-black flex items-center justify-center text-white">Syncing Market Data...</div>;
   }
@@ -47,6 +65,19 @@ export default function MomentumClientView({ data, symbol }: MomentumClientViewP
         <p className="text-zinc-400 text-lg max-w-xl mx-auto">
            Oscillator Health & Buying Velocity Analysis
         </p>
+
+        <div className="flex items-center justify-center gap-4 mt-4">
+          <p className="text-zinc-400 text-sm">
+            Updated: {new Date(lastUpdated).toLocaleTimeString()}
+          </p>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="px-3 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 rounded-md disabled:opacity-50"
+          >
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 grid md:grid-cols-12 gap-8">
@@ -156,6 +187,7 @@ export default function MomentumClientView({ data, symbol }: MomentumClientViewP
 
       {/* --- FOOTER --- */}
       <SymbolNavigation symbol={symbol} />
+
     </div>
   );
 }

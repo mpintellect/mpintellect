@@ -2,84 +2,62 @@
 
 import { useEffect, useState } from 'react';
 import VolatilityClientView from '@/components/VolatilityClientView';
+import { SymbolData } from '@/app/lib/fetchData';
 
 export default function VolatilityFetcher({ symbol }: { symbol: string }) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<SymbolData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const response = await fetch(`/api/data-proxy?symbol=${symbol}`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch: ${response.status}`);
+  // ONE unified fetch function - ONLY place data is fetched
+  const fetchSymbolData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const cleanSymbol = symbol.replace(/[-_/]/g, '').toUpperCase();
+      console.log(`[VolatilityFetcher] Fetching ${cleanSymbol} from /api/symbol-data`);
+      
+      // ✅ CORRECT ENDPOINT - using symbol-data, NOT data-proxy
+      const response = await fetch(`/api/symbol-data?symbol=${cleanSymbol}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error(`Symbol ${cleanSymbol} not found in database`);
         }
-        
-        const result = await response.json();
-        
-        if (result.error) {
-          throw new Error(result.error);
-        }
-        
-        setData(result);
-      } catch (err) {
-        console.error(`Error loading ${symbol} volatility data:`, err);
-        setError(err instanceof Error ? err.message : 'Failed to load data');
-      } finally {
-        setLoading(false);
+        throw new Error(`Failed to fetch: ${response.status}`);
       }
-    };
+      
+      const result = await response.json();
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      setData(result);
+      console.log(`[VolatilityFetcher] Data loaded for ${cleanSymbol}`);
+      
+    } catch (err) {
+      console.error(`[VolatilityFetcher] Error:`, err);
+      setError(err instanceof Error ? err.message : 'Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
+  // Fetch on mount or symbol change
+  useEffect(() => {
+    fetchSymbolData();
   }, [symbol]);
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-purple-500 border-r-transparent"></div>
-          <p className="mt-4 text-zinc-400">Loading {symbol.toUpperCase()} volatility analysis...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="text-red-400 text-4xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold mb-2">Volatility Data Unavailable</h1>
-          <p className="text-zinc-400 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-md"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // No data state
-  if (!data) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-zinc-400">No volatility data available for {symbol.toUpperCase()}</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Success - render the client view
-  return <VolatilityClientView data={data} symbol={symbol} />;
+  // Pass everything to child - child does NO fetching
+  return (
+    <VolatilityClientView 
+      data={data}
+      symbol={symbol}
+      loading={loading}
+      error={error}
+      onRefresh={fetchSymbolData}  // Child can request refresh, but parent fetches
+    />
+  );
 }

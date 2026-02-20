@@ -1,6 +1,6 @@
-// components/TradeClientView.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Crosshair, ShieldAlert, Coins, TrendingUp, AlertTriangle, ArrowRight, Bot } from 'lucide-react';
 import NotificationButton from '@/components/NotificationButton';
 import SymbolNavigation from '@/components/SymbolNavigation';
@@ -9,9 +9,27 @@ import { formatPriceForSymbol } from '../app/lib/formatting';
 interface TradeClientViewProps {
   data: any;
   symbol: string;
+  onRefresh: () => Promise<void>;
 }
 
-export default function TradeClientView({ data, symbol }: TradeClientViewProps) {
+export default function TradeClientView({ data, symbol, onRefresh }: TradeClientViewProps) {
+  const [lastUpdated, setLastUpdated] = useState<string>(new Date().toISOString());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await onRefresh();
+    setLastUpdated(new Date().toISOString());
+    setIsRefreshing(false);
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleRefresh();
+    }, 300000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Safety Check: Are there orders?
   const orderData = data?.pending_orders;
   const activeOrder = orderData?.primary_order || orderData?.pending_orders?.[0];
@@ -51,6 +69,19 @@ export default function TradeClientView({ data, symbol }: TradeClientViewProps) 
         <p className="text-zinc-400 font-mono text-xl max-w-xl mx-auto">
           Entry @ {formatPriceForSymbol(symbol, activeOrder.entry_price)}
         </p>
+
+        <div className="flex items-center justify-center gap-4 mt-4">
+          <p className="text-zinc-400 text-sm">
+            Updated: {new Date(lastUpdated).toLocaleTimeString()}
+          </p>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="px-3 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 rounded-md disabled:opacity-50"
+          >
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       {/* MAIN CONTENT GRID */}
@@ -78,11 +109,11 @@ export default function TradeClientView({ data, symbol }: TradeClientViewProps) 
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-xl bg-black/40 border border-emerald-900/50">
                 <span className="block text-emerald-500 text-xs font-bold mb-1">TAKE PROFIT</span>
-                <span className="block text-xl font-mono text-white">{formatPriceForSymbol(symbol, activeOrder.entry_price)}</span>
+                <span className="block text-xl font-mono text-white">{formatPriceForSymbol(symbol, activeOrder.tp_price)}</span>
               </div>
               <div className="p-4 rounded-xl bg-black/40 border border-rose-900/50">
                 <span className="block text-rose-500 text-xs font-bold mb-1">STOP LOSS</span>
-                <span className="block text-xl font-mono text-white">{formatPriceForSymbol(symbol, activeOrder.entry_price)}</span>
+                <span className="block text-xl font-mono text-white">{formatPriceForSymbol(symbol, activeOrder.sl_price)}</span>
               </div>
             </div>
 
@@ -191,6 +222,7 @@ export default function TradeClientView({ data, symbol }: TradeClientViewProps) 
 
       {/* FOOTER SECTION */}
       <SymbolNavigation symbol={symbol} />
+
     </div>
   );
 }

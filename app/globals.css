@@ -29134,3 +29134,29 @@ circle {
     display: none !important;
   }
 }
+/* Refresh button animation */
+.px-3.py-1.text-xs.bg-zinc-800.hover\:bg-zinc-700.rounded-md.disabled\:opacity-50 {
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.px-3.py-1.text-xs.bg-zinc-800.hover\:bg-zinc-700.rounded-md.disabled\:opacity-50:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.px-3.py-1.text-xs.bg-zinc-800.hover\:bg-zinc-700.rounded-md.disabled\:opacity-50:active:not(:disabled) {
+  transform: translateY(0);
+  transition: all 0.05s ease;
+}
+
+/* Optional: Add a subtle pulse animation when refreshing */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.px-3.py-1.text-xs.bg-zinc-800.hover\:bg-zinc-700.rounded-md.disabled\:opacity-50:disabled {
+  animation: pulse 1.5s ease-in-out infinite;
+}

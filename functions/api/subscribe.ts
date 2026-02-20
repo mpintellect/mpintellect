@@ -211,7 +211,7 @@ async function sendWelcomeEmailDirect(email: string, name: string | undefined, e
             <div style="margin-top: 32px; padding: 16px; background: rgba(212, 175, 55, 0.02); border: 1px solid rgba(212, 175, 55, 0.1); border-radius: 12px;">
               <p style="color: #6b7280; font-size: 12px; text-align: center;">
                 If you didn't subscribe, you can 
-                <a href="https://mzprimer.com/api/newsletter/unsubscribe?email=${encodeURIComponent(email)}" style="color: #d4af37; text-decoration: none;">
+                <a href="https://mzprimer.com/api/unsubscribe?email=${encodeURIComponent(email)}" style="color: #d4af37; text-decoration: none;">
                   unsubscribe here
                 </a>.
               </p>
@@ -247,7 +247,7 @@ Thank you for joining our educational community. You'll now receive institutiona
 Explore our markets: https://mzprimer.com/markets
 
 If you didn't subscribe, you can unsubscribe here:
-https://mzprimer.com/api/newsletter/unsubscribe?email=${encodeURIComponent(email)}
+https://mzprimer.com/api/unsubscribe?email=${encodeURIComponent(email)}
 
 MZPRIMER INTELLIGENCE LTD
   `;

@@ -1,3 +1,5 @@
+
+  // functions/api/ads/render.ts
 import puppeteer from "@cloudflare/puppeteer";
 
 const SIZES = {
@@ -49,14 +51,30 @@ export async function onRequestGet(context: any) {
   const style = (searchParams.get("style") || "black").toLowerCase(); // Background/color theme
   const type = (searchParams.get("type") || "propfirm").toLowerCase();   // Content layout type
   const sizeKey = (searchParams.get("size") || "square").toLowerCase();
+  const version = searchParams.get("v") || "1"; // Version parameter from catalog
   const config = SIZES[sizeKey as keyof typeof SIZES] || SIZES.square;
   
-  const adId = `ad_${symbol}_${style}_${type}_${sizeKey}`.toLowerCase();
+  // UNIQUE FILENAME WITH VERSION - includes version for cache busting
+  const adId = `ad_${symbol}_${style}_${type}_${sizeKey}_v${version}.png`.toLowerCase();
 
   try {
-    // 🚫 CACHE DISABLED FOR TESTING - Always fetch fresh data and generate new image
+    // 🛡️ STEP 1: CHECK R2 CACHE FIRST
+    if (env.AD_STORAGE) {
+      const cachedFile = await env.AD_STORAGE.get(adId);
+      if (cachedFile) {
+        console.log(`🚀 Serving cached ad: ${adId}`);
+        return new Response(cachedFile.body, {
+          headers: { 
+            "Content-Type": "image/png",
+            "Cache-Control": "public, max-age=3600", // Cache for 1 hour on CDN
+            "X-Cache-Hit": "true"
+          }
+        });
+      }
+    }
 
-    // 2. FETCH LIVE MARKET DATA
+    // 2. FETCH LIVE MARKET DATA (only on cache miss)
+    console.log(`🎨 Cache miss. Rendering: ${adId}`);
     const dataRes = await fetch(`https://data.mzprimer.com/output_${symbol}.json`);
     const marketData = await dataRes.json().catch(() => ({}));
 
@@ -64,7 +82,6 @@ export async function onRequestGet(context: any) {
     const currentPrice = marketData.trend?.current_price || 
                         marketData.pending_orders?.current_price || 
                         1950.42;
-   
 
     // Get final decision
     const finalDecision = marketData.final_decision || 'ANALYZING';
@@ -113,24 +130,26 @@ export async function onRequestGet(context: any) {
 
     const screenshot = await page.screenshot();
     
-    // 🚫 DON'T SAVE TO CACHE FOR TESTING
-    // if (env.AD_STORAGE) {
-    //   await env.AD_STORAGE.put(`${adId}.png`, new Uint8Array(screenshot));
-    // }
+    // 📦 STEP 4: SAVE TO R2 FOR FUTURE REQUESTS
+    if (env.AD_STORAGE) {
+      await env.AD_STORAGE.put(adId, screenshot, {
+        httpMetadata: { contentType: "image/png" }
+      });
+      console.log(`✅ Saved new render to R2: ${adId}`);
+    }
     
     await browser.close();
 
-    // Add no-cache headers to prevent browser caching
+    // Return with cache headers
     return new Response(new Uint8Array(screenshot), {
       headers: { 
         "Content-Type": "image/png",
-        "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-        "Pragma": "no-cache",
-        "Expires": "0"
+        "Cache-Control": "public, max-age=3600" // Cache for 1 hour
       }
     });
 
   } catch (e: any) {
+    console.error("💥 Rendering Error:", e.message);
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
   }
 }
@@ -150,12 +169,12 @@ function generateAdHTML(
   entryLevel: string
 ) {
   // Get the style configuration
-  const currentStyle = STYLES[style] || STYLES.propfirm;
+  const currentStyle = STYLES[style] || STYLES.black;
   const accent = isBuy ? currentStyle.buyAccent : currentStyle.sellAccent;
   const gold = "#D4AF37";
 
   // ==============================================
-  // ADDED: Symbol specs for proper decimal formatting
+  // Symbol specs for proper decimal formatting
   // ==============================================
   const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: number; fullName: string; category: string }> = {
     // Forex
@@ -199,7 +218,7 @@ function generateAdHTML(
   };
 
   // ==============================================
-  // ADDED: Formatting function
+  // Formatting function
   // ==============================================
   function formatPrice(price: number | string | null | undefined, symbolKey: string): string {
     if (price === null || price === undefined) return "----";
@@ -216,7 +235,7 @@ function generateAdHTML(
   }
 
   // ==============================================
-  // ADDED: Format all price values
+  // Format all price values
   // ==============================================
   const formattedEntry = formatPrice(entryLevel, symbol);
   const formattedSL = formatPrice(slLevel, symbol);

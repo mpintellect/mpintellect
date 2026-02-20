@@ -9,13 +9,12 @@ export async function onRequestGet(context: any) {
   const platform = url.searchParams.get("platform") || "facebook"; 
   const version = Math.floor(Date.now() / 3600000); // Updates every hour
 
-  // 2. Define columns based on platform - GOOGLE NEEDS MORE FIELDS
+  // 2. Define columns based on platform - EXACT MATCH TO GOOGLE'S REQUIREMENTS
   const googleColumns = [
-    'id', 'title', 'description', 'availability', 'condition', 
-    'price', 'link', 'image_link', 'brand', 'google_product_category',
-    'custom_label_0', 'custom_label_1', 'custom_label_2', 'custom_label_3',
-    'mpn', 'gtin', 'identifier_exists', 'item_group_id', 'sale_price',
-    'shipping', 'tax', 'color', 'size', 'gender', 'age_group'
+    'ID', 'ID2', 'Final URL', 'Image URL', 'Item title', 'Item subtitle', 
+    'Item description', 'Item address', 'Item category', 'Price', 'Formatted Price', 
+    'Sale price', 'Formatted sale price', 'Contextual keywords', 'Tracking template', 
+    'Final mobile URL', 'Android app link', 'iOS app link', 'iOS app store ID', 'Similar IDs'
   ];
 
   const facebookColumns = [
@@ -91,9 +90,6 @@ export async function onRequestGet(context: any) {
           }
           usedIds.add(prodId);
           
-          // Item group ID for variants (without size)
-          const itemGroupId = `${sym.id}-${type}`.toUpperCase();
-          
           // Define destination link
           let link = `${LANDING_HOST}${typeConfig[type].url}?symbol=${sym.id}&source=${platform}_ad&auto_start=true&variant=${size}`;
           
@@ -104,10 +100,11 @@ export async function onRequestGet(context: any) {
           // Image link
           const imageLink = `${LANDING_HOST}/api/ads/render?symbol=${sym.id}&type=${type}&size=${size}&v=${version}`;
 
-          // Price logic - FREE for lead gen, paid for bots
-          const price = isBot ? '45.00 EUR' : '0.00 EUR';
+          // Price logic
+          const price = isBot ? '45.00' : '0.00';
+          const formattedPrice = isBot ? '45.00 EUR' : 'Free';
           
-          // Size mapping for display
+          // Size description
           const sizeDescriptions: Record<string, string> = {
             standard: 'Landscape 1200x628',
             square: 'Square 1080x1080',
@@ -120,48 +117,16 @@ export async function onRequestGet(context: any) {
             cyber: 'Neon Cyber'
           };
 
-          // Create title
-          const title = `${sym.name} ${typeConfig[type].name} - ${sizeDescriptions[size]}`;
-          
-          // Create description
+          // Create title and description
+          const title = `${sym.name} ${typeConfig[type].name}`;
+          const subtitle = `${styleDescriptions[style]} ${sizeDescriptions[size]}`;
           const description = `Interactive ${typeConfig[type].name} for ${sym.name} trading. Real-time market insights, AI-powered analysis, and professional trading signals. Perfect for ${styleDescriptions[style]} theme.`;
 
-          // Google product category - MUST HAVE VALUE
-          const googleCategory = 'Software > Business & Productivity Software';
+          // Item category
+          const itemCategory = isBot ? 'Trading Robot' : 'Trading Tool';
 
-          // Custom labels
-          const customLabel0 = sym.category; // Product Type
-          const customLabel1 = typeConfig[type].category; // Campaign Type
-          const customLabel2 = styleDescriptions[style]; // Design Style
-          const customLabel3 = sizeDescriptions[size]; // Ad Size
-
-          // MPN (Manufacturer Part Number) - REQUIRED for Google
-          const mpn = `MZP-${prodId.substring(0, 10)}`;
-          
-          // GTIN - empty but identifier_exists must be FALSE
-          const gtin = '';
-          const identifierExists = 'FALSE';
-          
-          // Sale price (same as price if no sale)
-          const salePrice = price;
-          
-          // Shipping - REQUIRED for Google
-          const shipping = 'EUR:Standard:0.00';
-          
-          // Tax - REQUIRED for Google
-          const tax = 'DE:0.00';
-
-          // Color
-          const color = style === 'black' ? 'Black/Gold' : 'Neon/Cyber';
-          
-          // Size
-          const googleSize = sizeDescriptions[size];
-          
-          // Gender
-          const gender = 'unisex';
-          
-          // Age group
-          const ageGroup = 'adult';
+          // Contextual keywords
+          const keywords = `${sym.name},${typeConfig[type].name},${styleDescriptions[style]},${sizeDescriptions[size]},trading,forex,AI,signals`.toLowerCase();
 
           if (platform === 'facebook') {
             // Facebook-specific row
@@ -171,42 +136,37 @@ export async function onRequestGet(context: any) {
               description,                                      // description
               'in stock',                                       // availability
               'new',                                            // condition
-              price,                                            // price
+              price + ' EUR',                                   // price
               link,                                             // link
               imageLink,                                        // image_link
               'MZPrimer AI',                                    // brand
-              googleCategory,                                   // google_product_category
-              customLabel0,                                     // custom_label_0
-              customLabel1                                      // custom_label_1
+              'Software > Business & Productivity',             // google_product_category
+              sym.category,                                     // custom_label_0
+              typeConfig[type].category                         // custom_label_1
             ]);
           } else {
-            // Google-specific row with ALL required fields
+            // Google-specific row - EXACT MATCH TO THEIR COLUMNS
             rows.push([
-              prodId,                                           // id
-              title,                                            // title
-              description,                                      // description
-              'in stock',                                       // availability
-              'new',                                            // condition
-              price,                                            // price
-              link,                                             // link
-              imageLink,                                        // image_link
-              'MZPrimer AI',                                    // brand
-              googleCategory,                                   // google_product_category
-              customLabel0,                                     // custom_label_0
-              customLabel1,                                     // custom_label_1
-              customLabel2,                                     // custom_label_2
-              customLabel3,                                     // custom_label_3
-              mpn,                                              // mpn (REQUIRED)
-              gtin,                                             // gtin (can be empty)
-              identifierExists,                                 // identifier_exists (MUST be FALSE if no GTIN)
-              itemGroupId,                                      // item_group_id (for variants)
-              salePrice,                                        // sale_price
-              shipping,                                         // shipping (REQUIRED)
-              tax,                                              // tax (REQUIRED)
-              color,                                            // color
-              googleSize,                                       // size
-              gender,                                           // gender
-              ageGroup                                          // age_group
+              prodId,                                           // ID
+              '',                                               // ID2 (leave empty)
+              link,                                             // Final URL
+              imageLink,                                        // Image URL
+              title,                                            // Item title
+              subtitle,                                         // Item subtitle
+              description,                                      // Item description
+              '',                                               // Item address (leave empty)
+              itemCategory,                                     // Item category
+              price,                                            // Price
+              formattedPrice,                                   // Formatted Price
+              price,                                            // Sale price
+              formattedPrice,                                   // Formatted sale price
+              keywords,                                         // Contextual keywords
+              '',                                               // Tracking template
+              link,                                             // Final mobile URL
+              '',                                               // Android app link
+              '',                                               // iOS app link
+              '',                                               // iOS app store ID
+              ''                                                // Similar IDs
             ]);
           }
         }

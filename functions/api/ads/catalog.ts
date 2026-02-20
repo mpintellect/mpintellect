@@ -9,7 +9,7 @@ export async function onRequestGet(context: any) {
   const platform = url.searchParams.get("platform") || "facebook"; 
   const version = Math.floor(Date.now() / 3600000); // Updates every hour
 
-  // 2. Define columns based on platform - EXACT MATCH TO GOOGLE'S REQUIREMENTS
+  // 2. Define columns based on platform
   const googleColumns = [
     'ID', 'ID2', 'Final URL', 'Image URL', 'Item title', 'Item subtitle', 
     'Item description', 'Item address', 'Item category', 'Price', 'Formatted Price', 
@@ -29,7 +29,7 @@ export async function onRequestGet(context: any) {
 
   // Define available sizes per platform
   const googleSizes = ['standard', 'square', 'portrait'];
-  const facebookSizes = ['standard', 'square', 'portrait', 'story'];
+  const facebookSizes = ['square'];
   
   // Styles available
   const styles = ['black', 'cyber'];
@@ -97,19 +97,18 @@ export async function onRequestGet(context: any) {
             link = `${LANDING_HOST}/ai-robot?symbol=${sym.id}&source=${platform}_ad&variant=${size}`;
           }
 
-          // Image link
-          const imageLink = `${LANDING_HOST}/api/ads/render?symbol=${sym.id}&type=${type}&size=${size}&v=${version}`;
+          // ✅ FIXED: Use the served R2 URL format (ads.mzprimer.com/ad_...)
+          const imageLink = `https://ads.mzprimer.com/ad_${sym.id.toLowerCase()}_${style}_${type}_${size}_v${version}.png`;
 
           // Price logic
-          const price = isBot ? '45.00' : '0.00';
-          const formattedPrice = isBot ? '45.00 EUR' : 'Free';
+          const price = isBot ? '50.00' : '5.00';
+          const formattedPrice = isBot ? '50.00 USD' : 'Free';
           
           // Size description
           const sizeDescriptions: Record<string, string> = {
             standard: 'Landscape 1200x628',
             square: 'Square 1080x1080',
             portrait: 'Portrait 1080x1350',
-            story: 'Story 1080x1920'
           };
 
           const styleDescriptions: Record<string, string> = {
@@ -136,25 +135,25 @@ export async function onRequestGet(context: any) {
               description,                                      // description
               'in stock',                                       // availability
               'new',                                            // condition
-              price + ' EUR',                                   // price
+              price + ' USD',                                   // price
               link,                                             // link
-              imageLink,                                        // image_link
+              imageLink,                                        // ✅ ads.mzprimer.com/ad_...png
               'MZPrimer AI',                                    // brand
               'Software > Business & Productivity',             // google_product_category
               sym.category,                                     // custom_label_0
               typeConfig[type].category                         // custom_label_1
             ]);
           } else {
-            // Google-specific row - EXACT MATCH TO THEIR COLUMNS
+            // Google-specific row
             rows.push([
               prodId,                                           // ID
-              '',                                               // ID2 (leave empty)
+              '',                                               // ID2
               link,                                             // Final URL
-              imageLink,                                        // Image URL
+              imageLink,                                        // ✅ ads.mzprimer.com/ad_...png
               title,                                            // Item title
               subtitle,                                         // Item subtitle
               description,                                      // Item description
-              '',                                               // Item address (leave empty)
+              '',                                               // Item address
               itemCategory,                                     // Item category
               price,                                            // Price
               formattedPrice,                                   // Formatted Price

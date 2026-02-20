@@ -17,7 +17,7 @@ export const AD_SYMBOLS: SymbolDef[] = [
   { id: 'USTEC', name: 'Nasdaq 100', category: 'Indices' },
   { id: 'US30', name: 'Dow Jones 30', category: 'Indices' },
   { id: 'BRENT', name: 'Crude Oil (Brent)', category: 'Energy' },
-  { id: 'SCALPER_X1', name: 'Scalper V1_X1 Bot', category: 'Robots' }, // ✅ Added new bot
+ 
 ];
 
 export const LANDING_HOST = 'https://mzprimer.com';

@@ -5,7 +5,6 @@ import puppeteer from "@cloudflare/puppeteer";
 const SIZES = {
   standard: { width: 1200, height: 628 },  // Google Ads
   square: { width: 1080, height: 1080 },    // Facebook/Instagram Square
-  story: { width: 1080, height: 1920 },     // Instagram/Facebook Stories
   portrait: { width: 1080, height: 1350 },  // Instagram Portrait // Website Leaderboard // Billboard
 };
 

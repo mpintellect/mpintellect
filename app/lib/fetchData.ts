@@ -132,7 +132,22 @@ export interface ComponentScores {
   momentum: number;
   zones: number;
 }
+export interface TPSLData {
+  entry_price: number;
+  tp_level: number;
+  sl_level: number;
+  rr_ratio: number;
+  is_valid: boolean;
+}
 
+export interface PendingOrder {
+  type: string;
+  entry_price: number;
+  sl_price: number;
+  tp_price: number;
+  rr_ratio: number;
+  rationale: string;
+}
 export interface ValidationData {
   symbol: string;
   is_valid: boolean;
@@ -162,6 +177,13 @@ export interface SymbolData {
     position_size_multiplier: number;
     analysis_accuracy_used: number;
     base_confidence: number;
+    tp_sl: TPSLData;
+    pending_orders: {
+    pending_orders: PendingOrder[];
+    primary_order: PendingOrder;
+    order_confidence: number;
+  }; // Added
+  
   };
 }
 

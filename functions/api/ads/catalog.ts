@@ -2,14 +2,22 @@
 import { AD_SYMBOLS, LANDING_HOST, csvEscape } from "../../../backend-lib/ad-config";
 
 export async function onRequestGet(context: any) {
-  const { request } = context;
+  const { env, request } = context;
   const url = new URL(request.url);
   
   // 1. Identify which platform is asking for the catalog
   const platform = url.searchParams.get("platform") || "facebook"; 
-  const version = Math.floor(Date.now() / (12 * 3600000)); // Updates every hour
+  
+  // 2. Ask the Database which version is 100% ready
+  // This ensures all ads use the same version that's been validated
+  const versionRecord = await env.DB.prepare(
+    "SELECT value FROM app_settings WHERE key = 'current_ad_version'"
+  ).first();
+  
+  // Use DB value, or fallback to time-based version if DB is empty
+  const version = versionRecord?.value || Math.floor(Date.now() / (12 * 3600000));
 
-  // 2. Define columns based on platform
+  // 3. Define columns based on platform
   const googleColumns = [
     'ID', 'ID2', 'Final URL', 'Image URL', 'Item title', 'Item subtitle', 
     'Item description', 'Item address', 'Item category', 'Price', 'Formatted Price', 
@@ -97,7 +105,7 @@ export async function onRequestGet(context: any) {
             link = `${LANDING_HOST}/ai-robot?symbol=${sym.id}&source=${platform}_ad&variant=${size}`;
           }
 
-          // ✅ FIXED: Use the served R2 URL format (ads.mzprimer.com/ad_...)
+          // ✅ Use database-controlled version for all image URLs
           const imageLink = `https://ads.mzprimer.com/ad_${sym.id.toLowerCase()}_${style}_${type}_${size}_v${version}.png`;
 
           // Price logic
@@ -137,7 +145,7 @@ export async function onRequestGet(context: any) {
               'new',                                            // condition
               price + ' USD',                                   // price
               link,                                             // link
-              imageLink,                                        // ✅ ads.mzprimer.com/ad_...png
+              imageLink,                                        // ✅ Database-controlled version
               'MZPrimer AI',                                    // brand
               'Software > Business & Productivity',             // google_product_category
               sym.category,                                     // custom_label_0
@@ -149,7 +157,7 @@ export async function onRequestGet(context: any) {
               prodId,                                           // ID
               '',                                               // ID2
               link,                                             // Final URL
-              imageLink,                                        // ✅ ads.mzprimer.com/ad_...png
+              imageLink,                                        // ✅ Database-controlled version
               title,                                            // Item title
               subtitle,                                         // Item subtitle
               description,                                      // Item description

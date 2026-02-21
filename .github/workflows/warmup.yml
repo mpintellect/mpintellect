@@ -2,26 +2,25 @@ name: MZ Ad Warmup (Pre-Render)
 
 on:
   schedule:
-    - cron: '0 8 * * *'   # 08:00 AM UTC
-    - cron: '0 20 * * *'  # 08:00 PM UTC
-  workflow_dispatch:      # Play button in GitHub Actions
+    - cron: '30 0 * * *'  # 00:30 UTC
+    - cron: '30 12 * * *' # 12:30 UTC
+  workflow_dispatch:      # Play button
 
 jobs:
   warmup:
     runs-on: ubuntu-latest
     steps:
-      - name: Bake 8 Symbols (144 Images Total)
+      - name: Bake 8 Symbols
         run: |
-          # Your Final 8 Symbols
           SYMBOLS=("EURUSD" "GBPUSD" "XAUUSD" "BTCUSD" "ETHUSD" "US500" "USTEC" "BRENT")
-
           for sym in "${SYMBOLS[@]}"
           do
-            echo "🔥 Starting batch for $sym..."
-            curl -s -X GET "https://mzprimer.com/api/ads/warmup?key=${{ secrets.ADMIN_KEY }}&symbol=$sym"
-            
-            # 45-second sleep ensures Cloudflare has time to process the 18 variants
-            echo "😴 Waiting for Cloudflare to finish $sym..."
+            echo "🔥 Baking $sym..."
+            curl -s "https://mzprimer.com/api/ads/warmup?key=${{ secrets.ADMIN_KEY }}&symbol=$sym"
             sleep 45
           done
-          echo "🏁 All 144 variants requested successfully."
+
+      - name: 🏁 Flip the Safety Switch
+        run: |
+          echo "✅ Baking finished. Activating current version..."
+          curl -s "https://mzprimer.com/api/ads/activate-version?key=${{ secrets.ADMIN_KEY }}"

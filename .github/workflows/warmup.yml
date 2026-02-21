@@ -1,0 +1,16 @@
+name: MZ Ad Warmup (Pre-Render)
+
+on:
+  schedule:
+    - cron: '0 8 * * *'   # 08:00 AM UTC (Every Day)
+    - cron: '0 20 * * *'  # 08:00 PM UTC (Every Day)
+  workflow_dispatch:      # Allows you to click a button to run it manually
+
+jobs:
+  trigger_warmup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Warmup API
+        run: |
+          # We use the key you already have in Cloudflare Variables
+          curl -X GET "https://mzprimer.com/api/ads/warmup?key=${{ secrets.ADMIN_KEY }}"

@@ -1,13 +1,33 @@
-export async function onScheduled(event: any, env: any, ctx: any) {
-  console.log("⏰ MZ Intelligence: Starting Scheduled Ad Warmup...");
+// functions/_scheduled.ts
+
+export const onScheduled = async (params: any) => {
+  const { env, waitUntil } = params;
   
-  // This triggers the warmup script we talked about
-  // It ensures all images are "baked" and ready in R2 1 hour before Google/FB arrive
-  const warmupUrl = "https://mzprimer.com/api/ads/warmup";
+  console.log("⏰ MZ Intelligence: Cron Triggered for Ad Warmup");
+
+  // Logic to calculate current 12h version
+  const version = Math.floor(Date.now() / (12 * 3600000));
   
-  ctx.waitUntil(
+  // Base URL of your production site
+  const baseUrl = "https://mzprimer.com";
+
+  // Use the ADMIN_KEY from your Cloudflare Variables
+  const authKey = env.ADMIN_KEY;
+
+  // Trigger the warmup process
+  const warmupUrl = `${baseUrl}/api/ads/warmup?key=${authKey}&v=${version}`;
+  
+  console.log(`🔗 Dispatching Warmup request to: ${warmupUrl}`);
+
+  // Use waitUntil to ensure the fetch finishes before the worker goes to sleep
+  waitUntil(
     fetch(warmupUrl)
-      .then(res => console.log("✅ Warmup triggered successfully"))
-      .catch(err => console.error("❌ Warmup trigger failed:", err))
+      .then(async (r) => {
+        const text = await r.text();
+        console.log("✅ Warmup Response:", text);
+      })
+      .catch((e) => {
+        console.error("❌ Warmup Dispatch Failed:", e.message);
+      })
   );
-}
+};

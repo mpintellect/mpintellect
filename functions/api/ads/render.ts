@@ -73,37 +73,31 @@ export async function onRequestGet(context: any) {
     }
 
     // 2. FETCH LIVE MARKET DATA (only on cache miss)
-    console.log(`🎨 Cache miss. Rendering: ${adId}`);
-    const dataRes = await fetch(`https://data.mzprimer.com/output_${symbol}.json`);
-    const marketData = await dataRes.json().catch(() => ({}));
+console.log(`🎨 Cache miss. Rendering: ${adId}`);
 
-    // Get current price from the data structure
-    const currentPrice = marketData.trend?.current_price || 
-                        marketData.pending_orders?.current_price || 
-                        1950.42;
+// ✅ USE THE SAME API ENDPOINT AS YOUR OTHER FETCHERS
+const apiSymbol = symbol.replace(/[-_/]/g, '').toUpperCase();
+const dataRes = await fetch(`https://mzprimer.com/api/symbol-data?symbol=${apiSymbol}`);
 
-    // Get final decision
-    const finalDecision = marketData.final_decision || 'ANALYZING';
-    const isBuy = finalDecision.includes("BUY");
+// If that fails, fallback to direct R2 (though it shouldn't)
+let marketData;
+if (!dataRes.ok) {
+  console.log(`⚠️ API failed, falling back to R2 for ${symbol}`);
+  const r2Res = await fetch(`https://data.mzprimer.com/output_${apiSymbol}.json`);
+  marketData = await r2Res.json().catch(() => ({}));
+} else {
+  marketData = await dataRes.json().catch(() => ({}));
+}
+  
+const currentPrice = marketData.trend.current_price;
+const finalDecision = marketData.final_decision;
+const isBuy = finalDecision.includes("BUY");
+const confidence = marketData.risk_score.confidence_score;
 
-    // Get confidence score
-    const confidence = marketData.risk_score?.confidence_score || 
-                      marketData.analysis_accuracy || 
-                      88;
-
-    // Get TP/SL levels from data
-    const tpLevel = marketData.pending_orders?.orders?.[0]?.tp_price ||
-                   marketData.tp_sl?.tp_level ||
-                   (isBuy ? (Number(currentPrice) + 30).toFixed(2) : (Number(currentPrice) - 30).toFixed(2));
-
-    const slLevel = marketData.pending_orders?.orders?.[0]?.sl_price ||
-                   marketData.tp_sl?.sl_level ||
-                   (isBuy ? (Number(currentPrice) - 15).toFixed(2) : (Number(currentPrice) + 15).toFixed(2));
-
-    const entryLevel = marketData.pending_orders?.orders?.[0]?.entry_price ||
-                      marketData.tp_sl?.entry_price ||
-                      currentPrice;
-
+// Get TP/SL levels from pending orders
+const tpLevel = marketData.pending_orders.orders[0].tp_price;
+const slLevel = marketData.pending_orders.orders[0].sl_price;
+const entryLevel = marketData.pending_orders.orders[0].entry_price;
     // 3. OPEN CHROME & PAINT
     const browser = await puppeteer.launch(env.BROWSER);
     const page = await browser.newPage();

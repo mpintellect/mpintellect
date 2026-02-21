@@ -9,13 +9,11 @@ export type SymbolDef = {
 export const AD_SYMBOLS: SymbolDef[] = [
   { id: 'EURUSD', name: 'EUR/USD', category: 'Forex' },
   { id: 'GBPUSD', name: 'GBP/USD', category: 'Forex' },
-  { id: 'USDJPY', name: 'USD/JPY', category: 'Forex' },
   { id: 'XAUUSD', name: 'Gold (XAU/USD)', category: 'Metals' },
   { id: 'BTCUSD', name: 'Bitcoin (BTC)', category: 'Crypto' },
   { id: 'ETHUSD', name: 'Ethereum (ETH)', category: 'Crypto' },
   { id: 'US500', name: 'S&P 500 Index', category: 'Indices' },
   { id: 'USTEC', name: 'Nasdaq 100', category: 'Indices' },
-  { id: 'US30', name: 'Dow Jones 30', category: 'Indices' },
   { id: 'BRENT', name: 'Crude Oil (Brent)', category: 'Energy' },
  
 ];

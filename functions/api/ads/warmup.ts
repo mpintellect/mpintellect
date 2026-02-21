@@ -5,41 +5,36 @@ export async function onRequestGet(context: any) {
   const { env, request } = context;
   const url = new URL(request.url);
   
-  // 1. Check Security Key
   const key = url.searchParams.get("key");
-  if (key !== env.ADMIN_KEY) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  if (key !== env.ADMIN_KEY) return new Response("Unauthorized", { status: 401 });
 
-  // 2. Versioning (12h cycle)
+  const targetSymbol = url.searchParams.get("symbol")?.toUpperCase();
+  if (!targetSymbol) return new Response("Missing symbol", { status: 400 });
+
   const version = Math.floor(Date.now() / (12 * 3600000));
-  const styles = ['black', 'cyber'];
+  const types = ['test', 'chat', 'update', 'volatility'];
   const sizes = ['square', 'standard', 'portrait'];
-  const types = ['propfirm', 'chat', 'update', 'volatility'];
 
-  console.log(`🚀 GitHub Trigger: Starting Warmup for v${version}`);
+  console.log(`🚀 Warmup: Baking 18 variants for ${targetSymbol}`);
 
-  // 3. Background Loop
   context.waitUntil((async () => {
-    for (const sym of AD_SYMBOLS) {
-      for (const style of styles) {
-        for (const type of types) {
-          for (const size of sizes) {
-            const renderUrl = `${url.origin}/api/ads/render?symbol=${sym.id}&style=${style}&type=${type}&size=${size}&v=${version}`;
-            try {
-              // This triggers the save-to-R2 logic in render.ts
-              await fetch(renderUrl);
-              // Wait 800ms between each to keep browser rendering stable
-              await new Promise(r => setTimeout(r, 800)); 
-            } catch (e) {
-              console.error(`Error warming ${sym.id}:`, e);
-            }
-          }
+    for (const type of types) {
+      // ✅ LOGIC: Propfirm & Chat get both Black & Cyber. Others get Black only.
+      const stylesForType = (type === 'test' || type === 'chat') ? ['black', 'cyber'] : ['black'];
+      
+      for (const style of stylesForType) {
+        for (const size of sizes) {
+          const renderUrl = `${url.origin}/api/ads/render?symbol=${targetSymbol}&style=${style}&type=${type}&size=${size}&v=${version}`;
+          try {
+            const res = await fetch(renderUrl);
+            console.log(`✅ ${targetSymbol}-${style}-${type}-${size}: ${res.status}`);
+            await new Promise(r => setTimeout(r, 800)); // Maintain stability
+          } catch (e) { console.error(e); }
         }
       }
     }
-    console.log("🏁 Warmup Complete: All images are in R2.");
+    console.log(`🏁 Finished Symbol: ${targetSymbol}`);
   })());
 
-  return new Response("Warmup Initiated");
+  return new Response(`Baking started for ${targetSymbol}`);
 }

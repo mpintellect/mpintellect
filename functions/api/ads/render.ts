@@ -48,7 +48,7 @@ export async function onRequestGet(context: any) {
   // 1. Parameters
   const symbol = (searchParams.get("symbol") || "XAUUSD").toUpperCase();
   const style = (searchParams.get("style") || "black").toLowerCase(); // Background/color theme
-  const type = (searchParams.get("type") || "propfirm").toLowerCase();   // Content layout type
+  const type = (searchParams.get("type") || "test").toLowerCase();   // Content layout type
   const sizeKey = (searchParams.get("size") || "square").toLowerCase();
   const version = searchParams.get("v") || "1"; // Version parameter from catalog
   const config = SIZES[sizeKey as keyof typeof SIZES] || SIZES.square;
@@ -268,7 +268,7 @@ function generateAdHTML(
   // TYPE: PROPFIRM (Risk Calculator Style)
   // ==============================================
 
-if (type === "propfirm") {
+if (type === "test") {
   return `
     <html>
       <head>
@@ -834,6 +834,6 @@ if (type === "volatility") {
       </html>
     `;
 }
-  // Default to propfirm if type not recognized
-  return generateAdHTML(symbol, style, "propfirm", data, cfg, currentPrice, finalDecision, isBuy, confidence, tpLevel, slLevel, entryLevel);
+  // Default to test if type not recognized
+  return generateAdHTML(symbol, style, "test", data, cfg, currentPrice, finalDecision, isBuy, confidence, tpLevel, slLevel, entryLevel);
 }

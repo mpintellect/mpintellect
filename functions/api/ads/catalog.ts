@@ -36,8 +36,8 @@ export async function onRequestGet(context: any) {
   
   // For each style, define which types of content to show
   const styleToTypes: Record<string, string[]> = {
-    'black': ['propfirm', 'chat', 'update', 'volatility'],
-    'cyber': ['propfirm', 'chat']
+    'black': ['test', 'chat', 'update', 'volatility'],
+    'cyber': ['test', 'chat']
   };
 
   // Map types to display names and URLs
@@ -47,7 +47,7 @@ export async function onRequestGet(context: any) {
       url: '/AIChat',
       category: 'Lead_Gen'
     },
-    'propfirm': {
+    'test': {
       name: 'Prop Firm Calculator',
       url: '/prop-firm',
       category: 'Tool'

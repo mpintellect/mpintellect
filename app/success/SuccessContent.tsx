@@ -56,7 +56,7 @@ export default function SuccessContent() {
         <div className="next-steps">
           <h3>To Activate Your License:</h3>
           <ol>
-            <li><strong>Check your email</strong> for the license key (subject: "Your MZPrimer Order")</li>
+            <li><strong>Check your email</strong> for the license key (subject: "Your MZPrimer Intelligence Order")</li>
             <li><strong>Return to the AI Assistant</strong> below</li>
             <li><strong>Click "Activate License"</strong> button</li>
             <li><strong>Enter your license key</strong> when prompted</li>
@@ -69,7 +69,7 @@ export default function SuccessContent() {
         </div>
         
         <Link href="/AIChat" className="return-button">
-          Return to MZPrimer AI Assistant
+          Return to MZPrimer Intelligence Assistant
         </Link>
         
         <div className="support-note">

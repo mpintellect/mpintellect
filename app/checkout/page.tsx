@@ -2,8 +2,8 @@ import { Suspense } from 'react';
 import CheckoutClient from '../checkout/CheckClient';
 
 export const metadata = {
-  title: 'Checkout – MZPrimer',
-  description: 'Secure checkout for MZPrimer products.',
+  title: 'Checkout – MZPrimer Intelligence',
+  description: 'Secure checkout for MZPrimer Intelligence products.',
   robots: { index: false, follow: false },
 };
 

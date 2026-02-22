@@ -7,9 +7,9 @@ export default function FAQPage() {
 
       <div className="faq-list">
         <section className="faq-item">
-          <h2 className="faq-question">What is MZPrimer?</h2>
+          <h2 className="faq-question">What is MZPrimer Intelligence?</h2>
           <p className="faq-answer">
-            MZPrimer is a platform that provides AI-powered trading tools, educational content, and algorithmic solutions for traders.
+            MZPrimer Intelligence is a platform that provides AI-powered trading tools, educational content, and algorithmic solutions for traders.
           </p>
         </section>
 

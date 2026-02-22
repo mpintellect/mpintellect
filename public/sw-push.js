@@ -15,7 +15,7 @@ self.addEventListener('push', (event) => {
   console.log('Push event received:', event);
 
   let notificationData = {
-    title: 'MZPrimer',
+    title: 'MZPrimer Intelligence',
     body: 'New notification',
     icon: '/logos/mzlogo.webp',
     badge: '/logos/mzlogo.webp',
@@ -26,7 +26,7 @@ self.addEventListener('push', (event) => {
     if (event.data) {
       const data = event.data.json();
       notificationData = {
-        title: data.title || 'MZPrimer',
+        title: data.title || 'MZPrimer Intelligence',
         body: data.body || 'New notification',
         icon: data.icon || '/logos/mzlogo.webp',
         badge: data.badge || '/logos/mzlogo.webp',

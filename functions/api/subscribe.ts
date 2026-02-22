@@ -166,7 +166,7 @@ async function sendWelcomeEmailDirect(email: string, name: string | undefined, e
             </div>
             
             <h1 style="margin: 0 0 16px; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; color: #ffffff;">
-              Welcome to MZPrimer! <span style="color: #d4af37;">📚</span>
+              Welcome to MZPrimer Intelligence! <span style="color: #d4af37;">📚</span>
             </h1>
             
             <p style="margin: 0 0 8px; font-size: 16px; color: #e5e7eb;">
@@ -220,7 +220,7 @@ async function sendWelcomeEmailDirect(email: string, name: string | undefined, e
           
           <div style="padding: 24px 32px; background: #050505; border-top: 1px solid #1a1a1a; border-radius: 0 0 24px 24px;">
             <p style="margin: 0; color: #4b5563; font-size: 12px; text-align: center;">
-              MZPRIMER INTELLIGENCE LTD • EDUCATIONAL TRADING RESOURCES
+              MZPrimer INTELLIGENCE • EDUCATIONAL TRADING RESOURCES
             </p>
           </div>
         </div>
@@ -230,7 +230,7 @@ async function sendWelcomeEmailDirect(email: string, name: string | undefined, e
   `;
 
   const text = `
-MZPRIMER - NEWSLETTER CONFIRMATION
+MZPrimer Intelligence - NEWSLETTER CONFIRMATION
 ========================================
 
 Dear ${customerName},
@@ -249,7 +249,7 @@ Explore our markets: https://mzprimer.com/markets
 If you didn't subscribe, you can unsubscribe here:
 https://mzprimer.com/api/unsubscribe?email=${encodeURIComponent(email)}
 
-MZPRIMER INTELLIGENCE LTD
+MZPRIMER INTELLIGENCE 
   `;
 
   try {
@@ -260,9 +260,9 @@ MZPRIMER INTELLIGENCE LTD
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: env.EMAIL_FROM || 'MZPrimer Education <education@mzprimer.com>',
+        from: env.EMAIL_FROM || 'MZPrimer Intelligence <education@mzprimer.com>',
         to: [email],
-        subject: 'Welcome to MZPrimer Education! 📚',
+        subject: 'Welcome to MZPrimer Intelligence! 📚',
         html,
         text
       }),

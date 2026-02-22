@@ -178,7 +178,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           </div>
 
           <span className="footer-text">
-            © {CURRENT_YEAR} MZPrimer LTD. All rights reserved.
+            © {CURRENT_YEAR} MZPrimer Intelligence. All rights reserved.
           </span>
         </div>
 

@@ -38,7 +38,7 @@ function formatMessageContent(message: string): string {
 
 function buildMessageTemplate(title: string, content: string, link: string): string {
   return `
-🚀 <b>MZPrimer AI Trading</b>
+🚀 <b>MZPrimer Intelligence Trading</b>
 ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
 
 🎯 <b>${title.toUpperCase()}</b>

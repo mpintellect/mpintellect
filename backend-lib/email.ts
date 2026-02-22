@@ -30,7 +30,7 @@ export async function sendEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: env.EMAIL_FROM || 'MZPrimer <intelligence@mzprimer.com>',
+        from: env.EMAIL_FROM || 'MZPrimer Intelligence <intelligence@mzprimer.com>',
         to: [details.to],
         subject: details.subject,
         html: details.html,
@@ -204,7 +204,7 @@ function generateEmailHTML(
               <div style="background: #000000; border-radius: 14px; padding: 20px; border: 1px solid #2a2a2a; margin-bottom: 20px;">
                 <p style="margin: 0 0 10px 0; color: #9ca3af; font-size: 14px;">File:</p>
                 <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600; word-break: break-all;">
-                  MZPrimer_${order.productName.replace(/\s+/g, '_')}_V.1.ex5
+                  MZPrimer Intelligence_${order.productName.replace(/\s+/g, '_')}_V.1.ex5
                 </p>
               </div>
               
@@ -318,7 +318,7 @@ function generateEmailHTML(
               <a href="https://mzprimer.com/contact" style="color: #6b7280; font-size: 13px; text-decoration: none;">Support</a>
             </div>
             <p style="margin: 0; color: #4b5563; font-size: 12px; text-align: center; letter-spacing: 0.3px;">
-              © ${new Date().getFullYear()} MZPrimer LTD · All rights reserved
+              © ${new Date().getFullYear()} MZPrimer Intelligence · All rights reserved
             </p>
             ${isSubscription ? `
             <p style="margin: 16px 0 0; color: #d4af37; font-size: 10px; text-align: center; text-transform: uppercase; letter-spacing: 4px; opacity: 0.7;">
@@ -341,7 +341,7 @@ function generatePlainText(
   ctaLink: string
 ): string {
   let text = `
-MZPRIMER - ${isRobot ? 'ROBOT DELIVERY' : isSubscription ? 'PRO LICENSE ACTIVATED' : 'ORDER CONFIRMATION'}
+MZPrimer Intelligence - ${isRobot ? 'ROBOT DELIVERY' : isSubscription ? 'PRO LICENSE ACTIVATED' : 'ORDER CONFIRMATION'}
 ========================================
 Order ID: ${order.orderId}
 Amount: $${order.amountPaid.toFixed(2)}
@@ -372,7 +372,7 @@ Access your dashboard: ${ctaLink}
 
   text += `
 
-Thank you for choosing MZPrimer!
+Thank you for choosing MZPrimer Intelligence!
 Questions? Contact contact@mzprimer.com`;
 
   return text;

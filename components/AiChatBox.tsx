@@ -975,7 +975,7 @@ const incrementTrial = async () => {
         const welcomeMessages: ChatMessage[] = [
           {
             sender: "ai" as const,
-            text: "🤖 MZPrimer AI:\nWelcome! I'm your personal AI Trading Assistant. Let's analyze a strategic setup.",
+            text: "🤖 MZPrimer Intelligence:\nWelcome! I'm your personal AI Trading Assistant. Let's analyze a strategic setup.",
           },
         ];
 

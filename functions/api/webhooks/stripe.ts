@@ -475,7 +475,7 @@ function generateEmailHTML(
           
           <div style="padding: 24px 32px; background: #050505; border-top: 1px solid #1a1a1a; border-radius: 0 0 24px 24px;">
             <p style="margin: 0; color: #4b5563; font-size: 12px; text-align: center;">
-              © ${new Date().getFullYear()} MZPrimer LTD · All rights reserved
+              © ${new Date().getFullYear()} MZPrimer Intelligence · All rights reserved
             </p>
           </div>
         </div>

@@ -3,10 +3,10 @@ import React from 'react';
 export default function AboutPage() {
   return (
     <main className="section-container about-container">
-      <h1 className="section-title">👋 About MZPrimer</h1>
+      <h1 className="section-title">👋 About MZPrimer Intelligence</h1>
 
       <p className="about-text">
-        MZPrimer is a premium digital platform operated by MZPrimer LTD (UK). We are built to empower traders with cutting-edge AI tools, institutional-grade simulations, and real-time market data. We help you deconstruct market structure and simulate setups to gain a deeper understanding of market behavior—before you risk capital.
+        MZPrimer Intelligence is a premium digital platform. We are built to empower traders with cutting-edge AI tools, institutional-grade simulations, and real-time market data. We help you deconstruct market structure and simulate setups to gain a deeper understanding of market behavior—before you risk capital.
       </p>
 
       <p className="about-text">

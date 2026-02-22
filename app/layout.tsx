@@ -23,9 +23,9 @@ import Script from 'next/script';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'MZPrimer – Your Gateway to Smart Trading',
+  title: 'MZPrimer Intelligence – Your Gateway to Smart Trading',
   description:
-    'MZPrimer is a premium platform built to help traders get started with speed, confidence, and security. Access exclusive insights, AI tools, and global markets.',
+    'MZPrimer Intelligence is a premium platform built to help traders get started with speed, confidence, and security. Access exclusive insights, AI tools, and global markets.',
   manifest: '/manifest.json',
 };
 

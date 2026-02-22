@@ -10,5 +10,5 @@ export async function sendLicenseEmail(to: string, key: string, expiresAt: strin
     <p>Expires: ${new Date(expiresAt).toUTCString()}</p>
     <p>Use on up to 3 devices. Keep this key private.</p>
   `;
-  await resend.emails.send({ from: 'MZPrimer <noreply@mzprimer.com>', to, subject: 'Your License Key', html });
+  await resend.emails.send({ from: 'MZPrimer <noreply@MZPrimer Intelligence.com>', to, subject: 'Your License Key', html });
 }

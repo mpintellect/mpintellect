@@ -109,8 +109,8 @@ export default function ReferPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'MZPrimer AI Trading',
-          text: 'Join me on MZPrimer and get free AI trading setups!',
+          title: 'MZPrimer Intelligence Trading',
+          text: 'Join me on MZPrimer Intelligence and get free AI trading setups!',
           url: referralLink,
         });
       } catch (err) { console.log("Share failed", err); }

@@ -211,7 +211,7 @@ export async function onRequestGet(context: any) {
               price + ' USD',                                   // price (0.00 for FB)
               link,                                             // link
               imageLink,                                        // image
-              'MZPrimer Education',                             // brand (Education-focused)
+              'MZPrimer Intelligence ',                             // brand (Education-focused)
               'Software > Business & Productivity',             // google_product_category
               sym.category,                                     // custom_label_0
               typeConfig[type].category                         // custom_label_1

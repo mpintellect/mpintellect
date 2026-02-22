@@ -19,7 +19,7 @@ export async function onRequestGet(context: any) {
     const res = await fetch(url, {
       headers: { 
         'Accept': 'application/json',
-        'User-Agent': 'MZPrimer-Internal-Fetcher' 
+        'User-Agent': 'MZPrimer Intell-Internal-Fetcher' 
       },
       // ✅ Cloudflare Native Caching
       // @ts-ignore

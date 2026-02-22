@@ -20,7 +20,7 @@ export async function sendEmail({
   });
 
   await transporter.sendMail({
-    from: `"MZPrimer LTD" <${process.env.EMAIL_FROM}>`,
+    from: `"MZPrimer Intelligence" <${process.env.EMAIL_FROM}>`,
     to,
     subject,
     html,

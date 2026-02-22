@@ -72,35 +72,33 @@ export async function onRequestGet(context: any) {
       }
     }
 
-// ✅ 2. FETCH LIVE MARKET DATA (Safe & Aligned with JSON)
+// ✅ 2. FETCH LIVE MARKET DATA (Using Option 1: symbol-data)
 console.log(`🎨 Cache miss. Rendering: ${adId}`);
 
 const apiSymbol = symbol.replace(/[-_/]/g, '').toUpperCase();
-const dataRes = await fetch(`https://mzprimer.com/api/symbol-data?symbol=${apiSymbol}`);
+// Call your internal symbol-data API
+const dataRes = await fetch(`${new URL(request.url).origin}/api/symbol-data?symbol=${apiSymbol}`);
 
-let marketData: any = {};
-try {
-  marketData = await dataRes.json();
-} catch (e) {
-  console.log(`⚠️ JSON Parse failed for ${symbol}`);
+if (!dataRes.ok) {
+  throw new Error(`Data API failed with status ${dataRes.status}`);
 }
 
-// --- SAFE DATA MAPPING (Aligned with output_AUDUSD.json) ---
+const marketData = await dataRes.json();
+
+// --- INSTITUTIONAL DATA MAPPING ---
+// We use the normalized values from Option 1
 const currentPrice = marketData?.trend?.current_price || "----";
 const finalDecision = marketData?.final_decision || "ANALYZING";
-const isBuy = finalDecision?.includes("BUY") || false;
+const isBuy = finalDecision.includes("BUY");
 const confidence = marketData?.risk_score?.confidence_score || marketData?.analysis_accuracy || 85;
 
-// Use the 'tp_sl' object as the primary source (it's the most reliable in your JSON)
-const levels = marketData?.tp_sl;
-// Use 'pending_orders.primary_order' as fallback
-const primary = marketData?.pending_orders?.primary_order;
+// Use the most reliable path for TP/SL/Entry
+const tpLevel = marketData?.tp_sl?.tp_level || marketData?.pending_orders?.primary_order?.tp_price || "----";
+const slLevel = marketData?.tp_sl?.sl_level || marketData?.pending_orders?.primary_order?.sl_price || "----";
+const entryLevel = marketData?.tp_sl?.entry_price || marketData?.pending_orders?.primary_order?.entry_price || currentPrice;
 
-const entryLevel = levels?.entry_price || primary?.entry_price || currentPrice;
-const tpLevel = levels?.tp_level || primary?.tp_price || "----";
-const slLevel = levels?.sl_level || primary?.sl_price || "----";
-
-console.log(`📊 Data Loaded: Price:${currentPrice} Entry:${entryLevel} TP:${tpLevel} SL:${slLevel}`);
+console.log(`📊 [${symbol}] Price: ${currentPrice} | Entry: ${entryLevel} | TP: ${tpLevel}`);
+// --- END MAPPING ---
     // 3. OPEN CHROME & PAINT
     const browser = await puppeteer.launch(env.BROWSER);
     const page = await browser.newPage();

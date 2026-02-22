@@ -1,5 +1,4 @@
 name: MZ Ad Warmup (Pre-Render)
-
 on:
   schedule:
     - cron: '30 0 * * *'
@@ -10,7 +9,7 @@ jobs:
   warmup:
     runs-on: ubuntu-latest
     steps:
-      - name: 🔥 Bake 144 Institutional Images (Sequential)
+      - name: 🔥 Bake 144 Images
         run: |
           SYMBOLS=("EURUSD" "GBPUSD" "XAUUSD" "BTCUSD" "ETHUSD" "US500" "USTEC" "BRENT")
           TYPES=("test" "chat" "update" "volatility")
@@ -18,29 +17,19 @@ jobs:
 
           for sym in "${SYMBOLS[@]}"; do
             for type in "${TYPES[@]}"; do
-              # Determine styles for this type
+              # Logic: test and chat get both. Others get black only.
               STYLES=("black")
-              if [[ "$type" == "test" || "$type" == "chat" ]]; then
-                STYLES=("black" "cyber")
-              fi
+              if [[ "$type" == "test" || "$type" == "chat" ]]; then STYLES=("black" "cyber"); fi
 
               for style in "${STYLES[@]}"; do
                 for size in "${SIZES[@]}"; do
-                  echo "🚀 [SYMBOL: $sym] [TYPE: $type] [STYLE: $style] [SIZE: $size]"
-                  
-                  # GitHub waits for Cloudflare to return a 200 OK
-                  # --fail makes the script stop if there's a serious server error
+                  echo "🚀 Baking $sym-$type-$style-$size"
                   curl --fail -s "https://mzprimer.com/api/ads/warmup?key=${{ secrets.ADMIN_KEY }}&symbol=$sym&type=$type&style=$style&size=$size"
-                  
-                  # 😴 SAFETY GAP: 5 seconds ensures no browser overlaps
-                  echo "✅ Baking confirmed. Cooling down 5s..."
-                  sleep 5
+                  sleep 4
                 done
               done
             done
           done
 
-      - name: 🏁 Final Activation
-        run: |
-          echo "✅ All 144 variants verified. Flipping the Safety Switch..."
-          curl -s "https://mzprimer.com/api/ads/activate-version?key=${{ secrets.ADMIN_KEY }}"
+      - name: 🏁 Activate
+        run: curl -s "https://mzprimer.com/api/ads/activate-version?key=${{ secrets.ADMIN_KEY }}"

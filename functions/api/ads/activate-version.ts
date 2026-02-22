@@ -1,20 +1,16 @@
 // functions/api/ads/activate-version.ts
-
 export async function onRequestGet(context: any) {
   const { env, request } = context;
   const url = new URL(request.url);
   
-  if (url.searchParams.get("key") !== env.ADMIN_KEY) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  if (url.searchParams.get("key") !== env.ADMIN_KEY) return new Response("Unauthorized", { status: 401 });
 
-  // ✅ THE SMART SWITCH: Calculate the version on the server
-  // This ensures GitHub and Cloudflare are always perfectly synced
-  const currentVersion = Math.floor(Date.now() / (12 * 3600000));
+  // ✅ INTERNAL MATH: Matches the warmup script exactly
+  const version = Math.floor(Date.now() / (12 * 3600000));
 
   await env.DB.prepare("INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)")
-    .bind('current_ad_version', currentVersion.toString())
+    .bind('current_ad_version', version.toString())
     .run();
 
-  return new Response(`Activated Version: ${currentVersion}`);
+  return new Response(`Activated v${version}`);
 }

@@ -2,25 +2,40 @@ name: MZ Ad Warmup (Pre-Render)
 
 on:
   schedule:
-    - cron: '30 0 * * *'  # 00:30 UTC
-    - cron: '30 12 * * *' # 12:30 UTC
-  workflow_dispatch:      # Play button
+    - cron: '30 0 * * *'
+    - cron: '30 12 * * *'
+  workflow_dispatch:
 
 jobs:
   warmup:
     runs-on: ubuntu-latest
     steps:
-      - name: Bake 8 Symbols
+      - name: 🔥 Bake 144 Institutional Images
         run: |
           SYMBOLS=("EURUSD" "GBPUSD" "XAUUSD" "BTCUSD" "ETHUSD" "US500" "USTEC" "BRENT")
-          for sym in "${SYMBOLS[@]}"
-          do
-            echo "🔥 Baking $sym..."
-            curl -s "https://mzprimer.com/api/ads/warmup?key=${{ secrets.ADMIN_KEY }}&symbol=$sym"
-            sleep 45
+          TYPES=("test" "chat" "update" "volatility")
+          SIZES=("standard" "square" "portrait")
+
+          for sym in "${SYMBOLS[@]}"; do
+            for type in "${TYPES[@]}"; do
+              # Logic: Only test and chat get cyber style
+              STYLES=("black")
+              if [[ "$type" == "test" || "$type" == "chat" ]]; then
+                STYLES=("black" "cyber")
+              fi
+
+              for style in "${STYLES[@]}"; do
+                for size in "${SIZES[@]}"; do
+                  echo "Baking $sym-$type-$style-$size..."
+                  # We no longer send the version (v) here!
+                  curl -s "https://mzprimer.com/api/ads/warmup?key=${{ secrets.ADMIN_KEY }}&symbol=$sym&type=$type&style=$style&size=$size"
+                  sleep 1
+                done
+              done
+            done
           done
 
-      - name: 🏁 Flip the Safety Switch
+      - name: 🏁 Activate
         run: |
-          echo "✅ Baking finished. Activating current version..."
+          echo "✅ All symbols requested. Flipping the switch..."
           curl -s "https://mzprimer.com/api/ads/activate-version?key=${{ secrets.ADMIN_KEY }}"

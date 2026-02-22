@@ -117,7 +117,7 @@ export async function onRequestGet(context: any) {
           }
 
           // Use database-controlled version for all image URLs
-          const imageLink = `https://ads.mzprimer.com/ad_${sym.id.toLowerCase()}_${style}_${type}_${size}_v${version}.png`;
+           const imageLink = `https://ads.mzprimer.com/ad_${sym.id.toLowerCase()}_${style}_${type}_${size}.png?v=${version}`;
 
           // Price logic - Facebook always free, Google can have paid
           let price, formattedPrice;

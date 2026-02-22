@@ -6,14 +6,14 @@ export async function onRequestGet(context: any) {
   // 1. Clear the old list
   await env.DB.prepare("DELETE FROM ad_queue").run();
 
-  const types = ["test", "chat", "update", "volatility"];
+  const types = ["test", "chat", "update"];
   const sizes = ["standard", "square", "portrait"];
 
   // 2. Fill the list with 144 tasks
   const statements = [];
   for (const sym of AD_SYMBOLS) {
     for (const type of types) {
-      const styles = (type === 'test' || type === 'chat') ? ['black', 'cyber'] : ['black'];
+      const styles = (type === 'chat') ? ['black', 'cyber'] : ['black'];
       for (const style of styles) {
         for (const size of sizes) {
           statements.push(

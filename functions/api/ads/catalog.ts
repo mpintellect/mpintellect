@@ -43,8 +43,8 @@ export async function onRequestGet(context: any) {
   
   // For each style, define which types of content to show
   const styleToTypes: Record<string, string[]> = {
-    'black': ['test', 'chat', 'update', 'volatility'],
-    'cyber': ['test', 'chat']
+    'black': ['test', 'chat', 'update'],
+    'cyber': ['chat']
   };
 
   // Map types to display names and URLs
@@ -69,13 +69,6 @@ export async function onRequestGet(context: any) {
       category: 'Update',
       fbDescription: 'Daily market overview for {symbol}. Review price action, key levels, and market structure for your personal research and education.',
       googleDescription: 'Professional market analysis for {symbol} with technical levels, trend structure, and institutional data points for informed decision-making.'
-    },
-    'volatility': {
-      name: 'Volatility Analysis',
-      url: '/tools/ai-assistant?tab=volatility',
-      category: 'Analysis',
-      fbDescription: 'Educational volatility metrics for {symbol}. Learn about average true range, support/resistance levels, and market behavior patterns.',
-      googleDescription: 'Advanced volatility analysis tool for {symbol} with ATR calculations, volatility cones, and market structure analysis for professional traders.'
     }
   };
 
@@ -153,8 +146,6 @@ export async function onRequestGet(context: any) {
               title = `Explore ${sym.name} Markets`;
             } else if (type === 'update') {
               title = `${sym.name} Market Review`;
-            } else if (type === 'volatility') {
-              title = `Understand ${sym.name} Volatility`;
             } else {
               title = `${sym.name} ${typeConfig[type].name}`;
             }
@@ -178,8 +169,6 @@ export async function onRequestGet(context: any) {
               title = `${sym.name} AI Market Analysis`;
             } else if (type === 'update') {
               title = `${sym.name} Professional Market Data`;
-            } else if (type === 'volatility') {
-              title = `${sym.name} Volatility Analysis Tool`;
             } else {
               title = `${sym.name} ${typeConfig[type].name}`;
             }

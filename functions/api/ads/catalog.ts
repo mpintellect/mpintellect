@@ -9,7 +9,6 @@ export async function onRequestGet(context: any) {
   const platform = url.searchParams.get("platform") || "facebook"; 
   
   // 2. Ask the Database which version is 100% ready
-  // This ensures all ads use the same version that's been validated
   const versionRecord = await env.DB.prepare(
     "SELECT value FROM app_settings WHERE key = 'current_ad_version'"
   ).first();
@@ -49,28 +48,40 @@ export async function onRequestGet(context: any) {
   };
 
   // Map types to display names and URLs
-  const typeConfig: Record<string, { name: string, url: string, category: string }> = {
+  const typeConfig: Record<string, { name: string, url: string, category: string, fbDescription: string, googleDescription: string }> = {
     'chat': {
       name: 'AI Assistant',
       url: '/AIChat',
-      category: 'Lead_Gen'
+      category: 'Lead_Gen',
+      fbDescription: 'Interactive market analysis tool for {symbol}. Ask questions about market structures and learn trading concepts through AI-guided exploration. For educational purposes only.',
+      googleDescription: 'Professional AI-powered market analysis tool for {symbol}. Analyze market structures, identify patterns, and enhance your trading research with real-time data.'
     },
     'test': {
       name: 'Prop Firm Calculator',
       url: '/prop-firm',
-      category: 'Tool'
+      category: 'Tool',
+      fbDescription: 'Educational position sizing calculator for {symbol}. Learn how prop firm challenges work and practice risk management concepts in a safe environment.',
+      googleDescription: 'Advanced prop firm challenge calculator for {symbol}. Track drawdown limits, calculate position sizes, and manage risk parameters for FTMO and similar programs.'
     },
     'update': {
       name: 'Market Update',
       url: '/tools/ai-assistant',
-      category: 'Update'
+      category: 'Update',
+      fbDescription: 'Daily market overview for {symbol}. Review price action, key levels, and market structure for your personal research and education.',
+      googleDescription: 'Professional market analysis for {symbol} with technical levels, trend structure, and institutional data points for informed decision-making.'
     },
     'volatility': {
       name: 'Volatility Analysis',
       url: '/tools/ai-assistant?tab=volatility',
-      category: 'Analysis'
+      category: 'Analysis',
+      fbDescription: 'Educational volatility metrics for {symbol}. Learn about average true range, support/resistance levels, and market behavior patterns.',
+      googleDescription: 'Advanced volatility analysis tool for {symbol} with ATR calculations, volatility cones, and market structure analysis for professional traders.'
     }
   };
+
+  // Safe descriptions for robots
+  const botFbDescription = 'Educational trading software for {symbol}. Learn about automated trading concepts and risk management through interactive tutorials.';
+  const botGoogleDescription = 'Professional automated trading software for {symbol} with customizable parameters, risk controls, and backtesting capabilities.';
 
   // Use a Set to track used IDs to prevent duplicates
   const usedIds = new Set();
@@ -105,12 +116,19 @@ export async function onRequestGet(context: any) {
             link = `${LANDING_HOST}/ai-robot?symbol=${sym.id}&source=${platform}_ad&variant=${size}`;
           }
 
-          // ✅ Use database-controlled version for all image URLs
+          // Use database-controlled version for all image URLs
           const imageLink = `https://ads.mzprimer.com/ad_${sym.id.toLowerCase()}_${style}_${type}_${size}_v${version}.png`;
 
-          // Price logic
-          const price = isBot ? '50.00' : '5.00';
-          const formattedPrice = isBot ? '50.00 USD' : 'Free';
+          // Price logic - Facebook always free, Google can have paid
+          let price, formattedPrice;
+          if (platform === 'facebook') {
+            price = '0.00';
+            formattedPrice = 'Free';
+          } else {
+            // Google can have paid products
+            price = isBot ? '50.00' : '5.00';
+            formattedPrice = isBot ? '50.00 USD' : '5.00 USD';
+          }
           
           // Size description
           const sizeDescriptions: Record<string, string> = {
@@ -124,43 +142,90 @@ export async function onRequestGet(context: any) {
             cyber: 'Neon Cyber'
           };
 
-          // Create title and description
-          const title = `${sym.name} ${typeConfig[type].name}`;
+          // Platform-specific title and description
+          let title, description;
+          
+          if (platform === 'facebook') {
+            // Facebook: Educational, soft titles
+            if (type === 'test') {
+              title = `Learn ${sym.name} Position Sizing`;
+            } else if (type === 'chat') {
+              title = `Explore ${sym.name} Markets`;
+            } else if (type === 'update') {
+              title = `${sym.name} Market Review`;
+            } else if (type === 'volatility') {
+              title = `Understand ${sym.name} Volatility`;
+            } else {
+              title = `${sym.name} ${typeConfig[type].name}`;
+            }
+            
+            // Use platform-specific description
+            if (isBot) {
+              description = botFbDescription.replace('{symbol}', sym.name);
+            } else {
+              description = typeConfig[type].fbDescription.replace('{symbol}', sym.name);
+            }
+            
+            // Add educational disclaimer for Facebook
+            description += ' For educational purposes only. Not financial advice.';
+          } else {
+            // Google: Professional, feature-focused titles
+            if (isBot) {
+              title = `${sym.name} Automated Trading Software`;
+            } else if (type === 'test') {
+              title = `${sym.name} Prop Firm Calculator Pro`;
+            } else if (type === 'chat') {
+              title = `${sym.name} AI Market Analysis`;
+            } else if (type === 'update') {
+              title = `${sym.name} Professional Market Data`;
+            } else if (type === 'volatility') {
+              title = `${sym.name} Volatility Analysis Tool`;
+            } else {
+              title = `${sym.name} ${typeConfig[type].name}`;
+            }
+            
+            // Use platform-specific description
+            if (isBot) {
+              description = botGoogleDescription.replace('{symbol}', sym.name);
+            } else {
+              description = typeConfig[type].googleDescription.replace('{symbol}', sym.name);
+            }
+          }
+
           const subtitle = `${styleDescriptions[style]} ${sizeDescriptions[size]}`;
-          const description = `Interactive ${typeConfig[type].name} for ${sym.name} trading. Real-time market insights, AI-powered analysis, and professional trading signals. Perfect for ${styleDescriptions[style]} theme.`;
 
           // Item category
-          const itemCategory = isBot ? 'Trading Robot' : 'Trading Tool';
+          const itemCategory = isBot ? 'Trading Software' : 'Trading Tools';
 
           // Contextual keywords
-          const keywords = `${sym.name},${typeConfig[type].name},${styleDescriptions[style]},${sizeDescriptions[size]},trading,forex,AI,signals`.toLowerCase();
+          const keywords = `${sym.name},${typeConfig[type].name},${styleDescriptions[style]},${sizeDescriptions[size]},trading,education,market analysis,risk management`.toLowerCase();
 
           if (platform === 'facebook') {
-            // Facebook-specific row
+            // Facebook-specific row - SAFE VERSION
             rows.push([
               prodId,                                           // id
               title,                                            // title
-              description,                                      // description
-              'in stock',                                       // availability
-              'new',                                            // condition
-              price + ' USD',                                   // price
+              description,                                      // description (educational)
+              'available for order',                            // availability (safer than 'in stock')
+              'refurbished',                                    // condition (safer for FB)
+              price + ' USD',                                   // price (0.00 for FB)
               link,                                             // link
-              imageLink,                                        // ✅ Database-controlled version
-              'MZPrimer AI',                                    // brand
+              imageLink,                                        // image
+              'MZPrimer Education',                             // brand (Education-focused)
               'Software > Business & Productivity',             // google_product_category
               sym.category,                                     // custom_label_0
               typeConfig[type].category                         // custom_label_1
             ]);
           } else {
-            // Google-specific row
+            // Google-specific row - PROFESSIONAL VERSION
             rows.push([
               prodId,                                           // ID
               '',                                               // ID2
               link,                                             // Final URL
-              imageLink,                                        // ✅ Database-controlled version
+              imageLink,                                        // Image URL
               title,                                            // Item title
               subtitle,                                         // Item subtitle
-              description,                                      // Item description
+              description,                                      // Item description (professional)
               '',                                               // Item address
               itemCategory,                                     // Item category
               price,                                            // Price
@@ -181,7 +246,7 @@ export async function onRequestGet(context: any) {
     }
   }
 
-  // 3. Assemble CSV
+  // Assemble CSV
   const csvBody = [
     columns.map(csvEscape).join(','),
     ...rows.map(row => row.map(csvEscape).join(','))

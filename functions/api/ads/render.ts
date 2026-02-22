@@ -54,7 +54,7 @@ export async function onRequestGet(context: any) {
   const config = SIZES[sizeKey as keyof typeof SIZES] || SIZES.square;
   
   // UNIQUE FILENAME WITH VERSION - includes version for cache busting
-  const adId = `ad_${symbol}_${style}_${type}_${sizeKey}_v${version}.png`.toLowerCase();
+  const adId = `ad_${symbol.toLowerCase()}_${style}_${type}_${sizeKey}.png`;
 
   try {
     // 🛡️ STEP 1: CHECK R2 CACHE FIRST

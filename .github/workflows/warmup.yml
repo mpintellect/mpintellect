@@ -10,7 +10,7 @@ jobs:
   warmup:
     runs-on: ubuntu-latest
     steps:
-      - name: 🔥 Bake 144 Institutional Images
+      - name: 🔥 Bake 144 Institutional Images (Sequential)
         run: |
           SYMBOLS=("EURUSD" "GBPUSD" "XAUUSD" "BTCUSD" "ETHUSD" "US500" "USTEC" "BRENT")
           TYPES=("test" "chat" "update" "volatility")
@@ -18,7 +18,7 @@ jobs:
 
           for sym in "${SYMBOLS[@]}"; do
             for type in "${TYPES[@]}"; do
-              # Logic: Only test and chat get cyber style
+              # Determine styles for this type
               STYLES=("black")
               if [[ "$type" == "test" || "$type" == "chat" ]]; then
                 STYLES=("black" "cyber")
@@ -26,16 +26,21 @@ jobs:
 
               for style in "${STYLES[@]}"; do
                 for size in "${SIZES[@]}"; do
-                  echo "Baking $sym-$type-$style-$size..."
-                  # We no longer send the version (v) here!
-                  curl -s "https://mzprimer.com/api/ads/warmup?key=${{ secrets.ADMIN_KEY }}&symbol=$sym&type=$type&style=$style&size=$size"
-                  sleep 1
+                  echo "🚀 [SYMBOL: $sym] [TYPE: $type] [STYLE: $style] [SIZE: $size]"
+                  
+                  # GitHub waits for Cloudflare to return a 200 OK
+                  # --fail makes the script stop if there's a serious server error
+                  curl --fail -s "https://mzprimer.com/api/ads/warmup?key=${{ secrets.ADMIN_KEY }}&symbol=$sym&type=$type&style=$style&size=$size"
+                  
+                  # 😴 SAFETY GAP: 5 seconds ensures no browser overlaps
+                  echo "✅ Baking confirmed. Cooling down 5s..."
+                  sleep 5
                 done
               done
             done
           done
 
-      - name: 🏁 Activate
+      - name: 🏁 Final Activation
         run: |
-          echo "✅ All symbols requested. Flipping the switch..."
+          echo "✅ All 144 variants verified. Flipping the Safety Switch..."
           curl -s "https://mzprimer.com/api/ads/activate-version?key=${{ secrets.ADMIN_KEY }}"

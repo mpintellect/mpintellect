@@ -16,41 +16,36 @@ export default {
   },
 
   async processQueue(env: any) {
-    const ADMIN_KEY = "MZprimer2026";
-    const BASE_URL = "https://mzprimer.com";
+  const ADMIN_KEY = "MZprimer2026";
+  const BASE_URL = "https://mzprimer.com";
 
-    // 1. Get ONE symbol batch from the database
-    const task: any = await env.DB.prepare(
-      "SELECT * FROM ad_queue WHERE status = 'pending' ORDER BY id ASC LIMIT 1"
-    ).first();
+  // 1. Get the next Symbol/Type batch from the queue
+  const task: any = await env.DB.prepare(
+    "SELECT * FROM ad_queue WHERE status = 'pending' ORDER BY id ASC LIMIT 1"
+  ).first();
 
-    if (!task) {
-      console.log("💤 Queue empty. No tasks to process.");
-      return;
-    }
+  if (!task) {
+    console.log("💤 No pending tasks found.");
+    return;
+  }
 
-    // 2. Loop through the 3 sizes for this symbol
-    const sizes = ["standard", "square", "portrait"];
+  // 2. DEFINE SIZES HERE - THIS IS CRITICAL
+  const sizes = ["standard", "square", "portrait"];
+  
+  console.log(`🔥 Starting Batch for: ${task.symbol} (${task.type})`);
+
+  for (const size of sizes) {
+    // 3. MAKE SURE size IS IN THE URL
+    const url = `${BASE_URL}/api/ads/render?key=${ADMIN_KEY}&symbol=${task.symbol}&type=${task.type}&style=${task.style}&size=${size}`;
     
-    // ✅ LOGIC FIX: We use 'size' from the array below
-    for (const size of sizes) {
-      console.log(`🎨 Baking: ${task.symbol}-${task.type}-${size}`); // Using 'size', not 'task.size'
-
-      const url = `${BASE_URL}/api/ads/render?key=${ADMIN_KEY}&symbol=${task.symbol}&type=${task.type}&style=${task.style}&size=${size}`;
-      
-      try {
-        const res = await fetch(url);
-        if (res.ok) {
-          console.log(`✅ Success: ${task.symbol}-${size}`);
-        } else {
-          // If the website returns 500, we see it here
-          const errorText = await res.text();
-          console.error(`❌ Website Error for ${size}: ${res.status} - ${errorText}`);
-        }
-      } catch (e: any) {
-        console.error(`💥 Connection failure: ${e.message}`);
-      }
+    try {
+      console.log(`🎨 Baking: ${task.symbol}-${task.type}-${size}`);
+      const res = await fetch(url);
+      console.log(`✅ ${task.symbol}-${size}: ${res.status}`);
+    } catch (e: any) {
+      console.error(`❌ Render failed for ${task.symbol}-${size}:`, e.message);
     }
+  }
 
     // 3. Mark the Symbol as finished
     await env.DB.prepare("UPDATE ad_queue SET status = 'completed' WHERE id = ?")

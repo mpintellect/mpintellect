@@ -11,7 +11,6 @@ export const AD_SYMBOLS: SymbolDef[] = [
   { id: 'XAUUSD', name: 'Gold (XAU/USD)', category: 'Metals' },
   { id: 'BTCUSD', name: 'Bitcoin (BTC)', category: 'Crypto' },
   { id: 'ETHUSD', name: 'Ethereum (ETH)', category: 'Crypto' },
-  { id: 'USTEC', name: 'Nasdaq 100', category: 'Indices' },
   { id: 'BRENT', name: 'Crude Oil (Brent)', category: 'Energy' },
  
 ];

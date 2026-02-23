@@ -43,7 +43,7 @@ export async function onRequestGet(context: any) {
   
   // For each style, define which types of content to show
   const styleToTypes: Record<string, string[]> = {
-    'black': ['test', 'chat', 'update'],
+    'black': ['test', 'update'],
     'cyber': ['chat']
   };
 

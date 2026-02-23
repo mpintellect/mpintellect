@@ -1,19 +1,16 @@
-/**
- * MZ AD SCHEDULER (Batch Processor)
- * TypeScript Clean Version
- */
-
 export default {
-  // We use _ to tell TypeScript 'event' is intentionally ignored
+  // 1. Fixed 'ctx' name here
   async scheduled(_event: any, env: any, ctx: any) {
-    // We pass 'env' to the logic function
+    // Now 'ctx' matches the name above
     ctx.waitUntil(this.processQueue(env));
   },
 
-  // Added types to parameters to fix ts(7006)
-  async fetch(_request: any, env: any, _ctx: any) {
-    await this.processQueue(env);
-    return new Response("🚀 MZ Queue: Processing 1 symbol batch (3 sizes)...", {
+  // 2. Fixed 'ctx' name here as well
+  async fetch(_request: any, env: any, ctx: any) {
+    // Using ctx.waitUntil is safer for background tasks in fetch too
+    ctx.waitUntil(this.processQueue(env));
+    
+    return new Response("🚀 MZ Queue Processor: Batch started...", {
       headers: { "Content-Type": "text/plain" }
     });
   },
@@ -22,51 +19,50 @@ export default {
     const ADMIN_KEY = "MZprimer2026";
     const BASE_URL = "https://mzprimer.com";
 
-    // 1. Get the next Symbol/Type batch from the queue
+    // 1. Get ONE symbol batch from the database
     const task: any = await env.DB.prepare(
       "SELECT * FROM ad_queue WHERE status = 'pending' ORDER BY id ASC LIMIT 1"
     ).first();
 
     if (!task) {
-      console.log("💤 No pending tasks found.");
+      console.log("💤 Queue empty. No tasks to process.");
       return;
     }
 
-    // 2. We loop through all 3 sizes for this one symbol
-    // This is the most efficient way to use your 10-minute daily limit
+    // 2. Loop through the 3 sizes for this symbol
     const sizes = ["standard", "square", "portrait"];
     
-    console.log(`🔥 Starting Batch for: ${task.symbol} (${task.type})`);
-
+    // ✅ LOGIC FIX: We use 'size' from the array below
     for (const size of sizes) {
+      console.log(`🎨 Baking: ${task.symbol}-${task.type}-${size}`); // Using 'size', not 'task.size'
+
       const url = `${BASE_URL}/api/ads/render?key=${ADMIN_KEY}&symbol=${task.symbol}&type=${task.type}&style=${task.style}&size=${size}`;
       
       try {
-        // We await each size so they don't overlap
         const res = await fetch(url);
-        console.log(`✅ ${task.symbol}-${size}: ${res.status}`);
+        if (res.ok) {
+          console.log(`✅ Success: ${task.symbol}-${size}`);
+        } else {
+          // If the website returns 500, we see it here
+          const errorText = await res.text();
+          console.error(`❌ Website Error for ${size}: ${res.status} - ${errorText}`);
+        }
       } catch (e: any) {
-        console.error(`❌ Render failed for ${size}:`, e.message);
+        console.error(`💥 Connection failure: ${e.message}`);
       }
     }
 
-    // 3. Mark the Symbol/Type batch as finished
+    // 3. Mark the Symbol as finished
     await env.DB.prepare("UPDATE ad_queue SET status = 'completed' WHERE id = ?")
       .bind(task.id)
       .run();
 
-    // 4. Check if the whole project is finished
-    const remaining: any = await env.DB.prepare(
-      "SELECT COUNT(*) as count FROM ad_queue WHERE status = 'pending'"
-    ).first();
-
-    if (remaining && remaining.count === 0) {
-      console.log("🎊 QUEUE COMPLETE. Activating live version.");
+    // 4. Check if we are finished
+    const remaining: any = await env.DB.prepare("SELECT COUNT(*) as count FROM ad_queue WHERE status = 'pending'").first();
+    if (remaining.count === 0) {
+      console.log("🎊 Project Finished. Activating version.");
       await fetch(`${BASE_URL}/api/ads/activate-version?key=${ADMIN_KEY}`);
-      // Clean up the queue for the next 12-hour cycle
       await env.DB.prepare("DELETE FROM ad_queue WHERE status = 'completed'").run();
-    } else {
-      console.log(`⏳ ${remaining?.count || 0} batches remaining in queue.`);
     }
   }
 };

@@ -1,3 +1,4 @@
+
 // functions/api/ads/render.ts
 import puppeteer from "@cloudflare/puppeteer";
 
@@ -101,96 +102,47 @@ export async function onRequestGet(context: any) {
     console.log(`📊 [${symbol}] Price: ${currentPrice} | Entry: ${entryLevel} | TP: ${tpLevel}`);
     // --- END MAPPING ---
     
-    // 3. OPEN CHROME & PAINT
+        // 3. OPEN CHROME & PAINT
     browser = await puppeteer.launch(env.BROWSER);
     const page = await browser.newPage();
     await page.setViewport(config);
 
-    // ✅ Check if this is a batch request - if so, we'll process all sizes
-    const isBatch = searchParams.get("batch") === "true";
+    const html = generateAdHTML(
+      symbol, style, type, marketData, config, 
+      currentPrice, finalDecision, isBuy, confidence,
+      tpLevel, slLevel, entryLevel
+    );
+
+    await page.setContent(html);
+    await page.waitForNetworkIdle({ timeout: 1500 });
+    const screenshot = await page.screenshot();
     
-    if (isBatch) {
-      // Batch mode: Generate all 3 sizes in one browser session
-      const sizes = ['standard', 'square', 'portrait'];
-      const results = [];
-      
-      for (const size of sizes) {
-        const sizeConfig = SIZES[size as keyof typeof SIZES] || SIZES.square;
-        await page.setViewport(sizeConfig);
-        
-        const html = generateAdHTML(
-          symbol, style, type, marketData, sizeConfig,
-          currentPrice, finalDecision, isBuy, confidence,
-          tpLevel, slLevel, entryLevel
-        );
-        
-        await page.setContent(html);
-        await page.waitForNetworkIdle({ timeout: 1500 });
-        
-        const screenshot = await page.screenshot();
-        const batchAdId = `ad_${symbol.toLowerCase()}_${style}_${type}_${size}.png`;
-        
-        if (env.AD_STORAGE) {
-          await env.AD_STORAGE.put(batchAdId, screenshot, {
-            httpMetadata: { contentType: "image/png" }
-          });
-          console.log(`✅ Saved batch render to R2: ${batchAdId}`);
-        }
-        results.push({ size, status: "success" });
-      }
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        symbol, 
-        type, 
-        style, 
-        results 
-      }), {
-        headers: { "Content-Type": "application/json" }
+    // 📦 STEP 4: SAVE TO R2
+    if (env.AD_STORAGE) {
+      await env.AD_STORAGE.put(adId, screenshot, {
+        httpMetadata: { contentType: "image/png" }
       });
-    } else {
-      // Single size mode (original behavior)
-      const html = generateAdHTML(
-        symbol, style, type, marketData, config,
-        currentPrice, finalDecision, isBuy, confidence,
-        tpLevel, slLevel, entryLevel
-      );
-
-      await page.setContent(html);
-      await page.waitForNetworkIdle({ timeout: 1500 });
-
-      const screenshot = await page.screenshot();
-      
-      // 📦 STEP 4: SAVE TO R2 FOR FUTURE REQUESTS
-      if (env.AD_STORAGE) {
-        await env.AD_STORAGE.put(adId, screenshot, {
-          httpMetadata: { contentType: "image/png" }
-        });
-        console.log(`✅ Saved new render to R2: ${adId}`);
-      }
-      
-      // ✅ Return the image
-      return new Response(screenshot, {
-        headers: { 
-          "Content-Type": "image/png",
-          "Cache-Control": "public, max-age=3600"
-        }
-      });
+      console.log(`✅ Saved new render to R2: ${adId}`);
     }
+    
+    return new Response(screenshot, {
+      headers: { 
+        "Content-Type": "image/png",
+        "Cache-Control": "public, max-age=3600"
+      }
+    });
 
   } catch (e: any) {
     console.error("💥 Rendering Error:", e.message);
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
 
   } finally {
-    // ✅ CRITICAL: Always close the browser to free resources
     if (browser) {
       await browser.close();
       console.log("🧼 Browser session closed and resource freed.");
     }
   }
 }
-
 function generateAdHTML(
   symbol: string,
   style: string,
@@ -669,8 +621,8 @@ if (type === "update") {
     `;
 }
 // ==============================================
-  // TYPE: Volatility
-  // ==============================================
+// TYPE: Volatility
+// ==============================================
 if (type === "volatility") {
     const v = data.volatility || {};
     

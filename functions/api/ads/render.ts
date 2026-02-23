@@ -2,7 +2,7 @@
 // functions/api/ads/render.ts
 import puppeteer from "@cloudflare/puppeteer";
 
-const SIZES = {
+const SIZES: any = {
   standard: { width: 1200, height: 628 },  // Google Ads
   square: { width: 1080, height: 1080 },    // Facebook/Instagram Square
   portrait: { width: 1080, height: 1350 },  // Instagram Portrait // Website Leaderboard // Billboard
@@ -45,102 +45,61 @@ export async function onRequestGet(context: any) {
   const { request, env } = context;
   const { searchParams } = new URL(request.url);
 
-  // 1. Parameters
   const symbol = (searchParams.get("symbol") || "XAUUSD").toUpperCase();
   const style = (searchParams.get("style") || "black").toLowerCase();
   const type = (searchParams.get("type") || "test").toLowerCase();
   const sizeKey = (searchParams.get("size") || "square").toLowerCase();
-  const version = searchParams.get("v") || "1";
   const forceKey = searchParams.get("key");
   const isManager = forceKey === env.ADMIN_KEY;
   
-  const config = SIZES[sizeKey as keyof typeof SIZES] || SIZES.square;
-  
-  // UNIQUE FILENAME WITH VERSION
+  const config = SIZES[sizeKey] || SIZES.square;
   const adId = `ad_${symbol.toLowerCase()}_${style}_${type}_${sizeKey}.png`;
 
-  let browser: any; // Define browser here so finally block can access it
+  let browser: any;
 
   try {
-    // 🛡️ STEP 1: CHECK R2 CACHE FIRST (skip if manager is forcing a bake)
     if (!isManager && env.AD_STORAGE) {
       const cachedFile = await env.AD_STORAGE.get(adId);
-      if (cachedFile) {
-        console.log(`🚀 Serving cached ad: ${adId}`);
-        return new Response(cachedFile.body, {
-          headers: { 
-            "Content-Type": "image/png",
-            "Cache-Control": "public, max-age=3600",
-            "X-Cache-Hit": "true"
-          }
-        });
-      }
+      if (cachedFile) return new Response(cachedFile.body, { headers: { "Content-Type": "image/png" } });
     }
 
-    // ✅ 2. FETCH LIVE MARKET DATA
-    console.log(`🎨 Cache miss. Rendering: ${adId}`);
-    
     const apiSymbol = symbol.replace(/[-_/]/g, '').toUpperCase();
     const dataRes = await fetch(`${new URL(request.url).origin}/api/symbol-data?symbol=${apiSymbol}`);
-    
-    if (!dataRes.ok) {
-      throw new Error(`Data API failed with status ${dataRes.status}`);
-    }
-    
+    if (!dataRes.ok) throw new Error(`Data API Failure: ${dataRes.status}`);
     const marketData = await dataRes.json();
-    
-    // --- INSTITUTIONAL DATA MAPPING ---
+
+    // Data Mapping
     const currentPrice = marketData?.trend?.current_price || "----";
     const finalDecision = marketData?.final_decision || "ANALYZING";
     const isBuy = finalDecision.includes("BUY");
-    const confidence = marketData?.risk_score?.confidence_score || marketData?.analysis_accuracy || 85;
-    
+    const confidence = marketData?.risk_score?.confidence_score || 85;
     const tpLevel = marketData?.tp_sl?.tp_level || marketData?.pending_orders?.primary_order?.tp_price || "----";
     const slLevel = marketData?.tp_sl?.sl_level || marketData?.pending_orders?.primary_order?.sl_price || "----";
     const entryLevel = marketData?.tp_sl?.entry_price || marketData?.pending_orders?.primary_order?.entry_price || currentPrice;
-    
-    console.log(`📊 [${symbol}] Price: ${currentPrice} | Entry: ${entryLevel} | TP: ${tpLevel}`);
-    // --- END MAPPING ---
-    
-        // 3. OPEN CHROME & PAINT
+
+    // Launch Browser
     browser = await puppeteer.launch(env.BROWSER);
     const page = await browser.newPage();
     await page.setViewport(config);
 
-    const html = generateAdHTML(
-      symbol, style, type, marketData, config, 
-      currentPrice, finalDecision, isBuy, confidence,
-      tpLevel, slLevel, entryLevel
-    );
+    // Call HTML Generator
+    const html = generateAdHTML(symbol, style, type, marketData, config, currentPrice, finalDecision, isBuy, confidence, tpLevel, slLevel, entryLevel);
 
     await page.setContent(html);
     await page.waitForNetworkIdle({ timeout: 1500 });
     const screenshot = await page.screenshot();
     
-    // 📦 STEP 4: SAVE TO R2
     if (env.AD_STORAGE) {
-      await env.AD_STORAGE.put(adId, screenshot, {
-        httpMetadata: { contentType: "image/png" }
-      });
-      console.log(`✅ Saved new render to R2: ${adId}`);
+      await env.AD_STORAGE.put(adId, screenshot, { httpMetadata: { contentType: "image/png" } });
     }
     
-    return new Response(screenshot, {
-      headers: { 
-        "Content-Type": "image/png",
-        "Cache-Control": "public, max-age=3600"
-      }
-    });
+    return new Response(screenshot, { headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=3600" } });
 
   } catch (e: any) {
-    console.error("💥 Rendering Error:", e.message);
+    console.error("💥 Render Error:", e.message);
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
-
   } finally {
-    if (browser) {
-      await browser.close();
-      console.log("🧼 Browser session closed and resource freed.");
-    }
+    if (browser) await browser.close();
   }
 }
 function generateAdHTML(

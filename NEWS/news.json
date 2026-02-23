@@ -1,5 +1,14 @@
 [
   {
+  "date": "2026-02-23",
+  "id": "trump_tariffs_usd_impact_2026",
+  "symbol": "EURUSD",
+  "headline": "💰 Trump's New 10% Tariffs: Dollar Dynamics",
+  "question": "How would Trump's proposed 10% universal tariffs affect US Dollar performance against Euro (EURUSD) and other major currencies?",
+  "aiContext": "The implementation of broad-based tariffs creates a complex dual-effect on the Dollar. Initially, tariffs typically strengthen the USD through reduced import demand and safe-haven flows. However, retaliatory measures from trading partners and potential drag on US economic growth could offset these gains. For EURUSD specifically, the impact depends on relative tariff exposure, Eurozone economic resilience, and whether the tariffs trigger a broader trade war dynamic that could ultimately weaken the USD through reduced global trade volumes and capital flows.",
+  "category": "Macro"
+},
+  {
     "date": "2026-02-19",
     "id": "iran_us_conflict_oil_gold_2026",
     "symbol": "BRENT",

@@ -1,32 +1,23 @@
-import { AD_SYMBOLS } from "../../../backend-lib/ad-config";
-
+// functions/api/ads/create-tasks.ts
 export async function onRequestGet(context: any) {
   const { env } = context;
-
-  // 1. Clear the old list
   await env.DB.prepare("DELETE FROM ad_queue").run();
 
-  const types = ["test", "chat", "update"];
-  const sizes = ["standard", "square", "portrait"];
-
-  // 2. Fill the list with 144 tasks
+  const types = ["test", "update", "chat"];
+  const symbols = ["EURUSD", "XAUUSD", "BTCUSD", "ETHUSD", "USTEC", "BRENT"];
   const statements = [];
-  for (const sym of AD_SYMBOLS) {
+
+  for (const sym of symbols) {
     for (const type of types) {
       const styles = (type === 'chat') ? ['black', 'cyber'] : ['black'];
       for (const style of styles) {
-        for (const size of sizes) {
-          statements.push(
-            env.DB.prepare("INSERT INTO ad_queue (symbol, type, style, size) VALUES (?, ?, ?, ?)")
-              .bind(sym.id, type, style, size)
-          );
-        }
+        statements.push(
+          env.DB.prepare("INSERT INTO ad_queue (symbol, type, style, status) VALUES (?, ?, ?, 'pending')")
+            .bind(sym, type, style)
+        );
       }
     }
   }
-
-  // Execute all inserts in one batch
   await env.DB.batch(statements);
-
-  return new Response(`✅ 144 Tasks Created. Cloudflare will now bake them minute-by-minute.`);
+  return new Response("✅ Queue Ready: 24 Batches (72 images total).");
 }

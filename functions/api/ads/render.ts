@@ -1,5 +1,4 @@
-
-  // functions/api/ads/render.ts
+// functions/api/ads/render.ts
 import puppeteer from "@cloudflare/puppeteer";
 
 const SIZES = {
@@ -47,104 +46,148 @@ export async function onRequestGet(context: any) {
 
   // 1. Parameters
   const symbol = (searchParams.get("symbol") || "XAUUSD").toUpperCase();
-  const style = (searchParams.get("style") || "black").toLowerCase(); // Background/color theme
-  const type = (searchParams.get("type") || "test").toLowerCase();   // Content layout type
+  const style = (searchParams.get("style") || "black").toLowerCase();
+  const type = (searchParams.get("type") || "test").toLowerCase();
   const sizeKey = (searchParams.get("size") || "square").toLowerCase();
-  const version = searchParams.get("v") || "1"; // Version parameter from catalog
+  const version = searchParams.get("v") || "1";
+  const forceKey = searchParams.get("key");
+  const isManager = forceKey === env.ADMIN_KEY;
+  
   const config = SIZES[sizeKey as keyof typeof SIZES] || SIZES.square;
   
-  // UNIQUE FILENAME WITH VERSION - includes version for cache busting
+  // UNIQUE FILENAME WITH VERSION
   const adId = `ad_${symbol.toLowerCase()}_${style}_${type}_${sizeKey}.png`;
 
+  let browser: any; // Define browser here so finally block can access it
+
   try {
-    // 🛡️ STEP 1: CHECK R2 CACHE FIRST
-    if (env.AD_STORAGE) {
+    // 🛡️ STEP 1: CHECK R2 CACHE FIRST (skip if manager is forcing a bake)
+    if (!isManager && env.AD_STORAGE) {
       const cachedFile = await env.AD_STORAGE.get(adId);
       if (cachedFile) {
         console.log(`🚀 Serving cached ad: ${adId}`);
         return new Response(cachedFile.body, {
           headers: { 
             "Content-Type": "image/png",
-            "Cache-Control": "public, max-age=3600", // Cache for 1 hour on CDN
+            "Cache-Control": "public, max-age=3600",
             "X-Cache-Hit": "true"
           }
         });
       }
     }
 
-// ✅ 2. FETCH LIVE MARKET DATA (Using Option 1: symbol-data)
-console.log(`🎨 Cache miss. Rendering: ${adId}`);
-
-const apiSymbol = symbol.replace(/[-_/]/g, '').toUpperCase();
-// Call your internal symbol-data API
-const dataRes = await fetch(`${new URL(request.url).origin}/api/symbol-data?symbol=${apiSymbol}`);
-
-if (!dataRes.ok) {
-  throw new Error(`Data API failed with status ${dataRes.status}`);
-}
-
-const marketData = await dataRes.json();
-
-// --- INSTITUTIONAL DATA MAPPING ---
-// We use the normalized values from Option 1
-const currentPrice = marketData?.trend?.current_price || "----";
-const finalDecision = marketData?.final_decision || "ANALYZING";
-const isBuy = finalDecision.includes("BUY");
-const confidence = marketData?.risk_score?.confidence_score || marketData?.analysis_accuracy || 85;
-
-// Use the most reliable path for TP/SL/Entry
-const tpLevel = marketData?.tp_sl?.tp_level || marketData?.pending_orders?.primary_order?.tp_price || "----";
-const slLevel = marketData?.tp_sl?.sl_level || marketData?.pending_orders?.primary_order?.sl_price || "----";
-const entryLevel = marketData?.tp_sl?.entry_price || marketData?.pending_orders?.primary_order?.entry_price || currentPrice;
-
-console.log(`📊 [${symbol}] Price: ${currentPrice} | Entry: ${entryLevel} | TP: ${tpLevel}`);
-// --- END MAPPING ---
+    // ✅ 2. FETCH LIVE MARKET DATA
+    console.log(`🎨 Cache miss. Rendering: ${adId}`);
+    
+    const apiSymbol = symbol.replace(/[-_/]/g, '').toUpperCase();
+    const dataRes = await fetch(`${new URL(request.url).origin}/api/symbol-data?symbol=${apiSymbol}`);
+    
+    if (!dataRes.ok) {
+      throw new Error(`Data API failed with status ${dataRes.status}`);
+    }
+    
+    const marketData = await dataRes.json();
+    
+    // --- INSTITUTIONAL DATA MAPPING ---
+    const currentPrice = marketData?.trend?.current_price || "----";
+    const finalDecision = marketData?.final_decision || "ANALYZING";
+    const isBuy = finalDecision.includes("BUY");
+    const confidence = marketData?.risk_score?.confidence_score || marketData?.analysis_accuracy || 85;
+    
+    const tpLevel = marketData?.tp_sl?.tp_level || marketData?.pending_orders?.primary_order?.tp_price || "----";
+    const slLevel = marketData?.tp_sl?.sl_level || marketData?.pending_orders?.primary_order?.sl_price || "----";
+    const entryLevel = marketData?.tp_sl?.entry_price || marketData?.pending_orders?.primary_order?.entry_price || currentPrice;
+    
+    console.log(`📊 [${symbol}] Price: ${currentPrice} | Entry: ${entryLevel} | TP: ${tpLevel}`);
+    // --- END MAPPING ---
+    
     // 3. OPEN CHROME & PAINT
-    const browser = await puppeteer.launch(env.BROWSER);
+    browser = await puppeteer.launch(env.BROWSER);
     const page = await browser.newPage();
     await page.setViewport(config);
 
-    const html = generateAdHTML(
-      symbol, 
-      style,
-      type,
-      marketData, 
-      config, 
-      currentPrice,
-      finalDecision,
-      isBuy,
-      confidence,
-      tpLevel,
-      slLevel,
-      entryLevel
-    );
-
-    await page.setContent(html);
-    await page.waitForNetworkIdle({ timeout: 1500 });
-
-    const screenshot = await page.screenshot();
+    // ✅ Check if this is a batch request - if so, we'll process all sizes
+    const isBatch = searchParams.get("batch") === "true";
     
-    // 📦 STEP 4: SAVE TO R2 FOR FUTURE REQUESTS
-    if (env.AD_STORAGE) {
-      await env.AD_STORAGE.put(adId, screenshot, {
-        httpMetadata: { contentType: "image/png" }
-      });
-      console.log(`✅ Saved new render to R2: ${adId}`);
-    }
-    
-    await browser.close();
-
-    // Return with cache headers
-    return new Response(new Uint8Array(screenshot), {
-      headers: { 
-        "Content-Type": "image/png",
-        "Cache-Control": "public, max-age=3600" // Cache for 1 hour
+    if (isBatch) {
+      // Batch mode: Generate all 3 sizes in one browser session
+      const sizes = ['standard', 'square', 'portrait'];
+      const results = [];
+      
+      for (const size of sizes) {
+        const sizeConfig = SIZES[size as keyof typeof SIZES] || SIZES.square;
+        await page.setViewport(sizeConfig);
+        
+        const html = generateAdHTML(
+          symbol, style, type, marketData, sizeConfig,
+          currentPrice, finalDecision, isBuy, confidence,
+          tpLevel, slLevel, entryLevel
+        );
+        
+        await page.setContent(html);
+        await page.waitForNetworkIdle({ timeout: 1500 });
+        
+        const screenshot = await page.screenshot();
+        const batchAdId = `ad_${symbol.toLowerCase()}_${style}_${type}_${size}.png`;
+        
+        if (env.AD_STORAGE) {
+          await env.AD_STORAGE.put(batchAdId, screenshot, {
+            httpMetadata: { contentType: "image/png" }
+          });
+          console.log(`✅ Saved batch render to R2: ${batchAdId}`);
+        }
+        results.push({ size, status: "success" });
       }
-    });
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        symbol, 
+        type, 
+        style, 
+        results 
+      }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    } else {
+      // Single size mode (original behavior)
+      const html = generateAdHTML(
+        symbol, style, type, marketData, config,
+        currentPrice, finalDecision, isBuy, confidence,
+        tpLevel, slLevel, entryLevel
+      );
+
+      await page.setContent(html);
+      await page.waitForNetworkIdle({ timeout: 1500 });
+
+      const screenshot = await page.screenshot();
+      
+      // 📦 STEP 4: SAVE TO R2 FOR FUTURE REQUESTS
+      if (env.AD_STORAGE) {
+        await env.AD_STORAGE.put(adId, screenshot, {
+          httpMetadata: { contentType: "image/png" }
+        });
+        console.log(`✅ Saved new render to R2: ${adId}`);
+      }
+      
+      // ✅ Return the image
+      return new Response(screenshot, {
+        headers: { 
+          "Content-Type": "image/png",
+          "Cache-Control": "public, max-age=3600"
+        }
+      });
+    }
 
   } catch (e: any) {
     console.error("💥 Rendering Error:", e.message);
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+
+  } finally {
+    // ✅ CRITICAL: Always close the browser to free resources
+    if (browser) {
+      await browser.close();
+      console.log("🧼 Browser session closed and resource freed.");
+    }
   }
 }
 
@@ -628,9 +671,6 @@ if (type === "update") {
 // ==============================================
   // TYPE: Volatility
   // ==============================================
-// ==============================================
-// TYPE: Volatility
-// ==============================================
 if (type === "volatility") {
     const v = data.volatility || {};
     

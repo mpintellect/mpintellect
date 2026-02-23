@@ -45,18 +45,22 @@ export async function onRequestGet(context: any) {
   const { request, env } = context;
   const { searchParams } = new URL(request.url);
 
+  // 1. Extract Parameters
   const symbol = (searchParams.get("symbol") || "XAUUSD").toUpperCase();
   const style = (searchParams.get("style") || "black").toLowerCase();
   const type = (searchParams.get("type") || "test").toLowerCase();
-  const sizeKey = (searchParams.get("size") || "square").toLowerCase();
   const forceKey = searchParams.get("key");
   const isManager = forceKey === env.ADMIN_KEY;
   
-  const config = SIZES[sizeKey] || SIZES.square;
+  // 2. Validate Size (ONLY DECLARE THIS ONCE)
+  const rawSize = searchParams.get("size")?.toLowerCase();
+  const sizeKey = (rawSize && SIZES[rawSize]) ? rawSize : "square";
+
+  // 3. Set Config and ID
+  const config = SIZES[sizeKey];
   const adId = `ad_${symbol.toLowerCase()}_${style}_${type}_${sizeKey}.png`;
 
   let browser: any;
-
   try {
     if (!isManager && env.AD_STORAGE) {
       const cachedFile = await env.AD_STORAGE.get(adId);

@@ -1,5 +1,32 @@
 [
   {
+  "date": "2026-02-24",
+  "id": "trump_tariffs_usd_impact_2026",
+  "symbol": "EURUSD",
+  "headline": "💰 Trump's New 10% Tariffs: Dollar Dynamics",
+  "question": "How would Trump's proposed 10% universal tariffs affect US Dollar performance against Euro (EURUSD) and other major currencies?",
+  "aiContext": "At 1.17756, EURUSD is in a critical equilibrium phase. Tariffs may temporarily boost the Dollar as a safe haven, but retaliatory measures and slowing global growth could push the pair back toward 1.2000. A break below 1.1700 remains the key signal for further downside.",
+  "category": "Macro"
+},
+  {
+    "date": "2026-02-24",
+    "id": "12",
+    "symbol": "XAUUSD",
+    "headline": "🔥 Gold Breaches $5240: Will Geopolitical Tensions Push It Toward $5500?",
+    "question": "With gold trading above $5,240, how do the geopolitical escalation and US military buildup in the Middle East to strike Iran affect gold's upside, and can we expect new record highs towards $5,500?",
+    "aiContext": "The US military buildup and collapse of diplomacy with Iran are increasing demand for gold as a safe haven. With the price above $5240, any conflict in the Strait of Hormuz could push gold toward $5500.",
+    "category": "Geopolitics"
+},
+  {
+    "date": "2026-02-24",
+    "id": "bitcoin_crash_65k_analysis",
+    "symbol": "BTCUSD",
+    "headline": "📉 Bitcoin Crashes to $65K – Are We Heading to $50K Soon?",
+    "question": "After Bitcoin crashed to $65,000 for the first time since October 2024, can we expect to see new levels at $50,000 soon?",
+    "aiContext": "The breakdown below $65K breaks a key support, opening the door toward $58K and then $50K if heavy selling and weak sentiment persist.",
+    "category": "Crypto"
+},
+  {
   "date": "2026-02-23",
   "id": "trump_tariffs_usd_impact_2026",
   "symbol": "EURUSD",

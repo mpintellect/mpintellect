@@ -26,6 +26,10 @@
 			"bucket_name": "mzprimer-ads"
 		},
 		{
+			"binding": "ASSETS_STORAGE",
+			"bucket_name": "assets"
+		},
+		{
 			"bucket_name": "mzprimer-ads",
 			"binding": "mzprimer_ads"	
 			

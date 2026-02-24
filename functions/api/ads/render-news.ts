@@ -39,42 +39,20 @@ export async function onRequestGet(context: any) {
   const storyId = searchParams.get("id");
   const partnerId = (searchParams.get("partner") || "default").toLowerCase();
   const imageType = searchParams.get("type") || "story"; // 'story' or 'cover'
-  const forceKey = searchParams.get("key");
-  const isManager = forceKey === env.ADMIN_KEY;
-  const forceRefresh = searchParams.get("refresh") === "true";
 
   if (!storyId) return new Response("Missing Story ID", { status: 400 });
-
-  // ✅ Institutional Naming Convention - Include type in filename
-  const adId = imageType === 'cover' 
-    ? `cover_${storyId}.png` 
-    : `story_${storyId}.png`;
 
   let browser: any;
 
   try {
-    // 🛡️ STEP 1: CACHE CHECK - Return cached image if exists (skip if manager or refreshing)
-    if (!isManager && !forceRefresh && env.AD_STORAGE) {
-      const cached = await env.AD_STORAGE.get(adId);
-      if (cached) {
-        console.log(`🚀 Serving cached ${imageType}: ${adId}`);
-        return new Response(cached.body, { 
-          headers: { 
-            "Content-Type": "image/png",
-            "Cache-Control": "public, max-age=3600" 
-          } 
-        });
-      }
-    }
-
-    // 🛡️ STEP 2: FETCH LIVE STORY DATA
+    // 🛡️ STEP 1: FETCH LIVE STORY DATA
     const dataRes = await fetch("https://data.mzprimer.com/Story-news.json");
     if (!dataRes.ok) throw new Error("Failed to fetch Story-news.json");
     const allStories = await dataRes.json();
     const story = allStories.find((s: any) => s.id === storyId);
     if (!story) throw new Error(`Story ID '${storyId}' not found in JSON`);
 
-    // 🛡️ STEP 3: FETCH BRAND ASSETS (Logos & Background)
+    // 🛡️ STEP 2: FETCH BRAND ASSETS (Logos & Background)
     const mzLogoUrl = "https://news.mzprimer.com/mzlogo.webp";
     const partnerLogoUrl = `https://news.mzprimer.com/lfmo1.webp`;
 
@@ -84,7 +62,7 @@ export async function onRequestGet(context: any) {
       fetchSymbolBackground(story.symbol)
     ]);
 
-    // 🛡️ STEP 4: RENDER ENGINE (Puppeteer)
+    // 🛡️ STEP 3: RENDER ENGINE (Puppeteer)
     console.log(`🎨 Generating fresh ${imageType} Image for story: ${storyId}`);
     browser = await puppeteer.launch(env.BROWSER);
     const page = await browser.newPage();
@@ -99,21 +77,15 @@ export async function onRequestGet(context: any) {
     await page.waitForNetworkIdle({ timeout: 2000 });
     const screenshot = await page.screenshot();
 
-    // 🛡️ STEP 5: SAVE TO R2 BUCKET
-    if (env.AD_STORAGE) {
-      await env.AD_STORAGE.put(adId, screenshot, { 
-        httpMetadata: { contentType: "image/png" } 
-      });
-      console.log(`✅ ${imageType} saved to R2: ${adId}`);
-    }
-
     await browser.close();
     
-    // 🛡️ STEP 6: RETURN FRESH IMAGE
+    // 🛡️ STEP 4: RETURN FRESH IMAGE (NO CACHE)
     return new Response(screenshot, { 
       headers: { 
         "Content-Type": "image/png",
-        "Cache-Control": "public, max-age=3600" // Cache for 1 hour
+        "Cache-Control": "no-cache, no-store, must-revalidate", // Prevents caching
+        "Pragma": "no-cache",
+        "Expires": "0"
       } 
     });
 

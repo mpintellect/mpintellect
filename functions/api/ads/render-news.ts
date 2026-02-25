@@ -20,7 +20,7 @@ async function fetchSymbolBackground(symbol: string) {
   const symbolMap: Record<string, string> = {
     'XAUUSD': 'xauusd3',
     'BTCUSD': 'btcusd6',
-    'EURUSD': 'eurusd5',
+    'EURUSD': 'EURUSD8',
     'GLOBAL': 'global3',
     'NASDAQ': 'nasdaq',
     'US30': 'us30',

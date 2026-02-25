@@ -10,15 +10,6 @@
 },
   {
     "date": "2026-02-25",
-    "id": "gold_technical_analysis_5180_2026",
-    "symbol": "XAUUSD",
-    "headline": "📉 Gold at $5,180: RSI Plunges to 35 Signaling Oversold Bearish Momentum",
-    "question": "With Gold trading at $5,180 and RSI at 35 indicating strong bearish momentum below the neutral 50 threshold, will any relief rallies encounter selling pressure near 60 RSI, presenting new short entries?",
-    "aiContext": "Gold's RSI at 35 confirms persistent seller dominance below the 50 midline, reflecting strong bearish momentum. Any corrective upside that fails to push RSI above 60 should be viewed as selling opportunities. The broader trend remains bearish with moderate downside velocity.",
-    "category": "Technical Analysis"
-},
-  {
-    "date": "2026-02-25",
     "id": "trump_tariffs_democrats_2026",
     "symbol": "EURUSD",
     "headline": "💰 Trump's Tariff Policy Founders as Supreme Court Strikes Down Most Import Taxes",

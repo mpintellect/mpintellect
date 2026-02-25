@@ -105,12 +105,12 @@ export async function onRequestGet(context: any) {
           // Define destination link
           let link = `${LANDING_HOST}${typeConfig[type].url}?symbol=${sym.id}&source=${platform}_ad&auto_start=true&variant=${size}`;
           
-          if (isBot) {
-            link = `${LANDING_HOST}/ai-robot?symbol=${sym.id}&source=${platform}_ad&variant=${size}`;
-          }
+         
 
           // Use database-controlled version for all image URLs
-           const imageLink = `https://ads.mzprimer.com/ad_${sym.id.toLowerCase()}_${style}_${type}_${size}.png`;
+           const imageLink = platform === 'google' 
+  ? `https://ads.mzprimer.com/ad_${sym.id.toLowerCase()}_${style}_${type}_${size}.png`
+  : `https://ads.mzprimer.com/ad_${sym.id.toLowerCase()}_${style}_${type}_${size}.png?v=${version}`;
 
           // Price logic - Facebook always free, Google can have paid
           let price, formattedPrice;

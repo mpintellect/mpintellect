@@ -18,13 +18,13 @@ async function fetchImageAsBase64(url: string) {
 // Fetch symbol-specific background image
 async function fetchSymbolBackground(symbol: string) {
   const symbolMap: Record<string, string> = {
-    'XAUUSD': 'xauusd',
-    'BTCUSD': 'btcusd2',
-    'EURUSD': 'eurusd4',
-    'GLOBAL': 'global',
+    'XAUUSD': 'xauusd3',
+    'BTCUSD': 'btcusd6',
+    'EURUSD': 'eurusd5',
+    'GLOBAL': 'global3',
     'NASDAQ': 'nasdaq',
     'US30': 'us30',
-    'BRENT': 'brent3'
+    'BRENT': 'BRENT6'
   };
   const filename = symbolMap[symbol.toUpperCase()] || 'global';
   const url = `https://news.mzprimer.com/${filename}.webp`;

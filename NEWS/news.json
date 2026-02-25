@@ -1,5 +1,33 @@
 [
   {
+    "date": "2026-02-25",
+    "id": "trump_sotu_polls_2026",
+    "symbol": "US500",
+    "headline": "📉 Trump's SOTU Paradox: 'Golden Age' Rhetoric vs. Sinking Polls",
+    "question": "With polls showing a majority of Americans have soured on Trump's performance, can his 'Golden Age' messaging reverse declining approval ahead of midterms?",
+    "aiContext": "Despite 'Golden Age' declaration, polling weakness signals voter skepticism. Political capital erosion may hinder policy agenda, creating uncertainty for markets reliant on stable governance.",
+    "category": "Politics"
+},
+{
+    "date": "2026-02-25",
+    "id": "trump_tariffs_democrats_2026",
+    "symbol": "EURUSD",
+    "headline": "💰 Trump's Tariff Policy Founders as Supreme Court Strikes Down Most Import Taxes",
+    "question": "With the Supreme Court voiding most Trump tariffs and Democrats blaming them for economic suffering, how will currency markets price in the trade policy collapse?",
+    "aiContext": "Tariff collapse weakens Dollar support previously driven by import reduction. Virginia Governor Spanberger's response highlighting tariff pain may amplify trade policy uncertainty, potentially pressuring USD as protectionist narrative fades.",
+    "category": "Macro"
+},
+
+  {
+    "date": "2026-02-25",
+    "id": "bitcoin_volatility_feb_2026",
+    "symbol": "BTCUSD",
+    "headline": "📈 Bitcoin Bounces to $66,300 After Sub-$63K Dip, Heads for 5th Monthly Loss",
+    "question": "After briefly dipping below $63,000 before rebounding to $66,300, can Bitcoin avoid a fifth consecutive monthly loss—the longest losing streak since 2018?",
+    "aiContext": "Bitcoin's rapid rebound above $66,300 shows strong dip-buying, but if the monthly close below $65K confirms fifth straight loss—worst since 2022. Failure to hold $67K could accelerate selling toward $60K.",
+    "category": "Crypto"
+},
+  {
   "date": "2026-02-24",
   "id": "trump_tariffs_usd_impact_2026",
   "symbol": "EURUSD",
@@ -36,14 +64,14 @@
   "category": "Macro"
 },
   {
-    "date": "2026-02-19",
-    "id": "iran_us_conflict_oil_gold_2026",
+    "date": "2026-02-25",
+    "id": "trump_sotu_iran_2026",
     "symbol": "BRENT",
-    "headline": "⚔️ Geopolitical Escalation: Iran Strike Risk",
-    "question": "How would a strategic U.S. strike on Iran in March 2026 fundamentally re-price the Oil and Gold risk premiums?",
-    "aiContext": "A kinetic engagement in the Strait of Hormuz creates a binary risk environment. Despite de-escalation rhetoric in recent executive speeches, the 'proximity risk' to energy infrastructure suggests a move toward $80 Brent. Gold acts as the primary safe-haven beneficiary, detaching from yield correlations to price in direct conflict volatility.",
-    "category": "Macro"
-  },
+    "headline": "⚔️ Trump Signals Iran Strike Risk: 'Will Not Allow Nuclear Weapon'",
+    "question": "After Trump briefly laid out his case for a possible attack on Iran, how will oil markets price in rising geopolitical risks and nuclear tensions?",
+    "aiContext": "Trump's Iran rhetoric, though brief, reignites geopolitical premium in oil. Any escalation toward strikes could push Brent higher, with gold benefiting as safe-haven demand rises amid Middle East uncertainty.",
+    "category": "Geopolitics"
+},
   {
     "date": "2026-02-19",
     "id": "gold_5k_fed_trajectory",

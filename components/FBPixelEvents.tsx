@@ -3,64 +3,102 @@
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
+declare global {
+  interface Window {
+    fbq: (
+      command: 'track' | 'trackCustom' | 'init',
+      eventName: string,
+      parameters?: Record<string, any>
+    ) => void;
+    _fbq?: any;
+  }
+}
+
 export default function FBPixelEvents() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     // 1. Check if FB Pixel is initialized
-    if (typeof window === 'undefined' || !(window as any).fbq) return;
+    if (typeof window === 'undefined' || typeof window.fbq === 'undefined') return;
 
     // 2. Extract Symbol from URL
-    // Supports: /trade/btcusd, /calculator/btcusd, /AIChat?symbol=BTCUSD
     let symbol = '';
     
-    // Check URL Params (for AIChat)
+    // Check URL Params (for AIChat, prop-firm, tools)
     const paramSymbol = searchParams.get('symbol');
     if (paramSymbol) {
       symbol = paramSymbol.toUpperCase();
     } else {
-      // Check Path (for /trade/btcusd)
+      // Check Path (for /trade/btcusd style URLs)
       const parts = pathname.split('/');
       const lastPart = parts[parts.length - 1];
-      // Simple regex to check if last part looks like a symbol (e.g., XAUUSD, BTCUSD)
-      if (lastPart && lastPart.length >= 3) {
+      if (lastPart && lastPart.length >= 3 && !lastPart.includes('?')) {
         symbol = lastPart.toUpperCase();
       }
     }
 
-    if (!symbol) return; // No symbol found, do nothing
+    if (!symbol) return;
 
-    // 3. Determine Product Suffix based on Page
-    let suffix = '';
-    let category = '';
+    // 3. Determine Type based on Page Path
+    let type = '';
+    let style = 'black'; // Default style
 
     if (pathname.includes('/AIChat')) {
-      suffix = '-CHAT';
-      category = 'Lead_Gen';
-    } else if (pathname.includes('/trade/') || pathname.includes('/forecast/')) {
-      suffix = '-SETUP';
-      category = 'Strategy_Tool';
-    } else if (pathname.includes('/calculator/') || pathname.includes('/zones/')) {
-      suffix = '-RISK';
-      category = 'Utility_Tool';
+      type = 'chat';
+      style = 'cyber'; // Chat uses cyber style in catalog
+    } else if (pathname.includes('/prop-firm')) {
+      type = 'test';
+      style = 'black'; // Test uses black style
+    } else if (pathname.includes('/tools/ai-assistant')) {
+      type = 'update';
+      style = 'black'; // Update uses black style
     }
 
-    if (!suffix) return; // Not a product page
+    if (!type) return;
 
-    // 4. Construct the Exact ID from your Catalog
-    const contentID = `${symbol}${suffix}`; // e.g., "BTCUSD-CHAT"
+    // 4. Extract Size from query params (variant parameter)
+    // Default to 'square' for Facebook as per your catalog
+    let size = searchParams.get('variant') || 'square';
+    
+    // Validate size is one of the allowed values
+    if (!['standard', 'square', 'portrait'].includes(size)) {
+      size = 'square'; // Default to square if invalid
+    }
 
-    console.log(`📡 FB Pixel Firing: ViewContent for ${contentID}`);
+    // 5. Construct the EXACT Catalog ID format: [SYMBOL]-[TYPE]-[SIZE]
+    const exactContentID = `${symbol}-${type}-${size}`.toUpperCase();
+    
+    // Also create the style-specific version that matches your image URL pattern
+    const imageStyleID = `${symbol}-${type}-${size}`.toUpperCase(); // Same format
+    
+    console.log(`📡 FB Pixel Firing: ViewContent`, {
+      exactID: exactContentID,
+      symbol,
+      type,
+      size,
+      style,
+      path: pathname
+    });
 
-    // 5. Fire the Event
-    (window as any).fbq('track', 'ViewContent', {
+    // 6. Fire the ViewContent Event with the exact catalog ID
+    window.fbq('track', 'ViewContent', {
       content_type: 'product',
-      content_ids: [contentID], // ⚠️ CRITICAL: Must match Catalog ID exactly
-      content_name: `${symbol} ${category}`,
-      content_category: 'Software',
+      content_ids: [exactContentID], // Send only the exact match
+      content_name: `${symbol} ${type.charAt(0).toUpperCase() + type.slice(1)} Tool`,
+      content_category: type === 'chat' ? 'Lead_Gen' : 'Tool',
       currency: 'USD',
-      value: 0.00 // You can set this to 4.50 for SETUP/RISK pages
+      value: 0.00
+    });
+
+    // 7. Also track a custom event with all parameters for debugging
+    window.fbq('trackCustom', 'MZ_ViewContent', {
+      symbol,
+      type,
+      size,
+      style,
+      content_id: exactContentID,
+      page: pathname
     });
 
   }, [pathname, searchParams]);

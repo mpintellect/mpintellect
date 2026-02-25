@@ -8,6 +8,18 @@ import { usePathname, useSearchParams } from "next/navigation";
 const PIXEL_ID =
   process.env.NEXT_PUBLIC_FB_PIXEL_ID || "719990012398471004";
 
+// Type declaration for window.fbq
+declare global {
+  interface Window {
+    fbq: (
+      command: 'track' | 'trackCustom' | 'init',
+      eventName: string,
+      parameters?: Record<string, any>
+    ) => void;
+    _fbq?: any;
+  }
+}
+
 export default function FacebookPixel() {
   const pathname = usePathname();
   const searchParams = useSearchParams();

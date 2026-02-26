@@ -21,11 +21,12 @@ async function fetchSymbolBackground(symbol: string) {
     'XAUUSD': 'xauusd',
     'BTCUSD': 'btcusd2',
     'EURUSD': 'EURUSD8',
-    'GLOBAL': 'global3',
+    'GLOBAL': 'global',
     'NASDAQ': 'nasdaq',
     'US30': 'us30',
     'BRENT': 'BRENT6',
     'EURJPY': 'eurjpy3',
+    'S&P500': 'sp5002',
   };
   const filename = symbolMap[symbol.toUpperCase()] || 'global';
   const url = `https://news.mzprimer.com/${filename}.webp`;

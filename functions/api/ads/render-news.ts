@@ -24,7 +24,8 @@ async function fetchSymbolBackground(symbol: string) {
     'GLOBAL': 'global3',
     'NASDAQ': 'nasdaq',
     'US30': 'us30',
-    'BRENT': 'BRENT6'
+    'BRENT': 'BRENT6',
+    'EURJPY': 'eurjpy3',
   };
   const filename = symbolMap[symbol.toUpperCase()] || 'global';
   const url = `https://news.mzprimer.com/${filename}.webp`;

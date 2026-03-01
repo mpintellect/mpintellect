@@ -2,12 +2,12 @@
 export const LOGO_URLS = {
   // Main logo
   MAIN: '/logos/mzlogo.webp',
-  MAIN_PNG: '/logos/icon-512.png',
+  MAIN_PNG: '/logos/icon-512.webp',
   
   // PWA icons
-  PWA_192: '/logos/icon-192.png',
-  PWA_512: '/logos/icon-512.png',
-  PWA_180: '/logos/icon-180.png',
+  PWA_192: '/logos/icon-512.webp',
+  PWA_512: '/logos/icon-512.webp',
+  
   
   // Payment badges
   STRIPE: '/logos/stripe.svg',

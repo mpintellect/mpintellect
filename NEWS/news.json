@@ -1,5 +1,48 @@
 [
   {
+    "date": "2026-03-01",
+    "id": "gold_huge_gap_warning_march_2026",
+    "symbol": "XAUUSD",
+    "headline": "⚠️ GOLD ALERT: Weekend Strike on Iran – Massive Gap Expected at Sunday's Open",
+    "question": "With the US and Israel striking Iran over the weekend after markets closed, is gold poised for a huge gap-up at Sunday's opening session (Monday trading session)?",
+    "aiContext": "All eyes on Sunday's market opening (Monday session). Despite the tactical weekend timing chosen by US and Israel, geopolitical tensions will drive market reaction. Gold expected to open with significant gaps as safe-haven demand surges.",
+    "category": "Geopolitics"
+},{
+    "date": "2026-03-01",
+    "id": "oil_price_hormuz_attacks_march_2026",
+    "symbol": "BRENT",
+    "headline": "🛢️ Oil Alert: Attacks on Ships in Hormuz Strait – $100 Next Week?",
+    "question": "With attacks on oil and gas ships in the Strait of Hormuz, and escalating tensions between Iran, USA, Israel, and Gulf countries, are these clear signs of a spike in oil prices toward $100 per barrel next week, or will the market react differently?",
+    "aiContext": "Attacks on vessels in the Strait of Hormuz—which handles 20% of global oil supply—combined with regional tensions point to significant supply disruption risk. Markets will likely price in a substantial geopolitical premium at Sunday's open. Analysts warn of potential spikes toward $80-$100, though OPEC+ spare capacity and potential US intervention could limit sustained highs.",
+    "category": "Geopolitics"
+},
+{
+    "date": "2026-02-28",
+    "id": "us_iran_strike_gold_analysis",
+    "symbol": "XAUUSD",
+    "headline": "⚡ US Tactical Strike on Iran During Weekend to Avoid Gold Spike – Will Gold Surge to $5,600-$5,800?",
+    "question": "After a US tactical strike on Iran during the weekend designed to avoid a gold spike, will we still see new record highs for gold reaching $5,600 to $5,800?",
+    "aiContext": "Despite the weekend timing intended to contain market reaction, geopolitical shocks often force gold repricing. The question remains whether institutional hedging and safe-haven demand will drive gold toward $5,600-$5,800 levels regardless of the tactical timing.",
+    "category": "Geopolitics"
+},
+  {
+    "date": "2026-03-01",
+    "id": "oil_price_hormuz_closed_monday_2026",
+    "symbol": "BRENT",
+    "headline": "🛢️ BREAKING: Strait of Hormuz Closed – Will Oil Spike Above $100 at Monday's Open?",
+    "question": "With the Strait of Hormuz now closed following escalating conflict, can we expect a sharp spike in Brent crude prices during the trading session opening on Monday, March 2nd?",
+    "aiContext": "The Strait of Hormuz handles 20% of global oil supply. With closure confirmed, markets will react violently at Sunday night's open (Monday session). Expect gap-up openings and potential spikes toward $100-120 as traders price in supply shock. Volatility will be extreme with possible liquidity gaps.",
+    "category": "Geopolitics"
+},{
+    "date": "2026-02-28",
+    "id": "us_geopolitical_strategy_dollar_2026",
+    "symbol": "DXY",
+    "headline": "🇺🇸 US Strategy: Venezuela Operation Followed by Iran Strike – Dollar Power Play?",
+    "question": "With the US attack on Iran coming months after operations in Venezuela and its oil facilities, does this put the US in a winner's position like Russia, waiting for prices to rise, and will this strengthen the US dollar?",
+    "aiContext": "The strategic timing suggests a calculated geopolitical play. By controlling key oil regions (Venezuela then Iran), the US gains leverage over global energy supply. Higher oil prices historically benefit the US dollar as a reserve currency and safe haven. Unlike Russia which benefits from higher prices as a producer, the US as a net exporter now also gains, potentially strengthening dollar dominance while weakening rivals.",
+    "category": "Geopolitics"
+},
+  {
     "date": "2026-02-25",
     "id": "trump_sotu_polls_2026",
     "symbol": "US500",
@@ -35,59 +78,5 @@
   "question": "How would Trump's proposed 10% universal tariffs affect US Dollar performance against Euro (EURUSD) and other major currencies?",
   "aiContext": "At 1.17756, EURUSD is in a critical equilibrium phase. Tariffs may temporarily boost the Dollar as a safe haven, but retaliatory measures and slowing global growth could push the pair back toward 1.2000. A break below 1.1700 remains the key signal for further downside.",
   "category": "Macro"
-}, 
-  {
-    "date": "2026-02-24",
-    "id": "12",
-    "symbol": "XAUUSD",
-    "headline": "🔥 Gold Breaches $5240: Will Geopolitical Tensions Push It Toward $5500?",
-    "question": "With gold trading above $5,240, how do the geopolitical escalation and US military buildup in the Middle East to strike Iran affect gold's upside, and can we expect new record highs towards $5,500?",
-    "aiContext": "The US military buildup and collapse of diplomacy with Iran are increasing demand for gold as a safe haven. With the price above $5240, any conflict in the Strait of Hormuz could push gold toward $5500.",
-    "category": "Geopolitics"
-},
-  {
-    "date": "2026-02-24",
-    "id": "bitcoin_crash_65k_analysis",
-    "symbol": "BTCUSD",
-    "headline": "📉 Bitcoin Crashes to $65K – Are We Heading to $50K Soon?",
-    "question": "After Bitcoin crashed to $65,000 for the first time since October 2024, can we expect to see new levels at $50,000 soon?",
-    "aiContext": "The breakdown below $65K breaks a key support, opening the door toward $58K and then $50K if heavy selling and weak sentiment persist.",
-    "category": "Crypto"
-},
-  {
-  "date": "2026-02-23",
-  "id": "trump_tariffs_usd_impact_2026",
-  "symbol": "EURUSD",
-  "headline": "💰 Trump's New 10% Tariffs: Dollar Dynamics",
-  "question": "How would Trump's proposed 10% universal tariffs affect US Dollar performance against Euro (EURUSD) and other major currencies?",
-  "aiContext": "Tariffs create a dual-effect: initially strengthening USD via reduced imports and safe-haven flows, but retaliatory measures and growth drag could offset gains. EURUSD impact depends on relative trade exposure and whether a broader trade war ultimately weakens the Dollar.",
-  "category": "Macro"
-},
-  {
-    "date": "2026-02-25",
-    "id": "trump_sotu_iran_2026",
-    "symbol": "BRENT",
-    "headline": "⚔️ Trump Signals Iran Strike Risk: 'Will Not Allow Nuclear Weapon'",
-    "question": "After Trump briefly laid out his case for a possible attack on Iran, how will oil markets price in rising geopolitical risks and nuclear tensions?",
-    "aiContext": "Trump's Iran rhetoric, though brief, reignites geopolitical premium in oil. Any escalation toward strikes could push Brent higher, with gold benefiting as safe-haven demand rises amid Middle East uncertainty.",
-    "category": "Geopolitics"
-},
-  {
-    "date": "2026-02-19",
-    "id": "gold_5k_fed_trajectory",
-    "symbol": "XAUUSD",
-    "headline": "🏆 The $5,000 Baseline: Fed Rate Path",
-    "question": "Will the Fed’s current interest rate trajectory support Gold's sustainment above the psychological $5,000 threshold?",
-    "aiContext": "Gold has successfully recaptured the 5k level as institutional capital rotates into hard assets. The Fed's rate path is no longer the sole driver; the market is now pricing in 'fiscal dominance.' While rate cuts provide the tailwind, the $5,000 mark is rapidly transitioning from a target to an institutional support floor for Q2 2026.",
-    "category": "Stocks"
-  },
-  {
-    "date": "2026-02-19",
-    "id": "trump_iran_policy_paradox",
-    "symbol": "OIL",
-    "headline": "🏛️ The Policy Paradox: Rhetoric vs. Reality",
-    "question": "Can the Gold-Oil ratio remain stable if diplomatic rhetoric fails to align with actual naval posturing in the Middle East?",
-    "aiContext": "History shows a divergence between diplomatic speeches and structural defense posture. Even if leadership seeks to avoid direct conflict, the military footprint near Iranian waters necessitates a 'volatility hedge.' Portfolio managers are aggressively pricing in dramatic shifts for Gold as the ultimate insurance policy against a failed diplomatic pivot.",
-    "category": "Geopolitics"
-  }
+}
 ]

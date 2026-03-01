@@ -26,6 +26,30 @@ export interface PendingOrdersData {
   fallback_used?: boolean;
 }
 
+/** 🔥 NEW: Volume Profile Data Structure */
+export interface VolumeData {
+  poc_price: number;
+  value_area_high: number;
+  value_area_low: number;
+  volume_bias: "bullish_accumulation" | "bearish_distribution" | "neutral_balance";
+  position_vs_poc: "above_poc" | "below_poc" | "at_poc" | "inside";
+  volume_concentration: number;
+  imbalance_detected: boolean;
+  component_quality: number;
+  current_price: number;
+}
+
+/** 🔥 NEW: Market Sessions Data Structure */
+export interface SessionsData {
+  session_name: "Asia" | "London" | "New York" | "Market Rollover";
+  liquidity_rating: number; // 1-5
+  is_high_volume_window: boolean;
+  volatility_expectation: "low" | "low_moderate" | "moderate" | "high";
+  trading_regime_bias: "structural_accumulation" | "distribution" | "neutral" | "avoid";
+  session_note: string;
+  component_quality: number;
+}
+
 /** Full type for trade setups based on ACTUAL data structure */
 export interface TradeSetupData {
   symbol: SymbolKey;
@@ -33,6 +57,10 @@ export interface TradeSetupData {
   volatility: any;
   momentum: any;
   zones: any;
+  /** 🔥 NEW: Volume profile analysis */
+  volume?: VolumeData;
+  /** 🔥 NEW: Market sessions analysis */
+  sessions?: SessionsData;
   pending_orders?: PendingOrdersData;
   tp_sl?: any;
   risk_score?: any;
@@ -49,6 +77,46 @@ export interface TradeSetupData {
 /** Extended interface for enhanced data */
 export interface ExtendedTradeSetupData extends TradeSetupData {
   // Add any additional fields if needed
+}
+
+/**
+ * ✅ Helper function to get volume data safely
+ */
+export function getVolumeData(setup: ExtendedTradeSetupData | null): VolumeData | null {
+  return setup?.volume ?? null;
+}
+
+/**
+ * ✅ Helper function to get sessions data safely
+ */
+export function getSessionsData(setup: ExtendedTradeSetupData | null): SessionsData | null {
+  return setup?.sessions ?? null;
+}
+
+/**
+ * ✅ Helper function to get formatted value area string
+ */
+export function getValueAreaString(setup: ExtendedTradeSetupData | null): string {
+  const volume = setup?.volume;
+  if (!volume?.value_area_low || !volume?.value_area_high) return "N/A";
+  return `${volume.value_area_low.toFixed(5)} - ${volume.value_area_high.toFixed(5)}`;
+}
+
+/**
+ * ✅ Helper function to get session with emoji
+ */
+export function getSessionWithEmoji(setup: ExtendedTradeSetupData | null): string {
+  const session = setup?.sessions?.session_name;
+  if (!session) return "Unknown";
+  
+  const emojiMap: Record<string, string> = {
+    "Asia": "🌏 Asia",
+    "London": "🇬🇧 London", 
+    "New York": "🗽 New York",
+    "Market Rollover": "🔄 Market Rollover"
+  };
+  
+  return emojiMap[session] || session;
 }
 
 /**
@@ -83,7 +151,9 @@ export async function fetchSetup(symbol: SymbolKey): Promise<ExtendedTradeSetupD
     console.log(`✅ Successfully fetched setup for ${symbol}:`, {
       final_decision: data.final_decision,
       analysis_accuracy: data.analysis_accuracy,
-      has_pending_orders: !!data.pending_orders
+      has_pending_orders: !!data.pending_orders,
+      has_volume: !!data.volume,
+      has_sessions: !!data.sessions
     });
 
     return data as ExtendedTradeSetupData;

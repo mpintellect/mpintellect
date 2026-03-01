@@ -4,9 +4,9 @@ const LOGO_CACHE_NAME = 'mzprimer-logos-v1';
 
 const LOGO_URLS = [
   '/logos/mzlogo.webp',
-  '/logos/icon-192.png',
-  '/logos/icon-512.png',
-  '/logos/icon-180.png',
+  '/logos/icon-512.webp',
+  '/logos/icon-512.webp',
+  '/logos/icon-192.webp',
   '/logos/stripe.svg',
   '/logos/visa.svg',
   '/logos/mastercard.svg',
@@ -49,8 +49,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body || data.message || 'New market intelligence available.',
-    icon: '/logos/icon-192.png',
-    badge: '/logos/icon-192.png',
+    icon: '/logos/icon-512.webp',
+    badge: '/logos/icon-512.webp',
     vibrate: [100, 50, 100],
     tag: data.tag || 'mz-signal',
     data: { url: data.url || data.data?.url || '/' },

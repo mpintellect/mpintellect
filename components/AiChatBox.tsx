@@ -87,11 +87,11 @@ const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: nu
   "BRENT": { pip: 0.01, contract: 1000, decimals: 2 },
 
   // Crypto - ADJUSTED FOR MT5 CONTRACT SIZES (Standard CFD lots)
-  "BTCUSD": { pip: 1.0, contract: 1, decimals: 1 },      // 1 Lot = 1 Bitcoin
-  "ETHUSD": { pip: 0.1, contract: 1, decimals: 2 },      // 1 Lot = 1 Ether
-  "XRPUSD": { pip: 0.0001, contract: 1000, decimals: 4 }, // ✅ 1 Lot = 1000 XRP (Standard CFD)
-  "LTCUSD": { pip: 0.01, contract: 10, decimals: 2 },    // ✅ 1 Lot = 10 LTC
-  "DOGEUSD": { pip: 0.0001, contract: 1000, decimals: 4 }, // ✅ 1 Lot = 1000 DOGE
+  "BTCUSD": { pip: 1.0, contract: 1, decimals: 1 },
+  "ETHUSD": { pip: 0.1, contract: 1, decimals: 2 },
+  "XRPUSD": { pip: 0.0001, contract: 1000, decimals: 4 },
+  "LTCUSD": { pip: 0.01, contract: 10, decimals: 2 },
+  "DOGEUSD": { pip: 0.0001, contract: 1000, decimals: 4 },
 
   // Indices (Standard Lot = 1 Contract)
   "US500": { pip: 0.1, contract: 1, decimals: 2 },
@@ -165,8 +165,8 @@ function QuickRegisterModal({
     setError("");
     setLoading(true);
     console.log("📝 QuickRegister started");
-  console.log("  - email:", email);
-  console.log("  - selectedPlan:", selectedPlan);
+    console.log("  - email:", email);
+    console.log("  - selectedPlan:", selectedPlan);
 
     if (!email || !password || !confirmPassword) {
       setError("Please fill in all fields");
@@ -187,45 +187,42 @@ function QuickRegisterModal({
     }
 
     try {
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        email, 
-        password,
-        displayName: email.split('@')[0]
-      })
-    });
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email, 
+          password,
+          displayName: email.split('@')[0]
+        })
+      });
 
-  const data = await response.json();
-console.log("📝 Registration API response:", data);
+      const data = await response.json();
+      console.log("📝 Registration API response:", data);
 
-if (data.success) {
-  console.log("✅ Quick registration success:", data);
-  console.log("✅ Registration SUCCESS!");
-  console.log("  - data.token:", data.token);
-  console.log("  - data.user:", data.user);
-  console.log("  - data.user.setup_count:", data.user?.setup_count);
-  
-  // 🔥 SAVE TO LOCALSTORAGE
-  localStorage.setItem('cf_token', data.token);
-  localStorage.setItem('cf_user', JSON.stringify(data.user));
-  localStorage.setItem('cf_session_id', data.token);
-  console.log("📝 After saving to localStorage:");
-  console.log("  - cf_token saved:", localStorage.getItem('cf_token') ? 'YES' : 'NO');
-  console.log("  - cf_user saved:", localStorage.getItem('cf_user') ? 'YES' : 'NO');
-  
-  // 🔥 CLEAR TRIAL COUNT
-  localStorage.removeItem("MZP_TRIAL_COUNT");
-  
-  // 🔥 CALL THE PARENT CALLBACK with data and selectedPlan
-  // This will trigger handleQuickRegisterSuccess which sets trialCount to 0
-  onSuccess(data, selectedPlan);
-  
-  // 🔥 CLOSE MODAL
-  onClose();
+      if (data.success) {
+        console.log("✅ Quick registration success:", data);
+        console.log("✅ Registration SUCCESS!");
+        console.log("  - data.token:", data.token);
+        console.log("  - data.user:", data.user);
+        console.log("  - data.user.setup_count:", data.user?.setup_count);
         
-      
+        // 🔥 SAVE TO LOCALSTORAGE
+        localStorage.setItem('cf_token', data.token);
+        localStorage.setItem('cf_user', JSON.stringify(data.user));
+        localStorage.setItem('cf_session_id', data.token);
+        console.log("📝 After saving to localStorage:");
+        console.log("  - cf_token saved:", localStorage.getItem('cf_token') ? 'YES' : 'NO');
+        console.log("  - cf_user saved:", localStorage.getItem('cf_user') ? 'YES' : 'NO');
+        
+        // 🔥 CLEAR TRIAL COUNT
+        localStorage.removeItem("MZP_TRIAL_COUNT");
+        
+        // 🔥 CALL THE PARENT CALLBACK with data and selectedPlan
+        onSuccess(data, selectedPlan);
+        
+        // 🔥 CLOSE MODAL
+        onClose();
       } else {
         if (data.error.includes('already exists')) {
           setError("This email is already registered. Please login instead.");
@@ -242,14 +239,13 @@ if (data.success) {
     } finally {
       setLoading(false);
     }
-};
+  };
 
   const modalContent = (
     <div className="modal-overlay">
       <div className="modal-content">
         <div className="modal-header">
           <h3>🎯 Quick Registration</h3>
-          
           <button onClick={onClose} className="close-modal">✕</button>
         </div>
 
@@ -322,7 +318,6 @@ if (data.success) {
     </div>
   );
 
-  // This sends the modal to the bottom of <body>
   return typeof document !== "undefined" 
     ? createPortal(modalContent, document.body) 
     : null;
@@ -342,7 +337,6 @@ function PricingPlansModal({
 
   useEffect(() => {
     if (scrollRef.current) {
-      // Scrolls the container to the middle on mount
       const container = scrollRef.current;
       const scrollAmount = (container.scrollWidth - container.offsetWidth) / 2;
       container.scrollLeft = scrollAmount;
@@ -407,7 +401,6 @@ function PricingPlansModal({
     </div>
   );
 
-  // This sends the modal to the bottom of <body>
   return typeof document !== "undefined" 
     ? createPortal(modalContent, document.body) 
     : null;
@@ -427,20 +420,22 @@ export default function AiChatBox({
   console.log("  - localStorage cf_token:", localStorage.getItem('cf_token'));
   console.log("  - localStorage cf_user:", localStorage.getItem('cf_user'));
   console.log("  - localStorage MZP_TRIAL_COUNT:", localStorage.getItem('MZP_TRIAL_COUNT'));
+  
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [step, setStep] = useState(0);
   const [symbol, setSymbol] = useState<SymbolKey | null>(null);
   const [capital, setCapital] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   
-  // Use 'loading' (the name in the hook) and rename it to 'userLoading'
-const { user, setupCount, loading: userLoading, userId, refreshUser } = useUser();
-useEffect(() => {
+  const { user, setupCount, loading: userLoading, userId, refreshUser } = useUser();
+  
+  useEffect(() => {
     console.log("🔄 AiChatBox user state changed:");
     console.log("  - user:", user);
     console.log("  - userLoading:", userLoading);
     console.log("  - setupCount:", setupCount);
   }, [user, userLoading, setupCount]);
+  
   const { deductSetup } = useOneSetup();
   const router = useRouter();
   
@@ -474,11 +469,10 @@ useEffect(() => {
   }, [userId]);
 
   // ==========================================
-  // ⚡ NEW: PRESELECTED SYMBOL EFFECT
+  // ⚡ PRESELECTED SYMBOL EFFECT
   // ==========================================
   useEffect(() => {
     if (preselectedSymbol && ALL_SYMBOLS.includes(preselectedSymbol as SymbolKey)) {
-      // Small timeout ensures the modal animation finishes before analysis starts
       const timer = setTimeout(() => {
         executeQuickAnalysis(preselectedSymbol as SymbolKey);
       }, 600);
@@ -494,88 +488,73 @@ useEffect(() => {
     console.log("  - user:", user);
     console.log("  - trialCount:", trialCount);
     console.log("  - !user && trialCount >= 2:", !user && trialCount >= 2);
-    // Check access first
+    
     if (!user && trialCount >= 2) {
       console.log("❌ Blocked: !user && trialCount >= 2 is TRUE");
-      console.log("  - Showing pricing modal");
       setShowPricingModal(true);
       return;
     }
     
     console.log("✅ Access granted or user has trials left");
-    // 🔥 CHECK: If user just registered, redirect to dashboard
+    
     if (localStorage.getItem('just_registered')) {
-        window.location.href = '/client/dashboard?showPlans=true';
-        return;
+      window.location.href = '/client/dashboard?showPlans=true';
+      return;
     }
 
-    let proceed = false;
-    
-
- // Access Control Logic - CHECK only, don't deduct yet
-if (user) {
-  // Just check if user has credits, don't deduct yet
-  if (setupCount <= 0) {
-    setMessages((prev) => [
-      ...prev,
-      {
-        sender: "ai",
-        text: [
+    if (user) {
+      if (setupCount <= 0) {
+        setMessages((prev) => [
+          ...prev,
           {
-            title: "❌ No Setups Left",
-            content: "You've used all your setup credits. Please buy more to continue.",
+            sender: "ai",
+            text: [
+              {
+                title: "❌ No Setups Left",
+                content: "You've used all your setup credits. Please buy more to continue.",
+              },
+            ],
           },
-        ],
-      },
-    ]);
-    setMessages((prev) => [
-      ...prev,
-      {
-        sender: "ai",
-        text: [
           {
-            title: "🛒 Buy More Setups",
-            content: `<button onclick="window.location.href='/client/dashboard?showPlans=true'" style="background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
-              View Pricing Plans
-            </button>`,
+            sender: "ai",
+            text: [
+              {
+                title: "🛒 Buy More Setups",
+                content: `<button onclick="window.location.href='/client/dashboard?showPlans=true'" style="background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                  View Pricing Plans
+                </button>`,
+              },
+            ],
           },
-        ],
-      },
-    ]);
-    return;
-  }
-  proceed = true;
-} else {
-  // 🔥 CHECK: Did user just register? (trial count cleared but user not yet loaded)
-  const hasJustRegistered = trialCount === 0 && localStorage.getItem('cf_token');
-  
-  if (hasJustRegistered) {
-    setMessages((prev) => [
-      ...prev,
-      { sender: "ai", text: "🔄 Loading your account, please wait..." },
-    ]);
-    return;
-  }
-  
-  if (trialCount < 2) {
-    proceed = true;
-  } else {
-    setShowPricingModal(true);
-    return;
-  }
-}
+        ]);
+        return;
+      }
+    } else {
+      const hasJustRegistered = trialCount === 0 && localStorage.getItem('cf_token');
+      
+      if (hasJustRegistered) {
+        setMessages((prev) => [
+          ...prev,
+          { sender: "ai", text: "🔄 Loading your account, please wait..." },
+        ]);
+        return;
+      }
+      
+      if (trialCount >= 2) {
+        setShowPricingModal(true);
+        return;
+      }
+    }
 
-    // Set $1,000 as default capital for quick analysis
     const quickCapital = 1000;
     
-    // Show user message
     setMessages((prev) => [
       ...prev,
       { sender: "user", text: `Quick Setup: ${targetSymbol} ($${quickCapital})` }
     ]);
     
     setIsTyping(true);
-    setStep(3); // Skip to result state
+    setStep(3);
 
     try {
       const setup = await fetchSetup(targetSymbol) as ExtendedTradeSetupData;
@@ -589,20 +568,24 @@ if (user) {
         return;
       }
 
-      // ✅ SAFE confidence access
       const confidenceScore = setup.risk_score?.confidence_score ?? (setup as any).confidence?.confidence_score ?? 50;
-      
-      // ✅ SAFE EMBEDDED SYMBOL SPECS
       const symbolSpec = SYMBOL_SPECS[targetSymbol] || { pip: 0.0001, contract: 100000, decimals: 5 };
       const contract = symbolSpec.contract;
       const decimalPlaces = symbolSpec.decimals;
 
-      // ✅ EXTRACT ORDER DATA
       const hasValidOrders = hasValidPendingOrders(setup);
-      const primaryOrder = getPrimaryOrder(setup);
+      const primaryOrder = setup.trade_parameters?.primary_validated_order?.original_order || getPrimaryOrder(setup);
       const allOrders = getAllPendingOrders(setup);
       const orderConfidence = getOrderConfidence(setup);
       const marketContext = getMarketContext(setup);
+      
+      const trendDirection = setup.trend?.trend || "neutral";
+      const trendStrength = setup.trend?.trend_strength || "weak";
+      const momentumBias = setup.momentum?.momentum_bias || "neutral";
+      
+      const strengths = setup.risk_score?.strengths || [];
+      const weaknesses = setup.risk_score?.weaknesses || [];
+      const riskCategory = setup.risk_score?.risk_category || "MEDIUM_RISK";
       
       let entryPrice = 0;
       let slPrice = 0;
@@ -619,7 +602,6 @@ if (user) {
         orderType = primaryOrder.type || "LIMIT";
         orderRationale = primaryOrder.rationale || "Algorithm generated";
       } else {
-        // Fallback
         const currentPrice = setup.pending_orders?.current_price || 0;
         entryPrice = currentPrice;
         slPrice = entryPrice * 0.99;
@@ -627,30 +609,21 @@ if (user) {
         orderRationale = "Fallback estimation";
       }
 
-      // ✅ CORRECTED RISK CALCULATION
       const priceDifference = Math.abs(entryPrice - slPrice);
-      
-      // Calculate Dollar Risk per 1 Lot traded
       const riskPerTradePerLot = priceDifference * contract;
+      const maxRiskAmount = quickCapital * 0.02;
 
-      const maxRiskAmount = quickCapital * 0.02; // 2% Risk Rule
-
-      // ✅ FIX: Prevent division by zero & enforce min 0.01 lot
       let lotSize = 0;
       if (riskPerTradePerLot > 0.00000001) {
         const rawLots = maxRiskAmount / riskPerTradePerLot;
-        lotSize = parseFloat(rawLots.toFixed(2)); // Round to 2 decimals
-        
-        // Enforce minimum 0.01 lot if valid trade
+        lotSize = parseFloat(rawLots.toFixed(2));
         if (lotSize < 0.01) lotSize = 0.01;
       } else {
-          lotSize = 0.0; // Invalid trade parameters
+        lotSize = 0.0;
       }
 
       const actualRiskAmount = riskPerTradePerLot * lotSize;
       const riskPercentage = quickCapital > 0 ? (actualRiskAmount / quickCapital) * 100 : 0;
-      
-      // Calculate distances for display
       const slDistanceUSD = Math.abs(slPrice - entryPrice) * contract * lotSize;
       const tpDistanceUSD = Math.abs(tpPrice - entryPrice) * contract * lotSize;
 
@@ -662,52 +635,82 @@ if (user) {
         : "✅ **CONFIRMED SETUP** – Trade looks promising.";
 
       const decision = setup.final_decision || "WAIT";
-// ✅ DEDUCT SETUP ONLY AFTER SUCCESSFUL ANALYSIS
-if (user) {
-  const result = await deductSetup(); 
-  if (result !== "ok") {
-    console.error("Failed to deduct setup after analysis");
-    
-    // Show error message with CTA button to buy setups
-    setMessages((prev) => [
-      ...prev,
-      {
-        sender: "ai",
-        text: [
-          {
-            title: "❌ No Setups Left",
-            content: "You've used all your setup credits. Please buy more to continue using MZPrimer AI.",
-          },
-        ],
-      },
-      {
-        sender: "ai",
-        text: [
-          {
-            title: "🛒 Purchase Setups",
-            content: `<div class="cta-button-container">
-              <button onclick="window.location.href='/client/dashboard?showPlans=true'" class="cta-button-primary">
-                View Pricing Plans
-              </button>
-              <button onclick="window.location.href='/client/dashboard/billing'" class="cta-button-secondary">
-                Manage Billing
-              </button>
-            </div>`,
-          },
-        ],
-      },
-    ]);
-    
-    // STOP EXECUTION - don't show ticket or summary
-    setIsTyping(false);
-    return;
-  }
-} else {
-  // Increment trial count for guest
-  incrementTrialCount();
-  setTrialCount(prev => prev + 1);
-}
-      // 🚀 SHOW SIGNAL TICKET POPUP
+
+      const volumeData = (setup.volume || {}) as {
+        position_vs_poc?: string;
+        volume_bias?: string;
+        poc_price?: number;
+        value_area_high?: number;
+        value_area_low?: number;
+        imbalance_detected?: boolean;
+      };
+      
+      const volumePosition = volumeData.position_vs_poc || "unknown";
+      const volumeBias = volumeData.volume_bias || "neutral";
+      const pocPrice = volumeData.poc_price ? volumeData.poc_price.toFixed(decimalPlaces) : "N/A";
+      const valueAreaHigh = volumeData.value_area_high ? volumeData.value_area_high.toFixed(decimalPlaces) : "N/A";
+      const valueAreaLow = volumeData.value_area_low ? volumeData.value_area_low.toFixed(decimalPlaces) : "N/A";
+      const imbalanceDetected = volumeData.imbalance_detected || false;
+
+      const sessionsData = (setup.sessions || {}) as {
+        session_name?: string;
+        liquidity_rating?: number;
+        is_high_volume_window?: boolean;
+        trading_regime_bias?: string;
+        session_note?: string;
+      };
+
+      const sessionName = sessionsData.session_name || "Unknown";
+      const liquidityRating = sessionsData.liquidity_rating || 0;
+      const isHighVolumeWindow = sessionsData.is_high_volume_window || false;
+      const tradingRegimeBias = sessionsData.trading_regime_bias || "neutral";
+      const sessionNote = sessionsData.session_note || "Normal trading conditions";
+
+      const isOverextended = volumePosition === "above_poc" || volumePosition === "below_poc";
+      const overextensionType = volumePosition === "above_poc" ? "premium" : volumePosition === "below_poc" ? "discount" : "";
+
+      if (user) {
+        const result = await deductSetup(); 
+        if (result !== "ok") {
+          console.error("Failed to deduct setup after analysis");
+          
+          setMessages((prev) => [
+            ...prev,
+            {
+              sender: "ai",
+              text: [
+                {
+                  title: "❌ No Setups Left",
+                  content: "You've used all your setup credits. Please buy more to continue using MZPrimer AI.",
+                },
+              ],
+            },
+            {
+              sender: "ai",
+              text: [
+                {
+                  title: "🛒 Purchase Setups",
+                  content: `<div class="cta-button-container">
+                    <button onclick="window.location.href='/client/dashboard?showPlans=true'" class="cta-button-primary">
+                      View Pricing Plans
+                    </button>
+                    <button onclick="window.location.href='/client/dashboard/billing'" class="cta-button-secondary">
+                      Manage Billing
+                    </button>
+                  </div>`,
+                },
+              ],
+            },
+          ]);
+          
+          setIsTyping(false);
+          return;
+        }
+      } else {
+        incrementTrialCount();
+        setTrialCount(prev => prev + 1);
+      }
+      
       setTicketData({
         symbol: targetSymbol,
         action: decision,
@@ -719,62 +722,93 @@ if (user) {
         tpDistanceUSD
       });
 
-      // Create summary blocks in the format you requested
+      // ✅ PROFESSIONAL SUMMARY CARDS (7 Cards - All Data Utilized)
       const summary: SummaryBlock[] = [
+        // 🎯 CARD 1: EXECUTIVE ACTION (Immediate Value)
         {
-          title: "🎯 Trade Parameters",
-          content:
-            `• Symbol: <strong>${targetSymbol} (${SYMBOL_NAMES[targetSymbol] || targetSymbol})</strong>\n` +
-            `• Decision: ${
-              setup.final_decision === "BUY"
-                ? '<span class="buy"><strong>BUY</strong></span> 📈'
-                : setup.final_decision === "SELL"
-                ? '<span class="sell"><strong>SELL</strong></span> 📉'
-                : '<span class="wait"><strong>WAIT</strong></span> ⏳'
-            }\n` +
-            `• Order Type: <strong>${orderType}</strong>\n` +
-            `• Confidence: <strong>${confidenceScore}%</strong> ${stars}\n` +
-            `• Signal: <strong>${signalStrength}</strong>\n` +
-            `• Market Context: <strong>${marketContext}</strong>`,
-        },
-        {
-          title: "⚡ Trade Parameters",
-          content:
-            `• Entry Price: <strong>${entryPrice.toFixed(decimalPlaces)}</strong>\n` +
+          title: "🎯 EXECUTIVE ACTION",
+          content: 
+            `• Target: <strong>${targetSymbol} (${SYMBOL_NAMES[targetSymbol as keyof typeof SYMBOL_NAMES] || targetSymbol})</strong>\n` +
+            `• Decision: ${decision === 'BUY' ? '<span class="buy"><strong>BUY 📈</strong></span>' : decision === 'SELL' ? '<span class="sell"><strong>SELL 📉</strong></span>' : '<strong>WAIT ⏳</strong>'}\n` +
+            `• Strategy: <strong>${orderRationale}</strong>\n` +
+            `• Confidence: <strong>${confidenceScore}%</strong> ${stars}\n\n` +
+            `• Entry: <strong>${entryPrice.toFixed(decimalPlaces)}</strong>\n` +
             `• Stop Loss: <strong>${slPrice.toFixed(decimalPlaces)}</strong> (<span style="color:red;">-$${slDistanceUSD.toFixed(2)}</span>)\n` +
-            `• Take Profit: <strong>${tpPrice.toFixed(decimalPlaces)}</strong> (<span style="color:green;">$${tpDistanceUSD.toFixed(2)}</span>)\n` +
-            `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>\n` +
-            `• Strategy: ${orderRationale}`,
+            `• Take Profit: <strong>${tpPrice.toFixed(decimalPlaces)}</strong> (<span style="color:green;">+$${tpDistanceUSD.toFixed(2)}</span>)\n` +
+            `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>`
         },
+
+        // 🏛️ CARD 2: INSTITUTIONAL CONTEXT
         {
-          title: "💰 Risk Management",
-          content:
-            `• Capital: <strong>$${quickCapital.toLocaleString()}</strong>\n` +
-            `• Risk/Trade: <strong>$${actualRiskAmount.toFixed(2)}</strong> (${riskPercentage.toFixed(1)}%)\n` +
-            `• Lot Size: <strong>${lotSize.toFixed(2)}</strong>\n` +
-            `• Position: ${setup.risk_score?.position_size_multiplier ?? 0.5}x`,
+          title: "🏛️ INSTITUTIONAL CONTEXT",
+          content: 
+            `• Structural Bias: ${trendDirection.replace(/_/g, ' ').toUpperCase()} (${trendStrength})\n` +
+            `• Market Context: <strong>${marketContext.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+            `• Momentum Bias: <strong>${momentumBias.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+            `• Institutional Flow: ${volumeBias === 'bullish_accumulation' ? 'Smart Money ACCUMULATING' : volumeBias === 'bearish_distribution' ? 'Smart Money DISTRIBUTING' : 'Balanced Distribution'}`
         },
+
+        // ⚖️ CARD 3: VALUE ANALYSIS
         {
-          title: signalStrength === "WEAK" ? "⚠️ Caution" : "✅ Final Signal",
-          content: `<strong>${signalWarning}</strong>`,
+          title: "⚖️ VALUE ANALYSIS",
+          content: 
+            `• Fair Value (POC): <strong>${pocPrice}</strong>\n` +
+            `• Value Area: ${valueAreaLow} - ${valueAreaHigh}\n` +
+            `• Price Position: <strong>${volumePosition.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+            `• Strategic State: ${isOverextended ? `Institutional <strong>${overextensionType?.toUpperCase()}</strong> detected (Premium Pricing)` : 'Price trading within fair value area.'}\n` +
+            `${imbalanceDetected ? '• 🔥 <strong>IMBALANCE DETECTED</strong>: High-velocity institutional buying.' : ''}`
         },
+
+        // ⏰ CARD 4: MARKET SESSION ANALYSIS
+        {
+          title: "⏰ SESSION INTELLIGENCE",
+          content: 
+            `• Current Session: <strong>${sessionName}</strong>\n` +
+            `• Liquidity Rating: <strong>${"⭐".repeat(liquidityRating)}${"☆".repeat(5-liquidityRating)}</strong> (${liquidityRating}/5)\n` +
+            `• High Volume Window: <strong>${isHighVolumeWindow ? 'YES ✅' : 'NO 🌙'}</strong>\n` +
+            `• Trading Regime: <strong>${tradingRegimeBias.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+            `• Session Note: ${sessionNote}`
+        },
+
+        // 💰 CARD 5: RISK ARCHITECTURE
+        {
+          title: "💰 RISK ARCHITECTURE",
+          content: 
+            `• Precision Lot Size: <strong>${lotSize.toFixed(2)} Lots</strong>\n` +
+            `• Account Exposure: $${actualRiskAmount.toFixed(2)} (<strong>${riskPercentage.toFixed(1)}% of Capital</strong>)\n` +
+            `• Risk Category: <strong>${riskCategory.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+            `• Safety Audit: ${setup.trade_parameters?.trade_validation?.is_valid ? '✅ VERIFIED' : '⚠️ CAUTION REQUIRED'}`
+        },
+
+        // 🛡️ CARD 6: STRATEGIC AUDIT
+        {
+          title: "🛡️ STRATEGIC AUDIT",
+          content: 
+            (strengths.length > 0 ? `✅ STRENGTHS:\n${strengths.slice(0, 3).map((s: string) => `  └ ${s}`).join('\n')}\n` : '') +
+            (weaknesses.length > 0 ? `⚠️ RISK FACTORS:\n${weaknesses.slice(0, 2).map((w: string) => `  └ ${w}`).join('\n')}` : '✅ No significant structural risks detected.')
+        },
+
+        // 🏁 CARD 7: FINAL RECOMMENDATION
+        {
+          title: signalStrength === "WEAK" ? "⚠️ STRATEGIC CAUTION" : "✅ EXECUTIVE VERDICT",
+          content: 
+            `<strong>${signalWarning}</strong>\n` +
+            `• Recommendation: ${setup.risk_score?.recommendation || 'Proceed with standard risk rules.'}`
+        }
       ];
 
-      // Convert summary blocks to chat messages
       const summaryCards: ChatMessage[] = summary.map(block => ({
         sender: "ai" as const,
         text: [{ title: block.title, content: block.content }]
       }));
 
-      // Add additional order information card if available
-      if (hasValidOrders) {
+      if (hasValidOrders && allOrders.length > 1) {
         summaryCards.push({
           sender: "ai" as const,
           text: [{ 
             title: "📋 ORDER DETAILS", 
             content: `• Total Pending Orders: <strong>${allOrders.length}</strong>\n` +
-                    `• Order Confidence: <strong>${orderConfidence}%</strong>\n` +
-                    `• Primary Order Rationale: ${orderRationale}` 
+                    `• Order Confidence: <strong>${orderConfidence}%</strong>` 
           }]
         });
       }
@@ -782,22 +816,21 @@ if (user) {
       scrollLocked.current = true;
       setMessages((prev) => [...prev, ...summaryCards]);
 
-    if (!user && trialCount >= 1) { // Check trialCount state instead
-  setMessages((prev) => [
-    ...prev,
-    {
-      sender: "ai",
-      text: [
-        {
-          title: "🚫 Trial Limit Reached",
-          content: "You've used all 2 free trials. Register and buy setups to continue using MZPrimer AI.",
-        },
-      ],
-    },
-  ]);
-}
+      if (!user && trialCount >= 1) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: [
+              {
+                title: "🚫 Trial Limit Reached",
+                content: "You've used all 2 free trials. Register and buy setups to continue using MZPrimer AI.",
+              },
+            ],
+          },
+        ]);
+      }
 
-      // ✅ Saving logic
       if (userId) {
         try {
           console.log("🔄 Saving quick setup for user:", userId);
@@ -806,13 +839,12 @@ if (user) {
             Math.abs(tpPrice - entryPrice) / Math.abs(entryPrice - slPrice) : 1.0;
           const token = localStorage.getItem('cf_token'); 
 
-          // Save setup via Cloudflare API
           const saveResponse = await fetch('/api/setups', {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${token}`, // This will now work with Step 1
-    'Content-Type': 'application/json'
-  },
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
               symbol: targetSymbol,
               entry_price: entryPrice,
@@ -850,59 +882,56 @@ if (user) {
   };
 
   const handleBuySetups = async (plan: string, userEmail?: string) => {
-  if (!user) {
-    console.error("No user found for purchase");
-    return;
-  }
-
-  setIsLoading(true);
-  try {
-    const res = await fetch("/api/checkout/create-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        userId: user.id, 
-        plan: plan,
-        email: user.email || userEmail
-      }),
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
+    if (!user) {
+      console.error("No user found for purchase");
+      return;
     }
 
-    const data = await res.json();
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/checkout/create-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          userId: user.id, 
+          plan: plan,
+          email: user.email || userEmail
+        }),
+      });
 
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      throw new Error("Checkout URL not received.");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("Checkout URL not received.");
+      }
+    } catch (error: any) {
+      console.error("Buy setup error:", error);
+      alert(`Failed to start checkout: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error: any) {
-    console.error("Buy setup error:", error);
-    alert(`Failed to start checkout: ${error.message}`);
-  } finally {
-    setIsLoading(false);
-  }
-};
-useEffect(() => {
-    // Check if user just registered and needs to select a plan
+  };
+
+  useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const showPlans = urlParams.get('showPlans');
     const isNewUser = urlParams.get('status') === 'new_user';
     
     if (user && (showPlans || isNewUser)) {
-        // User is registered, show plan selection immediately
-        setShowPricingModal(true);
-        // Clean up URL
-        window.history.replaceState({}, '', '/client/dashboard');
+      setShowPricingModal(true);
+      window.history.replaceState({}, '', '/client/dashboard');
     }
-}, [user]);
-const handleQuickRegisterSuccess = async (data: any, plan: string) => {
+  }, [user]);
+
+  const handleQuickRegisterSuccess = async (data: any, plan: string) => {
     console.log("🎯 [AiChatBox] Registration Successful");
-    
-    // Debug: Show what we received
     console.log("📦 Registration data:", data);
     console.log("🔑 Token received:", data.token?.substring(0, 20) + '...');
     console.log("👤 User received:", data.user);
@@ -912,61 +941,44 @@ const handleQuickRegisterSuccess = async (data: any, plan: string) => {
       return;
     }
     
-    // 1. Save credentials IMMEDIATELY
     localStorage.setItem('cf_token', data.token);
     localStorage.setItem('cf_user', JSON.stringify(data.user));
-    
-    // 2. CRITICAL: Clear trial count to prevent paywall
     localStorage.removeItem("MZP_TRIAL_COUNT");
-   
-    
-    // 3. Update local state
     setTrialCount(0);
-    
-    // 4. Close all modals
     setShowQuickRegister(false);
     setShowPricingModal(false);
     
-    // 5. FORCE REDIRECT - don't wait for anything
     console.log("🔀 Redirecting to dashboard with plan:", plan);
-    
-    // Use full URL to avoid any routing issues
     const redirectUrl = `${window.location.origin}/client/dashboard?showPlans=true&plan=${plan}&new_user=true`;
     console.log("📍 Redirect URL:", redirectUrl);
     
-    // Hard redirect with timeout to ensure it happens
     setTimeout(() => {
       window.location.href = redirectUrl;
     }, 100);
-};
+  };
 
+  const handlePlanSelect = (plan: string) => {
+    setSelectedPlan(plan);
+    if (user) {
+      handleBuySetups(plan, user.email);
+    } else {
+      setShowPricingModal(false);
+      setShowQuickRegister(true);
+    }
+  };
 
-// ✅ Only one handlePlanSelect function
-const handlePlanSelect = (plan: string) => {
-  setSelectedPlan(plan);
-  if (user) {
-    // If logged in, go to Stripe
-    handleBuySetups(plan, user.email);
-  } else {
-    // If guest, show registration modal
+  const handleRegisterFirst = () => {
     setShowPricingModal(false);
     setShowQuickRegister(true);
-  }
-};
+    setSelectedPlan("10");
+  };
 
-const handleRegisterFirst = () => {
-  setShowPricingModal(false);
-  setShowQuickRegister(true);
-  setSelectedPlan("10");
-};
+  const incrementTrial = async () => {
+    const newCount = incrementTrialCount();
+    setTrialCount(newCount);
+    return newCount;
+  };
 
-const incrementTrial = async () => {
-  const newCount = incrementTrialCount();
-  setTrialCount(newCount);
-  return newCount;
-};
-
-  // Welcome message with QUICK ACTION BUTTONS
   useEffect(() => {
     const hasAccess = user || trialCount < 2;
     
@@ -996,7 +1008,6 @@ const incrementTrial = async () => {
           text: "2️⃣ 🔍 Choose a Trading Symbol to begin:"
         });
 
-        // Add Quick Action Buttons as a separate message
         welcomeMessages.push({
           sender: "ai" as const, 
           text: "🚀 **Quick Setup:** Click any asset below for instant $1,000 analysis:"
@@ -1023,7 +1034,6 @@ const incrementTrial = async () => {
     setMessages((prev) => [...prev, { sender: "user", text: input }]);
     setIsTyping(true);
 
-    // === STEP 1: SELECT SYMBOL ===
     if (step === 1) {
       const selectedSymbol = input.trim() as SymbolKey;
       setSymbol(selectedSymbol);
@@ -1049,7 +1059,6 @@ const incrementTrial = async () => {
       return;
     }
 
-    // === STEP 2: ENTER CAPITAL & FETCH SETUP ===
     if (step === 2) {
       const capitalNumber = parseFloat(input);
       if (isNaN(capitalNumber) || capitalNumber <= 0 || capitalNumber > 10000000) {
@@ -1070,65 +1079,51 @@ const incrementTrial = async () => {
         return;
       }
 
-      let proceed = false;
-      
-      
-
-      
-// Access Control Logic - CHECK only, don't deduct yet
-if (user) {
-  // Just check if user has credits, don't deduct yet
-  if (setupCount <= 0) {
-    setMessages((prev) => [
-      ...prev,
-      {
-        sender: "ai",
-        text: [
-          {
-            title: "❌ No Setups Left",
-            content: "You've used all your setup credits. Please buy more to continue.",
-          },
-        ],
-      },
-    ]);
-    setMessages((prev) => [
-      ...prev,
-      {
-        sender: "ai",
-        text: [
-          {
-            title: "🛒 Buy More Setups",
-            content: `<button onclick="window.location.href='/client/dashboard?showPlans=true'" style="background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
-              View Pricing Plans
-            </button>`,
-          },
-        ],
-      },
-    ]);
-    return;
-  }
-  proceed = true;
-} else {
-  // 🔥 CHECK: Did user just register? (trial count cleared but user not yet loaded)
-  const hasJustRegistered = trialCount === 0 && localStorage.getItem('cf_token');
-  
-  if (hasJustRegistered) {
-    // User just registered but hook hasn't updated yet
-    // Show loading message or wait for user state
-    setMessages((prev) => [
-      ...prev,
-      { sender: "ai", text: "🔄 Loading your account, please wait..." },
-    ]);
-    return; // Don't proceed yet
-  }
-  
-  if (trialCount < 2) {
-    proceed = true;
-  } else {
-    setShowPricingModal(true);
-    return;
-  }
-}
+      if (user) {
+        if (setupCount <= 0) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              sender: "ai",
+              text: [
+                {
+                  title: "❌ No Setups Left",
+                  content: "You've used all your setup credits. Please buy more to continue.",
+                },
+              ],
+            },
+            {
+              sender: "ai",
+              text: [
+                {
+                  title: "🛒 Buy More Setups",
+                  content: `<button onclick="window.location.href='/client/dashboard?showPlans=true'" style="background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                    View Pricing Plans
+                  </button>`,
+                },
+              ],
+            },
+          ]);
+          setIsTyping(false);
+          return;
+        }
+      } else {
+        const hasJustRegistered = trialCount === 0 && localStorage.getItem('cf_token');
+        
+        if (hasJustRegistered) {
+          setMessages((prev) => [
+            ...prev,
+            { sender: "ai", text: "🔄 Loading your account, please wait..." },
+          ]);
+          return;
+        }
+        
+        if (trialCount >= 2) {
+          setShowPricingModal(true);
+          setIsTyping(false);
+          return;
+        }
+      }
 
       setCapital(input);
       setMessages((prev) => [
@@ -1149,20 +1144,23 @@ if (user) {
           return;
         }
 
-        // ✅ SAFE confidence access
         const confidenceScore = setup.risk_score?.confidence_score ?? (setup as any).confidence?.confidence_score ?? 50;
-        
-        // ✅ SAFE EMBEDDED SYMBOL SPECS
         const symbolSpec = SYMBOL_SPECS[symbol] || { pip: 0.0001, contract: 100000, decimals: 5 };
         const contract = symbolSpec.contract;
         const decimalPlaces = symbolSpec.decimals;
 
-        // ✅ EXTRACT ORDER DATA
         const hasValidOrders = hasValidPendingOrders(setup);
-        const primaryOrder = getPrimaryOrder(setup);
+        const primaryOrder = setup.trade_parameters?.primary_validated_order?.original_order || getPrimaryOrder(setup);
         const allOrders = getAllPendingOrders(setup);
         const orderConfidence = getOrderConfidence(setup);
         const marketContext = getMarketContext(setup);
+        
+        const trendDirection = setup.trend?.trend || "neutral";
+        const trendStrength = setup.trend?.trend_strength || "weak";
+        const momentumBias = setup.momentum?.momentum_bias || "neutral";
+        const strengths = setup.risk_score?.strengths || [];
+        const weaknesses = setup.risk_score?.weaknesses || [];
+        const riskCategory = setup.risk_score?.risk_category || "MEDIUM_RISK";
         
         let entryPrice = 0;
         let slPrice = 0;
@@ -1179,7 +1177,6 @@ if (user) {
           orderType = primaryOrder.type || "LIMIT";
           orderRationale = primaryOrder.rationale || "Algorithm generated";
         } else {
-          // Fallback
           const currentPrice = setup.pending_orders?.current_price || 0;
           entryPrice = currentPrice;
           slPrice = entryPrice * 0.99;
@@ -1187,30 +1184,21 @@ if (user) {
           orderRationale = "Fallback estimation";
         }
 
-        // ✅ CORRECTED RISK CALCULATION
         const priceDifference = Math.abs(entryPrice - slPrice);
-        
-        // Calculate Dollar Risk per 1 Lot traded
         const riskPerTradePerLot = priceDifference * contract;
+        const maxRiskAmount = capitalNumber * 0.02;
 
-        const maxRiskAmount = capitalNumber * 0.02; // 2% Risk Rule
-
-        // ✅ FIX: Prevent division by zero & enforce min 0.01 lot
         let lotSize = 0;
         if (riskPerTradePerLot > 0.00000001) {
           const rawLots = maxRiskAmount / riskPerTradePerLot;
-          lotSize = parseFloat(rawLots.toFixed(2)); // Round to 2 decimals
-          
-          // Enforce minimum 0.01 lot if valid trade
+          lotSize = parseFloat(rawLots.toFixed(2));
           if (lotSize < 0.01) lotSize = 0.01;
         } else {
-            lotSize = 0.0; // Invalid trade parameters
+          lotSize = 0.0;
         }
 
         const actualRiskAmount = riskPerTradePerLot * lotSize;
         const riskPercentage = capitalNumber > 0 ? (actualRiskAmount / capitalNumber) * 100 : 0;
-        
-        // Calculate distances for display
         const slDistanceUSD = Math.abs(slPrice - entryPrice) * contract * lotSize;
         const tpDistanceUSD = Math.abs(tpPrice - entryPrice) * contract * lotSize;
 
@@ -1222,52 +1210,76 @@ if (user) {
           : "✅ **CONFIRMED SETUP** – Trade looks promising.";
 
         const decision = setup.final_decision || "WAIT";
-// ✅ DEDUCT SETUP ONLY AFTER SUCCESSFUL ANALYSIS
-if (user) {
-  const result = await deductSetup(); 
-  if (result !== "ok") {
-    console.error("Failed to deduct setup after analysis");
-    
-    // Show error message with CTA button to buy setups
-    setMessages((prev) => [
-      ...prev,
-      {
-        sender: "ai",
-        text: [
-          {
-            title: "❌ No Setups Left",
-            content: "You've used all your setup credits. Please buy more to continue using MZPrimer AI.",
-          },
-        ],
-      },
-      {
-        sender: "ai",
-        text: [
-          {
-            title: "🛒 Purchase Setups",
-            content: `<div class="cta-button-container">
-              <button onclick="window.location.href='/client/dashboard?showPlans=true'" class="cta-button-primary">
-                View Pricing Plans
-              </button>
-              <button onclick="window.location.href='/client/dashboard/billing'" class="cta-button-secondary">
-                Manage Billing
-              </button>
-            </div>`,
-          },
-        ],
-      },
-    ]);
-    
-    // STOP EXECUTION - don't show ticket or summary
-    setIsTyping(false);
-    return;
-  }
-} else {
-  // Increment trial count for guest
-  incrementTrialCount();
-  setTrialCount(prev => prev + 1);
-}
-        // 🚀 SHOW SIGNAL TICKET POPUP
+
+        const volumeData = (setup.volume || {}) as {
+          position_vs_poc?: string;
+          volume_bias?: string;
+          poc_price?: number;
+          value_area_high?: number;
+          value_area_low?: number;
+          imbalance_detected?: boolean;
+        };
+
+        const volumePosition = volumeData.position_vs_poc || "unknown";
+        const volumeBias = volumeData.volume_bias || "neutral";
+        const pocPrice = volumeData.poc_price ? volumeData.poc_price.toFixed(decimalPlaces) : "N/A";
+        const valueAreaHigh = volumeData.value_area_high ? volumeData.value_area_high.toFixed(decimalPlaces) : "N/A";
+        const valueAreaLow = volumeData.value_area_low ? volumeData.value_area_low.toFixed(decimalPlaces) : "N/A";
+        const imbalanceDetected = volumeData.imbalance_detected || false;
+        const isOverextended = volumePosition === "above_poc" || volumePosition === "below_poc";
+        const overextensionType = volumePosition === "above_poc" ? "premium" : volumePosition === "below_poc" ? "discount" : "";
+        const sessionsData = (setup.sessions || {}) as {
+          session_name?: string;
+          liquidity_rating?: number;
+          is_high_volume_window?: boolean;
+          trading_regime_bias?: string;
+        };
+
+        const sessionName = sessionsData.session_name || "Unknown";
+        const liquidityRating = sessionsData.liquidity_rating || 0;
+        const isHighVolumeWindow = sessionsData.is_high_volume_window || false;
+        const tradingRegimeBias = sessionsData.trading_regime_bias || "neutral";
+
+        if (user) {
+          const result = await deductSetup(); 
+          if (result !== "ok") {
+            console.error("Failed to deduct setup after analysis");
+            setMessages((prev) => [
+              ...prev,
+              {
+                sender: "ai",
+                text: [
+                  {
+                    title: "❌ No Setups Left",
+                    content: "You've used all your setup credits. Please buy more to continue using MZPrimer AI.",
+                  },
+                ],
+              },
+              {
+                sender: "ai",
+                text: [
+                  {
+                    title: "🛒 Purchase Setups",
+                    content: `<div class="cta-button-container">
+                      <button onclick="window.location.href='/client/dashboard?showPlans=true'" class="cta-button-primary">
+                        View Pricing Plans
+                      </button>
+                      <button onclick="window.location.href='/client/dashboard/billing'" class="cta-button-secondary">
+                        Manage Billing
+                      </button>
+                    </div>`,
+                  },
+                ],
+              },
+            ]);
+            setIsTyping(false);
+            return;
+          }
+        } else {
+          incrementTrialCount();
+          setTrialCount(prev => prev + 1);
+        }
+
         setTicketData({
           symbol: symbol,
           action: decision,
@@ -1279,62 +1291,92 @@ if (user) {
           tpDistanceUSD
         });
 
-        // Create summary blocks in the format you requested
+        // ✅ PROFESSIONAL SUMMARY CARDS (7 Cards - All Data Utilized)
         const summary: SummaryBlock[] = [
+          // 🎯 CARD 1: EXECUTIVE ACTION (Immediate Value)
           {
-            title: "🎯 Trade Parameters",
-            content:
-              `• Symbol: <strong>${symbol} (${SYMBOL_NAMES[symbol] || symbol})</strong>\n` +
-              `• Decision: ${
-                setup.final_decision === "BUY"
-                  ? '<span class="buy"><strong>BUY</strong></span> 📈'
-                  : setup.final_decision === "SELL"
-                  ? '<span class="sell"><strong>SELL</strong></span> 📉'
-                  : '<span class="wait"><strong>WAIT</strong></span> ⏳'
-              }\n` +
-              `• Order Type: <strong>${orderType}</strong>\n` +
-              `• Confidence: <strong>${confidenceScore}%</strong> ${stars}\n` +
-              `• Signal: <strong>${signalStrength}</strong>\n` +
-              `• Market Context: <strong>${marketContext}</strong>`,
-          },
-          {
-            title: "⚡ Trade Parameters",
-            content:
-              `• Entry Price: <strong>${entryPrice.toFixed(decimalPlaces)}</strong>\n` +
+            title: "🎯 EXECUTIVE ACTION",
+            content: 
+              `• Target: <strong>${symbol} (${SYMBOL_NAMES[symbol as keyof typeof SYMBOL_NAMES] || symbol})</strong>\n` +
+              `• Decision: ${decision === 'BUY' ? '<span class="buy"><strong>BUY 📈</strong></span>' : decision === 'SELL' ? '<span class="sell"><strong>SELL 📉</strong></span>' : '<strong>WAIT ⏳</strong>'}\n` +
+              `• Strategy: <strong>${orderRationale}</strong>\n` +
+              `• Confidence: <strong>${confidenceScore}%</strong> ${stars}\n\n` +
+              `• Entry: <strong>${entryPrice.toFixed(decimalPlaces)}</strong>\n` +
               `• Stop Loss: <strong>${slPrice.toFixed(decimalPlaces)}</strong> (<span style="color:red;">-$${slDistanceUSD.toFixed(2)}</span>)\n` +
-              `• Take Profit: <strong>${tpPrice.toFixed(decimalPlaces)}</strong> (<span style="color:green;">$${tpDistanceUSD.toFixed(2)}</span>)\n` +
-              `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>\n` +
-              `• Strategy: ${orderRationale}`,
+              `• Take Profit: <strong>${tpPrice.toFixed(decimalPlaces)}</strong> (<span style="color:green;">+$${tpDistanceUSD.toFixed(2)}</span>)\n` +
+              `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>`
           },
+
+          // 🏛️ CARD 2: INSTITUTIONAL CONTEXT
           {
-            title: "💰 Risk Management",
-            content:
-              `• Capital: <strong>$${capitalNumber.toLocaleString()}</strong>\n` +
-              `• Risk/Trade: <strong>$${actualRiskAmount.toFixed(2)}</strong> (${riskPercentage.toFixed(1)}%)\n` +
-              `• Lot Size: <strong>${lotSize.toFixed(2)}</strong>\n` +
-              `• Position: ${setup.risk_score?.position_size_multiplier ?? 0.5}x`,
+            title: "🏛️ INSTITUTIONAL CONTEXT",
+            content: 
+              `• Structural Bias: ${trendDirection.replace(/_/g, ' ').toUpperCase()} (${trendStrength})\n` +
+              `• Market Context: <strong>${marketContext.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+              `• Momentum Bias: <strong>${momentumBias.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+              `• Institutional Flow: ${volumeBias === 'bullish_accumulation' ? 'Smart Money ACCUMULATING' : volumeBias === 'bearish_distribution' ? 'Smart Money DISTRIBUTING' : 'Balanced Distribution'}`
           },
+
+          // ⚖️ CARD 3: VALUE ANALYSIS
           {
-            title: signalStrength === "WEAK" ? "⚠️ Caution" : "✅ Final Signal",
-            content: `<strong>${signalWarning}</strong>`,
+            title: "⚖️ VALUE ANALYSIS",
+            content: 
+              `• Fair Value (POC): <strong>${pocPrice}</strong>\n` +
+              `• Value Area: ${valueAreaLow} - ${valueAreaHigh}\n` +
+              `• Price Position: <strong>${volumePosition.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+              `• Strategic State: ${isOverextended ? `Institutional <strong>${overextensionType?.toUpperCase()}</strong> detected (Premium Pricing)` : 'Price trading within fair value area.'}\n` +
+              `${imbalanceDetected ? '• 🔥 <strong>IMBALANCE DETECTED</strong>: High-velocity institutional buying.' : ''}`
           },
+
+          // ⏰ CARD 4: MARKET SESSION ANALYSIS
+          {
+            title: "⏰ SESSION INTELLIGENCE",
+            content: 
+              `• Current Session: <strong>${sessionName}</strong>\n` +
+              `• Liquidity Rating: <strong>${"⭐".repeat(liquidityRating)}${"☆".repeat(5-liquidityRating)}</strong> (${liquidityRating}/5)\n` +
+              `• High Volume Window: <strong>${isHighVolumeWindow ? 'YES ✅' : 'NO 🌙'}</strong>\n` +
+              `• Trading Regime: <strong>${tradingRegimeBias.replace(/_/g, ' ').toUpperCase()}</strong>`
+          },
+
+          // 💰 CARD 5: RISK ARCHITECTURE
+          {
+            title: "💰 RISK ARCHITECTURE",
+            content: 
+              `• Precision Lot Size: <strong>${lotSize.toFixed(2)} Lots</strong>\n` +
+              `• Account Exposure: $${actualRiskAmount.toFixed(2)} (<strong>${riskPercentage.toFixed(1)}% of Capital</strong>)\n` +
+              `• Risk Category: <strong>${riskCategory.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+              `• Safety Audit: ${setup.trade_parameters?.trade_validation?.is_valid ? '✅ VERIFIED' : '⚠️ CAUTION REQUIRED'}`
+          },
+
+          // 🛡️ CARD 6: STRATEGIC AUDIT
+          {
+            title: "🛡️ STRATEGIC AUDIT",
+            content: 
+              (strengths.length > 0 ? `✅ STRENGTHS:\n${strengths.slice(0, 3).map((s: string) => `  └ ${s}`).join('\n')}\n` : '') +
+              (weaknesses.length > 0 ? `⚠️ RISK FACTORS:\n${weaknesses.slice(0, 2).map((w: string) => `  └ ${w}`).join('\n')}` : '✅ No significant structural risks detected.')
+          },
+
+          // 🏁 CARD 7: FINAL RECOMMENDATION
+          {
+            title: signalStrength === "WEAK" ? "⚠️ STRATEGIC CAUTION" : "✅ EXECUTIVE VERDICT",
+            content: 
+              `<strong>${signalWarning}</strong>\n` +
+              `• Recommendation: ${setup.risk_score?.recommendation || 'Proceed with standard risk rules.'}`
+          }
         ];
 
-        // Convert summary blocks to chat messages
         const summaryCards: ChatMessage[] = summary.map(block => ({
           sender: "ai" as const,
           text: [{ title: block.title, content: block.content }]
         }));
 
-        // Add additional order information card if available
-        if (hasValidOrders) {
+        if (hasValidOrders && allOrders.length > 1) {
           summaryCards.push({
             sender: "ai" as const,
             text: [{ 
               title: "📋 ORDER DETAILS", 
               content: `• Total Pending Orders: <strong>${allOrders.length}</strong>\n` +
-                      `• Order Confidence: <strong>${orderConfidence}%</strong>\n` +
-                      `• Primary Order Rationale: ${orderRationale}` 
+                      `• Order Confidence: <strong>${orderConfidence}%</strong>` 
             }]
           });
         }
@@ -1342,22 +1384,21 @@ if (user) {
         scrollLocked.current = true;
         setMessages((prev) => [...prev, ...summaryCards]);
 
-       if (!user && trialCount >= 1) { // Check trialCount state instead
-  setMessages((prev) => [
-    ...prev,
-    {
-      sender: "ai",
-      text: [
-        {
-          title: "🚫 Trial Limit Reached",
-          content: "You've used all 2 free trials. Register and buy setups to continue using MZPrimer AI.",
-        },
-      ],
-    },
-  ]);
-}
+        if (!user && trialCount >= 1) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              sender: "ai",
+              text: [
+                {
+                  title: "🚫 Trial Limit Reached",
+                  content: "You've used all 2 free trials. Register and buy setups to continue using MZPrimer AI.",
+                },
+              ],
+            },
+          ]);
+        }
 
-        // ✅ Saving logic
         if (userId) {
           try {
             console.log("🔄 Saving setup for user:", userId);
@@ -1365,7 +1406,6 @@ if (user) {
             const finalRR = (tpPrice && slPrice && entryPrice) ? 
               Math.abs(tpPrice - entryPrice) / Math.abs(entryPrice - slPrice) : 1.0;
             
-            // Save setup via Cloudflare API
             const saveResponse = await fetch('/api/setups', {
               method: 'POST',
               headers: {
@@ -1411,16 +1451,16 @@ if (user) {
 
   const showPaywall = !userLoading && ((!user && trialCount >= 2) || (user && setupCount <= 0));
   console.log("🔍 showPaywall calculation:");
-console.log("  - userLoading:", userLoading);
-console.log("  - !user:", !user);
-console.log("  - trialCount:", trialCount);
-console.log("  - trialCount >= 2:", trialCount >= 2);
-console.log("  - !user && trialCount >= 2:", !user && trialCount >= 2);
-console.log("  - user && setupCount <= 0:", user && setupCount <= 0);
-console.log("  - showPaywall result:", showPaywall);
+  console.log("  - userLoading:", userLoading);
+  console.log("  - !user:", !user);
+  console.log("  - trialCount:", trialCount);
+  console.log("  - trialCount >= 2:", trialCount >= 2);
+  console.log("  - !user && trialCount >= 2:", !user && trialCount >= 2);
+  console.log("  - user && setupCount <= 0:", user && setupCount <= 0);
+  console.log("  - showPaywall result:", showPaywall);
 
-if (showPaywall && !userLoading) {
-   console.log("🚨 SHOWING PAYWALL!");
+  if (showPaywall && !userLoading) {
+    console.log("🚨 SHOWING PAYWALL!");
     return (
       <div className="chatbox-wrapper section">
         <div className="license-header">
@@ -1464,7 +1504,6 @@ if (showPaywall && !userLoading) {
           )}
         </div>
 
-        {/* ⚡ THE CRITICAL FIX: The modals MUST be here too! ⚡ */}
         {showPricingModal && (
           <PricingPlansModal
             onClose={() => setShowPricingModal(false)}
@@ -1510,7 +1549,6 @@ if (showPaywall && !userLoading) {
         />
       )}
 
-      {/* 🚀 SIGNAL TICKET POPUP */}
       {ticketData && (
         <SignalTicket 
           data={ticketData} 
@@ -1552,7 +1590,6 @@ if (showPaywall && !userLoading) {
               </div>
             )}
             
-            {/* Quick Action Buttons for Popular Symbols */}
             {msg.text === "🚀 **Quick Setup:** Click any asset below for instant $1,000 analysis:" && (
               <div className="quick-action-buttons">
                 {QUICK_SYMBOLS.map((sym) => (

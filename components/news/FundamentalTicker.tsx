@@ -76,14 +76,14 @@ export default function SlimScrollingTicker() {
 
   if (loading) {
     return (
-      <div className="slim-ticker-container">
-        <div className="slim-ticker-track">
+      <div className="feed-container">
+        <div className="terminal-scroll-view">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="news-terminal-slat loading-skeleton">
+            <div key={i} className="terminal-slat loading-skeleton">
               <div className="slat-timestamp skeleton" />
-              <div className="news-symbol-tag skeleton" />
-              <div className="news-headline-text skeleton" />
-              <div className="news-action-hint skeleton" />
+              <div className="slat-symbol skeleton" />
+              <div className="slat-news-headline skeleton" />
+              <div className="slat-news-action skeleton" />
             </div>
           ))}
         </div>
@@ -98,44 +98,32 @@ export default function SlimScrollingTicker() {
   return (
     <>
       <div 
-        className={`slim-ticker-container ${isPaused ? 'paused' : ''}`}
+        className={`feed-container ${isPaused ? 'paused' : ''}`}
         onMouseEnter={() => !isMobile && setIsPaused(true)}
         onMouseLeave={() => !isMobile && setIsPaused(false)}
       >
-        <div className="slim-ticker-bar">
+        <div className="terminal-scroll-view">
           <div 
             ref={trackRef}
-            className="slim-ticker-track"
-            style={{ transform: `translateX(${scrollPosition}px)` }}
+            className="scroll-content"
+            style={{ transform: `translateX(${scrollPosition}px)`, display: 'flex' }}
           >
             {duplicatedNews.map((item, idx) => (
               <button
                 key={`${item.id}-${idx}`}
                 onClick={() => handleNewsClick(item)}
-                className="news-terminal-slat"
+                className="terminal-slat news-slat"
               >
                 <span className="slat-timestamp">
                   [{new Date().toLocaleTimeString([], {hour12: false, hour:'2-digit', minute:'2-digit'})}]
                 </span>
-                <span className="news-symbol-tag">{item.symbol}</span>
-                <span className="news-headline-text">{item.headline}</span>
-                <div className="news-action-hint">READ_INTEL</div>
+                <span className="slat-symbol">{item.symbol}</span>
+                <span className="slat-news-headline">{item.headline}</span>
+                <span className="slat-news-action">READ</span>
               </button>
             ))}
           </div>
-          <div className="slim-fade-left" />
-          <div className="slim-fade-right" />
         </div>
-
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsPaused(!isPaused);
-          }}
-          className="slim-pause-btn"
-        >
-          {isPaused ? '▶' : '⏸'}
-        </button>
       </div>
 
       {selectedNews && (

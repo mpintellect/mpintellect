@@ -16,7 +16,7 @@ import LearningHub from '@/components/LearningHub';
 import AiToolsSection from '@/components/AiToolsSection';
 import AIRobotCards from '@/components/AIRobotCards';
 import ContactSection from '@/components/ContactSection';
-import FundamentalTicker from '@/components/news/FundamentalTicker'
+
 import PropFirmChatSection from '@/components/PropFirmChatSection';
 import AiChatBox from "@/components/AiChatBox";
 import PropFirmChat from "@/components/PropFirmChat";
@@ -43,10 +43,11 @@ export default function Home() {
     <>
     
       <Navbar />
-      <FundamentalTicker />
+      
       <NotificationButton /> 
-      <Hero />
       <LiveMarketFeed />
+      <Hero />
+      
       <WelcomeTradePopup />
       <MobileMenu />
 

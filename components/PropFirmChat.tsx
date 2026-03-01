@@ -878,11 +878,46 @@ if (user) {
         : "✅ **PROP-FRIENDLY SETUP** – Trade aligns with challenge rules.";
 
       const decision = setup.final_decision || "WAIT";
-
+      const trendDirection = setup.trend?.trend || "neutral";
+      const trendStrength = setup.trend?.trend_strength || "weak";
+      const momentumBias = setup.momentum?.momentum_bias || "neutral";
+      const volumeData = (setup.volume || {}) as {
+        position_vs_poc?: string;
+        volume_bias?: string;
+        poc_price?: number;
+        value_area_high?: number;
+        value_area_low?: number;
+        imbalance_detected?: boolean;
+      };
+      const volumePosition = volumeData.position_vs_poc || "unknown";
+      const volumeBias = volumeData.volume_bias || "neutral";
+      const pocPrice = volumeData.poc_price ? volumeData.poc_price.toFixed(decimalPlaces) : "N/A";
+      const valueAreaHigh = volumeData.value_area_high ? volumeData.value_area_high.toFixed(decimalPlaces) : "N/A";
+      const valueAreaLow = volumeData.value_area_low ? volumeData.value_area_low.toFixed(decimalPlaces) : "N/A";
+      const imbalanceDetected = volumeData.imbalance_detected || false;
       // Calculate progress towards target
       const targetProfitUSD = stage.target > 0 ? balance * stage.target : 0;
       const tradeProfitRatio = tpDistanceUSD / targetProfitUSD;
       const tradesNeeded = stage.target > 0 ? Math.ceil(targetProfitUSD / tpDistanceUSD) : 0;
+      const sessionsData = (setup.sessions || {}) as {
+        session_name?: string;
+        liquidity_rating?: number;
+        is_high_volume_window?: boolean;
+        trading_regime_bias?: string;
+        session_note?: string;
+      };
+
+      const sessionName = sessionsData.session_name || "Unknown";
+      const liquidityRating = sessionsData.liquidity_rating || 0;
+      const isHighVolumeWindow = sessionsData.is_high_volume_window || false;
+      const tradingRegimeBias = sessionsData.trading_regime_bias || "neutral";
+      const sessionNote = sessionsData.session_note || "Normal trading conditions";
+      const strengths = setup.risk_score?.strengths || [];
+      const weaknesses = setup.risk_score?.weaknesses || [];
+      const riskCategory = setup.risk_score?.risk_category || "MEDIUM_RISK";
+
+      const isOverextended = volumePosition === "above_poc" || volumePosition === "below_poc";
+      const overextensionType = volumePosition === "above_poc" ? "premium" : volumePosition === "below_poc" ? "discount" : "";
 // ✅ DEDUCT SETUP ONLY AFTER SUCCESSFUL ANALYSIS
 if (user) {
   const result = await deductSetup(); 
@@ -941,63 +976,109 @@ if (user) {
       });
 
       // Create PROP FIRM specific summary blocks
-      const summary: SummaryBlock[] = [
-        {
-          title: "🏢 FIRM COMPLIANCE",
-          content:
-            `• Prop Firm: <strong>${selectedFirm.toUpperCase()}</strong>\n` +
-            `• Stage: <strong>${stage.name}</strong>\n` +
-            `• Daily Cap: <strong>$${dailyLimit.toFixed(0)}</strong>\n` +
-            `• Trade Risk: <span style="color:#3b82f6;"><strong>$${actualRiskAmount.toFixed(2)} (${riskPercentageOfDailyLimit.toFixed(1)}% of limit)</strong></span>\n` +
-            `• Status: <span style="color:${riskPercentageOfDailyLimit <= 25 ? '#10b981' : '#f59e0b'}"><strong>${riskPercentageOfDailyLimit <= 25 ? '✓ SAFE' : '⚠ WARNING'}</strong></span> • Uses ${riskPercentageOfDailyLimit.toFixed(1)}% of daily allowance`,
-        },
-        {
-          title: "🎯 Trade Parameters",
-          content:
-            `• Symbol: <strong>${targetSymbol} (${SYMBOL_NAMES[targetSymbol] || targetSymbol})</strong>\n` +
-            `• Decision: ${
-              decision === "BUY"
-                ? '<span class="buy"><strong>BUY</strong></span> 📈'
-                : decision === "SELL"
-                ? '<span class="sell"><strong>SELL</strong></span> 📉'
-                : '<span class="wait"><strong>WAIT</strong></span> ⏳'
-            }\n` +
-            `• Order Type: <strong>${orderType}</strong>\n` +
-            `• Confidence: <strong>${confidenceScore}%</strong> ${stars}\n` +
-            `• Signal: <strong>${signalStrength}</strong>\n` +
-            `• Market Context: <strong>${marketContext}</strong>`,
-        },
-        {
-          title: "⚡ TRADE PARAMETERS",
-          content:
-            `• Entry Price: <strong>${entryPrice.toFixed(decimalPlaces)}</strong>\n` +
-            `• Stop Loss: <strong>${slPrice.toFixed(decimalPlaces)}</strong> (<span style="color:red;">-$${slDistanceUSD.toFixed(2)}</span>)\n` +
-            `• Take Profit: <strong>${tpPrice.toFixed(decimalPlaces)}</strong> (<span style="color:green;">$${tpDistanceUSD.toFixed(2)}</span>)\n` +
-            `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>\n` +
-            `• Strategy: ${orderRationale}`,
-        },
-        {
-          title: stage.target > 0 ? "📊 TARGET PROGRESS" : "💰 PROFIT POTENTIAL",
-          content: stage.target > 0
-            ? `• Target Profit: <strong>$${targetProfitUSD.toFixed(2)}</strong> (${(stage.target * 100).toFixed(1)}%)\n` +
-              `• This Trade: <strong>$${tpDistanceUSD.toFixed(2)}</strong> (${(tradeProfitRatio * 100).toFixed(1)}% of target)\n` +
-              `• Trades Needed: <strong>${tradesNeeded}</strong> to complete challenge\n` +
-              `• Completion Time: <strong>${Math.ceil(tradesNeeded / 2)} days</strong> (at 2 trades/day)`
-            : `• Trade Profit: <strong>$${tpDistanceUSD.toFixed(2)}</strong>\n` +
-              `• Monthly Potential: <strong>$${(tpDistanceUSD * 20).toFixed(2)}</strong> (20 trades/month)\n` +
-              `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong> (Prop Firm Approved)`,
-        },
-      ];
+const summary: SummaryBlock[] = [
+  {
+    title: "🏢 FIRM COMPLIANCE",
+    content:
+      `• Prop Firm: <strong>${selectedFirm.toUpperCase()}</strong>\n` +
+      `• Stage: <strong>${stage.name}</strong>\n` +
+      `• Daily Cap: <strong>$${dailyLimit.toFixed(0)}</strong>\n` +
+      `• Trade Risk: <span style="color:#3b82f6;"><strong>$${actualRiskAmount.toFixed(2)} (${riskPercentageOfDailyLimit.toFixed(1)}% of limit)</strong></span>\n` +
+      `• Status: <span style="color:${riskPercentageOfDailyLimit <= 25 ? '#10b981' : '#f59e0b'}"><strong>${riskPercentageOfDailyLimit <= 25 ? '✓ SAFE' : '⚠ WARNING'}</strong></span> • Uses ${riskPercentageOfDailyLimit.toFixed(1)}% of daily allowance`,
+  },
+  {
+    title: "🎯 EXECUTIVE ACTION",
+    content:
+      `• **Target**: <strong>${targetSymbol} (${SYMBOL_NAMES[targetSymbol as keyof typeof SYMBOL_NAMES] || targetSymbol})</strong>\n` +
+      `• **Decision**: ${
+        decision === "BUY"
+          ? '<span class="buy"><strong>BUY 📈</strong></span>'
+          : decision === "SELL"
+          ? '<span class="sell"><strong>SELL 📉</strong></span>'
+          : '<span class="wait"><strong>WAIT ⏳</strong></span>'
+      }\n` +
+      `• Strategy: <strong>${orderRationale}</strong>\n` +
+      `• Confidence: <strong>${confidenceScore}%</strong> ${stars}\n` +
+      `• Signal: <strong>${signalStrength}</strong>\n\n` +
+      `• Entry: <strong>${entryPrice.toFixed(decimalPlaces)}</strong>\n` +
+      `• Stop Loss: <strong>${slPrice.toFixed(decimalPlaces)}</strong> (<span style="color:red;">-$${slDistanceUSD.toFixed(2)}</span>)\n` +
+      `• Take Profit: <strong>${tpPrice.toFixed(decimalPlaces)}</strong> (<span style="color:green;">+$${tpDistanceUSD.toFixed(2)}</span>)\n` +
+      `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>`,
+  },
+  {
+    title: "🏛️ INSTITUTIONAL CONTEXT",
+    content:
+      `• Structural Bias: ${trendDirection.replace(/_/g, ' ').toUpperCase()} (${trendStrength})\n` +
+      `• Market Context: <strong>${marketContext.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+      `• Momentum Bias: <strong>${momentumBias.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+      `• Institutional Flow: ${volumeBias === 'bullish_accumulation' ? 'Smart Money ACCUMULATING' : volumeBias === 'bearish_distribution' ? 'Smart Money DISTRIBUTING' : 'Balanced Distribution'}\n` +
+      `• Order Type: <strong>${orderType}</strong>\n` +
+      `• Order Confidence: <strong>${orderConfidence}%</strong>`,
+  },
+  {
+    title: "⚖️ VALUE ANALYSIS",
+    content: 
+      `• Fair Value (POC): <strong>${pocPrice}</strong>\n` +
+      `• Value Area: ${valueAreaLow} - ${valueAreaHigh}\n` +
+      `• Price Position: <strong>${volumePosition.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+      `• Strategic State: ${isOverextended ? `Institutional <strong>${overextensionType?.toUpperCase()}</strong> detected (Premium Pricing)` : 'Price trading within fair value area.'}\n` +
+      `${imbalanceDetected ? '• 🔥 <strong>IMBALANCE DETECTED</strong>: High-velocity institutional buying.' : ''}`,
+  },
+  {
+    title: "⏰ SESSION INTELLIGENCE",
+    content: 
+      `• Current Session: <strong>${sessionName}</strong>\n` +
+      `• Liquidity Rating: <strong>${"⭐".repeat(liquidityRating)}${"☆".repeat(5-liquidityRating)}</strong> (${liquidityRating}/5)\n` +
+      `• High Volume Window: <strong>${isHighVolumeWindow ? 'YES ✅' : 'NO 🌙'}</strong>\n` +
+      `• Trading Regime: <strong>${tradingRegimeBias.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+      `• Session Note: ${sessionNote}`,
+  },
+  {
+    title: "💰 RISK ARCHITECTURE",
+    content:
+      `• Precision Lot Size: <strong>${lotSize.toFixed(2)} Lots</strong>\n` +
+      `• Account Exposure: $${actualRiskAmount.toFixed(2)} (<strong>${riskPercentageOfBalance.toFixed(1)}% of Balance</strong>)\n` +
+      `• Risk Category: <strong>${riskCategory.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+      `• Daily Limit Usage: <strong>${riskPercentageOfDailyLimit.toFixed(1)}%</strong>\n` +
+      `• Safety Status: <strong>${riskPercentageOfDailyLimit <= 25 ? '✅ SAFE' : '⚠️ EXCESSIVE'}</strong>\n` +
+      `• Safety Audit: ${setup.trade_parameters?.trade_validation?.is_valid ? '✅ VERIFIED' : '⚠️ CAUTION REQUIRED'}`,
+  },
+  {
+    title: stage.target > 0 ? "📊 TARGET PROGRESS" : "💰 PROFIT POTENTIAL",
+    content: stage.target > 0
+      ? `• Target Profit: <strong>$${targetProfitUSD.toFixed(2)}</strong> (${(stage.target * 100).toFixed(1)}%)\n` +
+        `• This Trade: <strong>$${tpDistanceUSD.toFixed(2)}</strong> (${(tradeProfitRatio * 100).toFixed(1)}% of target)\n` +
+        `• Trades Needed: <strong>${tradesNeeded}</strong> to complete challenge\n` +
+        `• Est. Completion: <strong>${Math.ceil(tradesNeeded / 2)} days</strong> (2 trades/day)`
+      : `• Trade Profit: <strong>$${tpDistanceUSD.toFixed(2)}</strong>\n` +
+        `• Monthly Potential: <strong>$${(tpDistanceUSD * 20).toFixed(2)}</strong> (20 trades/month)\n` +
+        `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>`,
+  },
+  {
+    title: "🛡️ STRATEGIC AUDIT",
+    content: 
+      (strengths.length > 0 ? `✅ STRENGTHS:\n${strengths.slice(0, 3).map((s: string) => `  └ ${s}`).join('\n')}\n` : '') +
+      (weaknesses.length > 0 ? `⚠️ RISK FACTORS:\n${weaknesses.slice(0, 2).map((w: string) => `  └ ${w}`).join('\n')}\n` : '') +
+      `• Signal Quality: ${signalStrength === "WEAK" ? "⚠️ LOW" : signalStrength === "MODERATE" ? "⚡ MEDIUM" : "✅ HIGH"}\n` +
+      `• Prop Firm Status: <strong>${riskPercentageOfDailyLimit <= 25 ? '✓ COMPLIANT' : '⚠️ REVIEW REQUIRED'}</strong>\n` +
+      `• Recommendation: ${setup.risk_score?.recommendation || signalWarning}`,
+  },
+  {
+    title: signalStrength === "WEAK" ? "⚠️ STRATEGIC CAUTION" : "✅ EXECUTIVE VERDICT",
+    content: 
+      `<strong>${signalWarning}</strong>\n` +
+      `• Recommendation: ${setup.risk_score?.recommendation || 'Proceed with standard risk rules.'}`,
+  },
+];
 
-      // Add order details if available
-      if (hasValidOrders) {
-        summary.push({
-          title: "📋 ORDER DETAILS",
-          content: `• Total Pending Orders: <strong>${allOrders.length}</strong>\n` +
-                  `• Order Confidence: <strong>${orderConfidence}%</strong>\n` +
-                  `• Primary Order Rationale: ${orderRationale}`
-        });
-      }
+// Add order details if available and there are multiple orders
+if (hasValidOrders && allOrders.length > 1) {
+  summary.push({
+    title: "📋 ORDER DETAILS",
+    content: `• Total Pending Orders: <strong>${allOrders.length}</strong>\n` +
+            `• Order Confidence: <strong>${orderConfidence}%</strong>`
+  });
+}
 
       // Convert summary blocks to chat messages
       const summaryCards: ChatMessage[] = summary.map(block => ({

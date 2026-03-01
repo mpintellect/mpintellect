@@ -7,7 +7,7 @@ interface Props {
 // Predefine logo URLs for better caching
 const LOGO_URLS = {
   webp: 'https://mzprimer.com/logos/mzlogo.webp',
-  png: 'https://mzprimer.com/logos/icon-512.png',
+  png: 'https://mzprimer.com/logos/icon-512.webp',
   og: (symbol: string, decision: string) => 
     `https://mzprimer.com/api/og?sym=${symbol}&sig=${decision}`
 } as const;

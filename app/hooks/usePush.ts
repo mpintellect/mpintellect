@@ -295,8 +295,8 @@ export function usePush() {
           targetUserId: userId,
           title: "✅ Signal Alert Active",
           message: "AI monitoring activated. You'll receive real-time Trade Parameters!",
-          icon: "/logos/icon-192.png",
-          badge: "/logos/icon-192.png",
+          icon: "/logos/icon-512.webp",
+          badge: "/logos/icon-512.webp",
           tag: "welcome",
           url: "/client/dashboard"
         })

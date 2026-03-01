@@ -225,15 +225,42 @@ function generateStoryHTML(story: any, mzLogo: string | null, partnerLogo: strin
           </p>
         </div>
 
-        <!-- IDENTITY SECTION -->
-        <div style="margin-bottom: 60px;">
-          <div class="symbol-pill">
-            <span style="font-size: 56px; font-weight: 900; letter-spacing: -1px; color: white;">${story.symbol}</span>
-          </div>
-          <div class="mono" style="color: ${dim}; font-size: 24px; margin-top: 20px; letter-spacing: 2px;">
-            RELEASED: ${story.date}
-          </div>
-        </div>
+ <!-- IDENTITY SECTION -->
+<div style="margin-bottom: 60px; display: flex; align-items: center; justify-content: space-between; width: 100%;">
+  
+  <!-- Symbol Pill (Left Side) -->
+  <div class="symbol-pill">
+    <span style="font-size: 56px; font-weight: 900; letter-spacing: -1px; color: white;">${story.symbol}</span>
+  </div>
+
+  <!-- Warning Container (Right Side) -->
+  <div style="
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 40px;
+    padding: 8px 20px 8px 15px;
+    backdrop-filter: blur(5px);
+  ">
+    <!-- Warning Text -->
+    <span style="
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      font-weight: 600;
+      color: #EF4444;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    ">Trading Session:${story.session}</span>
+  </div>
+
+</div>
+
+<!-- Date (Now on its own line below) -->
+<div class="mono" style="color: ${dim}; font-size: 24px; margin-top: 10px; letter-spacing: 2px;">
+  RELEASED: ${story.date}
+</div>
 
         <!-- CATEGORY BADGE -->
         <div class="label-light" style="margin-bottom: 30px;">
@@ -259,7 +286,7 @@ function generateStoryHTML(story: any, mzLogo: string | null, partnerLogo: strin
           <div style="display: flex; gap: 80px; margin-top: 20px;">
             <div class="metric-box" style="border-color: ${gold}40;">
               <span style="color: ${dim}; font-size: 18px; text-transform: uppercase; letter-spacing: 3px; display: block; margin-bottom: 10px;">Market Impact</span>
-              <span style="font-size: 52px; font-weight: 700; color: ${gold};">HIGH</span>
+              <span style="font-size: 52px; font-weight: 700; color: ${gold};">${story.impact}</span>
             </div>
           </div>
         </div>

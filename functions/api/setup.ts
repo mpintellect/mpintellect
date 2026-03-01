@@ -22,7 +22,7 @@ export async function onRequestGet(context: any) {
     
     // ✅ NEW CLOUDFLARE R2 URL
     const R2_URL = 'https://data.mzprimer.com';
-    const fileUrl = `${R2_URL}/output_${cleanSymbol}.json`;
+    const fileUrl = `${R2_URL}/output_test${cleanSymbol}.json`;
     
     console.log('📡 Fetching from R2:', fileUrl);
     

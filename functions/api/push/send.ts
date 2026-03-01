@@ -16,7 +16,7 @@ export async function onRequestPost(context: any) {
       title: title || "MZ Intelligence Alert",
       body: message,
       url: url || "https://mzprimer.com/news",
-      icon: "/logos/icon-192.png"
+      icon: "/logos/icon-512.webp"
     });
 
     // --- CASE A: BROADCAST ---

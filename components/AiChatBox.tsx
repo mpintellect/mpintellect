@@ -712,7 +712,7 @@ export default function AiChatBox({
       }
       
       setTicketData({
-        symbol: targetSymbol,
+        symbol: symbol!, // or targetSymbol
         action: decision,
         entry: entryPrice.toFixed(decimalPlaces),
         sl: slPrice.toFixed(decimalPlaces),
@@ -730,7 +730,7 @@ export default function AiChatBox({
           content: 
             `• Target: <strong>${targetSymbol} (${SYMBOL_NAMES[targetSymbol as keyof typeof SYMBOL_NAMES] || targetSymbol})</strong>\n` +
             `• Decision: ${decision === 'BUY' ? '<span class="buy"><strong>BUY 📈</strong></span>' : decision === 'SELL' ? '<span class="sell"><strong>SELL 📉</strong></span>' : '<strong>WAIT ⏳</strong>'}\n` +
-            `• Order Type: <strong>${orderType}</strong>\n` +
+            
             `• Strategy: <strong>${orderRationale}</strong>\n` +
             `• Confidence: <strong>${confidenceScore}%</strong> ${stars}\n\n` +
             `• Entry: <strong>${entryPrice.toFixed(decimalPlaces)}</strong>\n` +
@@ -761,7 +761,7 @@ export default function AiChatBox({
           title: "⏰ SESSION INTELLIGENCE",
           content: 
             `• Current Session: <strong>${sessionName}</strong>\n` +
-            `• Liquidity Rating: <strong>${"⭐".repeat(liquidityRating)}${"☆".repeat(5-liquidityRating)}</strong> (${liquidityRating}/5)\n` +
+            `• Liquidity Rating: <strong>${"⭐".repeat(Math.min(5, liquidityRating))}${"☆".repeat(Math.max(0, 5 - liquidityRating))}</strong> (${liquidityRating}/10)\n` +
             `• High Volume Window: <strong>${isHighVolumeWindow ? 'YES ✅' : 'NO 🌙'}</strong>\n` +
             `• Trading Regime: <strong>${tradingRegimeBias.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
             `• Session Note: ${sessionNote}`
@@ -843,7 +843,7 @@ export default function AiChatBox({
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              symbol: targetSymbol,
+              symbol: Symbol,
               entry_price: entryPrice,
               take_profit: tpPrice,
               stop_loss: slPrice,
@@ -1329,7 +1329,7 @@ export default function AiChatBox({
             title: "⏰ SESSION INTELLIGENCE",
             content: 
               `• Current Session: <strong>${sessionName}</strong>\n` +
-              `• Liquidity Rating: <strong>${"⭐".repeat(liquidityRating)}${"☆".repeat(5-liquidityRating)}</strong> (${liquidityRating}/5)\n` +
+              `• Liquidity Rating: <strong>${"⭐".repeat(Math.min(5, liquidityRating))}${"☆".repeat(Math.max(0, 5 - liquidityRating))}</strong> (${liquidityRating}/10)\n` +
               `• High Volume Window: <strong>${isHighVolumeWindow ? 'YES ✅' : 'NO 🌙'}</strong>\n` +
               `• Trading Regime: <strong>${tradingRegimeBias.replace(/_/g, ' ').toUpperCase()}</strong>`
           },

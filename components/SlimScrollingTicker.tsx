@@ -47,7 +47,7 @@ export default function SlimScrollingTicker() {
     if (loading || news.length === 0 || trackWidth === 0) return;
 
     let lastTime = 0;
-    const speed = 50; // Pixels per second
+    const speed = 50;
 
     const animate = (currentTime: number) => {
       if (!lastTime) lastTime = currentTime;
@@ -68,23 +68,27 @@ export default function SlimScrollingTicker() {
     };
   }, [loading, news, trackWidth]);
 
-  // 3. Session Calculation
-  const getCurrentSession = () => {
-    if (!now) return { name: "LOADING", isWeekend: false, time: "00:00" };
+  // 3. Session Calculation - Updated to handle multiple sessions
+  const getCurrentSessions = () => {
+    if (!now) return { sessions: [], isWeekend: false, time: "00:00" };
+    
     const hourUTC = now.getUTCHours();
     const dayUTC = now.getUTCDay();
     const isWeekend = (dayUTC === 6) || (dayUTC === 0 && hourUTC < 22) || (dayUTC === 5 && hourUTC >= 22);
-    const active = isWeekend ? [] : MARKET_SESSIONS.filter((s) => 
+    
+    const activeSessions = isWeekend ? [] : MARKET_SESSIONS.filter((s) => 
       s.open > s.close ? (hourUTC >= s.open || hourUTC < s.close) : (hourUTC >= s.open && hourUTC < s.close)
     );
+    
     return {
-      name: isWeekend ? "HALT" : (active.length > 0 ? active[active.length - 1].name : "ROLLOVER"),
+      sessions: activeSessions,
       isWeekend,
       time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
     };
   };
 
-  const session = getCurrentSession();
+  const sessionData = getCurrentSessions();
+  
   if (loading || !news || news.length === 0) return null;
   const duplicatedNews = [...news, ...news, ...news];
 
@@ -96,12 +100,27 @@ export default function SlimScrollingTicker() {
         <div className="ticker-content-wrapper">
           <div className="slim-ticker-bar">
             
-            {/* STICKY SESSION BLOCK: Outside the moving track */}
+            {/* STICKY SESSION BLOCK: Now shows multiple sessions */}
             <div className="ticker-session-block">
-              <span className={`session-status-dot ${session.isWeekend ? 'offline' : 'online'}`}></span>
-              <span className="session-name-text">{session.name}</span>
-              <span className="session-time-text">{session.time}</span>
-              <span className="session-badge-text">{session.isWeekend ? 'HALT' : 'LIVE'}</span>
+              {sessionData.isWeekend ? (
+                <>
+                  <span className="session-status-dot offline"></span>
+                  <span className="session-name-text">HALT</span>
+                  <span className="session-time-text">{sessionData.time}</span>
+                  <span className="session-badge-text">CLOSED</span>
+                </>
+              ) : (
+                sessionData.sessions.map((session, index) => (
+                  <div key={session.name} className="session-item">
+                    <span className={`session-status-dot ${session.name === 'LONDON' ? 'high' : session.name === 'NEW YORK' ? 'high' : 'online'}`}></span>
+                    <span className="session-name-text">{session.name}</span>
+                    {index < sessionData.sessions.length - 1 && <span className="session-separator">+</span>}
+                  </div>
+                ))
+              )}
+              {!sessionData.isWeekend && sessionData.sessions.length > 0 && (
+                <span className="session-time-text">{sessionData.time}</span>
+              )}
             </div>
 
             {/* MOVING NEWS TRACK */}
@@ -125,9 +144,17 @@ export default function SlimScrollingTicker() {
         {/* --- LAYER 2: THE ACTION RIBBON (Visible on scroll) --- */}
         <div className="action-ribbon-wrapper">
           <div className="action-left">
-            <span className={`cta-dot ${session.isWeekend ? 'red' : 'green'}`}></span>
-            <span className="cta-session-name">{session.name}</span>
-            <span className="cta-time">{session.time}</span>
+            {sessionData.isWeekend ? (
+              <span className="cta-dot red"></span>
+            ) : (
+              sessionData.sessions.map((session, index) => (
+                <span key={session.name} className={`cta-dot ${session.name === 'LONDON' || session.name === 'NEW YORK' ? 'high' : 'green'}`}></span>
+              ))
+            )}
+            <span className="cta-session-name">
+              {sessionData.isWeekend ? 'CLOSED' : sessionData.sessions.map(s => s.name).join(' + ')}
+            </span>
+            <span className="cta-time">{sessionData.time}</span>
           </div>
           <button 
             className="cta-begin-btn"

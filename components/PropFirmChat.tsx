@@ -1039,7 +1039,7 @@ const summary: SummaryBlock[] = [
     title: "⏰ SESSION INTELLIGENCE",
     content: 
       `• Current Session: <strong>${sessionName}</strong>\n` +
-      `• Liquidity Rating: <strong>${"⭐".repeat(liquidityRating)}${"☆".repeat(5-liquidityRating)}</strong> (${liquidityRating}/5)\n` +
+      `• Liquidity Rating: <strong>${"⭐".repeat(Math.min(5, liquidityRating))}${"☆".repeat(Math.max(0, 5 - liquidityRating))}</strong> (${liquidityRating}/10)\n` +
       `• High Volume Window: <strong>${isHighVolumeWindow ? 'YES ✅' : 'NO 🌙'}</strong>\n` +
       `• Trading Regime: <strong>${tradingRegimeBias.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
       `• Session Note: ${sessionNote}`,

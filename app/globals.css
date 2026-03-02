@@ -29273,3 +29273,39 @@ circle {
 }
 
 }
+/* Session item styling for multiple sessions */
+.session-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.session-separator {
+  color: var(--ticker-gold-soft);
+  font-weight: 700;
+  margin: 0 2px;
+  font-size: 14px;
+}
+
+/* Different dot colors for session importance */
+.session-status-dot.high {
+  background: #EF4444;
+  box-shadow: 0 0 10px #EF4444;
+}
+
+.cta-dot.high {
+  background: #EF4444;
+  box-shadow: 0 0 8px #EF4444;
+}
+
+/* Adjust spacing for multiple sessions */
+.ticker-session-block {
+  gap: 8px;
+  min-width: auto;
+  padding: 0 16px;
+}
+
+.action-left {
+  flex-wrap: wrap;
+  gap: 4px;
+}

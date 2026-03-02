@@ -1,5 +1,26 @@
 [
   {
+    "date": "2026-03-02",
+    "id": "gold_dollar_dynamic_2026",
+    "symbol": "XAUUSD",
+    "headline": "📊 Gold's Muted Reaction: Why Didn't It Skyrocket Despite Iran-USA-Israel Conflict?",
+    "question": "With the Iran-USA-Israel conflict escalating, why hasn't gold skyrocketed as markets expected, and could the simultaneous strength of the US dollar be capping gold's upside?",
+    "aiContext": "Gold failed to rally sharply despite geopolitical tensions due to the dual strength of the US dollar. The dollar gained safe-haven flows simultaneously, creating a rare dynamic where both assets compete for safety. This dollar strength offsets gold's traditional safe-haven  appeal, keeping prices contained. Markets are watching which safe-haven dominates as the conflict evolves.",
+    "category": "Geopolitics",
+    "session": "London/NY Overlap",
+    "impact": "High"
+}, {
+    "date": "2026-03-02",
+    "id": "energy_crisis_inflation_2026",
+    "symbol": "NATGAS",
+    "headline": "🔥 Energy Crisis: Qatar Halts Gas Production, Iran Attacks Oil Facilities – Prices Set to Soar",
+    "question": "With Qatar halting natural gas production and Iran attacking oil facilities, driving prices higher, will we see a return of high inflation across Europe and the world as natural gas prices surge 50%?",
+    "aiContext": "Qatar's gas halt combined with Iran's oil attacks creates a dual supply shock. Natural gas prices already up 50% with more upside expected. Europe faces immediate pressure, potentially reigniting inflation concerns globally. Energy costs will ripple through economies, forcing central banks to reconsider rate policies.",
+    "category": "Macro",
+    "session": "London/NY Overlap",
+    "impact": "Extreme"
+},
+{
     "date": "2026-03-01",
     "id": "gold_huge_gap_warning_march_2026",
     "symbol": "XAUUSD",

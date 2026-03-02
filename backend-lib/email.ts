@@ -215,7 +215,13 @@ function generateEmailHTML(
                   DOWNLOAD SOFTWARE →
                 </a>
               </div>
-              
+              <!-- GUIDE BUTTON - SIMPLE ADDITION -->
+  <div style="text-align: center;">
+    <a href="https://news.mzprimer.com/MZPrimer_Bot_Guide.pdf" 
+       style="display: inline-block; background: transparent; color: #d4af37; text-decoration: none; padding: 12px 30px; border-radius: 100px; font-weight: 600; border: 1px solid #d4af37;">
+      📘 DOWNLOAD GUIDE
+    </a>
+  </div>
               <!-- SECURITY NOTE -->
               <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #1e1e1e;">
                 <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">

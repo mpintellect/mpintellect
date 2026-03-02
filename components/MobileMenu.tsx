@@ -13,7 +13,7 @@ const navItems = [
   { label: 'Trading Robots', href: '/ai-robot', icon: <Zap size={18} className="premium-nav-icon" /> },
   { label: 'AI Assistant', href: '/tools/ai-assistant', icon: <Zap size={18} className="premium-nav-icon" /> },
   { label: 'Contact', href: '/#contacts', icon: <Star size={18} className="premium-nav-icon" /> },
-  { label: 'Privacy', href: '/legal', icon: <Star size={18} className="premium-nav-icon" /> },
+  { label: 'Blog', href: '/blog', icon: <Star size={18} className="premium-nav-icon" /> },
   { label: 'LOGIN', href: '/client/login', icon: <LogOut size={18} className="premium-nav-icon" /> },
 ];
 

@@ -20,6 +20,7 @@ import ContactSection from '@/components/ContactSection';
 import PropFirmChatSection from '@/components/PropFirmChatSection';
 import AiChatBox from "@/components/AiChatBox";
 import PropFirmChat from "@/components/PropFirmChat";
+import LatestInsights from '@/components/LatestInsights';
 
 
 
@@ -63,6 +64,7 @@ export default function Home() {
       <LearningHub />
       <AiToolsSection />
       <AIRobotCards />
+       <LatestInsights /> 
       <ContactSection />
 
       {activeTool && typeof document !== "undefined" && createPortal(

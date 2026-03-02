@@ -1006,14 +1006,25 @@ const summary: SummaryBlock[] = [
       `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>`,
   },
   {
-    title: "🏛️ INSTITUTIONAL CONTEXT",
+    title: "💰 RISK ARCHITECTURE",
     content:
-      `• Structural Bias: ${trendDirection.replace(/_/g, ' ').toUpperCase()} (${trendStrength})\n` +
-      `• Market Context: <strong>${marketContext.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
-      `• Momentum Bias: <strong>${momentumBias.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
-      `• Institutional Flow: ${volumeBias === 'bullish_accumulation' ? 'Smart Money ACCUMULATING' : volumeBias === 'bearish_distribution' ? 'Smart Money DISTRIBUTING' : 'Balanced Distribution'}\n` +
-      `• Order Type: <strong>${orderType}</strong>\n` +
-      `• Order Confidence: <strong>${orderConfidence}%</strong>`,
+      `• Precision Lot Size: <strong>${lotSize.toFixed(2)} Lots</strong>\n` +
+      `• Account Exposure: $${actualRiskAmount.toFixed(2)} (<strong>${riskPercentageOfBalance.toFixed(1)}% of Balance</strong>)\n` +
+      `• Risk Category: <strong>${riskCategory.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+      `• Daily Limit Usage: <strong>${riskPercentageOfDailyLimit.toFixed(1)}%</strong>\n` +
+      `• Safety Status: <strong>${riskPercentageOfDailyLimit <= 25 ? '✅ SAFE' : '⚠️ EXCESSIVE'}</strong>\n` +
+      `• Safety Audit: ${setup.trade_parameters?.trade_validation?.is_valid ? '✅ VERIFIED' : '⚠️ CAUTION REQUIRED'}`,
+  },
+  {
+    title: stage.target > 0 ? "📊 TARGET PROGRESS" : "💰 PROFIT POTENTIAL",
+    content: stage.target > 0
+      ? `• Target Profit: <strong>$${targetProfitUSD.toFixed(2)}</strong> (${(stage.target * 100).toFixed(1)}%)\n` +
+        `• This Trade: <strong>$${tpDistanceUSD.toFixed(2)}</strong> (${(tradeProfitRatio * 100).toFixed(1)}% of target)\n` +
+        `• Trades Needed: <strong>${tradesNeeded}</strong> to complete challenge\n` +
+        `• Est. Completion: <strong>${Math.ceil(tradesNeeded / 2)} days</strong> (2 trades/day)`
+      : `• Trade Profit: <strong>$${tpDistanceUSD.toFixed(2)}</strong>\n` +
+        `• Monthly Potential: <strong>$${(tpDistanceUSD * 20).toFixed(2)}</strong> (20 trades/month)\n` +
+        `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>`,
   },
   {
     title: "⚖️ VALUE ANALYSIS",
@@ -1034,25 +1045,14 @@ const summary: SummaryBlock[] = [
       `• Session Note: ${sessionNote}`,
   },
   {
-    title: "💰 RISK ARCHITECTURE",
+    title: "🏛️ INSTITUTIONAL CONTEXT",
     content:
-      `• Precision Lot Size: <strong>${lotSize.toFixed(2)} Lots</strong>\n` +
-      `• Account Exposure: $${actualRiskAmount.toFixed(2)} (<strong>${riskPercentageOfBalance.toFixed(1)}% of Balance</strong>)\n` +
-      `• Risk Category: <strong>${riskCategory.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
-      `• Daily Limit Usage: <strong>${riskPercentageOfDailyLimit.toFixed(1)}%</strong>\n` +
-      `• Safety Status: <strong>${riskPercentageOfDailyLimit <= 25 ? '✅ SAFE' : '⚠️ EXCESSIVE'}</strong>\n` +
-      `• Safety Audit: ${setup.trade_parameters?.trade_validation?.is_valid ? '✅ VERIFIED' : '⚠️ CAUTION REQUIRED'}`,
-  },
-  {
-    title: stage.target > 0 ? "📊 TARGET PROGRESS" : "💰 PROFIT POTENTIAL",
-    content: stage.target > 0
-      ? `• Target Profit: <strong>$${targetProfitUSD.toFixed(2)}</strong> (${(stage.target * 100).toFixed(1)}%)\n` +
-        `• This Trade: <strong>$${tpDistanceUSD.toFixed(2)}</strong> (${(tradeProfitRatio * 100).toFixed(1)}% of target)\n` +
-        `• Trades Needed: <strong>${tradesNeeded}</strong> to complete challenge\n` +
-        `• Est. Completion: <strong>${Math.ceil(tradesNeeded / 2)} days</strong> (2 trades/day)`
-      : `• Trade Profit: <strong>$${tpDistanceUSD.toFixed(2)}</strong>\n` +
-        `• Monthly Potential: <strong>$${(tpDistanceUSD * 20).toFixed(2)}</strong> (20 trades/month)\n` +
-        `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>`,
+      `• Structural Bias: ${trendDirection.replace(/_/g, ' ').toUpperCase()} (${trendStrength})\n` +
+      `• Market Context: <strong>${marketContext.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+      `• Momentum Bias: <strong>${momentumBias.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+      `• Institutional Flow: ${volumeBias === 'bullish_accumulation' ? 'Smart Money ACCUMULATING' : volumeBias === 'bearish_distribution' ? 'Smart Money DISTRIBUTING' : 'Balanced Distribution'}\n` +
+      `• Order Type: <strong>${orderType}</strong>\n` +
+      `• Order Confidence: <strong>${orderConfidence}%</strong>`,
   },
   {
     title: "🛡️ STRATEGIC AUDIT",

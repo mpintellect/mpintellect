@@ -730,6 +730,7 @@ export default function AiChatBox({
           content: 
             `• Target: <strong>${targetSymbol} (${SYMBOL_NAMES[targetSymbol as keyof typeof SYMBOL_NAMES] || targetSymbol})</strong>\n` +
             `• Decision: ${decision === 'BUY' ? '<span class="buy"><strong>BUY 📈</strong></span>' : decision === 'SELL' ? '<span class="sell"><strong>SELL 📉</strong></span>' : '<strong>WAIT ⏳</strong>'}\n` +
+            `• Order Type: <strong>${orderType}</strong>\n` +
             `• Strategy: <strong>${orderRationale}</strong>\n` +
             `• Confidence: <strong>${confidenceScore}%</strong> ${stars}\n\n` +
             `• Entry: <strong>${entryPrice.toFixed(decimalPlaces)}</strong>\n` +
@@ -737,17 +738,14 @@ export default function AiChatBox({
             `• Take Profit: <strong>${tpPrice.toFixed(decimalPlaces)}</strong> (<span style="color:green;">+$${tpDistanceUSD.toFixed(2)}</span>)\n` +
             `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>`
         },
-
-        // 🏛️ CARD 2: INSTITUTIONAL CONTEXT
-        {
-          title: "🏛️ INSTITUTIONAL CONTEXT",
+{
+          title: "💰 RISK ARCHITECTURE",
           content: 
-            `• Structural Bias: ${trendDirection.replace(/_/g, ' ').toUpperCase()} (${trendStrength})\n` +
-            `• Market Context: <strong>${marketContext.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
-            `• Momentum Bias: <strong>${momentumBias.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
-            `• Institutional Flow: ${volumeBias === 'bullish_accumulation' ? 'Smart Money ACCUMULATING' : volumeBias === 'bearish_distribution' ? 'Smart Money DISTRIBUTING' : 'Balanced Distribution'}`
+            `• Precision Lot Size: <strong>${lotSize.toFixed(2)} Lots</strong>\n` +
+            `• Account Exposure: $${actualRiskAmount.toFixed(2)} (<strong>${riskPercentage.toFixed(1)}% of Capital</strong>)\n` +
+            `• Risk Category: <strong>${riskCategory.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+            `• Safety Audit: ${setup.trade_parameters?.trade_validation?.is_valid ? '✅ VERIFIED' : '⚠️ CAUTION REQUIRED'}`
         },
-
         // ⚖️ CARD 3: VALUE ANALYSIS
         {
           title: "⚖️ VALUE ANALYSIS",
@@ -758,7 +756,6 @@ export default function AiChatBox({
             `• Strategic State: ${isOverextended ? `Institutional <strong>${overextensionType?.toUpperCase()}</strong> detected (Premium Pricing)` : 'Price trading within fair value area.'}\n` +
             `${imbalanceDetected ? '• 🔥 <strong>IMBALANCE DETECTED</strong>: High-velocity institutional buying.' : ''}`
         },
-
         // ⏰ CARD 4: MARKET SESSION ANALYSIS
         {
           title: "⏰ SESSION INTELLIGENCE",
@@ -769,16 +766,16 @@ export default function AiChatBox({
             `• Trading Regime: <strong>${tradingRegimeBias.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
             `• Session Note: ${sessionNote}`
         },
-
-        // 💰 CARD 5: RISK ARCHITECTURE
+        // 🏛️ CARD 2: INSTITUTIONAL CONTEXT
         {
-          title: "💰 RISK ARCHITECTURE",
+          title: "🏛️ INSTITUTIONAL CONTEXT",
           content: 
-            `• Precision Lot Size: <strong>${lotSize.toFixed(2)} Lots</strong>\n` +
-            `• Account Exposure: $${actualRiskAmount.toFixed(2)} (<strong>${riskPercentage.toFixed(1)}% of Capital</strong>)\n` +
-            `• Risk Category: <strong>${riskCategory.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
-            `• Safety Audit: ${setup.trade_parameters?.trade_validation?.is_valid ? '✅ VERIFIED' : '⚠️ CAUTION REQUIRED'}`
+            `• Structural Bias: ${trendDirection.replace(/_/g, ' ').toUpperCase()} (${trendStrength})\n` +
+            `• Market Context: <strong>${marketContext.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+            `• Momentum Bias: <strong>${momentumBias.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+            `• Institutional Flow: ${volumeBias === 'bullish_accumulation' ? 'Smart Money ACCUMULATING' : volumeBias === 'bearish_distribution' ? 'Smart Money DISTRIBUTING' : 'Balanced Distribution'}`
         },
+
 
         // 🛡️ CARD 6: STRATEGIC AUDIT
         {
@@ -1299,6 +1296,7 @@ export default function AiChatBox({
             content: 
               `• Target: <strong>${symbol} (${SYMBOL_NAMES[symbol as keyof typeof SYMBOL_NAMES] || symbol})</strong>\n` +
               `• Decision: ${decision === 'BUY' ? '<span class="buy"><strong>BUY 📈</strong></span>' : decision === 'SELL' ? '<span class="sell"><strong>SELL 📉</strong></span>' : '<strong>WAIT ⏳</strong>'}\n` +
+              `• Order Type: <strong>${orderType}</strong>\n` +
               `• Strategy: <strong>${orderRationale}</strong>\n` +
               `• Confidence: <strong>${confidenceScore}%</strong> ${stars}\n\n` +
               `• Entry: <strong>${entryPrice.toFixed(decimalPlaces)}</strong>\n` +
@@ -1306,18 +1304,16 @@ export default function AiChatBox({
               `• Take Profit: <strong>${tpPrice.toFixed(decimalPlaces)}</strong> (<span style="color:green;">+$${tpDistanceUSD.toFixed(2)}</span>)\n` +
               `• Risk/Reward: <strong>${rrRatio.toFixed(2)}:1</strong>`
           },
-
-          // 🏛️ CARD 2: INSTITUTIONAL CONTEXT
+ // 💰 CARD 5: RISK ARCHITECTURE
           {
-            title: "🏛️ INSTITUTIONAL CONTEXT",
+            title: "💰 RISK ARCHITECTURE",
             content: 
-              `• Structural Bias: ${trendDirection.replace(/_/g, ' ').toUpperCase()} (${trendStrength})\n` +
-              `• Market Context: <strong>${marketContext.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
-              `• Momentum Bias: <strong>${momentumBias.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
-              `• Institutional Flow: ${volumeBias === 'bullish_accumulation' ? 'Smart Money ACCUMULATING' : volumeBias === 'bearish_distribution' ? 'Smart Money DISTRIBUTING' : 'Balanced Distribution'}`
+              `• Precision Lot Size: <strong>${lotSize.toFixed(2)} Lots</strong>\n` +
+              `• Account Exposure: $${actualRiskAmount.toFixed(2)} (<strong>${riskPercentage.toFixed(1)}% of Capital</strong>)\n` +
+              `• Risk Category: <strong>${riskCategory.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+              `• Safety Audit: ${setup.trade_parameters?.trade_validation?.is_valid ? '✅ VERIFIED' : '⚠️ CAUTION REQUIRED'}`
           },
-
-          // ⚖️ CARD 3: VALUE ANALYSIS
+// ⚖️ CARD 3: VALUE ANALYSIS
           {
             title: "⚖️ VALUE ANALYSIS",
             content: 
@@ -1337,16 +1333,16 @@ export default function AiChatBox({
               `• High Volume Window: <strong>${isHighVolumeWindow ? 'YES ✅' : 'NO 🌙'}</strong>\n` +
               `• Trading Regime: <strong>${tradingRegimeBias.replace(/_/g, ' ').toUpperCase()}</strong>`
           },
-
-          // 💰 CARD 5: RISK ARCHITECTURE
+          // 🏛️ CARD 2: INSTITUTIONAL CONTEXT
           {
-            title: "💰 RISK ARCHITECTURE",
+            title: "🏛️ INSTITUTIONAL CONTEXT",
             content: 
-              `• Precision Lot Size: <strong>${lotSize.toFixed(2)} Lots</strong>\n` +
-              `• Account Exposure: $${actualRiskAmount.toFixed(2)} (<strong>${riskPercentage.toFixed(1)}% of Capital</strong>)\n` +
-              `• Risk Category: <strong>${riskCategory.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
-              `• Safety Audit: ${setup.trade_parameters?.trade_validation?.is_valid ? '✅ VERIFIED' : '⚠️ CAUTION REQUIRED'}`
+              `• Structural Bias: ${trendDirection.replace(/_/g, ' ').toUpperCase()} (${trendStrength})\n` +
+              `• Market Context: <strong>${marketContext.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+              `• Momentum Bias: <strong>${momentumBias.replace(/_/g, ' ').toUpperCase()}</strong>\n` +
+              `• Institutional Flow: ${volumeBias === 'bullish_accumulation' ? 'Smart Money ACCUMULATING' : volumeBias === 'bearish_distribution' ? 'Smart Money DISTRIBUTING' : 'Balanced Distribution'}`
           },
+
 
           // 🛡️ CARD 6: STRATEGIC AUDIT
           {

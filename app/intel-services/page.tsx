@@ -1,103 +1,117 @@
-// app/intel-services/page.tsx
 import React from 'react';
 
-export default function IntelLanding() {
+export default function IntelServices() {
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#D4AF37] selection:text-black">
-      {/* 1. ARCHITECTURAL HEADER */}
-      <nav className="border-b border-white/5 py-8 px-12 flex justify-between items-center backdrop-blur-xl sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <img src="/logos/mzlogo.webp" alt="MZ Intelligence" className="h-10" />
-          <span className="text-xl font-light tracking-[6px] uppercase text-white/90">Systems</span>
+    <div className="bg-[#050505] text-white min-h-screen font-sans selection:bg-[#D4AF37] selection:text-black">
+      
+      {/* --- UNIQUE INTEL HEADER --- */}
+      <nav className="w-full border-b border-white/5 py-6 px-8 md:px-16 flex justify-between items-center backdrop-blur-2xl sticky top-0 z-[100]">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-white flex items-center justify-center rounded-sm">
+             <span className="text-black font-black text-xs">MZ</span>
+          </div>
+          <span className="text-lg font-bold tracking-[4px] uppercase">Intel Systems</span>
         </div>
-        <div className="hidden md:flex gap-12 text-xs font-medium tracking-[4px] uppercase text-[#94a3b8]">
-          <a href="#solutions" className="hover:text-[#D4AF37] transition-colors">Solutions</a>
-          <a href="#architecture" className="hover:text-[#D4AF37] transition-colors">Architecture</a>
-          <a href="#compliance" className="hover:text-[#D4AF37] transition-colors">Compliance</a>
+        <div className="flex gap-8 items-center">
+          <a href="#about" className="text-[10px] tracking-[3px] uppercase text-zinc-500 hover:text-white transition-colors">About</a>
+          <a href="#contact" className="px-6 py-2 bg-white text-black text-[10px] font-bold tracking-[2px] uppercase rounded-sm hover:bg-[#D4AF37] transition-all">Get in Touch</a>
         </div>
-        <button className="px-8 py-3 border border-[#D4AF37]/30 rounded-full text-[10px] tracking-[3px] uppercase hover:bg-[#D4AF37] hover:text-black transition-all duration-500">
-          Enquire
-        </button>
       </nav>
 
-      {/* 2. HERO: THE ENGINE BEHIND THE DATA */}
-      <section className="relative pt-32 pb-20 px-12 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-radial-gradient from-[#D4AF37]/5 to-transparent opacity-50" />
-        
-        <div className="max-w-6xl mx-auto relative z-10">
-          <div className="inline-block px-4 py-1 rounded-full border border-[#10B981]/30 bg-[#10B981]/5 text-[#10B981] text-[10px] tracking-[4px] uppercase mb-8">
-            Established 2026 // Institutional Tech
-          </div>
-          <h1 className="text-7xl md:text-9xl font-black tracking-tighter leading-[0.85] mb-12">
-            BUILDING <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#D4AF37] to-[#8e793e]">
-              THE FUTURE
-            </span><br />
-            OF SYSTEMS.
+      {/* --- HERO SECTION --- */}
+      <main className="pt-24 pb-20 px-8 md:px-16 max-w-7xl mx-auto">
+        <header className="mb-24">
+          <p className="text-[#D4AF37] font-mono text-sm tracking-[5px] mb-6 uppercase">Institutional IT Solutions</p>
+          <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-none mb-12">
+            ENGINEERING <br />
+            COMMERCIAL <br />
+            <span className="text-zinc-500">INFRASTRUCTURE.</span>
           </h1>
-          <p className="max-w-2xl text-xl text-[#94a3b8] leading-relaxed font-light mb-12">
-            MZ Intelligence Systems provides bespoke software development and strategic IT architecture for enterprise-level data operations. 
-            We specialize in mission-critical environments where performance is the only metric that matters.
+          <div className="h-1 w-24 bg-[#D4AF37]"></div>
+        </header>
+
+        {/* --- SERVICES SECTION (The Descriptions) --- */}
+        <section className="grid md:grid-cols-2 gap-12 mb-32">
+          <div className="space-y-8">
+            <div className="p-8 border border-white/10 rounded-2xl bg-zinc-900/20">
+              <h2 className="text-2xl font-bold mb-4 flex items-center gap-4">
+                <span className="text-[#D4AF37]">62012</span> Software Development
+              </h2>
+              <p className="text-zinc-400 leading-relaxed font-light">
+                We specialize in the creation of bespoke business and domestic software architectures. 
+                Our development cycle focuses on the <strong>MZ Intelligence DNA</strong>: 
+                Security, Scalability, and Speed. From private API environments to custom 
+                enterprise tools, we build the engines that drive modern commerce.
+              </p>
+            </div>
+
+            <div className="p-8 border border-white/10 rounded-2xl bg-zinc-900/20">
+              <h2 className="text-2xl font-bold mb-4 flex items-center gap-4">
+                <span className="text-[#10B981]">62090</span> IT Service Activities
+              </h2>
+              <p className="text-zinc-400 leading-relaxed font-light">
+                Our strategic IT services cover the spectrum of modern technological needs. 
+                We provide Zero-Trust network design, decentralized data storage solutions, 
+                and advanced system monitoring for firms that cannot afford a second of downtime.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center relative">
+             <div className="absolute inset-0 bg-[#D4AF37]/5 blur-[120px] rounded-full"></div>
+             <div className="relative border border-white/10 p-12 rounded-[40px] bg-[#050505] shadow-2xl">
+                <p className="text-sm font-mono text-zinc-600 mb-4 tracking-widest uppercase">System Audit v2.0</p>
+                <p className="text-4xl font-light italic text-white/90 leading-tight">
+                  "Architecture is not just about code. It is about the <span className="text-[#D4AF37] font-bold">stability of the operation</span>."
+                </p>
+             </div>
+          </div>
+        </section>
+
+        {/* --- ABOUT SECTION --- */}
+        <section id="about" className="py-24 border-t border-white/5">
+          <div className="grid md:grid-cols-3 gap-12">
+            <h2 className="text-sm font-bold tracking-[8px] uppercase text-[#94a3b8]">The Foundation</h2>
+            <div className="md:col-span-2 space-y-6 text-xl font-light leading-relaxed text-zinc-300">
+              <p>
+                MZ Intelligence Systems operates at the intersection of financial logic and enterprise technology. 
+                As a subsidiary of <span className="text-white font-medium italic">MZPrimer LTD</span>, our mission is 
+                to provide the same industrial-strength technology we use for our global market terminals 
+                to domestic and business sectors.
+              </p>
+              <p>
+                Every line of code we write is optimized for Cloudflare’s global edge network, ensuring your business 
+                tools are available instantly, anywhere in the world, with military-grade encryption.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* --- CONTACT SECTION --- */}
+        <section id="contact" className="py-32 mb-20 bg-gradient-to-b from-[#080808] to-[#050505] border border-white/5 rounded-[60px] px-12 text-center">
+          <h2 className="text-5xl font-black mb-6">START THE PROJECT</h2>
+          <p className="text-zinc-500 max-w-xl mx-auto mb-12 tracking-wide">
+            Consult with our lead architects on your next software deployment or system overhaul.
           </p>
-        </div>
-      </section>
+          <a href="mailto:contact@mzprimer.com" className="text-2xl font-light border-b border-[#D4AF37] text-[#D4AF37] pb-2 hover:text-white hover:border-white transition-all">
+            contact@mzprimer.com
+          </a>
+        </section>
+      </main>
 
-      {/* 3. CORE SERVICES (SIC CODES) */}
-      <section id="solutions" className="py-32 px-12 bg-[#080808]">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8">
-          
-          {/* SIC 62012: Software Development */}
-          <div className="p-12 rounded-[40px] bg-white/[0.02] border border-white/5 hover:border-[#D4AF37]/30 transition-all duration-700 group">
-            <div className="h-2 w-24 bg-[#D4AF37] mb-12 group-hover:w-full transition-all duration-700" />
-            <span className="text-xs font-mono text-[#D4AF37]/60 mb-4 block">SIC 62012</span>
-            <h3 className="text-4xl font-bold mb-6">Business & Enterprise <br />Software Development</h3>
-            <p className="text-[#94a3b8] leading-relaxed font-light mb-8">
-              Bespoke application development tailored to industrial requirements. From custom internal tools to domestic software ecosystems, we write code that drives efficiency.
-            </p>
-            <ul className="text-sm space-y-4 text-white/70 tracking-wide font-light">
-              <li className="flex items-center gap-3">○ Proprietary API Architectures</li>
-              <li className="flex items-center gap-3">○ Database Scaling & Optimization</li>
-              <li className="flex items-center gap-3">○ High-Security Domestic Tools</li>
-            </ul>
+      {/* --- UNIQUE INTEL FOOTER --- */}
+      <footer className="bg-black py-20 px-8 border-t border-white/5">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="text-left">
+            <p className="text-[10px] tracking-[5px] uppercase font-bold text-white mb-2">MZ Intelligence Systems</p>
+            <p className="text-[10px] tracking-[3px] text-zinc-600 uppercase">UK Registered Legal Entity • MZPrimer LTD</p>
           </div>
-
-          {/* SIC 62090: Other IT Services */}
-          <div className="p-12 rounded-[40px] bg-white/[0.02] border border-white/5 hover:border-[#10B981]/30 transition-all duration-700 group">
-            <div className="h-2 w-24 bg-[#10B981] mb-12 group-hover:w-full transition-all duration-700" />
-            <span className="text-xs font-mono text-[#10B981]/60 mb-4 block">SIC 62090</span>
-            <h3 className="text-4xl font-bold mb-6">Information Technology <br />Service Management</h3>
-            <p className="text-[#94a3b8] leading-relaxed font-light mb-8">
-              Strategic IT consulting and specialized infrastructure management. We solve the complex bottlenecks that traditional IT services overlook.
-            </p>
-            <ul className="text-sm space-y-4 text-white/70 tracking-wide font-light">
-              <li className="flex items-center gap-3">● Edge Computing & CDN Strategy</li>
-              <li className="flex items-center gap-3">● Zero-Trust Network Architecture</li>
-              <li className="flex items-center gap-3">● Compliance-First Cloud Solutions</li>
-            </ul>
-          </div>
-
-        </div>
-      </section>
-
-      {/* 4. THE TECH STACK PROOF */}
-      <section id="architecture" className="py-32 px-12 border-t border-white/5">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-sm font-bold tracking-[10px] uppercase text-[#D4AF37] mb-12 text-center">The Intelligence Stack</h2>
-          <p className="text-4xl font-light leading-snug mb-16">
-            We leverage the same infrastructure powering the <span className="font-bold italic">MZ Intelligence Terminal</span>—Cloudflare Native, D1 SQL, and R2 Decentralized Storage—to build your enterprise solutions.
-          </p>
-          <div className="grid grid-cols-3 gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
-            <div className="text-xs tracking-widest uppercase">Performance Management</div>
-            <div className="text-xs tracking-widest uppercase">Scalable Architecture</div>
-            <div className="text-xs tracking-widest uppercase">Global Delivery</div>
+          <div className="flex gap-12 text-[10px] tracking-[4px] uppercase text-zinc-500">
+            <span>SIC 62012</span>
+            <span>SIC 62090</span>
+            <span>Security First</span>
           </div>
         </div>
-      </section>
-
-      {/* 5. FOOTER */}
-      <footer className="py-20 px-12 border-t border-white/5 text-center">
-        <p className="text-[#64748b] text-[10px] tracking-[6px] uppercase mb-4">MZ Intelligence Systems // LTD</p>
-        <p className="text-[#475569] text-[9px] tracking-[4px]">UK REGISTERED • SIC 62012 & 62090</p>
       </footer>
     </div>
   );

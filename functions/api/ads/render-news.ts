@@ -18,7 +18,7 @@ async function fetchImageAsBase64(url: string) {
 // Fetch symbol-specific background image
 async function fetchSymbolBackground(symbol: string) {
   const symbolMap: Record<string, string> = {
-    'XAUUSD': 'xauusd3',
+    'XAUUSD': 'xauusd6',
     'BTCUSD': 'btcusd2',
     'EURUSD': 'EURUSD8',
     'GLOBAL': 'global',

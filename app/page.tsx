@@ -64,7 +64,7 @@ export default function Home() {
       <LearningHub />
       <AiToolsSection />
       <AIRobotCards />
-       <LatestInsights /> 
+       
       <ContactSection />
 
       {activeTool && typeof document !== "undefined" && createPortal(

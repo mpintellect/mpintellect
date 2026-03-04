@@ -2,7 +2,8 @@
 import './globals.css';
 import { ReactNode, Suspense } from 'react';
 import { Inter } from 'next/font/google';
-import { usePathname } from 'next/navigation'; 
+
+import ClientLayoutWrapper from '@/components/ClientLayoutWrapper'; // ✅ Import the new wrapper
 // Component Imports
 import ConditionalStickyLogo from '@/components/ConditionalStickyLogo';
 import ConditionalMobileMenu from '@/components/ConditionalMobileMenu'; 
@@ -30,10 +31,9 @@ export const metadata = {
 };
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
   
-  // ✅ THE LOGIC: Check if we are on the intel page
-  const isIntelPage = pathname === '/intel';
+  
+ 
   return (
     <html lang="en" suppressHydrationWarning> 
       <head>
@@ -63,7 +63,10 @@ export default function Layout({ children }: { children: ReactNode }) {
             });
           `}
         </Script>
-
+{/* --- THE FIX: Move Navbar/Footer logic into this wrapper --- */}
+        <ClientLayoutWrapper>
+          {children}
+        </ClientLayoutWrapper>
         {/* ---------------- 2. LAYOUT ELEMENTS ---------------- */}
         <ConditionalStickyLogo />
         <ConditionalNavbar />

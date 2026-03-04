@@ -3,20 +3,11 @@ import './globals.css';
 import { ReactNode, Suspense } from 'react';
 import { Inter } from 'next/font/google';
 
-import ClientLayoutWrapper from '@/components/ClientLayoutWrapper'; // ✅ Import the new wrapper
+import ClientLayoutWrapper from '@/components/ClientLayoutWrapper'; // ✅ This now handles ALL conditional layout components
 // Component Imports
-import ConditionalStickyLogo from '@/components/ConditionalStickyLogo';
-import ConditionalMobileMenu from '@/components/ConditionalMobileMenu'; 
-import ConditionalNavbar from '@/components/ConditionalNavbar'; 
 import CtaTracker from '@/components/CTATracker';
 import FacebookPixel from "@/components/FacebookPixel";
-import Footer from '@/components/Footer';
 import FBPixelEvents from '@/components/FBPixelEvents'; // ✅ Imported
-
-
-
-
-// NEW: Import the custom elegant cookie bar
 import CookieConsent from '@/components/CookieConsent';
 
 import Script from 'next/script';
@@ -32,8 +23,6 @@ export const metadata = {
 
 export default function Layout({ children }: { children: ReactNode }) {
   
-  
- 
   return (
     <html lang="en" suppressHydrationWarning> 
       <head>
@@ -63,25 +52,13 @@ export default function Layout({ children }: { children: ReactNode }) {
             });
           `}
         </Script>
-{/* --- THE FIX: Move Navbar/Footer logic into this wrapper --- */}
+
+        {/* --- THE FIX: ClientLayoutWrapper now handles ALL conditional layout components (Navbar, Footer, StickyLogo, MobileMenu) --- */}
         <ClientLayoutWrapper>
           {children}
         </ClientLayoutWrapper>
-        {/* ---------------- 2. LAYOUT ELEMENTS ---------------- */}
-        <ConditionalStickyLogo />
-        <ConditionalNavbar />
-        <ConditionalMobileMenu />
-        
 
-        {/* Main content */}
-        <main className="flex-grow">
-          {children}
-        </main>
-        
-        {/* Footer */}
-        <Footer />
-
-        {/* ---------------- 3. ANALYTICS & TRACKING ---------------- */}
+        {/* ---------------- 2. ANALYTICS & TRACKING ---------------- */}
         
         {/* ✅ FIX: Added FBPixelEvents inside Suspense */}
         {/* Both components use searchParams, so they need Suspense to not break static generation */}
@@ -133,12 +110,12 @@ export default function Layout({ children }: { children: ReactNode }) {
         <Script src="/cta-tracker.js" strategy="afterInteractive" />
         <CtaTracker />
 
-        {/* ---------------- 4. THE CUSTOM COOKIE UI ---------------- */}
+        {/* ---------------- 3. THE CUSTOM COOKIE UI ---------------- */}
         <CookieConsent />
         
         <Suspense fallback={null}>
-           
-         </Suspense>
+          {/* Empty Suspense - kept for structure */}
+        </Suspense>
 
       </body>
     </html>

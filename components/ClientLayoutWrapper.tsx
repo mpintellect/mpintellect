@@ -15,6 +15,7 @@ export default function ClientLayoutWrapper({ children }: { children: ReactNode 
 
   return (
     <>
+      {/* Conditional components based on page type */}
       {!isIntelPage && (
         <>
           <ConditionalStickyLogo />
@@ -23,10 +24,12 @@ export default function ClientLayoutWrapper({ children }: { children: ReactNode 
         </>
       )}
 
+      {/* Main content - always rendered */}
       <main className="flex-grow">
         {children}
       </main>
 
+      {/* Conditional footer */}
       {!isIntelPage && <Footer />}
     </>
   );

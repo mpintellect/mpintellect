@@ -1,60 +1,28 @@
 // app/page.tsx
-"use client";
-
-import { Suspense, useState } from "react";
-import { createPortal } from "react-dom";
-import { X } from 'lucide-react';
-import Navbar from '@/components/Navbar';
+import { Suspense } from "react";
+import HomeClientContainer from '@/components/HomeClientContainer';
 import NotificationButton from '@/components/NotificationButton'; 
 import Hero from '@/components/Hero';
-import MobileMenu from '@/components/MobileMenu';
 import LiveMarketFeed from "@/components/LiveMarketFeed";
 import WelcomeTradePopup from '@/components/WelcomeTradePopup';  
-import AiChatSection from "@/components/AiChatSection";
 import TraderAssistantLite from '@/components/TraderAssistantLite';
 import LearningHub from '@/components/LearningHub';
 import AiToolsSection from '@/components/AiToolsSection';
 import AIRobotCards from '@/components/AIRobotCards';
 import ContactSection from '@/components/ContactSection';
-
-import PropFirmChatSection from '@/components/PropFirmChatSection';
-import AiChatBox from "@/components/AiChatBox";
-import PropFirmChat from "@/components/PropFirmChat";
 import LatestInsights from '@/components/LatestInsights';
 
-
-
 export default function Home() {
-  const [activeTool, setActiveTool] = useState<'ai' | 'prop' | null>(null);
-  const [startSymbol, setStartSymbol] = useState<string | null>(null);
-
-  const openTool = (tool: 'ai' | 'prop', symbol: string | null = null) => {
-    setStartSymbol(symbol);
-    setActiveTool(tool);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeTool = () => {
-    setActiveTool(null);
-    setStartSymbol(null);
-    document.body.style.overflow = 'auto';
-  };
-
   return (
     <>
-    
-      <Navbar />
-      
       <NotificationButton /> 
       <LiveMarketFeed />
       <Hero />
       
       <WelcomeTradePopup />
-      <MobileMenu />
 
       {/* Existing Sections */}
-      <AiChatSection onLaunch={(sym) => openTool('ai', sym)} />
-      <PropFirmChatSection onLaunch={(sym) => openTool('prop', sym)} />
+      <HomeClientContainer /> {/* ✅ This now handles the modal logic */}
 
       {/* 🚀 THE FIX: Wrap TraderAssistantLite in Suspense */}
       <Suspense fallback={<div className="py-10 text-center opacity-50">Loading Assistant...</div>}>
@@ -64,41 +32,24 @@ export default function Home() {
       <LearningHub />
       <AiToolsSection />
       <AIRobotCards />
-       
-      <ContactSection />
-
-      {activeTool && typeof document !== "undefined" && createPortal(
-        <div className="immersive-modal-overlay">
-          <div className="immersive-modal-container">
-            <div className="immersive-header">
-              <div className="tool-identity">
-                <span className="live-pulse"></span>
-                {activeTool === 'ai' ? 'Intelligence Terminal' : 'Prop Firm Security Protocol'}
-              </div>
-              <button onClick={closeTool} className="immersive-close-btn">
-                <X size={24} /> <span>CLOSE</span>
-              </button>
-            </div>
-
-            <div className="immersive-content">
-               {activeTool === 'ai' ? (
-                 <AiChatBox 
-                   mode="section" 
-                   onClose={closeTool} 
-                   autoStart={true}
-                   preselectedSymbol={startSymbol}
-                 />
-               ) : (
-                 <PropFirmChat 
-                   onClose={closeTool} 
-                   preselectedSymbol={startSymbol}
-                 />
-               )}
+      
+       {/* Latest Insights with Premium Animations */}
+      <Suspense fallback={
+        <div className="latest-insights bg-[#050505] py-24">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="h-32 bg-zinc-900/50 animate-pulse mb-12" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              {[1,2,3].map(i => (
+                <div key={i} className="h-96 bg-zinc-900/30 animate-pulse" />
+              ))}
             </div>
           </div>
-        </div>,
-        document.body
-      )}
+        </div>
+      }>
+        <LatestInsights />
+      </Suspense>
+      
+      <ContactSection />
     </>
   );
 }

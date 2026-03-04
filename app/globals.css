@@ -29309,11 +29309,11 @@ circle {
   flex-wrap: wrap;
   gap: 4px;
 }
-/* --- MZ Intelligence: Visual Insights Grid --- */
-
+/* --- MZ Intelligence: Visual Insights Grid Premium Styling --- */
 .latest-insights {
   padding: 100px 20px;
   background: #050505;
+  width: 100%;
 }
 
 .insights-header {
@@ -29333,6 +29333,44 @@ circle {
   color: #fff;
 }
 
+.live-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #10B981;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.live-tag span {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.view-all {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #D4AF37;
+  text-decoration: none;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+  letter-spacing: 1px;
+}
+
+.view-all:hover {
+  opacity: 1;
+}
+
 .insights-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -29347,6 +29385,9 @@ circle {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* Image Container with 16:9 Ratio */
@@ -29396,6 +29437,9 @@ circle {
   border-radius: 2px;
   z-index: 2;
   font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
 
 /* Card content layout */
@@ -29409,8 +29453,9 @@ circle {
 .card-date {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px;
-  color: #555;
+  color: #666;
   margin-bottom: 12px;
+  letter-spacing: 1px;
 }
 
 .card-title {
@@ -29419,6 +29464,11 @@ circle {
   line-height: 1.4;
   margin-bottom: 12px;
   font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.insight-card:hover .card-title {
+  color: #D4AF37;
 }
 
 .card-desc {
@@ -29430,6 +29480,7 @@ circle {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  font-weight: 300;
 }
 
 .card-footer-action {
@@ -29437,51 +29488,114 @@ circle {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px;
   color: #D4AF37;
-  letter-spacing: 1px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  transition: transform 0.3s ease;
+  position: relative;
+  display: inline-block;
+}
+
+.insight-card:hover .card-footer-action {
+  transform: translateX(5px);
 }
 
 .insight-card:hover {
   border-color: rgba(212, 175, 55, 0.4);
   background: rgba(20, 20, 20, 0.8);
+  box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
+}
+
+/* Fade In Up Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger children animations */
+.insights-grid .insight-card:nth-child(1) {
+  animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.insights-grid .insight-card:nth-child(2) {
+  animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.15s forwards;
+  opacity: 0;
+}
+
+.insights-grid .insight-card:nth-child(3) {
+  animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
+  opacity: 0;
 }
 
 /* Mobile Tweak */
 @media (max-width: 900px) {
-  .insights-grid { grid-template-columns: 1fr; }
-}
-.insights-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 40px;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-  padding-bottom: 20px;
-}
-
-.live-tag {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  color: #10B981; /* Emerald Green */
-  letter-spacing: 2px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  .insights-grid { 
+    grid-template-columns: 1fr; 
+  }
+  
+  .insights-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  
+  .insights-header h2 {
+    font-size: 1.8rem;
+  }
 }
 
-.insights-header h2 {
-  font-size: 2rem;
-  font-weight: 200;
-  letter-spacing: -1px;
-  margin-top: 10px;
+@media (max-width: 480px) {
+  .latest-insights {
+    padding: 60px 15px;
+  }
+  
+  .insights-header h2 {
+    font-size: 1.5rem;
+  }
+}
+ /* Animations */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.view-all {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: #D4AF37;
-  text-decoration: none;
-  opacity: 0.6;
-  transition: opacity 0.3s;
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.view-all:hover { opacity: 1; }
+.animate-fade-in {
+  animation: fade-in 1s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 1s ease-out forwards;
+  opacity: 0;
+}
+
+.animation-delay-300 {
+  animation-delay: 300ms;
+}
+
+.animation-delay-600 {
+  animation-delay: 600ms;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2000ms;
+}
+
+html {
+  scroll-behavior: smooth;
+}

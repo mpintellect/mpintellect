@@ -1,52 +1,78 @@
-// components/LatestInsights.tsx
 import Link from 'next/link';
 import { getRemoteBlogPosts, BlogPost } from '@/app/lib/blog-data';
 
 export default async function LatestInsights() {
-  const allPosts = await getRemoteBlogPosts();
-  
-  // ✅ Fetch only the top 3 most recent executive briefings
-  const latestPosts = allPosts.slice(0, 3);
+  let latestPosts: BlogPost[] = [];
+  try {
+    const allPosts = await getRemoteBlogPosts();
+    latestPosts = (allPosts || []).slice(0, 3);
+  } catch (e) {
+    return null; 
+  }
 
   if (latestPosts.length === 0) return null;
 
   return (
-    <section className="latest-insights">
-      <div className="section-container">
+    <section className="latest-insights w-full bg-[#050505] border-t border-white/5">
+      <div className="max-w-7xl mx-auto px-6 py-24">
+        {/* Premium Header with MZ Intelligence styling */}
         <div className="insights-header">
-          <div className="title-group">
-            <span className="live-tag"><span className="dot pulse"></span> LIVE_INTEL</span>
-            <h2>STRATEGIC_MARKET_INSIGHTS</h2>
+          <div>
+            <div className="live-tag">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></span>
+              LIVE_INTEL_FEED
+            </div>
+            <h2 className="text-white">STRATEGIC_MARKET_INSIGHTS</h2>
           </div>
-          <Link href="/blog" className="view-all">ACCESS_FULL_ARCHIVE →</Link>
+          <Link href="/blog" className="view-all">
+            ACCESS_ARCHIVE →
+          </Link>
         </div>
 
+        {/* Premium Grid with MZ Intelligence card styling */}
         <div className="insights-grid">
-          {latestPosts.map((post: BlogPost) => (
-            <Link href={`/blog/${post.slug}`} key={post.slug} className="insight-card">
-              {/* ✅ IMAGE WRAPPER */}
+          {latestPosts.map((post: BlogPost, index: number) => (
+            <Link 
+              key={post.slug} 
+              href={`/blog/${post.slug}`} 
+              className="insight-card group"
+              style={{ 
+                animationDelay: `${index * 150}ms`,
+              }}
+            >
+              {/* Image Container with 16:9 Ratio and MZ styling */}
               <div className="card-image-container">
                 {post.image ? (
                   <img 
                     src={post.image} 
-                    alt={post.title}
-                    className="card-img" 
-                    loading="lazy"
+                    alt={post.title} 
+                    className="card-img"
                   />
                 ) : (
                   <div className="card-img-placeholder">
-                    <span>MZ_INTELLIGENCE</span>
+                    MZ_INTEL
                   </div>
                 )}
-                <div className="card-overlay" />
-                <span className="category-badge">{post.category || 'MARKET_REPORT'}</span>
+                {/* Category Badge - You can make this dynamic if you have categories */}
+                <div className="category-badge">
+                  MARKET_ANALYSIS
+                </div>
               </div>
 
+              {/* Card Content with MZ typography */}
               <div className="card-content">
-                <div className="card-date">{post.date}</div>
-                <h3 className="card-title">{post.title}</h3>
-                <p className="card-desc">{post.description}</p>
-                <div className="card-footer-action">READ_FULL_DOSSIER</div>
+                <div className="card-date">
+                  {post.date}
+                </div>
+                <h3 className="card-title group-hover:text-[#D4AF37] transition-colors duration-300">
+                  {post.title}
+                </h3>
+                <p className="card-desc">
+                  {post.description}
+                </p>
+                <div className="card-footer-action">
+                  READ_DOSSIER →
+                </div>
               </div>
             </Link>
           ))}

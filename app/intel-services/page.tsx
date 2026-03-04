@@ -404,7 +404,7 @@ export default function IntelLanding() {
       <footer className="py-12 md:py-16 px-6 md:px-12 border-t border-white/5">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 text-center md:text-left">
-            MZ INTELLIGENCE SYSTEMS • COMPLETE IT SOLUTIONS
+            MZ INTELLIGENCE SYSTEMS • COMPLETE IT SOLUTIONS FOR INDIVIDUALS AND ENTREPRISES
           </div>
           <div className="flex gap-8">
             <Link href="/privacy" className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 hover:text-white">

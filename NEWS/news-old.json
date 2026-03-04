@@ -1,5 +1,16 @@
 [
   {
+    "date": "2026-03-03",
+    "id": "usd_gold_inflation_scenario_2026",
+    "symbol": "DXY",
+    "headline": "📊 Dollar Dominates: Gold Drops 5% Despite Tensions as USD Strength Prevails",
+    "question": "With gold falling 5% despite Middle East escalation, and oil and gas prices skyrocketing, will rising inflation force the Fed to hike interest rates instead of cutting?",
+    "aiContext": "Gold has lost 5% of its value in recent days despite geopolitical tensions, due to the US Dollar's strength as a safe haven. Investors currently prefer the Dollar over gold. With oil and gas prices surging, we expect inflation to rise again, potentially forcing the Fed to hike rates rather than cut. This scenario further supports the Dollar and pressures gold.",
+    "category": "Macro",
+    "session": "New York",
+    "impact": "Extreme"
+},
+{
     "date": "2026-03-02",
     "id": "gold_dollar_dynamic_2026",
     "symbol": "XAUUSD",

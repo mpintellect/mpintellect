@@ -3,10 +3,10 @@ export const onRequest = async (context: any) => {
   const url = new URL(request.url);
   const hostname = request.headers.get("host") || "";
 
-  // Map intel.mzprimer.com to the /intel folder
+  // Map intel.mzprimer.com to the /intel-services page
   if (hostname.startsWith("intel.")) {
     if (url.pathname === "/" || url.pathname === "") {
-      const newUrl = new URL("/intel", url.origin);
+      const newUrl = new URL("/intel-services", url.origin);
       return next(new Request(newUrl.toString(), request));
     }
   }

@@ -36,14 +36,6 @@ export default function Home() {
        {/* Latest Insights with Premium Animations */}
       <Suspense fallback={
         <div className="latest-insights bg-[#050505] py-24">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="h-32 bg-zinc-900/50 animate-pulse mb-12" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              {[1,2,3].map(i => (
-                <div key={i} className="h-96 bg-zinc-900/30 animate-pulse" />
-              ))}
-            </div>
-          </div>
         </div>
       }>
         <LatestInsights />

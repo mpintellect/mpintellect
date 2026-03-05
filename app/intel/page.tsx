@@ -366,39 +366,179 @@ export default function IntelLanding() {
         </div>
       </section>
 
-      {/* 8. CONTACT SECTION */}
-      <section id="contact" className="py-24 md:py-32 px-6 md:px-12 bg-white text-black text-center relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-0 w-64 h-64 bg-[#D4AF37]/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-0 w-64 h-64 bg-black/5 rounded-full blur-3xl" />
+      {/* 8. B2B CONTACT SECTION - Professional Inquiry Form */}
+<section id="contact" className="py-24 md:py-32 px-6 md:px-12 bg-white text-black">
+  <div className="max-w-7xl mx-auto">
+    {/* Section Header */}
+    <div className="text-center mb-16">
+      <h2 className="text-xs font-bold tracking-[10px] uppercase text-[#D4AF37] mb-4">
+        BUSINESS INQUIRIES
+      </h2>
+      <h3 className="text-3xl md:text-5xl font-light mb-6">Initiate a Partnership</h3>
+      <p className="text-[#4a5568] max-w-2xl mx-auto">
+        Submit your corporate requirements and a dedicated account manager will respond within 24 hours.
+      </p>
+    </div>
+
+    <div className="grid lg:grid-cols-2 gap-16 items-start">
+      {/* Contact Information */}
+      <div className="space-y-8">
+        <div className="border-l-4 border-[#D4AF37] pl-6">
+          <h4 className="text-2xl font-bold mb-2">Corporate Headquarters</h4>
+          <p className="text-[#4a5568]">71-75 Shelton Street, Covent Garden<br />London, WC2H 9JQ, United Kingdom</p>
         </div>
         
-        <div className="max-w-4xl mx-auto relative z-10">
-          <div className="flex justify-center gap-4 mb-8">
-            <span className="px-4 py-2 bg-[#D4AF37] text-black text-xs font-mono">SOFTWARE</span>
-            <span className="px-4 py-2 bg-black text-white text-xs font-mono">HARDWARE</span>
-            <span className="px-4 py-2 bg-[#10B981] text-black text-xs font-mono">INTEGRATION</span>
+        <div className="border-l-4 border-[#10B981] pl-6">
+          <h4 className="text-2xl font-bold mb-2">Direct Contacts</h4>
+          <p className="text-[#4a5568] mb-1">📞 +44 (0) 20 7946 0138</p>
+          <p className="text-[#4a5568]">📧 corporate@mzprimer.com</p>
+        </div>
+        
+        <div className="border-l-4 border-[#D4AF37] pl-6">
+          <h4 className="text-2xl font-bold mb-2">Company Registration</h4>
+          <p className="text-[#4a5568] mb-1">MZPrimer LTD • Company No. 12345678</p>
+          <p className="text-[#4a5568]">VAT: GB123456789 • SIC: 62012, 62090</p>
+        </div>
+
+        {/* Trust Badges */}
+        <div className="flex gap-6 pt-6">
+          <div className="text-center">
+            <div className="text-2xl font-black text-[#D4AF37]">ISO 27001</div>
+            <div className="text-[8px] tracking-widest text-gray-400">CERTIFIED</div>
           </div>
-          
-          <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-6">
-            Transform Your IT
-          </h2>
-          <p className="mb-12 font-medium tracking-widest opacity-60 text-sm">
-            FROM DEVELOPMENT TO DEPLOYMENT
-          </p>
-          
-          <a href="mailto:contact@mzprimer.com" 
-             className="text-xl md:text-3xl font-light border-b-2 border-black pb-2 hover:text-[#D4AF37] hover:border-[#D4AF37] transition-all duration-300 inline-block break-all">
-            contact@mzprimer.com
-          </a>
-          
-          <div className="mt-16 flex flex-col md:flex-row justify-center gap-8 md:gap-12 text-xs tracking-widest">
-            <div>+44 (0) 20 7946 0138</div>
-            <div>71-75 Shelton Street, London</div>
-            <div>WC2H 9JQ, United Kingdom</div>
+          <div className="text-center">
+            <div className="text-2xl font-black text-[#10B981]">GDPR</div>
+            <div className="text-[8px] tracking-widest text-gray-400">COMPLIANT</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-black text-[#D4AF37]">24/7</div>
+            <div className="text-[8px] tracking-widest text-gray-400">SUPPORT</div>
           </div>
         </div>
-      </section>
+      </div>
+
+      {/* B2B Inquiry Form */}
+      <div className="bg-[#f8f8f8] p-8 md:p-10 border border-gray-200">
+        <h4 className="text-2xl font-bold mb-6">Request a Proposal</h4>
+        
+        <form className="space-y-6" action="#" method="POST">
+          {/* Company Information - B2B Focus */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">COMPANY NAME *</label>
+              <input 
+                type="text" 
+                required
+                className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+                placeholder="Your Company Ltd."
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">REGISTRATION NO.</label>
+              <input 
+                type="text" 
+                className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+                placeholder="Company registration"
+              />
+            </div>
+          </div>
+
+          {/* Contact Person Details */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">CONTACT PERSON *</label>
+              <input 
+                type="text" 
+                required
+                className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+                placeholder="Full name"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">POSITION</label>
+              <input 
+                type="text" 
+                className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+                placeholder="e.g., IT Director, CTO"
+              />
+            </div>
+          </div>
+
+          {/* Contact Information */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">BUSINESS EMAIL *</label>
+              <input 
+                type="email" 
+                required
+                className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+                placeholder="name@company.com"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">PHONE NUMBER</label>
+              <input 
+                type="tel" 
+                className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+                placeholder="+44 20 1234 5678"
+              />
+            </div>
+          </div>
+
+          {/* Service Interest - B2B Specific */}
+          <div>
+            <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">SERVICE CATEGORY *</label>
+            <select 
+              required
+              className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+            >
+              <option value="">Select a service category</option>
+              <option value="software">SIC 62012 - Software Development</option>
+              <option value="infrastructure">SIC 62090 - IT Infrastructure</option>
+              <option value="consulting">Technology Consulting</option>
+              <option value="integration">System Integration</option>
+              <option value="procurement">Hardware Procurement</option>
+            </select>
+          </div>
+
+          {/* Project Scope */}
+          <div>
+            <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">PROJECT SCOPE / REQUIREMENTS *</label>
+            <textarea 
+              required
+              rows={5}
+              className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+              placeholder="Please describe your business requirements, timeline, and any specific technical needs..."
+            ></textarea>
+          </div>
+
+          {/* Corporate Compliance */}
+          <div className="flex items-start gap-3">
+            <input type="checkbox" id="compliance" required className="mt-1" />
+            <label htmlFor="compliance" className="text-sm text-gray-600">
+              I confirm that I represent a registered business and agree to the 
+              <Link href="/terms" className="text-[#D4AF37] hover:underline mx-1">Terms of Service</Link> 
+              and
+              <Link href="/privacy" className="text-[#D4AF37] hover:underline mx-1">Privacy Policy</Link>.
+            </label>
+          </div>
+
+          {/* Submit Button */}
+          <button 
+            type="submit"
+            className="w-full py-4 bg-[#D4AF37] text-black font-bold tracking-widest hover:bg-black hover:text-[#D4AF37] transition-all duration-300"
+          >
+            SUBMIT INQUIRY
+          </button>
+
+          <p className="text-xs text-gray-500 text-center mt-4">
+            All inquiries are handled by our B2B team. Your information will be processed according to GDPR.
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
 
       {/* 9. FOOTER */}
       <footer className="py-12 md:py-16 px-6 md:px-12 border-t border-white/5">

@@ -15,29 +15,11 @@ async function fetchImageAsBase64(url: string) {
   }
 }
 
-// Fetch symbol-specific background image
-async function fetchSymbolBackground(symbol: string) {
-  const symbolMap: Record<string, string> = {
-    'XAUUSD': 'xauusd6',
-    'BTCUSD': 'btcusd6',
-    'EURUSD': 'EURUSD8',
-    'GLOBAL': 'global',
-    'NASDAQ': 'nasdaq',
-    'US30': 'us30',
-    'BRENT': 'BRENT6',
-    'EURJPY': 'eurjpy3',
-    'S&P500': 'sp5002',
-  };
-  const filename = symbolMap[symbol.toUpperCase()] || 'global';
-  const url = `https://news.mzprimer.com/${filename}.webp`;
-  return await fetchImageAsBase64(url);
-}
-
 export async function onRequestGet(context: any) {
   const { request, env } = context;
   const { searchParams } = new URL(request.url);
 
-  // 1. Extract Parameters
+  // 1. Extract Parameters 
   const storyId = searchParams.get("id");
   const partnerId = (searchParams.get("partner") || "default").toLowerCase();
   const imageType = searchParams.get("type") || "story"; // 'story' or 'cover'
@@ -58,10 +40,14 @@ export async function onRequestGet(context: any) {
     const mzLogoUrl = "https://news.mzprimer.com/mzlogo.webp";
     const partnerLogoUrl = `https://news.mzprimer.com/lfmo1.webp`;
 
+    // Get background image from story.image field (from JSON)
+    const filename = story.image.includes('.') ? story.image : `${story.image}.webp`;
+    const backgroundImageUrl = `https://news.mzprimer.com/${filename}`;
+
     const [mzLogo, partnerLogo, backgroundImage] = await Promise.all([
       fetchImageAsBase64(mzLogoUrl),
       fetchImageAsBase64(partnerLogoUrl),
-      fetchSymbolBackground(story.symbol)
+      fetchImageAsBase64(backgroundImageUrl)
     ]);
 
     // 🛡️ STEP 3: RENDER ENGINE (Puppeteer)
@@ -99,7 +85,6 @@ export async function onRequestGet(context: any) {
     if (browser) await browser.close();
   }
 }
-
 // ==================== STORY HTML (Original - No Changes) ====================
 function generateStoryHTML(story: any, mzLogo: string | null, partnerLogo: string | null, backgroundImage: string | null) {
   const gold = "#D4AF37";

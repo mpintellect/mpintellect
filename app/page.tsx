@@ -4,7 +4,7 @@ import HomeClientContainer from '@/components/HomeClientContainer';
 import NotificationButton from '@/components/NotificationButton'; 
 import Hero from '@/components/Hero';
 import LiveMarketFeed from "@/components/LiveMarketFeed";
-import WelcomeTradePopup from '@/components/WelcomeTradePopup';  
+ 
 import TraderAssistantLite from '@/components/TraderAssistantLite';
 import LearningHub from '@/components/LearningHub';
 import AiToolsSection from '@/components/AiToolsSection';
@@ -19,7 +19,7 @@ export default function Home() {
       <LiveMarketFeed />
       <Hero />
       
-      <WelcomeTradePopup />
+    
 
       {/* Existing Sections */}
       <HomeClientContainer /> {/* ✅ This now handles the modal logic */}

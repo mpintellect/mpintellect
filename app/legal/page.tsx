@@ -26,7 +26,7 @@ export default function LegalPage() {
           We use cookies and analytics tools (e.g., Google Analytics) to improve your experience and performance tracking. You may opt out anytime.
         </p>
         <p>
-          If you wish to delete or access your data, please contact us at: <a href="mailto:contact@MZPrimer.com" className="text-yellow-400 underline">contact@MZPrimer.com</a>
+          If you wish to delete or access your data, please contact us at: <a href="mailto:contact@mzprimer.com" className="text-yellow-400 underline">contact@MZPrimer.com</a>
         </p>
       </section>
 

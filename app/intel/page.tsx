@@ -203,7 +203,121 @@ export default function IntelLanding() {
           </div>
         </div>
       </section>
+{/* 2.5 AI BUSINESS AUTOMATION - CORE SERVICES */}
+<section className="ai-automation-section">
+  <div className="ai-automation-container">
+    <div className="ai-automation-header">
+      <div className="ai-automation-badge">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-pulse"></span>
+        CORE COMPETENCY • AI BUSINESS AUTOMATION
+      </div>
+      <h2 className="ai-automation-title">
+        Transform Your Business with <span>Intelligent Automation</span>
+      </h2>
+      <p className="ai-automation-subtitle">
+        We help enterprises automate processes, enhance quality, and drive efficiency through 
+        advanced AI integration. Our core mission is to future-proof your operations.
+      </p>
+    </div>
 
+    {/* Core Value Proposition */}
+    <div className="core-value-proposition">
+      <div className="core-value-content">
+        <div className="core-value-tag">
+          <span></span> WHY CHOOSE US
+        </div>
+        <h3 className="core-value-title">
+          We Don't Just Implement IT — <strong>We Automate Intelligence</strong>
+        </h3>
+        <p className="core-value-description">
+          At MZ Intelligence Systems, our primary focus is helping businesses leverage AI to 
+          automate complex processes, reduce operational costs, and elevate quality standards. 
+          From manufacturing to finance, we deploy intelligent systems that learn, adapt, and 
+          optimize your operations in real-time.
+        </p>
+        <div className="core-value-stats">
+          <div className="stat-item">
+            <div className="stat-number">87%</div>
+            <div className="stat-label">PROCESS EFFICIENCY GAIN</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-number">99.9%</div>
+            <div className="stat-label">QUALITY IMPROVEMENT</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-number">24/7</div>
+            <div className="stat-label">AI OPERATIONS</div>
+          </div>
+        </div>
+      </div>
+      <div className="core-value-image">
+        <div className="ai-network-grid">
+          {[...Array(9)].map((_, i) => (
+            <div key={i} className="grid-dot"></div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {/* AI Services Grid */}
+    <div className="ai-services-grid">
+      {[
+        {
+          icon: Cpu,
+          title: 'Intelligent Process Automation',
+          desc: 'AI-powered automation for repetitive tasks, workflows, and business processes.',
+          features: ['Workflow Optimization', 'Task Automation', 'Process Mining']
+        },
+        {
+          icon: Zap,
+          title: 'Quality Enhancement Systems',
+          desc: 'Machine learning models that monitor, analyze, and improve output quality in real-time.',
+          features: ['Real-time Monitoring', 'Defect Detection', 'Quality Analytics']
+        },
+        {
+          icon: TrendingUp,
+          title: 'Predictive Operations',
+          desc: 'Anticipate issues before they occur with AI-driven predictive maintenance and forecasting.',
+          features: ['Predictive Maintenance', 'Demand Forecasting', 'Risk Prevention']
+        },
+        {
+          icon: GitBranch,
+          title: 'Cognitive Automation',
+          desc: 'Advanced AI that understands context, makes decisions, and executes complex tasks.',
+          features: ['Decision Automation', 'Context Awareness', 'Self-optimizing Systems']
+        },
+        {
+          icon: Cloud,
+          title: 'AI Infrastructure',
+          desc: 'Scalable cloud infrastructure optimized for AI/ML workloads and deployment.',
+          features: ['ML Pipeline Setup', 'Model Deployment', 'Inference Optimization']
+        },
+        {
+          icon: Users,
+          title: 'Business Intelligence',
+          desc: 'Transform data into actionable insights with AI-powered analytics and reporting.',
+          features: ['Data Visualization', 'Trend Analysis', 'Automated Reporting']
+        }
+      ].map((service, index) => {
+        const Icon = service.icon;
+        return (
+          <div key={index} className="ai-service-card">
+            <div className="service-icon">
+              <Icon />
+            </div>
+            <h3 className="service-title">{service.title}</h3>
+            <p className="service-description">{service.desc}</p>
+            <ul className="service-features">
+              {service.features.map((feature, i) => (
+                <li key={i}>{feature}</li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</section>
       {/* 3. COMPREHENSIVE SOLUTIONS SECTION (French Services in English) */}
       <section id="solutions" className="py-24 md:py-32 px-6 md:px-12 bg-[#080808]">
         <div className="max-w-7xl mx-auto">

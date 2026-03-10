@@ -1,5 +1,33 @@
-[
+[{
+    "date": "2026-03-09",
+    "id": "hormuz_insurance_crisis_2026",
+    "symbol": "BRENT",
+    "headline": "🛢️ Insurance Crisis: 90% of Insurers Stop Covering Hormuz Ships – Energy Prices Set to Explode",
+    "question": "With 90% of global insurers halting coverage for ships passing through the Strait of Hormuz since March 5, how will this affect energy prices and global inflation?",
+    "aiContext": "Since March 5, 90% of assurance companies worldwide have stopped insuring ships transiting the Strait of Hormuz. This creates a severe shipping crisis: vessels now either avoid the route (cutting supply) or sail uninsured (massive risk premium). Tanker availability collapses, freight costs soar, and oil prices spike. Inflationary impact: transport costs surge, energy prices rise, and goods become more expensive globally. This effectively adds a 'war premium' to every barrel and container.",
+    "category": "Geopolitics",
+    "impact": "Extreme"
+},
+    {
+    "date": "2026-03-09",
+    "id": "kuwait_force_majeure_oil_2026",
+    "symbol": "BRENT",
+    "headline": "🛢️ BREAKING: Kuwait Declares Force Majeure, Halts Oil Production – Prices Set to Surge",
+    "question": "After Kuwait declared force majeure and stopped oil production, how will global oil markets react and how high can prices go?",
+    "aiContext": "Kuwait has declared force majeure and halted oil production, adding to the growing supply crisis in the Gulf region. Following similar moves by Qatar and Bahrain, this latest disruption threatens to remove significant global supply. With the Strait of Hormuz already closed, oil prices are expected to spike further toward $120-150 in the coming sessions.",
+    "category": "Geopolitics",
+    "impact": "Extreme"
+},
   {
+    "date": "2026-03-06",
+    "id": "brent_geopolitical_context_2026",
+    "symbol": "BRENT",
+    "headline": "🛢️ Brent Jumps to $88.73: War Threatens Gulf Production Shutdown and $150 Oil",
+    "question": "With the escalating war between Iran, the US, and Israel, how are tensions affecting global energy prices?",
+    "aiContext": "In just two days, Brent jumped from $80.83 to $88.73. Serious warnings: Qatar declared force majeure after its facility was targeted, and a Qatari official expects Gulf countries to halt production entirely within weeks, potentially pushing oil to $150 and gas to 4x current levels. Closure of the Strait of Hormuz (20% of global oil supply) threatens complete loss of Gulf production. Economic impact: Gas prices up 93% in Britain, and IMF warns that sustained 10% energy price increase for a full year would raise global inflation by 0.4% and reduce growth by 0.2%.",
+    "category": "Geopolitics",
+    "impact": "Extreme"
+},{
     "date": "2026-03-03",
     "id": "usd_gold_inflation_scenario_2026",
     "symbol": "DXY",

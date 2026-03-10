@@ -177,9 +177,21 @@ const handleSubmit = async (e: React.FormEvent) => {
             {PaymentBadges}
           </div>
 
-          <span className="footer-text">
-            © {CURRENT_YEAR} MZPrimer Intelligence. All rights reserved.
-          </span>
+   <div className="footer-bottom">
+  <span className="footer-text">
+    © {CURRENT_YEAR} MZPrimer Intelligence. All rights reserved.
+  </span>
+  
+  {/* Concise Financial Disclaimer */}
+  <p className="disclaimer-text text-xs text-zinc-500 mt-4 max-w-3xl mx-auto text-center border-t border-[#D4AF37]/20 pt-4">
+    <span className="text-[#D4AF37] font-bold">DISCLAIMER:</span> MZPrimer Intelligence provides 
+    educational content and analytical tools for informational purposes only. We do not provide 
+    financial advice, and nothing on this website should be construed as a recommendation to 
+    buy or sell any financial instruments. Trading involves substantial risk of loss. 
+    Past performance does not guarantee future results. You alone are responsible for your 
+    trading decisions.
+  </p>
+</div>
         </div>
 
         <div className="footer-grid">

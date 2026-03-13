@@ -82,13 +82,15 @@ export default function LiveMarketFeed() {
         {/* ROW 1: SIGNALS */}
         <ScrollRow direction="left" speed={0.8}>
           {duplicatedSignals.map((item, idx) => (
-            <div key={`sig-${idx}`} className="feed-slat signal">
-              <span className="slat-label">{item.symbol}</span>
-              <span className={`slat-value ${item.action.toLowerCase()}`}>{item.action}</span>
-              <span className="slat-price">{item.current_price.toFixed(2)}</span>
-              <span className="slat-conf">{item.confidence}% ACC</span>
-            </div>
-          ))}
+  <div key={`sig-${idx}`} className="feed-slat signal">
+    <span className="slat-label">{item.symbol}</span>
+    <span className={`slat-value ${item.action.toLowerCase()}`}>
+      {item.action === "BUY" ? "↑" : "↓"}
+    </span>
+    <span className="slat-price">{item.current_price.toFixed(2)}</span>
+    <span className="slat-conf">{item.confidence}% ACC</span>
+  </div>
+))}
         </ScrollRow>
 
         {/* ROW 2: NEWS */}

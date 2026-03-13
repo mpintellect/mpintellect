@@ -29202,7 +29202,7 @@ circle {
 .dual-feed-container {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0px;
 }
 
 .feed-scroll-row {
@@ -29235,7 +29235,14 @@ circle {
 .slat-value.buy { color: #10B981; }
 .slat-value.sell { color: #ff4d4d; }
 .slat-conf { font-size: 9px; color: #666; }
-
+.slat-value.buy, 
+.slat-value.sell {
+  font-size: 1.3rem;   /* Even larger arrow */
+  line-height: 0.8;    /* Tighter spacing */
+  font-weight: 800;    /* Maximum boldness */
+  display: inline-block;
+  transform: translateY(-2px); /* Fine-tune vertical alignment */
+}
 /* News Slat Specifics */
 .news-tag {
   font-size: 8px;

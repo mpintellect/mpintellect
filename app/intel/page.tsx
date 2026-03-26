@@ -116,10 +116,7 @@ export default function IntelLanding() {
     { icon: BarChart, name: 'IT Audit & Assessment', desc: 'Comprehensive technology infrastructure review' },
     { icon: Globe, name: 'Domain & Hosting Management', desc: 'DNS, hosting, and email server administration' },
     { icon: Settings, name: 'SLA Management', desc: 'Service level agreement monitoring and reporting' },
-    { icon: Users, name: 'IT Training & Workshops', desc: 'Staff training on new technologies and systems' },
-    { icon: Server, name: 'Virtualization Services', desc: 'VMware, Hyper-V, and containerization' },
-    { icon: Hdd, name: 'Peripheral Integration', desc: 'Setup and configuration of printers, scanners, and external devices' },
-    { icon: MousePointer, name: 'End-User Computing', desc: 'Workstation setup, software installation, and user support' },
+    
   ];
 
   return (
@@ -461,24 +458,7 @@ export default function IntelLanding() {
         </div>
       </section>
 
-      {/* 7. TECHNOLOGY STACK */}
-      <section className="py-24 px-6 md:px-12">
-        <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-xs font-bold tracking-[10px] uppercase text-[#D4AF37] mb-12">
-            Trusted Technologies
-          </h2>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-8">
-            {['Microsoft', 'Apple', 'Dell', 'HP', 'Lenovo', 'Cisco',
-              'AWS', 'Azure', 'VMware', 'SAP', 'Oracle', 'Salesforce'].map((tech, i) => (
-              <div key={i} className="group">
-                <div className="text-xs md:text-sm font-mono text-white/20 group-hover:text-white/60 transition-colors">
-                  {tech}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      
 
       {/* 8. B2B CONTACT SECTION - Professional Inquiry Form */}
 <section id="contact" className="py-24 md:py-32 px-6 md:px-12 bg-white text-black">
@@ -504,30 +484,13 @@ export default function IntelLanding() {
         
         <div className="border-l-4 border-[#10B981] pl-6">
           <h4 className="text-2xl font-bold mb-2">Direct Contacts</h4>
-          <p className="text-[#4a5568] mb-1">📞 +44 (0) 20 7946 0138</p>
-          <p className="text-[#4a5568]">📧 corporate@mzprimer.com</p>
+          <p className="text-[#4a5568]">📧 contact@mzprimer.com</p>
         </div>
         
         <div className="border-l-4 border-[#D4AF37] pl-6">
           <h4 className="text-2xl font-bold mb-2">Company Registration</h4>
-          <p className="text-[#4a5568] mb-1">MZPrimer LTD • Company No. 12345678</p>
-          <p className="text-[#4a5568]">VAT: GB123456789 • SIC: 62012, 62090</p>
-        </div>
-
-        {/* Trust Badges */}
-        <div className="flex gap-6 pt-6">
-          <div className="text-center">
-            <div className="text-2xl font-black text-[#D4AF37]">ISO 27001</div>
-            <div className="text-[8px] tracking-widest text-gray-400">CERTIFIED</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-black text-[#10B981]">GDPR</div>
-            <div className="text-[8px] tracking-widest text-gray-400">COMPLIANT</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-black text-[#D4AF37]">24/7</div>
-            <div className="text-[8px] tracking-widest text-gray-400">SUPPORT</div>
-          </div>
+          <p className="text-[#4a5568] mb-1">MZPrimer LTD •</p>
+          <p className="text-[#4a5568]">• SIC: 62012, 62090</p>
         </div>
       </div>
 

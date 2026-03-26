@@ -273,39 +273,9 @@ function generateBonusPostHTML(partnerLogo: string | null) {
         </div>
 
         <!-- 2. THE MAIN HERO -->
-        <div class="hero-content">
-          <div class="arabic-headline">بمناسبة شهر رمضان المبارك</div>
+<div class="hero-content">
+  <div class="arabic-headline">LiteFinance تهنئكم بحلول عيد الفطر المبارك</div>
           
-          <div class="bonus-giant">50%</div>
-          
-          <div class="tagline-pill">بونص قابل للخسارة</div>
-        </div>
-
-        <!-- 3. PROMO CODE FOOTER (VAULT ACCESS) -->
-<div class="promo-footer">
-  <div class="promo-card">
-    <div class="promo-label">استخدم الكود لتفعيل العرض</div>
-    
-    <div class="promo-code-box">RAMADAN50</div>
-    
-</div>
-  
-  <!-- Partnership Tagline -->
-  <div style="margin-top: 40px; text-align: center;">
-  <div style="max-width: 900px; margin: 40px auto 0; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;">
-    
-    <p style="
-    direction: rtl;
-    font-family: 'Tajawal', sans-serif; 
-    font-size: 12px; 
-    color: rgba(255,255,255,0.3); 
-    line-height: 1.5; 
-    font-weight: 300;
-  ">
-    تحذير من المخاطر: ينطوي التداول في الفوركس وعقود الفروقات على مخاطر كبيرة وقد يؤدي إلى خسارة رأس المال المستثمر بالكامل. الرافعة المالية العالية يمكن أن تعمل ضدك كما تعمل لصالحك.
-  </p>
-  </div>
-</div>
           
           
         </div>

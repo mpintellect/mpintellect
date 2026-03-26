@@ -1,4 +1,34 @@
 [
+   {
+    "date": "2026-03-17",
+    "id": "42",
+    "symbol": "MACRO",
+    "headline": "🌍 Are We Heading for a 2008-Style Crisis? Soaring Energy, Sticky Inflation, and Central Banks Unable to Cut Rates",
+    "question": "With global energy prices spiking and inflation resurging, are markets repeating the 2008 scenario where central banks found themselves trapped and unable to lower interest rates?",
+    "aiContext": "The current landscape echoes early 2008: a major energy shock (Gulf war, Hormuz closure), rising inflation (PCE beating forecasts), and central banks stuck between fighting inflation and supporting growth. The big question: Are we on the verge of a similar systemic crisis?",
+    "category": "Macro Analysis",
+    "impact": "Extreme"
+},
+{
+    "date": "2026-03-17",
+    "id": "44",
+    "symbol": "XAUUSD",
+    "headline": "📉 Why Gold Didn't Hit $5,800: The Contradiction Between Geopolitics and Interest Rates",
+    "question": "Despite escalating Iran-USA-Israel tensions, gold failed to reach $5,500-$5,800. Is the inverse relationship with interest rates the reason?",
+    "aiContext": "Gold's traditional safe-haven rally was capped by rising interest rate expectations. While geopolitical tensions pushed for upside, higher-for-longer rates strengthened the dollar and increased the opportunity cost of holding gold. This contradiction created a ceiling, preventing gold from hitting $5,500-$5,800 targets despite the crisis.",
+    "category": "Macro Analysis",
+    "impact": "High"
+},
+{
+    "date": "2026-03-17",
+    "id": "43",
+    "symbol": "MACRO",
+    "headline": "🏦 Private Credit: The Next 2008? Shadow Banking Risk Under the Spotlight",
+    "question": "With private credit markets growing rapidly, could they trigger a systemic crisis similar to the 2008 real estate and bank credit meltdown?",
+    "aiContext": "Private credit (non-bank lending) has ballooned to $2 trillion+ , operating with less regulation and transparency. Like 2008's subprime mortgage system, risks are building in corporate debt, leveraged loans, and shadow banking. A sharp economic downturn or liquidity freeze could expose vulnerabilities, triggering a broader credit crisis. Regulators are increasingly concerned, but the sector remains largely in the dark.",
+    "category": "Macro Analysis",
+    "impact": "Extreme"
+},
  {
     "date": "2026-03-09",
     "id": "hormuz_insurance_crisis_2026",

@@ -1,6 +1,7 @@
-import React from 'react';
+"use client";
+
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Metadata } from 'next';
 import { 
   Cpu, 
   Cloud, 
@@ -32,12 +33,75 @@ import {
   TrendingUp
 } from 'lucide-react';
 
-export const metadata: Metadata = {
-  title: 'MZ Intelligence Systems | Enterprise IT Architecture & Software Development',
-  description: 'Comprehensive IT services including software development, hardware procurement, system integration, and technology consulting for enterprises.',
-};
-
 export default function IntelLanding() {
+  // --- FORM STATE ---
+  const [formData, setFormData] = useState({
+    companyName: '',
+    regNo: '',
+    contactPerson: '',
+    position: '',
+    email: '',
+    phone: '',
+    category: '',
+    requirements: ''
+  });
+  const [hp, setHp] = useState(''); // Honeypot
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<null | {ok:boolean; error?:string}>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSending(true);
+    setResult(null);
+
+    // Combine B2B data into a structured message for your existing email API
+    const structuredMessage = `
+      B2B INQUIRY DETAILS:
+      --------------------
+      Company: ${formData.companyName}
+      Reg No: ${formData.regNo}
+      Position: ${formData.position}
+      Phone: ${formData.phone}
+      Category: ${formData.category}
+      
+      REQUIREMENTS:
+      ${formData.requirements}
+    `;
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name: formData.contactPerson, 
+          email: formData.email, 
+          message: structuredMessage, 
+          hp 
+        }),
+      });
+      
+      const data = await res.json();
+      if (data.ok) {
+        setResult({ ok: true });
+        setFormData({
+          companyName: '', regNo: '', contactPerson: '',
+          position: '', email: '', phone: '',
+          category: '', requirements: ''
+        });
+      } else {
+        setResult({ ok: false, error: data.error || 'Failed to send' });
+      }
+    } catch (err) {
+      setResult({ ok: false, error: 'Network error' });
+    } finally {
+      setSending(false);
+    }
+  }
+
   // Original French service description translated to English
   const frenchServicesEnglish = [
     {
@@ -89,7 +153,7 @@ export default function IntelLanding() {
     { icon: Database, name: 'Database Design & Management', desc: 'SQL, NoSQL, and proprietary database architecture' },
     { icon: Layers, name: 'Enterprise Resource Planning', desc: 'Custom ERP systems for business process automation' },
     { icon: BarChart, name: 'Business Intelligence Tools', desc: 'Analytics platforms and reporting dashboards' },
-    { icon: GitBranch, name: 'DevOps & CI/CD', desc: 'Automated deployment pipelines and version control' },
+    
     { icon: Cpu, name: 'Embedded Systems Development', desc: 'Firmware and IoT device programming' },
     { icon: Users, name: 'CRM Systems', desc: 'Customer relationship management platforms' },
     { icon: Zap, name: 'Real-Time Trading Software', desc: 'Low-latency execution systems for financial markets' },
@@ -102,20 +166,20 @@ export default function IntelLanding() {
     { icon: Shield, name: 'Cybersecurity Implementation', desc: 'Zero-trust architecture and threat detection' },
     { icon: Network, name: 'Network Architecture Design', desc: 'Enterprise-grade network infrastructure' },
     { icon: Server, name: 'IT Infrastructure Management', desc: 'Server maintenance and hardware optimization' },
-    { icon: Lock, name: 'Data Protection & GDPR Compliance', desc: 'Regulatory compliance and data governance' },
+    
     { icon: Globe, name: 'CDN & Edge Computing', desc: 'Global content delivery and edge optimization' },
     { icon: Users, name: 'IT Consulting & Strategy', desc: 'Technology roadmap and digital transformation' },
     { icon: Settings, name: '24/7 Technical Support', desc: 'Round-the-clock IT assistance and monitoring' },
-    { icon: Database, name: 'Data Backup & Disaster Recovery', desc: 'Business continuity and recovery solutions' },
-    { icon: Shield, name: 'Penetration Testing', desc: 'Security auditing and vulnerability assessment' },
+    
+    
     { icon: Cloud, name: 'Cloud Migration Services', desc: 'Seamless transition to cloud infrastructure' },
     { icon: Network, name: 'VPN & Remote Access Solutions', desc: 'Secure remote work infrastructure' },
-    { icon: Processor, name: 'Hardware Procurement & Setup', desc: 'Enterprise hardware sourcing and configuration' },
+    
     { icon: Code, name: 'System Integration', desc: 'Connecting disparate business systems' },
     { icon: Lock, name: 'Identity & Access Management', desc: 'Authentication and authorization systems' },
     { icon: BarChart, name: 'IT Audit & Assessment', desc: 'Comprehensive technology infrastructure review' },
     { icon: Globe, name: 'Domain & Hosting Management', desc: 'DNS, hosting, and email server administration' },
-    { icon: Settings, name: 'SLA Management', desc: 'Service level agreement monitoring and reporting' },
+    
     
   ];
 
@@ -200,121 +264,359 @@ export default function IntelLanding() {
           </div>
         </div>
       </section>
-{/* 2.5 AI BUSINESS AUTOMATION - CORE SERVICES */}
-<section className="ai-automation-section">
-  <div className="ai-automation-container">
-    <div className="ai-automation-header">
-      <div className="ai-automation-badge">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-pulse"></span>
-        CORE COMPETENCY • AI BUSINESS AUTOMATION
-      </div>
-      <h2 className="ai-automation-title">
-        Transform Your Business with <span>Intelligent Automation</span>
-      </h2>
-      <p className="ai-automation-subtitle">
-        We help enterprises automate processes, enhance quality, and drive efficiency through 
-        advanced AI integration. Our core mission is to future-proof your operations.
-      </p>
-    </div>
 
-    {/* Core Value Proposition */}
-    <div className="core-value-proposition">
-      <div className="core-value-content">
-        <div className="core-value-tag">
-          <span></span> WHY CHOOSE US
-        </div>
-        <h3 className="core-value-title">
-          We Don't Just Implement IT — <strong>We Automate Intelligence</strong>
-        </h3>
-        <p className="core-value-description">
-          At MZ Intelligence Systems, our primary focus is helping businesses leverage AI to 
-          automate complex processes, reduce operational costs, and elevate quality standards. 
-          From manufacturing to finance, we deploy intelligent systems that learn, adapt, and 
-          optimize your operations in real-time.
-        </p>
-        <div className="core-value-stats">
-          <div className="stat-item">
-            <div className="stat-number">87%</div>
-            <div className="stat-label">PROCESS EFFICIENCY GAIN</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-number">99.9%</div>
-            <div className="stat-label">QUALITY IMPROVEMENT</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-number">24/7</div>
-            <div className="stat-label">AI OPERATIONS</div>
-          </div>
-        </div>
-      </div>
-      <div className="core-value-image">
-        <div className="ai-network-grid">
-          {[...Array(9)].map((_, i) => (
-            <div key={i} className="grid-dot"></div>
-          ))}
-        </div>
-      </div>
-    </div>
-
-    {/* AI Services Grid */}
-    <div className="ai-services-grid">
-      {[
-        {
-          icon: Cpu,
-          title: 'Intelligent Process Automation',
-          desc: 'AI-powered automation for repetitive tasks, workflows, and business processes.',
-          features: ['Workflow Optimization', 'Task Automation', 'Process Mining']
-        },
-        {
-          icon: Zap,
-          title: 'Quality Enhancement Systems',
-          desc: 'Machine learning models that monitor, analyze, and improve output quality in real-time.',
-          features: ['Real-time Monitoring', 'Defect Detection', 'Quality Analytics']
-        },
-        {
-          icon: TrendingUp,
-          title: 'Predictive Operations',
-          desc: 'Anticipate issues before they occur with AI-driven predictive maintenance and forecasting.',
-          features: ['Predictive Maintenance', 'Demand Forecasting', 'Risk Prevention']
-        },
-        {
-          icon: GitBranch,
-          title: 'Cognitive Automation',
-          desc: 'Advanced AI that understands context, makes decisions, and executes complex tasks.',
-          features: ['Decision Automation', 'Context Awareness', 'Self-optimizing Systems']
-        },
-        {
-          icon: Cloud,
-          title: 'AI Infrastructure',
-          desc: 'Scalable cloud infrastructure optimized for AI/ML workloads and deployment.',
-          features: ['ML Pipeline Setup', 'Model Deployment', 'Inference Optimization']
-        },
-        {
-          icon: Users,
-          title: 'Business Intelligence',
-          desc: 'Transform data into actionable insights with AI-powered analytics and reporting.',
-          features: ['Data Visualization', 'Trend Analysis', 'Automated Reporting']
+      {/* 2.5 AI BUSINESS AUTOMATION - CORE SERVICES */}
+      <style jsx>{`
+        .ai-automation-section {
+          padding: 6rem 1.5rem;
+          background: linear-gradient(135deg, #050505 0%, #0a0a0a 100%);
+          border-top: 1px solid rgba(255,255,255,0.05);
+          border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-      ].map((service, index) => {
-        const Icon = service.icon;
-        return (
-          <div key={index} className="ai-service-card">
-            <div className="service-icon">
-              <Icon />
+        
+        .ai-automation-container {
+          max-width: 80rem;
+          margin: 0 auto;
+        }
+        
+        .ai-automation-header {
+          text-align: center;
+          margin-bottom: 4rem;
+        }
+        
+        .ai-automation-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 1rem;
+          background: rgba(212, 175, 55, 0.1);
+          border: 1px solid rgba(212, 175, 55, 0.3);
+          border-radius: 2rem;
+          font-size: 0.75rem;
+          font-weight: 500;
+          letter-spacing: 0.1em;
+          color: #D4AF37;
+          margin-bottom: 1.5rem;
+        }
+        
+        .ai-automation-title {
+          font-size: 2.5rem;
+          font-weight: 300;
+          line-height: 1.2;
+          margin-bottom: 1rem;
+        }
+        
+        .ai-automation-title span {
+          font-weight: 700;
+          background: linear-gradient(135deg, #D4AF37 0%, #f3e6b0 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        
+        .ai-automation-subtitle {
+          color: #94a3b8;
+          max-width: 48rem;
+          margin: 0 auto;
+          font-size: 1.125rem;
+          line-height: 1.6;
+        }
+        
+        .core-value-proposition {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 4rem;
+          margin-bottom: 5rem;
+          padding: 3rem;
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.05);
+          border-radius: 1rem;
+        }
+        
+        .core-value-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.7rem;
+          letter-spacing: 0.2em;
+          color: #D4AF37;
+          margin-bottom: 1rem;
+        }
+        
+        .core-value-tag span {
+          width: 2rem;
+          height: 1px;
+          background: #D4AF37;
+        }
+        
+        .core-value-title {
+          font-size: 2rem;
+          font-weight: 300;
+          margin-bottom: 1.5rem;
+        }
+        
+        .core-value-title strong {
+          font-weight: 700;
+          color: #D4AF37;
+        }
+        
+        .core-value-description {
+          color: #94a3b8;
+          line-height: 1.6;
+          margin-bottom: 2rem;
+        }
+        
+        .core-value-stats {
+          display: flex;
+          gap: 2rem;
+        }
+        
+        .stat-item {
+          text-align: center;
+        }
+        
+        .stat-number {
+          font-size: 2rem;
+          font-weight: 700;
+          color: #D4AF37;
+          margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+          font-size: 0.7rem;
+          letter-spacing: 0.1em;
+          color: #94a3b8;
+        }
+        
+        .core-value-image {
+          background: linear-gradient(135deg, rgba(212,175,55,0.1) 0%, rgba(16,185,129,0.05) 100%);
+          border-radius: 1rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .ai-network-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 2rem;
+          padding: 2rem;
+        }
+        
+        .grid-dot {
+          width: 0.5rem;
+          height: 0.5rem;
+          background: #D4AF37;
+          border-radius: 50%;
+          animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.5); }
+        }
+        
+        .ai-services-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 2rem;
+          margin-top: 3rem;
+        }
+        
+        .ai-service-card {
+          padding: 2rem;
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.05);
+          border-radius: 1rem;
+          transition: all 0.3s ease;
+        }
+        
+        .ai-service-card:hover {
+          border-color: rgba(212,175,55,0.3);
+          transform: translateY(-4px);
+        }
+        
+        .service-icon {
+          width: 3rem;
+          height: 3rem;
+          background: rgba(212,175,55,0.1);
+          border-radius: 0.75rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 1.5rem;
+        }
+        
+        .service-icon svg {
+          width: 1.5rem;
+          height: 1.5rem;
+          color: #D4AF37;
+        }
+        
+        .service-title {
+          font-size: 1.25rem;
+          font-weight: 700;
+          margin-bottom: 0.75rem;
+        }
+        
+        .service-description {
+          color: #94a3b8;
+          font-size: 0.875rem;
+          line-height: 1.5;
+          margin-bottom: 1rem;
+        }
+        
+        .service-features {
+          list-style: none;
+          padding: 0;
+        }
+        
+        .service-features li {
+          color: #D4AF37;
+          font-size: 0.75rem;
+          padding: 0.25rem 0;
+          position: relative;
+          padding-left: 1rem;
+        }
+        
+        .service-features li::before {
+          content: "→";
+          position: absolute;
+          left: 0;
+          color: #D4AF37;
+        }
+        
+        @media (max-width: 768px) {
+          .core-value-proposition {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            padding: 1.5rem;
+          }
+          
+          .ai-automation-title {
+            font-size: 1.75rem;
+          }
+          
+          .core-value-title {
+            font-size: 1.5rem;
+          }
+        }
+      `}</style>
+      <section className="ai-automation-section">
+        <div className="ai-automation-container">
+          <div className="ai-automation-header">
+            <div className="ai-automation-badge">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-pulse"></span>
+              CORE COMPETENCY • AI BUSINESS AUTOMATION
             </div>
-            <h3 className="service-title">{service.title}</h3>
-            <p className="service-description">{service.desc}</p>
-            <ul className="service-features">
-              {service.features.map((feature, i) => (
-                <li key={i}>{feature}</li>
-              ))}
-            </ul>
+            <h2 className="ai-automation-title">
+              Transform Your Business with <span>Intelligent Automation</span>
+            </h2>
+            <p className="ai-automation-subtitle">
+              We help enterprises automate processes, enhance quality, and drive efficiency through 
+              advanced AI integration. Our core mission is to future-proof your operations.
+            </p>
           </div>
-        );
-      })}
-    </div>
-  </div>
-</section>
+
+          {/* Core Value Proposition */}
+          <div className="core-value-proposition">
+            <div className="core-value-content">
+              <div className="core-value-tag">
+                <span></span> WHY CHOOSE US
+              </div>
+              <h3 className="core-value-title">
+                We Don't Just Implement IT — <strong>We Automate Intelligence</strong>
+              </h3>
+              <p className="core-value-description">
+                At MZ Intelligence Systems, our primary focus is helping businesses leverage AI to 
+                automate complex processes, reduce operational costs, and elevate quality standards. 
+                From manufacturing to finance, we deploy intelligent systems that learn, adapt, and 
+                optimize your operations in real-time.
+              </p>
+              <div className="core-value-stats">
+                <div className="stat-item">
+                  <div className="stat-number">87%</div>
+                  <div className="stat-label">PROCESS EFFICIENCY GAIN</div>
+                </div>
+                <div className="stat-item">
+                  <div className="stat-number">99.9%</div>
+                  <div className="stat-label">QUALITY IMPROVEMENT</div>
+                </div>
+                <div className="stat-item">
+                  <div className="stat-number">24/7</div>
+                  <div className="stat-label">AI OPERATIONS</div>
+                </div>
+              </div>
+            </div>
+            <div className="core-value-image">
+              <div className="ai-network-grid">
+                {[...Array(9)].map((_, i) => (
+                  <div key={i} className="grid-dot"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* AI Services Grid */}
+          <div className="ai-services-grid">
+            {[
+              {
+                icon: Cpu,
+                title: 'Intelligent Process Automation',
+                desc: 'AI-powered automation for repetitive tasks, workflows, and business processes.',
+                features: ['Workflow Optimization', 'Task Automation', 'Process Mining']
+              },
+              {
+                icon: Zap,
+                title: 'Quality Enhancement Systems',
+                desc: 'Machine learning models that monitor, analyze, and improve output quality in real-time.',
+                features: ['Real-time Monitoring', 'Defect Detection', 'Quality Analytics']
+              },
+              {
+                icon: TrendingUp,
+                title: 'Predictive Operations',
+                desc: 'Anticipate issues before they occur with AI-driven predictive maintenance and forecasting.',
+                features: ['Predictive Maintenance', 'Demand Forecasting', 'Risk Prevention']
+              },
+              {
+                icon: GitBranch,
+                title: 'Cognitive Automation',
+                desc: 'Advanced AI that understands context, makes decisions, and executes complex tasks.',
+                features: ['Decision Automation', 'Context Awareness', 'Self-optimizing Systems']
+              },
+              {
+                icon: Cloud,
+                title: 'AI Infrastructure',
+                desc: 'Scalable cloud infrastructure optimized for AI/ML workloads and deployment.',
+                features: ['ML Pipeline Setup', 'Model Deployment', 'Inference Optimization']
+              },
+              {
+                icon: Users,
+                title: 'Business Intelligence',
+                desc: 'Transform data into actionable insights with AI-powered analytics and reporting.',
+                features: ['Data Visualization', 'Trend Analysis', 'Automated Reporting']
+              }
+            ].map((service, index) => {
+              const Icon = service.icon;
+              return (
+                <div key={index} className="ai-service-card">
+                  <div className="service-icon">
+                    <Icon />
+                  </div>
+                  <h3 className="service-title">{service.title}</h3>
+                  <p className="service-description">{service.desc}</p>
+                  <ul className="service-features">
+                    {service.features.map((feature, i) => (
+                      <li key={i}>{feature}</li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* 3. COMPREHENSIVE SOLUTIONS SECTION (French Services in English) */}
       <section id="solutions" className="py-24 md:py-32 px-6 md:px-12 bg-[#080808]">
         <div className="max-w-7xl mx-auto">
@@ -458,164 +760,168 @@ export default function IntelLanding() {
         </div>
       </section>
 
-      
-
       {/* 8. B2B CONTACT SECTION - Professional Inquiry Form */}
-<section id="contact" className="py-24 md:py-32 px-6 md:px-12 bg-white text-black">
-  <div className="max-w-7xl mx-auto">
-    {/* Section Header */}
-    <div className="text-center mb-16">
-      <h2 className="text-xs font-bold tracking-[10px] uppercase text-[#D4AF37] mb-4">
-        BUSINESS INQUIRIES
-      </h2>
-      <h3 className="text-3xl md:text-5xl font-light mb-6">Initiate a Partnership</h3>
-      <p className="text-[#4a5568] max-w-2xl mx-auto">
-        Submit your corporate requirements and a dedicated account manager will respond within 24 hours.
-      </p>
-    </div>
+      <section id="contact" className="py-24 md:py-32 px-6 md:px-12 bg-white text-black">
+        <div className="max-w-7xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <h2 className="text-xs font-bold tracking-[10px] uppercase text-[#D4AF37] mb-4">
+              BUSINESS INQUIRIES
+            </h2>
+            <h3 className="text-3xl md:text-5xl font-light mb-6">Initiate a Partnership</h3>
+            <p className="text-[#4a5568] max-w-2xl mx-auto">
+              Submit your corporate requirements and a dedicated account manager will respond within 24 hours.
+            </p>
+          </div>
 
-    <div className="grid lg:grid-cols-2 gap-16 items-start">
-      {/* Contact Information */}
-      <div className="space-y-8">
-        <div className="border-l-4 border-[#D4AF37] pl-6">
-          <h4 className="text-2xl font-bold mb-2">Corporate Headquarters</h4>
-          <p className="text-[#4a5568]">71-75 Shelton Street, Covent Garden<br />London, WC2H 9JQ, United Kingdom</p>
+          <div className="grid lg:grid-cols-2 gap-16 items-start">
+            {/* Contact Information */}
+            <div className="space-y-8">
+              <div className="border-l-4 border-[#D4AF37] pl-6">
+                <h4 className="text-2xl font-bold mb-2">Corporate Headquarters</h4>
+                <p className="text-[#4a5568]">71-75 Shelton Street, Covent Garden<br />London, WC2H 9JQ, United Kingdom</p>
+              </div>
+              
+              <div className="border-l-4 border-[#10B981] pl-6">
+                <h4 className="text-2xl font-bold mb-2">Direct Contacts</h4>
+                <p className="text-[#4a5568]">📧 contact@mzprimer.com</p>
+              </div>
+              
+              <div className="border-l-4 border-[#D4AF37] pl-6">
+                <h4 className="text-2xl font-bold mb-2">Company Registration</h4>
+                <p className="text-[#4a5568] mb-1">MZPrimer LTD •</p>
+                <p className="text-[#4a5568]">• SIC: 62012, 62090</p>
+              </div>
+            </div>
+
+            {/* B2B Inquiry Form - Updated with state management */}
+            <div className="bg-[#f8f8f8] p-8 md:p-10 border border-gray-200">
+              <h4 className="text-2xl font-bold mb-6">Request a Proposal</h4>
+              
+              <form className="space-y-6" onSubmit={onSubmit}>
+                {/* Honeypot */}
+                <input type="text" value={hp} onChange={(e)=>setHp(e.target.value)} className="hidden" tabIndex={-1} />
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">COMPANY NAME *</label>
+                    <input 
+                      name="companyName" type="text" required value={formData.companyName} onChange={handleChange}
+                      className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+                      placeholder="Your Company Ltd."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">REGISTRATION NO.</label>
+                    <input 
+                      name="regNo" type="text" value={formData.regNo} onChange={handleChange}
+                      className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+                      placeholder="Company registration"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">CONTACT PERSON *</label>
+                    <input 
+                      name="contactPerson" type="text" required value={formData.contactPerson} onChange={handleChange}
+                      className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+                      placeholder="Full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">POSITION</label>
+                    <input 
+                      name="position" type="text" value={formData.position} onChange={handleChange}
+                      className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+                      placeholder="e.g., IT Director, CTO"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">BUSINESS EMAIL *</label>
+                    <input 
+                      name="email" type="email" required value={formData.email} onChange={handleChange}
+                      className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+                      placeholder="name@company.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">PHONE NUMBER</label>
+                    <input 
+                      name="phone" type="tel" value={formData.phone} onChange={handleChange}
+                      className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+                      placeholder="+44 20 1234 5678"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">SERVICE CATEGORY *</label>
+                  <select 
+                    name="category" required value={formData.category} onChange={handleChange}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+                  >
+                    <option value="">Select a service category</option>
+                    <option value="software">SIC 62012 - Software Development</option>
+                    <option value="infrastructure">SIC 62090 - IT Infrastructure</option>
+                    <option value="consulting">Technology Consulting</option>
+                    <option value="integration">System Integration</option>
+                    <option value="procurement">Hardware Procurement</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">PROJECT SCOPE / REQUIREMENTS *</label>
+                  <textarea 
+                    name="requirements" required rows={5} value={formData.requirements} onChange={handleChange}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
+                    placeholder="Please describe your business requirements, timeline, and any specific technical needs..."
+                  ></textarea>
+                </div>
+
+                {/* Corporate Compliance */}
+                <div className="flex items-start gap-3">
+                  <input type="checkbox" id="compliance" required className="mt-1" />
+                  <label htmlFor="compliance" className="text-sm text-gray-600">
+                    I confirm that I represent a registered business and agree to the 
+                    <Link href="/terms" className="text-[#D4AF37] hover:underline mx-1">Terms of Service</Link> 
+                    and
+                    <Link href="/privacy" className="text-[#D4AF37] hover:underline mx-1">Privacy Policy</Link>.
+                  </label>
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={sending}
+                  className="w-full py-4 bg-[#D4AF37] text-black font-bold tracking-widest hover:bg-black hover:text-[#D4AF37] transition-all duration-300 disabled:opacity-50"
+                >
+                  {sending ? 'TRANSMITTING...' : 'SUBMIT INQUIRY'}
+                </button>
+
+                {result && result.ok && (
+                  <div className="mt-4 p-4 border border-[#D4AF37]/20 bg-[#D4AF37]/5 text-center">
+                    <p className="text-[#D4AF37] text-xs font-bold">✓ INQUIRY SENT SUCCESSFULLY</p>
+                  </div>
+                )}
+                
+                {result && !result.ok && (
+                  <div className="mt-4 p-4 border border-red-200 bg-red-50 text-center">
+                    <p className="text-red-600 text-xs font-bold">✗ {result.error || 'ERROR SENDING INQUIRY'}</p>
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-500 text-center mt-4">
+                  All inquiries are handled by our B2B team. Your information will be processed according to GDPR.
+                </p>
+              </form>
+            </div>
+          </div>
         </div>
-        
-        <div className="border-l-4 border-[#10B981] pl-6">
-          <h4 className="text-2xl font-bold mb-2">Direct Contacts</h4>
-          <p className="text-[#4a5568]">📧 contact@mzprimer.com</p>
-        </div>
-        
-        <div className="border-l-4 border-[#D4AF37] pl-6">
-          <h4 className="text-2xl font-bold mb-2">Company Registration</h4>
-          <p className="text-[#4a5568] mb-1">MZPrimer LTD •</p>
-          <p className="text-[#4a5568]">• SIC: 62012, 62090</p>
-        </div>
-      </div>
-
-      {/* B2B Inquiry Form */}
-      <div className="bg-[#f8f8f8] p-8 md:p-10 border border-gray-200">
-        <h4 className="text-2xl font-bold mb-6">Request a Proposal</h4>
-        
-        <form className="space-y-6" action="#" method="POST">
-          {/* Company Information - B2B Focus */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">COMPANY NAME *</label>
-              <input 
-                type="text" 
-                required
-                className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-                placeholder="Your Company Ltd."
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">REGISTRATION NO.</label>
-              <input 
-                type="text" 
-                className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-                placeholder="Company registration"
-              />
-            </div>
-          </div>
-
-          {/* Contact Person Details */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">CONTACT PERSON *</label>
-              <input 
-                type="text" 
-                required
-                className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-                placeholder="Full name"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">POSITION</label>
-              <input 
-                type="text" 
-                className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-                placeholder="e.g., IT Director, CTO"
-              />
-            </div>
-          </div>
-
-          {/* Contact Information */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">BUSINESS EMAIL *</label>
-              <input 
-                type="email" 
-                required
-                className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-                placeholder="name@company.com"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">PHONE NUMBER</label>
-              <input 
-                type="tel" 
-                className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-                placeholder="+44 20 1234 5678"
-              />
-            </div>
-          </div>
-
-          {/* Service Interest - B2B Specific */}
-          <div>
-            <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">SERVICE CATEGORY *</label>
-            <select 
-              required
-              className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-            >
-              <option value="">Select a service category</option>
-              <option value="software">SIC 62012 - Software Development</option>
-              <option value="infrastructure">SIC 62090 - IT Infrastructure</option>
-              <option value="consulting">Technology Consulting</option>
-              <option value="integration">System Integration</option>
-              <option value="procurement">Hardware Procurement</option>
-            </select>
-          </div>
-
-          {/* Project Scope */}
-          <div>
-            <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">PROJECT SCOPE / REQUIREMENTS *</label>
-            <textarea 
-              required
-              rows={5}
-              className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-              placeholder="Please describe your business requirements, timeline, and any specific technical needs..."
-            ></textarea>
-          </div>
-
-          {/* Corporate Compliance */}
-          <div className="flex items-start gap-3">
-            <input type="checkbox" id="compliance" required className="mt-1" />
-            <label htmlFor="compliance" className="text-sm text-gray-600">
-              I confirm that I represent a registered business and agree to the 
-              <Link href="/terms" className="text-[#D4AF37] hover:underline mx-1">Terms of Service</Link> 
-              and
-              <Link href="/privacy" className="text-[#D4AF37] hover:underline mx-1">Privacy Policy</Link>.
-            </label>
-          </div>
-
-          {/* Submit Button */}
-          <button 
-            type="submit"
-            className="w-full py-4 bg-[#D4AF37] text-black font-bold tracking-widest hover:bg-black hover:text-[#D4AF37] transition-all duration-300"
-          >
-            SUBMIT INQUIRY
-          </button>
-
-          <p className="text-xs text-gray-500 text-center mt-4">
-            All inquiries are handled by our B2B team. Your information will be processed according to GDPR.
-          </p>
-        </form>
-      </div>
-    </div>
-  </div>
-</section>
+      </section>
 
       {/* 9. FOOTER */}
       <footer className="py-12 md:py-16 px-6 md:px-12 border-t border-white/5">

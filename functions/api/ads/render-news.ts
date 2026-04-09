@@ -71,7 +71,7 @@ export async function onRequestGet(context: any) {
     return new Response(screenshot, { 
       headers: { 
         "Content-Type": "image/png",
-        "Cache-Control": "no-cache, no-store, must-revalidate", // Prevents caching
+        "Cache-Control": "no-cache, no-store, must-revalidate",
         "Pragma": "no-cache",
         "Expires": "0"
       } 
@@ -81,20 +81,59 @@ export async function onRequestGet(context: any) {
     console.error("💥 News Render Error:", e.message);
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
   } finally {
-    // ✅ CRITICAL: Clean up browser session
     if (browser) await browser.close();
   }
 }
-// ==================== STORY HTML (Original - No Changes) ====================
+
+// ==================== STORY HTML ====================
 function generateStoryHTML(story: any, mzLogo: string | null, partnerLogo: string | null, backgroundImage: string | null) {
   const gold = "#D4AF37";
   const white = "#FFFFFF";
   const dim = "#94a3b8";
-  const electricBlue = "#1E3A6F"; 
+  const electricBlue = "#1E3A6F";
+  
+  // Trend Variables
+  const trend = story.trend || "NEUTRAL";
+  const isLong = trend === "LONG" || trend === "BUY" || trend === "UP";
+  const trendColor = isLong ? "#10B981" : "#EF4444";
+  const trendArrow = isLong ? "▲" : "▼";
+  const trendLabel = isLong ? "LONG" : "SHORT";
+  
+  // Volume Profile Variables (from story JSON or defaults)
+  const volume = story.volume || {};
+  const valueAreaLow = volume.value_area_low || "97.06";
+  const valueAreaHigh = volume.value_area_high || "107.97";
+  const pocPrice = volume.poc_price || "102.24";
+  const pricePosition = volume.position_vs_poc || "above_poc";
+  const volumeBias = volume.volume_bias || "bullish_accumulation";
+  
+  // Support/Resistance Variables
+  const zones = story.zones || {};
+  const supportZone = zones.support_zone || "107.22";
+  const resistanceZone = zones.resistance_zone || "107.56";
+  const zoneStrength = zones.zone_strength || "strong";
+  const supportQuality = zones.support_quality || 1.0;
+  const resistanceQuality = zones.resistance_quality || 1.1;
+  const zoneWidth = zones.zone_width_pips || "34.3";
+  const pricePositionZone = zones.current_price_position || "near_support";
+  
+  // Calculate percentage position for current price within value area
+  const valueAreaLowNum = parseFloat(valueAreaLow) || 0;
+  const valueAreaHighNum = parseFloat(valueAreaHigh) || 0;
+  const currentPriceNum = parseFloat(story.current_price) || 107.22;
+  let pricePercent = 50;
+
+  if (valueAreaHighNum > valueAreaLowNum && currentPriceNum >= valueAreaLowNum && currentPriceNum <= valueAreaHighNum) {
+    pricePercent = ((currentPriceNum - valueAreaLowNum) / (valueAreaHighNum - valueAreaLowNum)) * 100;
+  } else if (currentPriceNum < valueAreaLowNum) {
+    pricePercent = 0;
+  } else if (currentPriceNum > valueAreaHighNum) {
+    pricePercent = 100;
+  }
   
   const backgroundStyle = backgroundImage 
-  ? `background: linear-gradient(0deg, rgba(5,5,5,0.92) 0%, rgba(5,5,5,0.6) 100%), url('${backgroundImage}');`
-  : `background: linear-gradient(145deg, #050505 0%, #121212 100%);`;
+    ? `background: linear-gradient(0deg, rgba(5,5,5,0.92) 0%, rgba(5,5,5,0.6) 100%), url('${backgroundImage}');`
+    : `background: linear-gradient(145deg, #050505 0%, #121212 100%);`;
 
   return `
     <html>
@@ -174,7 +213,7 @@ function generateStoryHTML(story: any, mzLogo: string | null, partnerLogo: strin
       </head>
       <body style="width: 1080px; height: 1920px; padding: 140px 60px 80px 60px; display: flex; flex-direction: column;">
         
-   <!-- HEADER (EXACTLY THE SAME) -->
+        <!-- HEADER -->
         <div class="header-container" style="
           display: grid; 
           grid-template-columns: 1fr auto 1fr;
@@ -187,14 +226,11 @@ function generateStoryHTML(story: any, mzLogo: string | null, partnerLogo: strin
           border: 1px solid rgba(255,255,255,0.1); 
           width: 800px;
         ">
-          <!-- Left Column: MZ Logo -->
           <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.6px; padding-right: 30px;">
-  <img src="${mzLogo}" style="height: 66px;" />
-  <span style="font-size: 22px; font-weight: 300; letter-spacing: 2px; color: white;">MZPRIMER.COM</span>
-</div>
-          <!-- Middle Column: The Divider -->
+            <img src="${mzLogo}" style="height: 66px;" />
+            <span style="font-size: 22px; font-weight: 300; letter-spacing: 2px; color: white;">MZPRIMER.COM</span>
+          </div>
           <div style="width: 1px; height: 45px; background: rgba(255,255,255,0.25);"></div>
-          <!-- Right Column: Partner Logo -->
           <div style="display: flex; align-items: center; justify-content: flex-start; padding-left: 40px;">
             ${partnerLogo ? 
               `<img src="${partnerLogo}" style="height: 66px; border-radius: 12px;" />` : 
@@ -210,42 +246,26 @@ function generateStoryHTML(story: any, mzLogo: string | null, partnerLogo: strin
           </p>
         </div>
 
- <!-- IDENTITY SECTION -->
-<div style="margin-bottom: 60px; display: flex; align-items: center; justify-content: space-between; width: 100%;">
-  
-  <!-- Symbol Pill (Left Side) -->
-  <div class="symbol-pill">
-    <span style="font-size: 56px; font-weight: 900; letter-spacing: -1px; color: white;">${story.symbol}</span>
-  </div>
+        <!-- IDENTITY SECTION -->
+        <div style="margin-bottom: 60px; display: flex; align-items: center; justify-content: space-between; width: 100%;">
+          <div class="symbol-pill" style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 56px; font-weight: 900; letter-spacing: -1px; color: white;">${story.symbol}</span>
+            <div style="display: inline-flex; align-items: center; gap: 4px; background: ${trendColor}20; border: 1px solid ${trendColor}; border-radius: 40px; padding: 6px 14px;">
+              <span style="color: ${trendColor}; font-size: 24px; font-weight: 900;">${trendArrow}</span>
+              <span style="color: ${trendColor}; font-size: 18px; font-weight: 600; text-transform: uppercase;">${trendLabel}</span>
+            </div>
+          </div>
+          <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 40px; padding: 8px 20px 8px 15px; backdrop-filter: blur(5px);">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; color: #EF4444; letter-spacing: 1px; text-transform: uppercase;">
+              Trading Session: ${story.session}
+            </span>
+          </div>
+        </div>
 
-  <!-- Warning Container (Right Side) -->
-  <div style="
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: 40px;
-    padding: 8px 20px 8px 15px;
-    backdrop-filter: blur(5px);
-  ">
-    <!-- Warning Text -->
-    <span style="
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 20px;
-      font-weight: 600;
-      color: #EF4444;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    ">Trading Session:${story.session}</span>
-  </div>
-
-</div>
-
-<!-- Date (Now on its own line below) -->
-<div class="mono" style="color: ${dim}; font-size: 24px; margin-top: 10px; letter-spacing: 2px;">
-  RELEASED: ${story.date}
-</div>
+        <!-- Date -->
+        <div class="mono" style="color: ${dim}; font-size: 24px; margin-top: 10px; letter-spacing: 2px;">
+          RELEASED: ${story.date}
+        </div>
 
         <!-- CATEGORY BADGE -->
         <div class="label-light" style="margin-bottom: 30px;">
@@ -290,320 +310,4 @@ function generateStoryHTML(story: any, mzLogo: string | null, partnerLogo: strin
     </html>
   `;
 }
-
-function generateCoverHTML(story: any, mzLogo: string | null, partnerLogo: string | null) {
-  const gold = "#D4AF37";
-  const deepBlue = "#0A1929";
-  const electricBlue = "#1E3A6F"; 
-  const emerald = "#10B981"; 
-  const black = "#050505";
-  const white = "#FFFFFF";
-  const sunsetPurple = "#8B5CF6";
-
-
-const sapphire = "#3B82F6";
-
-const deepBlack = "#030712";
-const charcoal = "#111827";
-const steelBlue = "#1E40AF";
-const forest = "#047857";
-
-const backgroundStyle = `
-  background-color: ${deepBlack};
-  background-image: 
-    /* 1. Black on black texture - carbon fiber vibe */
-    repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 8px),
-    
-    /* 2. GOLD VEINS (Top) - like precious metal */
-    radial-gradient(circle at 70% 20%, ${gold}35 0%, transparent 60%),
-    radial-gradient(circle at 30% 10%, ${gold}25 0%, transparent 50%),
-    
-    /* 3. SAPPHIRE DEPTHS (Bottom Right) */
-    radial-gradient(circle at 85% 80%, ${sapphire}30 0%, transparent 60%),
-    
-    /* 4. EMERALD SHADOWS (Bottom Left) */
-    radial-gradient(circle at 15% 85%, ${emerald}28 0%, transparent 60%),
-    
-    /* 5. STEEL BLUE ACCENTS (Mid) */
-    radial-gradient(circle at 40% 40%, ${steelBlue}20 0%, transparent 50%),
-    
-    /* 6. FOREST DEPTH (Center) */
-    radial-gradient(circle at 60% 60%, ${forest}18 0%, transparent 50%),
-    
-    /* 7. CHARCOAL BASE with black core */
-    linear-gradient(145deg, ${deepBlack} 0%, ${charcoal} 40%, ${deepBlack} 100%);
-    
-  background-size: 30px 30px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
-  background-blend-mode: overlay, screen, screen, screen, screen, screen, screen, normal;
-`;
-
-  return `
-    <html>
-      <head>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;400;500;700;900&family=JetBrains+Mono:wght@300;800&display=swap" rel="stylesheet">
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;700;900&display=swap');
-          
-          body { 
-            font-family: 'Tajawal', 'Inter', sans-serif; 
-            color: white; margin: 0; overflow: hidden; 
-            ${backgroundStyle}
-            background-size: cover; 
-            background-position: center;
-            height: 1920px; width: 1080px;
-            display: flex; flex-direction: column; align-items: center;
-            position: relative;
-          }
-
-          /* PREMIUM OVERLAY FOR DEPTH */
-          body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at 80% 20%, ${gold}10 0%, transparent 40%),
-                        radial-gradient(circle at 10% 90%, ${emerald}10 0%, transparent 40%),
-                        radial-gradient(circle at 50% 50%, ${electricBlue}15 0%, transparent 60%);
-            pointer-events: none;
-            z-index: 1;
-          }
-
-          .mono { font-family: 'JetBrains Mono', monospace; }
-
-          /* HEADER FROM CODE 2 - EXECUTIVE HEADER */
-          .executive-header {
-            background: rgba(0, 0, 0, 0.91);
-            backdrop-filter: blur(30px);
-            border-radius: 180px;
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            box-shadow: 0 30px 60px rgba(0,0,0,0.9);
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            padding: 30px 70px;
-            width: 920px;
-            margin: 120px auto 50px auto;
-            position: relative;
-            z-index: 10;
-            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-            cursor: pointer;
-          }
-
-          .executive-header:hover {
-            background: rgba(15, 15, 15, 0.9);
-            border-color: ${gold}80;
-            box-shadow: 0 30px 60px ${gold}30;
-            transform: translateY(-2px);
-          }
-
-          .executive-header:hover .header-logo {
-            filter: drop-shadow(0 0 20px ${gold}80);
-          }
-
-          .executive-header:hover .header-text {
-            color: ${gold};
-          }
-
-          .executive-header:hover .partner-logo {
-            filter: drop-shadow(0 0 20px ${gold}80);
-            transform: scale(1.02);
-          }
-
-          .header-logo {
-            height: 90px;
-            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
-            transition: all 0.3s ease;
-          }
-
-          .header-text {
-            font-size: 30px;
-            font-weight: 400;
-            letter-spacing: 4px;
-            font-family: 'Inter';
-            color: white;
-            transition: color 0.3s ease;
-          }
-
-          .partner-logo {
-            height: 80px;
-            border-radius: 18px;
-            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
-            transition: all 0.3s ease;
-          }
-
-          .partner-text {
-            color: ${gold};
-            font-size: 28px;
-            font-weight: 800;
-            font-family: 'Inter';
-            letter-spacing: 3px;
-            text-shadow: 0 0 15px ${emerald}60;
-            transition: all 0.3s ease;
-          }
-
-          /* 2. SUBTITLE - TOP POSITION */
-          .authority-subtitle {
-            direction: rtl;
-            text-align: center;
-            margin-top: 40px;
-            max-width: 900px;
-            z-index: 10;
-            position: relative;
-          }
-
-          /* 3. CENTER APERTURE (THE HOOK) */
-          .aperture-stage {
-            flex: 2;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            z-index: 10;
-            padding-bottom: 300px;
-          }
-
-          /* Corner Brackets */
-          .corner {
-            position: absolute;
-            width: 80px; height: 80px;
-            border: 2px solid ${gold};
-            opacity: 0.4;
-            z-index: 5;
-          }
-          .tl { top: 25%; left: 100px; border-right: 0; border-bottom: 0; }
-          .tr { top: 25%; right: 100px; border-left: 0; border-bottom: 0; }
-          .bl { bottom: 25%; left: 100px; border-right: 0; border-top: 0; }
-          .br { bottom: 25%; right: 100px; border-left: 0; border-top: 0; }
-
-          .hook-text-ar {
-            direction: rtl;
-            text-align: center;
-            z-index: 10;
-          }
-
-          .label-thin {
-            font-size: 80px;
-            font-weight: 200;
-            letter-spacing: 20px;
-            color: ${gold};
-            text-transform: uppercase;
-            margin-bottom: -20px;
-          }
-
-          .label-bold {
-            font-size: 280px;
-            font-weight: 900;
-            line-height: 0.9;
-            background: linear-gradient(180deg, #fff 40%, rgba(255,255,255,0.7) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 20px 50px rgba(0,0,0,0.5);
-          }
-            /* FULL IMAGE BORDER CADRE */
-body::after {
-  content: '';
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  right: 20px;
-  bottom: 20px;
-  border: 2px solid ${gold};
-  opacity: 0.3;
-  pointer-events: none;
-  z-index: 20;
-  border-radius: 40px;
-  box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
-}
-
-        </style>
-      </head>
-      <body>
-        
-        <!-- APERTURE FRAME ELEMENTS -->
-        <div class="corner tl"></div><div class="corner tr"></div>
-        <div class="corner bl"></div><div class="corner br"></div>
-
-        <!-- 1. HEADER FROM CODE 2 -->
-        <div class="executive-header">
-          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 20px; padding-right: 30px;">
-            <img src="${mzLogo}" class="header-logo" />
-            <span class="header-text">MZPRIMER.COM</span>
-          </div>
-          
-          <div style="width: 2px; height: 70px; background: linear-gradient(180deg, transparent, ${gold}, ${electricBlue}, ${gold}, transparent);"></div>
-          
-          <div style="display: flex; align-items: center; justify-content: flex-start; padding-left: 50px;">
-            ${partnerLogo ? 
-              `<img src="${partnerLogo}" class="partner-logo" />` : 
-              `<span class="partner-text">LITEFINANCE</span>`
-            }
-          </div>
-        </div>
-
-        <!-- 2. ARABIC SUBTITLE -->
-        <div class="authority-subtitle">
-          <p style="font-size: 60px; font-weight: 400; color: white; margin-bottom: 5px;">السياق يغير كل شيء.</p>
-          <p style="font-size: 39px; font-weight: 300; color: ${gold}; letter-spacing: 1px;"> ما يجب معرفته قبل بدء التداول اليوم</p>
-        </div>
-
-        <!-- 3. MAIN HOOK STAGE (CENTER) - NO FOOTER -->
-        <div class="aperture-stage">
-          <div class="hook-text-ar">
-            <div class="label-thin">إيجاز</div>
-            <div class="label-bold">اليوم</div>
-          </div>
-          
-          <div style="
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 52px;
-  font-weight: 400;
-  letter-spacing: 10px;
-  color: white;
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.12) 0%, rgba(0,0,0,0.3) 100%);
-  padding: 18px 60px;
-  border-radius: 80px;
-  border: 1px solid ${gold}30;
-  border-bottom: 3px solid ${gold}60;
-  backdrop-filter: blur(12px);
-  margin-top: 70px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(212, 175, 55, 0.2) inset;
-  text-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
-">
-
-  <!-- Subtle gold shimmer effect -->
-  <div style="
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
-    animation: shimmer 3s infinite;
-  "></div>
-  
-  ${story.date.replace(/-/g, ' • ')}
-</div>
-
-<style>
-  @keyframes shimmer {
-    0% { left: -100%; }
-    20% { left: 100%; }
-    100% { left: 100%; }
-  }
-</style>
-        </div>
-
-        <!-- FOOTER REMOVED COMPLETELY -->
-
-      </body>
-    </html>
-  `;
-}
+function generateCoverHTML(story: any, mzLogo: string | null, partnerLogo: string | null) {}

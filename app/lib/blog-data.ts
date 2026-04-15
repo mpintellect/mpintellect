@@ -12,7 +12,7 @@ export interface BlogPost {
   lang: 'en' | 'ar';
 }
 
-const R2_BLOG_URL = "https://data.mzprimer.com/blog.json";
+const R2_BLOG_URL = "https://data.mpintellect.com/blog.json";
 
 export async function getRemoteBlogPosts(): Promise<BlogPost[]> {
   try {

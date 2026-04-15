@@ -20,7 +20,7 @@ export async function onRequestGet(context: any) {
     console.log('🚀 Price API (R2) called for symbol:', symbol);
     
     // ✅ NEW CLOUDFLARE R2 URL
-    const R2_URL = 'https://data.mzprimer.com/prices.json';
+    const R2_URL = 'https://data.mpintellect.com/prices.json';
     
     // Cloudflare native fetch
     // Note: 'next: {revalidate}' is Next.js specific. 

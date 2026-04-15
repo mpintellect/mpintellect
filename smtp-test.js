@@ -5,7 +5,7 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: "contact@mzprimer.com",
+    user: "contact@mpintellect.com",
     pass: "/,KQF2%@ntgc.Kx",
   },
   logger: true,
@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
 async function main() {
   try {
     const info = await transporter.sendMail({
-      from: '"MZPrimer Test" <contact@mzprimer.com>',
+      from: '"MPIntellect Test" <contact@mpintellect.com>',
       to: "abdrahman.mez7@gmail.com", // use Gmail/Yahoo/Outlook for test
       subject: "SMTP Test",
       text: "If you see this, Namecheap SMTP works.",

@@ -166,7 +166,7 @@ async function sendWelcomeEmailDirect(email: string, name: string | undefined, e
             </div>
             
             <h1 style="margin: 0 0 16px; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; color: #ffffff;">
-              Welcome to MZPrimer Intelligence! <span style="color: #d4af37;">📚</span>
+              Welcome to MPIntellect Intelligence! <span style="color: #d4af37;">📚</span>
             </h1>
             
             <p style="margin: 0 0 8px; font-size: 16px; color: #e5e7eb;">
@@ -202,7 +202,7 @@ async function sendWelcomeEmailDirect(email: string, name: string | undefined, e
             </div>
 
             <div style="text-align: center; margin-top: 32px;">
-              <a href="https://mzprimer.com/markets" 
+              <a href="https://mpintellect.com/markets" 
                  style="display: inline-block; background: #d4af37; color: #000000; text-decoration: none; padding: 16px 40px; border-radius: 100px; font-weight: 800; font-size: 15px; letter-spacing: 2px; text-transform: uppercase; border: 1px solid #f9e076;">
                 EXPLORE MARKETS →
               </a>
@@ -211,7 +211,7 @@ async function sendWelcomeEmailDirect(email: string, name: string | undefined, e
             <div style="margin-top: 32px; padding: 16px; background: rgba(212, 175, 55, 0.02); border: 1px solid rgba(212, 175, 55, 0.1); border-radius: 12px;">
               <p style="color: #6b7280; font-size: 12px; text-align: center;">
                 If you didn't subscribe, you can 
-                <a href="https://mzprimer.com/api/unsubscribe?email=${encodeURIComponent(email)}" style="color: #d4af37; text-decoration: none;">
+                <a href="https://mpintellect.com/api/unsubscribe?email=${encodeURIComponent(email)}" style="color: #d4af37; text-decoration: none;">
                   unsubscribe here
                 </a>.
               </p>
@@ -220,7 +220,7 @@ async function sendWelcomeEmailDirect(email: string, name: string | undefined, e
           
           <div style="padding: 24px 32px; background: #050505; border-top: 1px solid #1a1a1a; border-radius: 0 0 24px 24px;">
             <p style="margin: 0; color: #4b5563; font-size: 12px; text-align: center;">
-              MZPrimer INTELLIGENCE • EDUCATIONAL TRADING RESOURCES
+              MPIntellect INTELLIGENCE • EDUCATIONAL TRADING RESOURCES
             </p>
           </div>
         </div>
@@ -230,7 +230,7 @@ async function sendWelcomeEmailDirect(email: string, name: string | undefined, e
   `;
 
   const text = `
-MZPrimer Intelligence - NEWSLETTER CONFIRMATION
+MPIntellect Intelligence - NEWSLETTER CONFIRMATION
 ========================================
 
 Dear ${customerName},
@@ -244,12 +244,12 @@ Thank you for joining our educational community. You'll now receive institutiona
 - Economic News - Key events and their market impact
 - Weekly Insights - Curated trading intelligence and market outlook
 
-Explore our markets: https://mzprimer.com/markets
+Explore our markets: https://mpintellect.com/markets
 
 If you didn't subscribe, you can unsubscribe here:
-https://mzprimer.com/api/unsubscribe?email=${encodeURIComponent(email)}
+https://mpintellect.com/api/unsubscribe?email=${encodeURIComponent(email)}
 
-MZPRIMER INTELLIGENCE 
+MPIntellect INTELLIGENCE 
   `;
 
   try {
@@ -260,9 +260,9 @@ MZPRIMER INTELLIGENCE
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: env.EMAIL_FROM || 'MZPrimer Intelligence <education@mzprimer.com>',
+        from: env.EMAIL_FROM || 'MPIntellect Intelligence <education@mpintellect.com>',
         to: [email],
-        subject: 'Welcome to MZPrimer Intelligence! 📚',
+        subject: 'Welcome to MPIntellect Intelligence! 📚',
         html,
         text
       }),

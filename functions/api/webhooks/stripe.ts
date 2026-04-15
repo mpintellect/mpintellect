@@ -109,8 +109,8 @@ async function handleCheckoutCompleted(session: any, env: any) {
 
     // 2. LOGIC: SCALPER ROBOT
     if (productId === "scalper-x1") {
-      prodName = "MZPrimer Scalper X1 (V.1)";
-      secureDownloadLink = `https://mzprimer.com/api/download-robot?session_id=${sessionId}`;
+      prodName = "MPIntellect Scalper X1 (V.1)";
+      secureDownloadLink = `https://mpintellect.com/api/download-robot?session_id=${sessionId}`;
       
       console.log("📡 Step 2: Updating user with robot flag...");
       
@@ -254,7 +254,7 @@ async function sendOrderConfirmationEmbedded(order: OrderEmailDetails, env: any)
   console.log("📧 ENTERING sendOrderConfirmationEmbedded");
   
   const apiKey = env.RESEND_API_KEY;
-  const fromEmail = env.EMAIL_FROM || 'MZPrimer Intelligence Team <contact@mzprimer.com>';
+  const fromEmail = env.EMAIL_FROM || 'MPIntellect Intelligence Team <contact@mpintellect.com>';
 
   console.log("📧 apiKey exists:", !!apiKey);
   console.log("📧 order.to:", order.to);
@@ -274,11 +274,11 @@ async function sendOrderConfirmationEmbedded(order: OrderEmailDetails, env: any)
   console.log("📧 isSetupBundle:", isSetupBundle);
   
   // CTA Link Logic
-  let ctaLink = "https://mzprimer.com/client/dashboard";
+  let ctaLink = "https://mpintellect.com/client/dashboard";
   let ctaText = "ACCESS DASHBOARD";
 
   if (isSubscription) {
-    ctaLink = "https://mzprimer.com/tools/ai-assistant?active";
+    ctaLink = "https://mpintellect.com/tools/ai-assistant?active";
     ctaText = "ACTIVATE AI ASSISTANT";
   } else if (isRobot) {
     ctaLink = order.downloadUrl!;
@@ -419,7 +419,7 @@ function generateEmailHTML(
               <div style="background: #000000; border-radius: 14px; padding: 20px; margin-bottom: 20px;">
                 <p style="margin: 0 0 10px 0; color: #9ca3af; font-size: 14px;">File:</p>
                 <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600;">
-                  MZPrimer_${order.productName.replace(/\s+/g, '_')}_V.1.ex5
+                  MPIntellect_${order.productName.replace(/\s+/g, '_')}_V.1.ex5
                 </p>
               </div>
               <div style="text-align: center;">
@@ -475,7 +475,7 @@ function generateEmailHTML(
           
           <div style="padding: 24px 32px; background: #050505; border-top: 1px solid #1a1a1a; border-radius: 0 0 24px 24px;">
             <p style="margin: 0; color: #4b5563; font-size: 12px; text-align: center;">
-              © ${new Date().getFullYear()} MZPrimer Intelligence · All rights reserved
+              © ${new Date().getFullYear()} MPIntellect Intelligence · All rights reserved
             </p>
           </div>
         </div>
@@ -494,7 +494,7 @@ function generatePlainText(
   ctaLink: string
 ): string {
   let text = `
-MZPRIMER - ${isRobot ? 'ROBOT DELIVERY' : isSubscription ? 'PRO LICENSE ACTIVATED' : 'ORDER CONFIRMATION'}
+MPIntellect - ${isRobot ? 'ROBOT DELIVERY' : isSubscription ? 'PRO LICENSE ACTIVATED' : 'ORDER CONFIRMATION'}
 ========================================
 Order ID: ${order.orderId}
 Amount: $${order.amountPaid.toFixed(2)}
@@ -526,8 +526,8 @@ Your ${order.productName} has been credited to your account.
 
   text += `
 
-Thank you for choosing MZPrimer!
-Questions? Contact contact@mzprimer.com`;
+Thank you for choosing MPIntellect!
+Questions? Contact contact@mpintellect.com`;
 
   return text;
 }

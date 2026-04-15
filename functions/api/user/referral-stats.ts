@@ -30,7 +30,7 @@ export async function onRequestGet(context: any) {
       referralCount: referralResult?.count || 0,
       referralCode: userResult?.referral_code || null,
       referralLink: userResult?.referral_code 
-        ? `https://mzprimer.com/client/register?ref=${userResult.referral_code}`
+        ? `https://mpintellect.com/client/register?ref=${userResult.referral_code}`
         : null
     };
 

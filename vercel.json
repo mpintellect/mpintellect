@@ -1,7 +1,7 @@
 {
   "functions": {
     "app/download.ts": {
-      "includeFiles": "private/robots/MZPrimer_Scalper_X_V.1.ex5"
+      "includeFiles": "private/robots/MPIntellect_Scalper_X_V.1.ex5"
     }
   }
 }

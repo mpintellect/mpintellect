@@ -15,7 +15,7 @@ export async function onRequestPost(context: any) {
     const payload = JSON.stringify({
       title: title || "MZ Intelligence Alert",
       body: message,
-      url: url || "https://mzprimer.com/news",
+      url: url || "https://mpintellect.com/news",
       icon: "/logos/icon-512.webp"
     });
 

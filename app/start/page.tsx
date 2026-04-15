@@ -124,7 +124,7 @@ export default function StartPage() {
         {/* Footer */}
         <div className="gateway-footer mx-auto">
           <p className="gateway-disclaimer">
-            <strong>Disclaimer:</strong> MZPrimer Intelligence provides software tools and
+            <strong>Disclaimer:</strong> MPIntellect Intelligence provides software tools and
             market analysis for informational and educational purposes only.
             We do not provide financial advice, investment recommendations,
             or brokerage services. Any external platforms are operated

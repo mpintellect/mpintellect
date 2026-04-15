@@ -10,7 +10,7 @@ import TraderAssistantLite from "../../../components/TraderAssistantLite";
 export const dynamic = "force-static";
 
 export const metadata: Metadata = {
-  title: "AI Trader Assistant – MZPrimer Intelligence",
+  title: "AI Trader Assistant – MPIntellect Intelligence",
   description:
     "Beginner-friendly assistant: choose symbol, lot, leverage & style. Get SL/TP, margin and a simulated M5 candle path.",
 };

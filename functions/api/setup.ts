@@ -21,7 +21,7 @@ export async function onRequestGet(context: any) {
     console.log('🚀 Setup API (R2) called for symbol:', cleanSymbol);
     
     // ✅ NEW CLOUDFLARE R2 URL
-    const R2_URL = 'https://data.mzprimer.com';
+    const R2_URL = 'https://data.mpintellect.com';
     const fileUrl = `${R2_URL}/output_${cleanSymbol}.json`;
     
     console.log('📡 Fetching from R2:', fileUrl);

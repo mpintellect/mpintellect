@@ -3,25 +3,25 @@ import type { Metadata } from 'next';
 import AIRobotCards from '@/components/AIRobotCards';
 
 export const metadata: Metadata = {
-  title: 'AI Trading Robots – MZPrimer Intelligence',
+  title: 'AI Trading Robots – MPIntellect Intelligence',
   description:
     'Automate parts of your trading with tested AI robots for MetaTrader. Simple setup and clear risk options.',
   openGraph: {
-    title: 'AI Trading Robots – MZPrimer Intelligence',
+    title: 'AI Trading Robots – MPIntellect Intelligence',
     description:
       'Automate parts of your trading with tested AI robots for MetaTrader. Simple setup and clear risk options.',
-    url: 'https://mzprimer.com/ai-robot',
-    siteName: 'MZPrimer', 
-    images: [{ url: 'https://mzprimer.com/og/ai-robots.jpg', width: 1200, height: 630 }],
+    url: 'https://mpintellect.com/ai-robot',
+    siteName: 'MPIntellect', 
+    images: [{ url: 'https://mpintellect.com/og/ai-robots.jpg', width: 1200, height: 630 }],
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AI Trading Robots – MZPrimer Intelligence',
+    title: 'AI Trading Robots – MPIntellect Intelligence',
     description:
       'Automate parts of your trading with tested AI robots for MetaTrader. Simple setup and clear risk options.',
-    images: ['https://mzprimer.com/og/ai-robots.jpg'],
+    images: ['https://mpintellect.com/og/ai-robots.jpg'],
   },
 };
 

@@ -16,7 +16,7 @@ export default function StickyLogo({ isDashboard = false }) {
     >
       <Image
         src={LOGO_URL}
-        alt="MZPrimer Logo"
+        alt="MPIntellect Logo"
         className="sticky-logo-img"
         width={60}
         height={60}

@@ -784,12 +784,12 @@ export default function IntelLanding() {
               
               <div className="border-l-4 border-[#10B981] pl-6">
                 <h4 className="text-2xl font-bold mb-2">Direct Contacts</h4>
-                <p className="text-[#4a5568]">📧 contact@mzprimer.com</p>
+                <p className="text-[#4a5568]">📧 contact@mpintellect.com</p>
               </div>
               
               <div className="border-l-4 border-[#D4AF37] pl-6">
                 <h4 className="text-2xl font-bold mb-2">Company Registration</h4>
-                <p className="text-[#4a5568] mb-1">MZPrimer LTD •</p>
+                <p className="text-[#4a5568] mb-1">MPIntellect LTD •</p>
                 <p className="text-[#4a5568]">• SIC: 62012, 62090</p>
               </div>
             </div>
@@ -941,7 +941,7 @@ export default function IntelLanding() {
             </Link>
           </div>
           <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600">
-            © 2026 MZPRIMER LTD
+            © 2026 MPIntellect LTD
           </div>
         </div>
       </footer>

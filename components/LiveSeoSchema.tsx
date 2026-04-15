@@ -6,10 +6,10 @@ interface Props {
 
 // Predefine logo URLs for better caching
 const LOGO_URLS = {
-  webp: 'https://mzprimer.com/logos/mzlogo.webp',
-  png: 'https://mzprimer.com/logos/icon-512.webp',
+  webp: 'https://mpintellect.com/logos/mzlogo.webp',
+  png: 'https://mpintellect.com/logos/icon-512.webp',
   og: (symbol: string, decision: string) => 
-    `https://mzprimer.com/api/og?sym=${symbol}&sig=${decision}`
+    `https://mpintellect.com/api/og?sym=${symbol}&sig=${decision}`
 } as const;
 
 export default function LiveSeoSchema({ data }: Props) {
@@ -22,8 +22,8 @@ export default function LiveSeoSchema({ data }: Props) {
   const decision = data.final_decision;
 
   // Use const for static values to prevent re-renders
-  const AUTHOR_NAME = "MZPrimer Intelligence ";
-  const SITE_URL = "https://mzprimer.com";
+  const AUTHOR_NAME = "MPIntellect Intelligence ";
+  const SITE_URL = "https://mpintellect.com";
 
   // --- 1. DYNAMIC HEADLINE ENGINE ---
   const { headline, storySummary } = (() => {
@@ -63,13 +63,13 @@ export default function LiveSeoSchema({ data }: Props) {
         },
         "publisher": {
           "@type": "Organization",
-          "name": "MZPrimer Intelligence",
+          "name": "MPIntellect Intelligence",
           "logo": {
             "@type": "ImageObject",
             "url": LOGO_URLS.png, // Use PNG for maximum compatibility
             "width": 512,
             "height": 512,
-            "caption": "MZprimer Logo"
+            "caption": "MPIntellect Logo"
           }
         },
         "description": storySummary,
@@ -93,7 +93,7 @@ export default function LiveSeoSchema({ data }: Props) {
         "description": `Real-time AI Forecast for ${symbolReadable}`,
         "provider": {
           "@type": "Organization",
-          "name": "MZPrimer Intelligence",
+          "name": "MPIntellect Intelligence",
           "url": SITE_URL,
           "logo": LOGO_URLS.png
         }
@@ -106,7 +106,7 @@ export default function LiveSeoSchema({ data }: Props) {
             "name": `Is ${symbolReadable} a Buy or Sell today?`,
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": `According to MZprimer AI analysis on ${new Date().toLocaleDateString()}, ${symbolReadable} is currently a <strong style="color:${decision === 'BUY' ? 'green' : decision === 'SELL' ? 'red' : 'orange'}">${decision}</strong>. The entry zone is monitored around ${data.trend?.current_price}.`
+              "text": `According to MPIntellect AI analysis on ${new Date().toLocaleDateString()}, ${symbolReadable} is currently a <strong style="color:${decision === 'BUY' ? 'green' : decision === 'SELL' ? 'red' : 'orange'}">${decision}</strong>. The entry zone is monitored around ${data.trend?.current_price}.`
             }
           },
           {

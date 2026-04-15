@@ -21,7 +21,7 @@ export async function onRequestGet(context: any) {
       }));
       
       // Try to get the specific file
-      const fileName = "MZPrimer_Scalper_X1_V.1.ex5";
+      const fileName = "MPIntellect_Scalper_X1_V.1.ex5";
       const file = await env.VAULT.get(fileName);
       result.file_exists = !!file;
       if (file) {

@@ -125,7 +125,7 @@ async function handleSendPush(request, env, ctx) {
   const vapidDetails = {
     publicKey: vapidPublicKey || env.VAPID_PUBLIC_KEY,
     privateKey: vapidPrivateKey || env.VAPID_PRIVATE_KEY,
-    subject: env.VAPID_SUBJECT || 'mailto:admin@mzprimer.com',
+    subject: env.VAPID_SUBJECT || 'mailto:admin@mpintellect.com',
   };
 
   const result = await sendPushNotification(subscription, payload, vapidDetails);
@@ -230,7 +230,7 @@ async function handleBroadcast(request, env, ctx) {
   const { 
     title, 
     message, 
-    url = 'https://mzprimer.com',
+    url = 'https://mpintellect.com',
     type = 'broadcast',
     icon = '/logos/mzlogo.webp'
   } = body;
@@ -407,9 +407,9 @@ async function handleTestPush(request, env) {
       subData,
       {
         title: '🚀 Test Push Notification',
-        body: 'This is a test notification from MZPrimer Push Worker',
+        body: 'This is a test notification from MPIntellect Push Worker',
         icon: '/logos/mzlogo.webp',
-        url: 'https://mzprimer.com',
+        url: 'https://mpintellect.com',
         timestamp: Date.now()
       },
       {

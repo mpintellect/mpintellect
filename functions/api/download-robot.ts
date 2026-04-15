@@ -72,7 +72,7 @@ export async function onRequestGet(context: any) {
     }
 
     // 4. Try to get the file directly
-    const fileName = "MZPrimer_Scalper_X1_V.1.ex5";
+    const fileName = "MPIntellect_Scalper_X1_V.1.ex5";
     console.log(`📦 Attempting to fetch: ${fileName}`);
     
     const file = await env.VAULT.get(fileName);

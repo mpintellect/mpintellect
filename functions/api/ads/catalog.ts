@@ -109,8 +109,8 @@ export async function onRequestGet(context: any) {
 
           // Use database-controlled version for all image URLs
            const imageLink = platform === 'google' 
-  ? `https://ads.mzprimer.com/ad_${sym.id.toLowerCase()}_${style}_${type}_${size}.png`
-  : `https://ads.mzprimer.com/ad_${sym.id.toLowerCase()}_${style}_${type}_${size}.png?v=${version}`;
+  ? `https://ads.mpintellect.com/ad_${sym.id.toLowerCase()}_${style}_${type}_${size}.png`
+  : `https://ads.mpintellect.com/ad_${sym.id.toLowerCase()}_${style}_${type}_${size}.png?v=${version}`;
 
           // Price logic - Facebook always free, Google can have paid
           let price, formattedPrice;
@@ -200,7 +200,7 @@ export async function onRequestGet(context: any) {
               price + ' USD',                                   // price (0.00 for FB)
               link,                                             // link
               imageLink,                                        // image
-              'MZPrimer Intelligence ',                             // brand (Education-focused)
+              'MPIntellect Intelligence ',                             // brand (Education-focused)
               'Software > Business & Productivity',             // google_product_category
               sym.category,                                     // custom_label_0
               typeConfig[type].category                         // custom_label_1

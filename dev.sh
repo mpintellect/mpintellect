@@ -17,7 +17,7 @@ sleep 5
 # Step 2: Start Wrangler as a proxy to Next.js with D1 support
 echo "⚡ Starting Wrangler with D1 on port 8788..."
 npx wrangler pages dev --proxy 3000 \
-  --d1 DB=mzprimer-db \
+  --d1 DB=mpintellect-db \
   --persist-to=./.wrangler/state \
   --compatibility-flags=nodejs_compat \
   --port 8788

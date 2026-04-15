@@ -188,7 +188,7 @@ export default function AdminPushDashboard() {
   // MANUAL INPUTS
   const [manualTitle, setManualTitle] = useState('📰 Market Update');
   const [manualMessage, setManualMessage] = useState('CPI Data released. High volatility expected.');
-  const [manualUrl, setManualUrl] = useState('https://mzprimer.com');
+  const [manualUrl, setManualUrl] = useState('https://mpintellect.com');
 
   // SYMBOL FETCH INPUTS
   const [symbolInput, setSymbolInput] = useState('XAUUSD');
@@ -394,7 +394,7 @@ View full technical analysis 👇
     `.trim();
 
     // 4. LINK & OPEN
-    const targetLink = `https://mzprimer.com/analysis/${rawSymbol}`;
+    const targetLink = `https://mpintellect.com/analysis/${rawSymbol}`;
     const shareUrl = `https://stocktwits.com/widgets/share?body=${encodeURIComponent(text)}&sentiment=${sentiment}&url=${encodeURIComponent(targetLink)}`;
 
     window.open(shareUrl, 'StocktwitsWindow', 'width=550,height=550,left=100,top=100,scrollbars=no,resizable=no');
@@ -593,13 +593,13 @@ AI detects strong momentum opportunity
 
     let finalTitle = '';
     let finalMessage = '';
-    let finalUrl = 'https://mzprimer.com';
+    let finalUrl = 'https://mpintellect.com';
 
     // Determine which data source to use
     if (activeTab === 'AI') {
       finalTitle = generatedPayload.title;
       finalMessage = generatedPayload.body;
-      finalUrl = 'https://mzprimer.com';
+      finalUrl = 'https://mpintellect.com';
     } else if (activeTab === 'MANUAL') {
       finalTitle = manualTitle;
       finalMessage = manualMessage;
@@ -625,7 +625,7 @@ ${getEmojiForRSI(symbolExtractedData.rsi)} RSI: ${symbolExtractedData.rsi.toFixe
 ${fetchedSymbolData.summary?.split('\n')[0] || 'AI analysis suggests trading opportunity.'}
       `.trim();
       
-      finalUrl = `https://mzprimer.com/analysis/${fetchedSymbolData.symbol}`;
+      finalUrl = `https://mpintellect.com/analysis/${fetchedSymbolData.symbol}`;
     } else {
       setStatus('❌ No data to send');
       setLoading(false);

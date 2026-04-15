@@ -681,7 +681,7 @@ export default function AiChatBox({
               text: [
                 {
                   title: "❌ No Setups Left",
-                  content: "You've used all your setup credits. Please buy more to continue using MZPrimer AI.",
+                  content: "You've used all your setup credits. Please buy more to continue using MPIntellect AI.",
                 },
               ],
             },
@@ -821,7 +821,7 @@ export default function AiChatBox({
             text: [
               {
                 title: "🚫 Trial Limit Reached",
-                content: "You've used all 2 free trials. Register and buy setups to continue using MZPrimer AI.",
+                content: "You've used all 2 free trials. Register and buy setups to continue using MPIntellect AI.",
               },
             ],
           },
@@ -984,7 +984,7 @@ export default function AiChatBox({
         const welcomeMessages: ChatMessage[] = [
           {
             sender: "ai" as const,
-            text: "🤖 MZPrimer Intelligence:\nWelcome! I'm your personal AI Trading Assistant. Let's analyze a strategic setup.",
+            text: "🤖 MPIntellect Intelligence:\nWelcome! I'm your personal AI Trading Assistant. Let's analyze a strategic setup.",
           },
         ];
 
@@ -1248,7 +1248,7 @@ export default function AiChatBox({
                 text: [
                   {
                     title: "❌ No Setups Left",
-                    content: "You've used all your setup credits. Please buy more to continue using MZPrimer AI.",
+                    content: "You've used all your setup credits. Please buy more to continue using MPIntellect AI.",
                   },
                 ],
               },
@@ -1388,7 +1388,7 @@ export default function AiChatBox({
               text: [
                 {
                   title: "🚫 Trial Limit Reached",
-                  content: "You've used all 2 free trials. Register and buy setups to continue using MZPrimer AI.",
+                  content: "You've used all 2 free trials. Register and buy setups to continue using MPIntellect AI.",
                 },
               ],
             },
@@ -1554,7 +1554,7 @@ export default function AiChatBox({
 
       {mode === "full" && onClose && (
         <div className="chatbox-header">
-          <div>MZPrimer AI Assistant</div>
+          <div>MPIntellect AI Assistant</div>
           <button onClick={onClose} className="chatbox-close">
             ✕
           </button>

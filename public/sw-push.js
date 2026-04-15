@@ -15,7 +15,7 @@ self.addEventListener('push', (event) => {
   console.log('Push event received:', event);
 
   let notificationData = {
-    title: 'MZPrimer Intelligence',
+    title: 'MPIntellect Intelligence',
     body: 'New notification',
     icon: '/logos/mzlogo.webp',
     badge: '/logos/mzlogo.webp',
@@ -26,7 +26,7 @@ self.addEventListener('push', (event) => {
     if (event.data) {
       const data = event.data.json();
       notificationData = {
-        title: data.title || 'MZPrimer Intelligence',
+        title: data.title || 'MPIntellect Intelligence',
         body: data.body || 'New notification',
         icon: data.icon || '/logos/mzlogo.webp',
         badge: data.badge || '/logos/mzlogo.webp',
@@ -60,7 +60,7 @@ self.addEventListener('notificationclick', (event) => {
 
   event.notification.close();
 
-  const urlToOpen = event.notification.data?.url || 'https://mzprimer.com';
+  const urlToOpen = event.notification.data?.url || 'https://mpintellect.com';
 
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then((clientList) => {

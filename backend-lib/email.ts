@@ -30,7 +30,7 @@ export async function sendEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: env.EMAIL_FROM || 'MZPrimer Intelligence <intelligence@mzprimer.com>',
+        from: env.EMAIL_FROM || 'MPIntellect Intelligence <intelligence@mpintellect.com>',
         to: [details.to],
         subject: details.subject,
         html: details.html,
@@ -51,7 +51,7 @@ export async function sendEmail(
 }
 export async function sendOrderConfirmation(order: OrderEmailDetails, env: any): Promise<void> {
   const apiKey = env.RESEND_API_KEY;
-  const fromEmail = env.EMAIL_FROM || 'MZPrimer Intelligence Team <contact@mzprimer.com>';
+  const fromEmail = env.EMAIL_FROM || 'MPIntellect Intelligence Team <contact@mpintellect.com>';
 
   if (!apiKey) {
     console.error("❌ RESEND_API_KEY is missing");
@@ -62,11 +62,11 @@ export async function sendOrderConfirmation(order: OrderEmailDetails, env: any):
   const isRobot = !!order.downloadUrl; // ✅ Detects if it's a bot purchase
   
   // CTA Link Logic
-  let ctaLink = "https://mzprimer.com/client/dashboard";
+  let ctaLink = "https://mpintellect.com/client/dashboard";
   let ctaText = "ACCESS DASHBOARD";
 
   if (isSubscription) {
-    ctaLink = "https://mzprimer.com/tools/ai-assistant?active";
+    ctaLink = "https://mpintellect.com/tools/ai-assistant?active";
     ctaText = "ACTIVATE AI ASSISTANT";
   } else if (isRobot) {
     ctaLink = order.downloadUrl!; // Points directly to the secure download link
@@ -204,7 +204,7 @@ function generateEmailHTML(
               <div style="background: #000000; border-radius: 14px; padding: 20px; border: 1px solid #2a2a2a; margin-bottom: 20px;">
                 <p style="margin: 0 0 10px 0; color: #9ca3af; font-size: 14px;">File:</p>
                 <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600; word-break: break-all;">
-                  MZPrimer Intelligence_${order.productName.replace(/\s+/g, '_')}_V.1.ex5
+                  MPIntellect Intelligence_${order.productName.replace(/\s+/g, '_')}_V.1.ex5
                 </p>
               </div>
               
@@ -217,7 +217,7 @@ function generateEmailHTML(
               </div>
               <!-- GUIDE BUTTON - SIMPLE ADDITION -->
   <div style="text-align: center;">
-    <a href="https://news.mzprimer.com/MZPrimer_Bot_Guide.pdf" 
+    <a href="https://news.mpintellect.com/MPIntellect_Bot_Guide.pdf" 
        style="display: inline-block; background: transparent; color: #d4af37; text-decoration: none; padding: 12px 30px; border-radius: 100px; font-weight: 600; border: 1px solid #d4af37;">
       📘 DOWNLOAD GUIDE
     </a>
@@ -317,14 +317,14 @@ function generateEmailHTML(
           <!-- FOOTER - DARK WITH GOLD TEXT -->
           <div style="padding: 24px 32px; background: #050505; border-top: 1px solid #1a1a1a; border-radius: 0 0 24px 24px;">
             <div style="display: flex; justify-content: center; gap: 32px; margin-bottom: 20px;">
-              <a href="https://mzprimer.com/terms" style="color: #6b7280; font-size: 13px; text-decoration: none;">Terms</a>
+              <a href="https://mpintellect.com/terms" style="color: #6b7280; font-size: 13px; text-decoration: none;">Terms</a>
               <span style="color: #3a3f44;">•</span>
-              <a href="https://mzprimer.com/privacy" style="color: #6b7280; font-size: 13px; text-decoration: none;">Privacy</a>
+              <a href="https://mpintellect.com/privacy" style="color: #6b7280; font-size: 13px; text-decoration: none;">Privacy</a>
               <span style="color: #3a3f44;">•</span>
-              <a href="https://mzprimer.com/contact" style="color: #6b7280; font-size: 13px; text-decoration: none;">Support</a>
+              <a href="https://mpintellect.com/contact" style="color: #6b7280; font-size: 13px; text-decoration: none;">Support</a>
             </div>
             <p style="margin: 0; color: #4b5563; font-size: 12px; text-align: center; letter-spacing: 0.3px;">
-              © ${new Date().getFullYear()} MZPrimer Intelligence · All rights reserved
+              © ${new Date().getFullYear()} MPIntellect Intelligence · All rights reserved
             </p>
             ${isSubscription ? `
             <p style="margin: 16px 0 0; color: #d4af37; font-size: 10px; text-align: center; text-transform: uppercase; letter-spacing: 4px; opacity: 0.7;">
@@ -347,7 +347,7 @@ function generatePlainText(
   ctaLink: string
 ): string {
   let text = `
-MZPrimer Intelligence - ${isRobot ? 'ROBOT DELIVERY' : isSubscription ? 'PRO LICENSE ACTIVATED' : 'ORDER CONFIRMATION'}
+MPIntellect Intelligence - ${isRobot ? 'ROBOT DELIVERY' : isSubscription ? 'PRO LICENSE ACTIVATED' : 'ORDER CONFIRMATION'}
 ========================================
 Order ID: ${order.orderId}
 Amount: $${order.amountPaid.toFixed(2)}
@@ -378,8 +378,8 @@ Access your dashboard: ${ctaLink}
 
   text += `
 
-Thank you for choosing MZPrimer Intelligence!
-Questions? Contact contact@mzprimer.com`;
+Thank you for choosing MPIntellect Intelligence!
+Questions? Contact contact@mpintellect.com`;
 
   return text;
 }

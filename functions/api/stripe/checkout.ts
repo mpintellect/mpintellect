@@ -15,7 +15,7 @@ export async function onRequestPost(context: any) {
 
   // Access keys from Cloudflare 'env'
   const stripeKey = env.STRIPE_SECRET_KEY;
-  const siteUrl = env.NEXT_PUBLIC_SITE_URL || "https://mzprimer.com";
+  const siteUrl = env.NEXT_PUBLIC_SITE_URL || "https://mpintellect.com";
 
   if (!stripeKey) {
     return Response.json({ error: "Stripe Config error" }, { status: 500 });

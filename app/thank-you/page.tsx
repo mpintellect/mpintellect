@@ -42,8 +42,8 @@ export default function ThankYouPage({
         {/* Support Link */}
         <p className="text-sm text-gray-600 mt-8">
           Questions? Contact{' '}
-          <a href="mailto:contact@mzprimer.com" className="text-yellow-500 hover:underline">
-            contact@mzprimer.com
+          <a href="mailto:contact@mpintellect.com" className="text-yellow-500 hover:underline">
+            contact@mpintellect.com
           </a>
         </p>
       </div>

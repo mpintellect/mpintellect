@@ -235,7 +235,7 @@ export default function MZCalculatorSection() {
   </button>
 
   <a
-    href="https://my.litefinance.org/registration?uid=967798214&cid=325438&utm_source=mzprimer&utm_medium=web&utm_campaign=calculator_cta"
+    href="https://my.litefinance.org/registration?uid=967798214&cid=325438&utm_source=mpintellect&utm_medium=web&utm_campaign=calculator_cta"
     target="_blank"
     rel="noopener noreferrer"
     className="btn-register"

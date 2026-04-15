@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 // --- LINKS ---
-const TELEGRAM_LINK = "https://t.me/mzprimer";
+const TELEGRAM_LINK = "https://t.me/mpintellect";
 
 // CONFIG
 const CACHE_KEY = 'mz_popup_market_data';

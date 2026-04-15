@@ -1,5 +1,5 @@
 {
-  "name": "mzprimer-nextjs-v1",
+  "name": "mpintellect-nextjs-v1",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,11 +9,11 @@
     "preview": "npm run build && npx wrangler pages dev out --compatibility-flags=nodejs_compat --d1 DB=074ccc04-d574-4164-8f48-0b6444b9db88",
     "cf:dev": "npx wrangler pages dev --port 3000 --proxy 3001 --command \"next dev -p 3001\" --compatibility-flags=nodejs_compat --d1 DB=074ccc04-d574-4164-8f48-0b6444b9db88",
     "test:functions": "npx wrangler pages dev --port 8788 --d1 DB=074ccc04-d574-4164-8f48-0b6444b9db88",
-    "db:pull": "npx wrangler d1 export mzprimer-db --remote --output=./live_backup.sql",
+    "db:pull": "npx wrangler d1 export mpintellect-db --remote --output=./live_backup.sql",
     "dev": "next dev",
     "dev:d1": "bash ./dev-with-d1.sh",
-    "dev:api": "wrangler dev functions/api --d1 DB=mzprimer-db --persist-to=./.wrangler/state/v3 --port 8789",
-    "pages:dev": "npm run pages:build && wrangler pages dev out --d1 DB=mzprimer-db --persist-to=./.wrangler/state/v3 --port 8788"
+    "dev:api": "wrangler dev functions/api --d1 DB=mpintellect-db --persist-to=./.wrangler/state/v3 --port 8789",
+    "pages:dev": "npm run pages:build && wrangler pages dev out --d1 DB=mpintellect-db --persist-to=./.wrangler/state/v3 --port 8788"
   },
   "dependencies": {
     "@cloudflare/puppeteer": "^1.0.6",

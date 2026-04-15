@@ -197,7 +197,7 @@ export async function getSymbolData(
     if (!symbolParam) return null;
 
     const cleanSymbol = symbolParam.replace(/[-_/]/g, "").toUpperCase();
-    const R2_PUBLIC_URL = "https://data.mzprimer.com"; 
+    const R2_PUBLIC_URL = "https://data.mpintellect.com"; 
     const url = `${R2_PUBLIC_URL}/output_${cleanSymbol}.json?t=${Date.now()}`; // Added cache buster for fresh data
 
     const res = await fetch(url, {

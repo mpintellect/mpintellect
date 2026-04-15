@@ -81,7 +81,7 @@ export default function BrokerInvitePage() {
         </button>
 
         <p className="mt-6 text-[10px] text-zinc-600">
-          You are leaving MZPrimer. Ensure you are on the official broker URL.
+          You are leaving MPIntellect. Ensure you are on the official broker URL.
         </p>
 
       </div>

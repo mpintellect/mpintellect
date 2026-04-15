@@ -5,13 +5,13 @@ import JSZip from 'jszip';
 // Fetch market data from your R2 or API
 async function fetchMarketData(symbol: string, env: any) {
   try {
-    const response = await fetch(`https://data.mzprimer.com/output_${symbol}.json`);
+    const response = await fetch(`https://data.mpintellect.com/output_${symbol}.json`);
     if (response.ok) {
       const data = await response.json();
       return {
         ...data,
-        mzLogo: "https://news.mzprimer.com/mzlogo.webp",
-        partnerLogo: "https://news.mzprimer.com/lfmo1.webp"
+        mzLogo: "https://news.mpintellect.com/mzlogo.webp",
+        partnerLogo: "https://news.mpintellect.com/lfmo1.webp"
       };
     }
   } catch (e) {
@@ -30,8 +30,8 @@ async function fetchMarketData(symbol: string, env: any) {
       support_quality: 1.0,
       resistance_quality: 1.0
     },
-    mzLogo: "https://news.mzprimer.com/mzlogo.webp",
-    partnerLogo: "https://news.mzprimer.com/lfmo1.webp"
+    mzLogo: "https://news.mpintellect.com/mzlogo.webp",
+    partnerLogo: "https://news.mpintellect.com/lfmo1.webp"
   };
 }
 
@@ -358,12 +358,12 @@ const releaseDate = `${day}-${month}-${year} ${hours}:${minutes}`;
       <!-- HEADER -->
       <div class="header-container">
         <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding-right: 30px;">
-          <img src="https://news.mzprimer.com/mzlogo.webp" class="header-logo" />
-          <span class="header-text">MZPRIMER.COM</span>
+          <img src="https://news.mpintellect.com/mzlogo.webp" class="header-logo" />
+          <span class="header-text">MPIntellect.COM</span>
         </div>
         <div class="header-divider"></div>
         <div style="display: flex; align-items: center; justify-content: flex-start; padding-left: 40px;">
-          <img src="https://news.mzprimer.com/lfmo1.webp" class="partner-logo" />
+          <img src="https://news.mpintellect.com/lfmo1.webp" class="partner-logo" />
         </div>
       </div>
       
@@ -447,7 +447,7 @@ const releaseDate = `${day}-${month}-${year} ${hours}:${minutes}`;
       <!-- FOOTER -->
       <div class="institutional-footer">
         <div class="footer-mono">Institutional Analysis Feed</div>
-        <div class="footer-copyright">MZPRIMER INTELLIGENCE SYSTEM • © 2026 GLOBAL DATA RESEARCH</div>
+        <div class="footer-copyright">MPIntellect INTELLIGENCE SYSTEM • © 2026 GLOBAL DATA RESEARCH</div>
       </div>
       
     </body>

@@ -932,7 +932,7 @@ if (user) {
         text: [
           {
             title: "❌ No Setups Left",
-            content: "You've used all your setup credits. Please buy more to continue using MZPrimer AI.",
+            content: "You've used all your setup credits. Please buy more to continue using MPIntellect AI.",
           },
         ],
       },

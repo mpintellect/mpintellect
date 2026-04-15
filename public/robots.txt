@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Host
-Host: https://mzprimer.com
+Host: https://mpintellect.com
 
 # Sitemaps
-Sitemap: https://mzprimer.com/sitemap.xml
+Sitemap: https://mpintellect.com/sitemap.xml

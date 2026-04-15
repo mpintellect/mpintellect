@@ -1,6 +1,6 @@
 // app/lib/cloudflare/push-client.ts
 
-const PUSH_WORKER_URL = process.env.NEXT_PUBLIC_PUSH_WORKER_URL || 'https://push.mzprimer.com';
+const PUSH_WORKER_URL = process.env.NEXT_PUBLIC_PUSH_WORKER_URL || 'https://push.mpintellect.com';
 
 export interface PushSubscriptionData {
   endpoint: string;

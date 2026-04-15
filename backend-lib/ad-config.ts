@@ -15,7 +15,7 @@ export const AD_SYMBOLS: SymbolDef[] = [
  
 ];
 
-export const LANDING_HOST = 'https://mzprimer.com';
+export const LANDING_HOST = 'https://mpintellect.com';
 
 /**
  * CSV Utility: Properly escapes values for Catalog CSV standards

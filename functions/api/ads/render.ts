@@ -259,7 +259,7 @@ if (type === "test") {
           <div class="flex justify-between items-start mb-${isStandard ? 2 : (isMobile ? 6 : 8)}">
             <div class="flex items-center gap-${isStandard ? 2 : 4}">
               <!-- BIGGER LOGO - Smaller for standard -->
-              <img src="https://mzprimer.com/logos/mzlogo.webp" class="h-${isStandard ? 10 : (isMobile ? 14 : 16)}" />
+              <img src="https://mpintellect.com/logos/mzlogo.webp" class="h-${isStandard ? 10 : (isMobile ? 14 : 16)}" />
               <div class="border-l-2 ${currentStyle.border} h-${isStandard ? 6 : (isMobile ? 10 : 12)}"></div>
               <div>
                 <div class="text-${isStandard ? 'xs' : 'sm'} ${currentStyle.text} uppercase tracking-widest">LIVE PRICE</div>
@@ -268,7 +268,7 @@ if (type === "test") {
             </div>
             <div>
               <h1 class="${isStandard ? 'text-4xl' : 'text-6xl'} font-black tracking-tighter">${symbol}</h1>
-              <p class="text-[${gold}] text-${isStandard ? '8' : 'xs'} font-bold tracking-[5px] uppercase mt-1">MZPrimer INTELLIGENCE</p>
+              <p class="text-[${gold}] text-${isStandard ? '8' : 'xs'} font-bold tracking-[5px] uppercase mt-1">MPIntellect INTELLIGENCE</p>
             </div>
           </div>
 
@@ -337,7 +337,7 @@ if (type === "test") {
               <p class="${currentStyle.text} text-${isStandard ? 'xs' : 'sm'}">"Institutions are positioning ${isBuy ? 'long' : 'short'}"</p>
             </div>
             <div class="text-right">
-              <div class="text-${isStandard ? 'lg' : '2xl'} font-black text-white tracking-tight">mzprimer.com</div>
+              <div class="text-${isStandard ? 'lg' : '2xl'} font-black text-white tracking-tight">mpintellect.com</div>
               <div class="text-${isStandard ? '8' : 'xs'} ${currentStyle.text} uppercase tracking-widest">Access Pro Terminal →</div>
             </div>
           </div>
@@ -404,7 +404,7 @@ if (type === "chat") {
             <div class="flex justify-between items-end border-b border-zinc-900 pb-${isStandard ? 3 : 6}">
               <div>
                 <h1 class="${isStandard ? 'text-5xl' : 'text-7xl'} md:text-8xl font-black tracking-tighter">${symbol}</h1>
-                <p class="text-[${gold}] text-${isStandard ? 'xs' : 'sm'} md:text-base font-bold tracking-[5px] uppercase mt-${isStandard ? 1 : 2}">MZPrimer INTELLIGENCE</p>
+                <p class="text-[${gold}] text-${isStandard ? 'xs' : 'sm'} md:text-base font-bold tracking-[5px] uppercase mt-${isStandard ? 1 : 2}">MPIntellect INTELLIGENCE</p>
               </div>
               <div class="text-right">
                 <p class="text-zinc-500 text-${isStandard ? '8' : 'xs'} md:text-sm font-bold uppercase mb-1">Algorithmic Bias</p>
@@ -437,7 +437,7 @@ if (type === "chat") {
                 <p class="${currentStyle.text} text-${isStandard ? 'xs' : 'base'} md:text-lg">"Institutions are positioning ${isBuy ? 'long' : 'short'}"</p>
               </div>
               <div class="text-right">
-                <div class="text-${isStandard ? 'xl' : '2xl'} md:text-3xl font-black text-white tracking-tight">mzprimer.com</div>
+                <div class="text-${isStandard ? 'xl' : '2xl'} md:text-3xl font-black text-white tracking-tight">mpintellect.com</div>
                 <div class="text-${isStandard ? 'xs' : 'sm'} md:text-base ${currentStyle.text} uppercase tracking-widest">Access Pro Terminal →</div>
               </div>
             </div>
@@ -506,7 +506,7 @@ if (type === "update") {
             <div class="flex justify-between items-start mb-${isStandard ? 2 : headerMargin}">
               <div class="flex items-center gap-${isStandard ? 2 : 4}">
                 <!-- BIGGER LOGO - Smaller for standard -->
-                <img src="https://mzprimer.com/logos/mzlogo.webp" class="h-${isStandard ? 10 : (isMobile ? 14 : 16)}" />
+                <img src="https://mpintellect.com/logos/mzlogo.webp" class="h-${isStandard ? 10 : (isMobile ? 14 : 16)}" />
                 <div class="border-l-2 ${currentStyle.border} h-${isStandard ? 6 : (isMobile ? 10 : 12)}"></div>
                 <div>
                   <div class="text-${isStandard ? 'xs' : 'sm'} ${currentStyle.text} uppercase tracking-widest">LIVE PRICE</div>
@@ -515,7 +515,7 @@ if (type === "update") {
               </div>
               <div>
                 <h1 class="text-${isStandard ? '4xl' : '6xl'} font-black tracking-tighter">${symbol}</h1>
-                <p class="text-[${gold}] text-${isStandard ? '8' : 'xs'} font-bold tracking-[5px] uppercase mt-1">MZPrimer INTELLIGENCE</p>
+                <p class="text-[${gold}] text-${isStandard ? '8' : 'xs'} font-bold tracking-[5px] uppercase mt-1">MPIntellect INTELLIGENCE</p>
               </div>
             </div>
 
@@ -574,7 +574,7 @@ if (type === "update") {
                 <p class="${currentStyle.text} text-${isStandard ? 'xs' : 'sm'}">"Institutions are positioning ${isBuy ? 'long' : 'short'}"</p>
               </div>
               <div class="text-right">
-                <div class="text-${isStandard ? 'lg' : '2xl'} font-black text-white tracking-tight">mzprimer.com</div>
+                <div class="text-${isStandard ? 'lg' : '2xl'} font-black text-white tracking-tight">mpintellect.com</div>
                 <div class="text-${isStandard ? '8' : 'xs'} ${currentStyle.text} uppercase tracking-widest">Access Pro Terminal →</div>
               </div>
             </div>

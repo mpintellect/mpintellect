@@ -13,7 +13,7 @@ wrangler login
 
 # 3. Create D1 database
 echo "Creating D1 database..."
-wrangler d1 create mzprimer-push-db
+wrangler d1 create mpintellect-push-db
 
 # 4. Update wrangler.toml with database ID
 echo "Please update workers/push-worker/wrangler.toml with your database ID"
@@ -31,7 +31,7 @@ VAPID_PRIVATE_KEY=$(cat vapid-keys.json | jq -r '.privateKey')
 echo "Add these to your environment variables:"
 echo "NEXT_PUBLIC_VAPID_PUBLIC_KEY=$VAPID_PUBLIC_KEY"
 echo "VAPID_PRIVATE_KEY=$VAPID_PRIVATE_KEY"
-echo "VAPID_SUBJECT=mailto:admin@mzprimer.com"
+echo "VAPID_SUBJECT=mailto:admin@mpintellect.com"
 
 # 6. Deploy worker
 echo "Deploying worker..."
@@ -39,4 +39,4 @@ cd workers/push-worker
 wrangler deploy
 
 echo "✅ Push Worker setup complete!"
-echo "Worker URL: https://push.mzprimer.com"
+echo "Worker URL: https://push.mpintellect.com"

@@ -7,9 +7,9 @@ import Image from 'next/image';
 
 // 🛑 UPDATE YOUR LINKS HERE
 const SOCIAL_LINKS = {
-  facebook: "https://www.facebook.com/mzprimer", 
-  instagram: "https://www.instagram.com/mzprimer",
-  telegram: "https://t.me/mzprimer"
+  facebook: "https://www.facebook.com/mpintellect", 
+  instagram: "https://www.instagram.com/mpintellect",
+  telegram: "https://t.me/mpintellect"
 };
 
 // Static year to avoid re-renders
@@ -29,7 +29,7 @@ type LogoKey = 'mzlogo' | 'stripe' | 'visa' | 'mastercard' | 'applepay' | 'googl
 const LOGOS: Record<LogoKey, LogoConfig> = {
   mzlogo: {
     src: '/logos/mzlogo.webp',
-    alt: 'MZPrimer Logo',
+    alt: 'MPIntellect Logo',
     width: 120,
     height: 120,
     priority: true
@@ -179,12 +179,12 @@ const handleSubmit = async (e: React.FormEvent) => {
 
    <div className="footer-bottom">
   <span className="footer-text">
-    © {CURRENT_YEAR} MZPrimer Intelligence. All rights reserved.
+    © {CURRENT_YEAR} MPIntellect Intelligence. All rights reserved.
   </span>
   
   {/* Concise Financial Disclaimer */}
   <p className="disclaimer-text text-xs text-zinc-500 mt-4 max-w-3xl mx-auto text-center border-t border-[#D4AF37]/20 pt-4">
-    <span className="text-[#D4AF37] font-bold">DISCLAIMER:</span> MZPrimer Intelligence provides 
+    <span className="text-[#D4AF37] font-bold">DISCLAIMER:</span> MPIntellect Intelligence provides 
     educational content and analytical tools for informational purposes only. We do not provide 
     financial advice, and nothing on this website should be construed as a recommendation to 
     buy or sell any financial instruments. Trading involves substantial risk of loss. 

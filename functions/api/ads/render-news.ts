@@ -30,19 +30,19 @@ export async function onRequestGet(context: any) {
 
   try {
     // 🛡️ STEP 1: FETCH LIVE STORY DATA
-    const dataRes = await fetch("https://data.mzprimer.com/Story-news.json");
+    const dataRes = await fetch("https://data.mpintellect.com/Story-news.json");
     if (!dataRes.ok) throw new Error("Failed to fetch Story-news.json");
     const allStories = await dataRes.json();
     const story = allStories.find((s: any) => s.id === storyId);
     if (!story) throw new Error(`Story ID '${storyId}' not found in JSON`);
 
     // 🛡️ STEP 2: FETCH BRAND ASSETS (Logos & Background)
-    const mzLogoUrl = "https://news.mzprimer.com/mzlogo.webp";
-    const partnerLogoUrl = `https://news.mzprimer.com/lfmo1.webp`;
+    const mzLogoUrl = "https://news.mpintellect.com/mzlogo.webp";
+    const partnerLogoUrl = `https://news.mpintellect.com/lfmo1.webp`;
 
     // Get background image from story.image field (from JSON)
     const filename = story.image.includes('.') ? story.image : `${story.image}.webp`;
-    const backgroundImageUrl = `https://news.mzprimer.com/${filename}`;
+    const backgroundImageUrl = `https://news.mpintellect.com/${filename}`;
 
     const [mzLogo, partnerLogo, backgroundImage] = await Promise.all([
       fetchImageAsBase64(mzLogoUrl),
@@ -228,7 +228,7 @@ function generateStoryHTML(story: any, mzLogo: string | null, partnerLogo: strin
         ">
           <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.6px; padding-right: 30px;">
             <img src="${mzLogo}" style="height: 66px;" />
-            <span style="font-size: 22px; font-weight: 300; letter-spacing: 2px; color: white;">MZPRIMER.COM</span>
+            <span style="font-size: 22px; font-weight: 300; letter-spacing: 2px; color: white;">MPIntellect.COM</span>
           </div>
           <div style="width: 1px; height: 45px; background: rgba(255,255,255,0.25);"></div>
           <div style="display: flex; align-items: center; justify-content: flex-start; padding-left: 40px;">
@@ -302,7 +302,7 @@ function generateStoryHTML(story: any, mzLogo: string | null, partnerLogo: strin
             Institutional Analysis Feed
           </div>
           <div style="font-size: 12px; color: #334155; letter-spacing: 2px;">
-            MZPRIMER INTELLIGENCE SYSTEM • © 2026 GLOBAL DATA RESEARCH
+            MPIntellect INTELLIGENCE SYSTEM • © 2026 GLOBAL DATA RESEARCH
           </div>
         </div>
 

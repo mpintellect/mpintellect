@@ -9,7 +9,7 @@ export async function onRequestGet(context: any) {
 
   try {
     // 1. Target the R2 JSON feed
-    const R2_NEWS_URL = "https://data.mzprimer.com/news-old.json";
+    const R2_NEWS_URL = "https://data.mpintellect.com/news-old.json";
     
     // 2. Use a cache-buster based on the minute to prevent over-fetching 
     // but keep data fresh.
@@ -19,7 +19,7 @@ export async function onRequestGet(context: any) {
     const res = await fetch(url, {
       headers: { 
         'Accept': 'application/json',
-        'User-Agent': 'MZPrimer Intell-Internal-Fetcher' 
+        'User-Agent': 'MPIntellect Intell-Internal-Fetcher' 
       },
       // ✅ Cloudflare Native Caching
       // @ts-ignore

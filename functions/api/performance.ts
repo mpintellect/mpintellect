@@ -13,7 +13,7 @@ export async function onRequestGet(context: any) {
     
     // Fetch fresh data from Google Storage
     const response = await fetch(
-      'https://us-central1-mzprimer-livefeed.cloudfunctions.net/api/performance',
+      'https://us-central1-mpintellect-livefeed.cloudfunctions.net/api/performance',
       {
         method: 'GET',
         headers: {

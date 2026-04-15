@@ -1,6 +1,6 @@
 // sw.js - Institutional Grade Service Worker
-const CACHE_NAME = 'mzprimer-v1';
-const LOGO_CACHE_NAME = 'mzprimer-logos-v1';
+const CACHE_NAME = 'mpintellect-v1';
+const LOGO_CACHE_NAME = 'mpintellect-logos-v1';
 
 const LOGO_URLS = [
   '/logos/mzlogo.webp',

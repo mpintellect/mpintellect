@@ -11,7 +11,7 @@ function formatDate(date: Date): string {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://mzprimer.com';
+  const baseUrl = 'https://mpintellect.com';
   const now = new Date();
 
   // 1. Get symbols (Fallback to hardcoded list if build environment has no DB access)

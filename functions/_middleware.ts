@@ -4,7 +4,7 @@ export const onRequest = async (context: any) => {
   const url = new URL(request.url);
   const hostname = request.headers.get("host") || "";
 
-  // Map intel.mzprimer.com to the NEW /intel page
+  // Map intel.mpintellect.com to the NEW /intel page
   if (hostname.startsWith("intel.")) {
     if (url.pathname === "/" || url.pathname === "") {
       // Rewrite to the new internal path

@@ -26,11 +26,11 @@ export async function onRequestPost(context: any) {
     }
 
     // 2. TARGET EMAIL: This is where YOU receive the client's message
-    const MY_INBOX = "contact@mzprimer.com"; 
+    const MY_INBOX = "contact@mpintellect.com"; 
 
     // 3. Create text version for email clients that don't support HTML
     const textVersion = `
-MZPRIMER INTELLIGENCE - CONTACT FORM SUBMISSION
+MPIntellect INTELLIGENCE - CONTACT FORM SUBMISSION
 ================================================
 Client Name: ${name}
 Client Email: ${email}
@@ -65,7 +65,7 @@ This is an automated notification from your contact form.
           </div>
 
           <p style="margin-top:30px; font-size:10px; color:#333; text-align:center; text-transform:uppercase; letter-spacing:2px;">
-            MZPrimer Internal Routing • Secure Transmission
+            MPIntellect Internal Routing • Secure Transmission
           </p>
         </div>
       `,
@@ -76,7 +76,7 @@ This is an automated notification from your contact form.
     const clientTextVersion = `
 Dear ${name},
 
-Thank you for reaching out to MZPrimer Intelligence.
+Thank you for reaching out to MPIntellect Intelligence.
 
 We have received your inquiry and our team will review it shortly. 
 You can expect a response within 24 hours during business days.
@@ -84,15 +84,15 @@ You can expect a response within 24 hours during business days.
 Your message:
 "${message}"
 
-For urgent matters, please contact us directly at contact@mzprimer.com.
+For urgent matters, please contact us directly at contact@mpintellect.com.
 
 Best regards,
-The MZPrimer Team
+The MPIntellect Team
     `;
 
     await sendEmail({
       to: email,
-      subject: "We've Received Your Inquiry - MZPrimer Intelligence",
+      subject: "We've Received Your Inquiry - MPIntellect Intelligence",
       html: `
         <!DOCTYPE html>
         <html>
@@ -152,10 +152,10 @@ The MZPrimer Team
                 <div style="margin-bottom: 24px;">
                   <p style="color: #9ca3af; font-size: 14px; margin-bottom: 12px;">While you wait:</p>
                   <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                    <a href="https://mzprimer.com/AIChat" style="background: rgba(212, 175, 55, 0.1); color: #d4af37; text-decoration: none; padding: 8px 16px; border-radius: 100px; font-size: 13px; border: 1px solid rgba(212, 175, 55, 0.2);">
+                    <a href="https://mpintellect.com/AIChat" style="background: rgba(212, 175, 55, 0.1); color: #d4af37; text-decoration: none; padding: 8px 16px; border-radius: 100px; font-size: 13px; border: 1px solid rgba(212, 175, 55, 0.2);">
                       Explore AI Tools →
                     </a>
-                    <a href="https://mzprimer.com/markets" style="background: rgba(212, 175, 55, 0.1); color: #d4af37; text-decoration: none; padding: 8px 16px; border-radius: 100px; font-size: 13px; border: 1px solid rgba(212, 175, 55, 0.2);">
+                    <a href="https://mpintellect.com/markets" style="background: rgba(212, 175, 55, 0.1); color: #d4af37; text-decoration: none; padding: 8px 16px; border-radius: 100px; font-size: 13px; border: 1px solid rgba(212, 175, 55, 0.2);">
                       Market Analysis →
                     </a>
                   </div>
@@ -173,7 +173,7 @@ The MZPrimer Team
               <!-- FOOTER -->
               <div style="padding: 24px 32px; background: #050505; border-top: 1px solid #1a1a1a; border-radius: 0 0 24px 24px; text-align: center;">
                 <p style="margin: 0; color: #4b5563; font-size: 12px;">
-                  © ${new Date().getFullYear()} MZPrimer Intelligence LTD
+                  © ${new Date().getFullYear()} MPIntellect Intelligence LTD
                 </p>
                 <p style="margin: 8px 0 0; color: #d4af37; font-size: 8px; text-transform: uppercase; letter-spacing: 2px;">
                   INSTITUTIONAL GRADE • SECURE COMMUNICATION

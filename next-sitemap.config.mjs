@@ -1,5 +1,5 @@
 /** @type {import('next-sitemap').IConfig} */
-const siteUrl = 'https://mzprimer.com';
+const siteUrl = 'https://mpintellect.com';
 
 export default {
   siteUrl,

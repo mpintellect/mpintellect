@@ -140,8 +140,8 @@ export default function ContactSection() {
           <div className="flex flex-col md:flex-row justify-center items-center gap-8 text-sm">
             <div className="flex items-center gap-3">
               <span className="text-[#D4AF37] text-lg">✉</span>
-              <a href="mailto:contact@mzprimer.com" className="text-zinc-400 hover:text-[#D4AF37] transition">
-                contact@mzprimer.com
+              <a href="mailto:contact@mpintellect.com" className="text-zinc-400 hover:text-[#D4AF37] transition">
+                contact@mpintellect.com
               </a>
             </div>
             <div className="hidden md:block w-px h-4 bg-zinc-800"></div>

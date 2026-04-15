@@ -28,7 +28,7 @@ export async function onRequestGet(context: any) {
 
   try {
     // 🛡️ STEP 1: FETCH PARTNER LOGO ONLY
-    const partnerLogoUrl = `https://news.mzprimer.com/lftrnas.webp`;
+    const partnerLogoUrl = `https://news.mpintellect.com/lftrnas.webp`;
     const partnerLogo = await fetchImageAsBase64(partnerLogoUrl);
 
     // 🛡️ STEP 2: RENDER ENGINE (Puppeteer)

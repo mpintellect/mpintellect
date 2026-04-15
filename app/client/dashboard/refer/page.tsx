@@ -98,7 +98,7 @@ export default function ReferPage() {
 
   const referralLink = typeof window !== "undefined" 
     ? `${window.location.origin}/client/register?ref=${referralCode}` 
-    : `https://mzprimer.com/client/register?ref=${referralCode}`;
+    : `https://mpintellect.com/client/register?ref=${referralCode}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
@@ -109,8 +109,8 @@ export default function ReferPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'MZPrimer Intelligence Trading',
-          text: 'Join me on MZPrimer Intelligence and get free AI trading setups!',
+          title: 'MPIntellect Intelligence Trading',
+          text: 'Join me on MPIntellect Intelligence and get free AI trading setups!',
           url: referralLink,
         });
       } catch (err) { console.log("Share failed", err); }

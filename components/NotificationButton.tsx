@@ -8,7 +8,7 @@ import {
   Share, PlusSquare, X, ArrowDown, ArrowUpRight, MessageCircle 
 } from 'lucide-react';
 
-const TELEGRAM_LINK = "https://t.me/mzprimer"; 
+const TELEGRAM_LINK = "https://t.me/mpintellect"; 
 
 export default function NotificationButton() {
   const { isSupported, subscription, subscribeToPush, loading } = usePush();

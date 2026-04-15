@@ -38,7 +38,7 @@ function formatMessageContent(message: string): string {
 
 function buildMessageTemplate(title: string, content: string, link: string): string {
   return `
-🚀 <b>MZPrimer Intelligence Trading</b>
+🚀 <b>MPIntellect Intelligence Trading</b>
 ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
 
 🎯 <b>${title.toUpperCase()}</b>
@@ -47,7 +47,7 @@ ${content}
 
 <b>QUICK ACTIONS:</b>
 └─ <a href="${link}">📈 Live Chart & Analysis</a>
-└─ <a href="https://mzprimer.com//AIChat">🌐 AI Trading Expert</a>
+└─ <a href="https://mpintellect.com//AIChat">🌐 AI Trading Expert</a>
 
 <i>AI-powered signals • Real-time monitoring</i>
   `.trim();
@@ -60,7 +60,7 @@ async function sendTelegramMessage(token: string, chatId: string, text: string) 
     method: 'POST',
     headers: { 
       'Content-Type': 'application/json',
-      'User-Agent': 'MZPrimer-Trading-Bot/1.0'
+      'User-Agent': 'MPIntellect-Trading-Bot/1.0'
     },
     body: JSON.stringify({
       chat_id: chatId,

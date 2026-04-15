@@ -28,7 +28,7 @@ export default function AccountsSection() {
           </div>
 
           <a
-  href="https://my.litefinance.org/registration?uid=967798214&cid=325438&utm_source=mzprimer&utm_medium=landing&utm_campaign=mzprimer_classic"
+  href="https://my.litefinance.org/registration?uid=967798214&cid=325438&utm_source=mpintellect&utm_medium=landing&utm_campaign=mpintellect_classic"
   target="_blank"
   rel="noopener noreferrer"
   className="cta-button"
@@ -58,7 +58,7 @@ export default function AccountsSection() {
           </div>
 
           <a
-  href="https://my.litefinance.org/registration?uid=967798214&cid=325438&utm_source=mzprimer&utm_medium=landing&utm_campaign=mzprimer_ecn"
+  href="https://my.litefinance.org/registration?uid=967798214&cid=325438&utm_source=mpintellect&utm_medium=landing&utm_campaign=mpintellect_ecn"
   target="_blank"
   rel="noopener noreferrer"
   className="cta-button"

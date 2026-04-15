@@ -81,7 +81,7 @@ export default function NewsClientView({ news }: NewsClientViewProps) {
       {/* Article Content */}
       <div className="prose prose-invert prose-lg max-w-none">
         <p className="text-lg leading-relaxed">
-          <strong>MZPrimer AI Detection:</strong> At {timestamp.toLocaleTimeString()}, our algorithmic systems detected a significant structure shift on 
+          <strong>MPIntellect AI Detection:</strong> At {timestamp.toLocaleTimeString()}, our algorithmic systems detected a significant structure shift on 
           <span className="font-bold text-white"> {news.symbol}</span>. This movement triggered a high-confidence alert based on volatility expansion and momentum alignment.
         </p>
         

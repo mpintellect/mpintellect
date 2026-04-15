@@ -18,7 +18,7 @@ export default function Hero() {
       {/* Logo Image - Optimized with Next.js Image */}
       <Image
         src="/logos/mzlogo.webp"
-        alt="MZPrimer Logo"
+        alt="MPIntellect Logo"
         width={224}
         height={224}
         className="w-40 md:w-56"

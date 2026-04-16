@@ -30,7 +30,7 @@ interface TradeSignal {
   confidence: number; 
   timestamp: string; 
 }
-interface MarketIntelligenceResponse { 
+interface MarketResponse { 
   generated_at: string; 
   signals: TradeSignal[]; 
 }
@@ -102,7 +102,7 @@ export default function TradingAssistantBridge() {
     loadData();
   }, [subscription]);
 
-  const getBestSignal = (data: MarketIntelligenceResponse) => {
+  const getBestSignal = (data: MarketResponse) => {
     if (!data.signals || data.signals.length === 0) return null;
     return data.signals.sort((a, b) => b.confidence - a.confidence)[0];
   };

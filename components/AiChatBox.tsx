@@ -758,7 +758,7 @@ export default function AiChatBox({
         },
         // ⏰ CARD 4: MARKET SESSION ANALYSIS
         {
-          title: "⏰ SESSION INTELLIGENCE",
+          title: "⏰ SESSION ",
           content: 
             `• Current Session: <strong>${sessionName}</strong>\n` +
             `• Liquidity Rating: <strong>${"⭐".repeat(Math.min(5, liquidityRating))}${"☆".repeat(Math.max(0, 5 - liquidityRating))}</strong> (${liquidityRating}/10)\n` +
@@ -984,7 +984,7 @@ export default function AiChatBox({
         const welcomeMessages: ChatMessage[] = [
           {
             sender: "ai" as const,
-            text: "🤖 MPIntellect Intelligence:\nWelcome! I'm your personal AI Trading Assistant. Let's analyze a strategic setup.",
+            text: "🤖 MPIntellect :\nWelcome! I'm your personal AI Trading Assistant. Let's analyze a strategic setup.",
           },
         ];
 
@@ -1326,7 +1326,7 @@ export default function AiChatBox({
 
           // ⏰ CARD 4: MARKET SESSION ANALYSIS
           {
-            title: "⏰ SESSION INTELLIGENCE",
+            title: "⏰ SESSION ",
             content: 
               `• Current Session: <strong>${sessionName}</strong>\n` +
               `• Liquidity Rating: <strong>${"⭐".repeat(Math.min(5, liquidityRating))}${"☆".repeat(Math.max(0, 5 - liquidityRating))}</strong> (${liquidityRating}/10)\n` +

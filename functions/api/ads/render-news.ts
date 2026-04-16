@@ -302,7 +302,7 @@ function generateStoryHTML(story: any, mzLogo: string | null, partnerLogo: strin
             Institutional Analysis Feed
           </div>
           <div style="font-size: 12px; color: #334155; letter-spacing: 2px;">
-            MPIntellect INTELLIGENCE SYSTEM • © 2026 GLOBAL DATA RESEARCH
+            MPIntellect  SYSTEM • © 2026 GLOBAL DATA RESEARCH
           </div>
         </div>
 

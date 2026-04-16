@@ -447,7 +447,7 @@ const releaseDate = `${day}-${month}-${year} ${hours}:${minutes}`;
       <!-- FOOTER -->
       <div class="institutional-footer">
         <div class="footer-mono">Institutional Analysis Feed</div>
-        <div class="footer-copyright">MPIntellect INTELLIGENCE SYSTEM • © 2026 GLOBAL DATA RESEARCH</div>
+        <div class="footer-copyright">MPIntellect  SYSTEM • © 2026 GLOBAL DATA RESEARCH</div>
       </div>
       
     </body>

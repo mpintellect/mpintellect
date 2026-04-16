@@ -179,12 +179,12 @@ const handleSubmit = async (e: React.FormEvent) => {
 
    <div className="footer-bottom">
   <span className="footer-text">
-    © {CURRENT_YEAR} MPIntellect Intelligence. All rights reserved.
+    © {CURRENT_YEAR} MPIntellect . All rights reserved.
   </span>
   
   {/* Concise Financial Disclaimer */}
   <p className="disclaimer-text text-xs text-zinc-500 mt-4 max-w-3xl mx-auto text-center border-t border-[#D4AF37]/20 pt-4">
-    <span className="text-[#D4AF37] font-bold">DISCLAIMER:</span> MPIntellect Intelligence provides 
+    <span className="text-[#D4AF37] font-bold">DISCLAIMER:</span> MPIntellect  provides 
     educational content and analytical tools for informational purposes only. We do not provide 
     financial advice, and nothing on this website should be construed as a recommendation to 
     buy or sell any financial instruments. Trading involves substantial risk of loss. 

@@ -53,7 +53,7 @@ export default function BillingPage() {
 
       <div className="text-center opacity-30 mt-20">
         <p className="text-[9px] uppercase tracking-[3px] text-zinc-500">
-          MPIntellect Intelligence• Institutional Billing System
+          MPIntellect • Institutional Billing System
         </p>
       </div>
     </div>

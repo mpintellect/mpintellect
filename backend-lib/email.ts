@@ -30,7 +30,7 @@ export async function sendEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: env.EMAIL_FROM || 'MPIntellect Intelligence <intelligence@mpintellect.com>',
+        from: env.EMAIL_FROM || 'MPIntellect  <@mpintellect.com>',
         to: [details.to],
         subject: details.subject,
         html: details.html,
@@ -51,7 +51,7 @@ export async function sendEmail(
 }
 export async function sendOrderConfirmation(order: OrderEmailDetails, env: any): Promise<void> {
   const apiKey = env.RESEND_API_KEY;
-  const fromEmail = env.EMAIL_FROM || 'MPIntellect Intelligence Team <contact@mpintellect.com>';
+  const fromEmail = env.EMAIL_FROM || 'MPIntellect  Team <contact@mpintellect.com>';
 
   if (!apiKey) {
     console.error("❌ RESEND_API_KEY is missing");
@@ -185,7 +185,7 @@ function generateEmailHTML(
               ${isRobot 
                 ? `Your institutional grade robot <b style="color: #d4af37;">${order.productName}</b> has been provisioned. You can download the protected .ex5 file below.`
                 : isSubscription 
-                  ? `Your institutional-grade trading intelligence subscription is now active. You have <strong style="color: #d4af37;">unlimited access</strong> to AI-powered market analysis.`
+                  ? `Your institutional-grade trading  subscription is now active. You have <strong style="color: #d4af37;">unlimited access</strong> to AI-powered market analysis.`
                   : `Thank you for your purchase. Your trading setups have been credited to your account and are ready for immediate use.`
               }
             </p>
@@ -204,7 +204,7 @@ function generateEmailHTML(
               <div style="background: #000000; border-radius: 14px; padding: 20px; border: 1px solid #2a2a2a; margin-bottom: 20px;">
                 <p style="margin: 0 0 10px 0; color: #9ca3af; font-size: 14px;">File:</p>
                 <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600; word-break: break-all;">
-                  MPIntellect Intelligence_${order.productName.replace(/\s+/g, '_')}_V.1.ex5
+                  MPIntellect _${order.productName.replace(/\s+/g, '_')}_V.1.ex5
                 </p>
               </div>
               
@@ -324,7 +324,7 @@ function generateEmailHTML(
               <a href="https://mpintellect.com/contact" style="color: #6b7280; font-size: 13px; text-decoration: none;">Support</a>
             </div>
             <p style="margin: 0; color: #4b5563; font-size: 12px; text-align: center; letter-spacing: 0.3px;">
-              © ${new Date().getFullYear()} MPIntellect Intelligence · All rights reserved
+              © ${new Date().getFullYear()} MPIntellect  · All rights reserved
             </p>
             ${isSubscription ? `
             <p style="margin: 16px 0 0; color: #d4af37; font-size: 10px; text-align: center; text-transform: uppercase; letter-spacing: 4px; opacity: 0.7;">
@@ -347,7 +347,7 @@ function generatePlainText(
   ctaLink: string
 ): string {
   let text = `
-MPIntellect Intelligence - ${isRobot ? 'ROBOT DELIVERY' : isSubscription ? 'PRO LICENSE ACTIVATED' : 'ORDER CONFIRMATION'}
+MPIntellect  - ${isRobot ? 'ROBOT DELIVERY' : isSubscription ? 'PRO LICENSE ACTIVATED' : 'ORDER CONFIRMATION'}
 ========================================
 Order ID: ${order.orderId}
 Amount: $${order.amountPaid.toFixed(2)}
@@ -378,7 +378,7 @@ Access your dashboard: ${ctaLink}
 
   text += `
 
-Thank you for choosing MPIntellect Intelligence!
+Thank you for choosing MPIntellect !
 Questions? Contact contact@mpintellect.com`;
 
   return text;

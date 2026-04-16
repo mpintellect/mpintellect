@@ -61,7 +61,7 @@ export default function MarketsHub() {
       
       {/* 1. HERO TITLE */}
       <div className="max-w-4xl mx-auto text-center mb-20">
-        <span className="text-yellow-500 font-bold uppercase tracking-[0.2em] text-xs mb-4 block">Institutional Intelligence</span>
+        <span className="text-yellow-500 font-bold uppercase tracking-[0.2em] text-xs mb-4 block">Institutional </span>
         <h1 className="text-4xl md:text-6xl font-black text-white mb-6 leading-tight">
           Live Market <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">Command Center</span>
         </h1>

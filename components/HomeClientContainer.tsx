@@ -36,7 +36,7 @@ export default function HomeClientContainer() {
             <div className="immersive-header">
               <div className="tool-identity">
                 <span className="live-pulse"></span>
-                {activeTool === 'ai' ? 'Intelligence Terminal' : 'Prop Firm Security Protocol'}
+                {activeTool === 'ai' ? ' Terminal' : 'Prop Firm Security Protocol'}
               </div>
               <button onClick={closeTool} className="immersive-close-btn">
                 <X size={24} /> <span>CLOSE</span>

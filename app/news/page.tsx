@@ -58,13 +58,13 @@ export default function FundamentalNewsHub() {
     return 'cat-tag';
   };
 
-  if (loading) return <div className="news-page-wrapper pt-40 text-center text-zinc-500 uppercase tracking-widest">Loading Intelligence...</div>;
+  if (loading) return <div className="news-page-wrapper pt-40 text-center text-zinc-500 uppercase tracking-widest">Loading ...</div>;
 
   return (
     <div className="news-page-wrapper">
       <header className="news-header-section">
         <span className="news-sub-label">Fundamental Analysis</span>
-        <h1 className="news-main-title">Intelligence Feed</h1>
+        <h1 className="news-main-title"> Feed</h1>
       </header>
 <p>Context changes everything. The latest updates on geopolitical events, economic news, and more.</p>
 

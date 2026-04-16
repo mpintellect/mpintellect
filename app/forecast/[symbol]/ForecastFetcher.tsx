@@ -48,7 +48,7 @@ export default function ForecastFetcher({ symbol }: { symbol: string }) {
       const accuracy = data.analysis_accuracy || 0;
       
       // News-style headlines
-      let dynamicTitle = `${sym} Price Prediction: Artificial Intelligence Forecast`;
+      let dynamicTitle = `${sym} Price Prediction: Artificial  Forecast`;
       
       if (volatility > 0.6) {
         if (decision === "SELL") dynamicTitle = `⚠️ ${sym} Crash Warning? AI Forecast & Targets`;

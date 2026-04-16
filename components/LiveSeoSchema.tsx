@@ -22,7 +22,7 @@ export default function LiveSeoSchema({ data }: Props) {
   const decision = data.final_decision;
 
   // Use const for static values to prevent re-renders
-  const AUTHOR_NAME = "MPIntellect Intelligence ";
+  const AUTHOR_NAME = "MPIntellect  ";
   const SITE_URL = "https://mpintellect.com";
 
   // --- 1. DYNAMIC HEADLINE ENGINE ---
@@ -63,7 +63,7 @@ export default function LiveSeoSchema({ data }: Props) {
         },
         "publisher": {
           "@type": "Organization",
-          "name": "MPIntellect Intelligence",
+          "name": "MPIntellect ",
           "logo": {
             "@type": "ImageObject",
             "url": LOGO_URLS.png, // Use PNG for maximum compatibility
@@ -93,7 +93,7 @@ export default function LiveSeoSchema({ data }: Props) {
         "description": `Real-time AI Forecast for ${symbolReadable}`,
         "provider": {
           "@type": "Organization",
-          "name": "MPIntellect Intelligence",
+          "name": "MPIntellect ",
           "url": SITE_URL,
           "logo": LOGO_URLS.png
         }

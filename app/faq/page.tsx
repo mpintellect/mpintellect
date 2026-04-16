@@ -7,9 +7,9 @@ export default function FAQPage() {
 
       <div className="faq-list">
         <section className="faq-item">
-          <h2 className="faq-question">What is MPIntellect Intelligence?</h2>
+          <h2 className="faq-question">What is MPIntellect ?</h2>
           <p className="faq-answer">
-            MPIntellect Intelligence is a platform that provides AI-powered trading tools, educational content, and algorithmic solutions for traders.
+            MPIntellect  is a platform that provides AI-powered trading tools, educational content, and algorithmic solutions for traders.
           </p>
         </section>
 

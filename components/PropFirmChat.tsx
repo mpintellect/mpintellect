@@ -1036,7 +1036,7 @@ const summary: SummaryBlock[] = [
       `${imbalanceDetected ? '• 🔥 <strong>IMBALANCE DETECTED</strong>: High-velocity institutional buying.' : ''}`,
   },
   {
-    title: "⏰ SESSION INTELLIGENCE",
+    title: "⏰ SESSION ",
     content: 
       `• Current Session: <strong>${sessionName}</strong>\n` +
       `• Liquidity Rating: <strong>${"⭐".repeat(Math.min(5, liquidityRating))}${"☆".repeat(Math.max(0, 5 - liquidityRating))}</strong> (${liquidityRating}/10)\n` +

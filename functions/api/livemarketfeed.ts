@@ -3,9 +3,9 @@ export async function onRequestGet(context: any) {
   const { request, env } = context;
 
   try {
-    console.log('Fetching market intelligence data...');
+    console.log('Fetching market  data...');
     
-    const R2_URL = "https://data.mpintellect.com/market_intelligence.json";
+    const R2_URL = "https://data.mpintellect.com/market_.json";
     const url = `${R2_URL}?t=${Date.now()}`;
 
     console.log('URL:', url);

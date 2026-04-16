@@ -56,7 +56,7 @@ export default function SuccessContent() {
         <div className="next-steps">
           <h3>To Activate Your License:</h3>
           <ol>
-            <li><strong>Check your email</strong> for the license key (subject: "Your MPIntellect Intelligence Order")</li>
+            <li><strong>Check your email</strong> for the license key (subject: "Your MPIntellect  Order")</li>
             <li><strong>Return to the AI Assistant</strong> below</li>
             <li><strong>Click "Activate License"</strong> button</li>
             <li><strong>Enter your license key</strong> when prompted</li>
@@ -69,7 +69,7 @@ export default function SuccessContent() {
         </div>
         
         <Link href="/AIChat" className="return-button">
-          Return to MPIntellect Intelligence Assistant
+          Return to MPIntellect  Assistant
         </Link>
         
         <div className="support-note">

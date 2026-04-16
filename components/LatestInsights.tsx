@@ -46,7 +46,7 @@ export default function LatestInsights() {
   return (
     <section className="latest-insights w-full bg-[#050505] border-t border-white/5">
       <div className="max-w-7xl mx-auto px-6 py-24">
-        {/* Premium Header with MZ Intelligence styling */}
+        {/* Premium Header with MZ  styling */}
         <div className="insights-header">
           <div>
             <div className="live-tag">
@@ -60,7 +60,7 @@ export default function LatestInsights() {
           </Link>
         </div>
 
-        {/* Premium Grid with MZ Intelligence card styling */}
+        {/* Premium Grid with MZ  card styling */}
         <div className="insights-grid">
           {posts.map((post, index) => (
             <Link 

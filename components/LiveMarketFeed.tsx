@@ -75,7 +75,7 @@ export default function LiveMarketFeed() {
           <span className={`pulse-dot ${isWeekend ? 'red' : 'green'}`}></span>
           <span className="session-info">{isWeekend ? "MARKETS CLOSED" : `${sessionName} SESSION ACTIVE`}</span>
         </div>
-        <div className="feed-description">MZ Intelligence Real-Time Order Flow</div>
+        <div className="feed-description">MZ  Real-Time Order Flow</div>
       </div>
 
       <div className="dual-feed-container">

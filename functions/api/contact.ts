@@ -30,7 +30,7 @@ export async function onRequestPost(context: any) {
 
     // 3. Create text version for email clients that don't support HTML
     const textVersion = `
-MPIntellect INTELLIGENCE - CONTACT FORM SUBMISSION
+MPIntellect  - CONTACT FORM SUBMISSION
 ================================================
 Client Name: ${name}
 Client Email: ${email}
@@ -51,7 +51,7 @@ This is an automated notification from your contact form.
       html: `
         <div style="background:#000; color:#fff; padding:40px; font-family:sans-serif; border:1px solid #D4AF37;">
           <div style="border-bottom:1px solid #1a1a1a; padding-bottom:20px; margin-bottom:20px;">
-            <p style="color:#D4AF37; font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:3px;">Intelligence Inbound</p>
+            <p style="color:#D4AF37; font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:3px;"> Inbound</p>
             <h1 style="margin:0; font-size:24px;">New Contact Form Submission</h1>
           </div>
           
@@ -76,7 +76,7 @@ This is an automated notification from your contact form.
     const clientTextVersion = `
 Dear ${name},
 
-Thank you for reaching out to MPIntellect Intelligence.
+Thank you for reaching out to MPIntellect .
 
 We have received your inquiry and our team will review it shortly. 
 You can expect a response within 24 hours during business days.
@@ -92,7 +92,7 @@ The MPIntellect Team
 
     await sendEmail({
       to: email,
-      subject: "We've Received Your Inquiry - MPIntellect Intelligence",
+      subject: "We've Received Your Inquiry - MPIntellect ",
       html: `
         <!DOCTYPE html>
         <html>
@@ -173,7 +173,7 @@ The MPIntellect Team
               <!-- FOOTER -->
               <div style="padding: 24px 32px; background: #050505; border-top: 1px solid #1a1a1a; border-radius: 0 0 24px 24px; text-align: center;">
                 <p style="margin: 0; color: #4b5563; font-size: 12px;">
-                  © ${new Date().getFullYear()} MPIntellect Intelligence LTD
+                  © ${new Date().getFullYear()} MPIntellect  LTD
                 </p>
                 <p style="margin: 8px 0 0; color: #d4af37; font-size: 8px; text-transform: uppercase; letter-spacing: 2px;">
                   INSTITUTIONAL GRADE • SECURE COMMUNICATION

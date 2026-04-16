@@ -117,7 +117,7 @@ const AiChatSection = ({ onLaunch }: { onLaunch?: (sym: string) => void }) => {
             <div className="immersive-header">
               <div className="tool-identity">
                 <span className="live-pulse"></span>
-                AI Intelligence Terminal
+                AI  Terminal
               </div>
               <button onClick={closeModal} className="immersive-close-btn">
                 <X size={24} /> <span>CLOSE</span>

@@ -190,7 +190,7 @@ function DashboardContent() {
             disabled={setupCount <= 0}
           >
             <Zap size={18} className="premium-nav-icon" /> 
-            <span>AI Intelligence</span>
+            <span>AI </span>
             {setupCount <= 0 && <span className="premium-nav-badge">No Credits</span>}
           </button>
           
@@ -274,7 +274,7 @@ function DashboardContent() {
             disabled={setupCount <= 0}
           >
             <Zap size={18} className="premium-nav-icon" />
-            <span>AI Intelligence</span>
+            <span>AI </span>
             {setupCount <= 0 && <span className="premium-mobile-badge">No Credits</span>}
           </button>
           

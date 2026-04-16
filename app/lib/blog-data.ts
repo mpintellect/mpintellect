@@ -36,7 +36,7 @@ export async function getRemoteBlogPosts(): Promise<BlogPost[]> {
     const data = await res.json();
     
     // ✅ 3. INSTITUTIONAL ORDERING:
-    // We sort the results by date to ensure the newest intelligence is always at the top.
+    // We sort the results by date to ensure the newest  is always at the top.
     return data.sort((a: BlogPost, b: BlogPost) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );

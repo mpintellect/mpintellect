@@ -268,7 +268,7 @@ if (type === "test") {
             </div>
             <div>
               <h1 class="${isStandard ? 'text-4xl' : 'text-6xl'} font-black tracking-tighter">${symbol}</h1>
-              <p class="text-[${gold}] text-${isStandard ? '8' : 'xs'} font-bold tracking-[5px] uppercase mt-1">MPIntellect INTELLIGENCE</p>
+              <p class="text-[${gold}] text-${isStandard ? '8' : 'xs'} font-bold tracking-[5px] uppercase mt-1">MPIntellect </p>
             </div>
           </div>
 
@@ -404,7 +404,7 @@ if (type === "chat") {
             <div class="flex justify-between items-end border-b border-zinc-900 pb-${isStandard ? 3 : 6}">
               <div>
                 <h1 class="${isStandard ? 'text-5xl' : 'text-7xl'} md:text-8xl font-black tracking-tighter">${symbol}</h1>
-                <p class="text-[${gold}] text-${isStandard ? 'xs' : 'sm'} md:text-base font-bold tracking-[5px] uppercase mt-${isStandard ? 1 : 2}">MPIntellect INTELLIGENCE</p>
+                <p class="text-[${gold}] text-${isStandard ? 'xs' : 'sm'} md:text-base font-bold tracking-[5px] uppercase mt-${isStandard ? 1 : 2}">MPIntellect </p>
               </div>
               <div class="text-right">
                 <p class="text-zinc-500 text-${isStandard ? '8' : 'xs'} md:text-sm font-bold uppercase mb-1">Algorithmic Bias</p>
@@ -515,7 +515,7 @@ if (type === "update") {
               </div>
               <div>
                 <h1 class="text-${isStandard ? '4xl' : '6xl'} font-black tracking-tighter">${symbol}</h1>
-                <p class="text-[${gold}] text-${isStandard ? '8' : 'xs'} font-bold tracking-[5px] uppercase mt-1">MPIntellect INTELLIGENCE</p>
+                <p class="text-[${gold}] text-${isStandard ? '8' : 'xs'} font-bold tracking-[5px] uppercase mt-1">MPIntellect </p>
               </div>
             </div>
 

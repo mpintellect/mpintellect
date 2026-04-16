@@ -11,7 +11,7 @@ interface TradeSignal {
   symbol: string; action: string; entry: number; tp: number; sl: number;
   trend: TrendInfo; confidence: number; timestamp: string;  
 }
-interface MarketIntelligenceResponse {
+interface MarketResponse {
   generated_at: string; signals: TradeSignal[];
 }
 
@@ -546,7 +546,7 @@ ${data.summary?.split('\n')[0] || 'AI analysis suggests trading opportunity.'}
         const res = await fetch(`/api/livemarketfeed?admin=true&t=${Date.now()}`);
         if (!res.ok) throw new Error("API Route Failed");
         
-        const data: MarketIntelligenceResponse = await res.json();
+        const data: MarketResponse = await res.json();
         
         if (data.signals && data.signals.length > 0) {
             const bestTrade = data.signals.sort((a, b) => b.confidence - a.confidence)[0];
@@ -843,7 +843,7 @@ Risk/Reward: ${symbolExtractedData.rrRatio.toFixed(2)}:1
                               className="w-full bg-gradient-to-r from-emerald-900/30 to-emerald-800/20 hover:from-emerald-900/40 hover:to-emerald-800/30 border border-emerald-700/30 text-white py-4 px-6 rounded-xl flex items-center justify-center gap-3 text-base font-bold transition-all hover:scale-[1.02]"
                             >
                                 {isFetchingAI ? <RefreshCw className="animate-spin" size={20}/> : <Zap size={20} fill="currentColor" className="text-yellow-400"/>}
-                                {isFetchingAI ? "CONNECTING TO AI..." : "FETCH MARKET INTELLIGENCE"}
+                                {isFetchingAI ? "CONNECTING TO AI..." : "FETCH MARKET "}
                             </button>
 
                             {aiData && (

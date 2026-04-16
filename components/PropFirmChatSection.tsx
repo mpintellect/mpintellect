@@ -43,7 +43,7 @@ const PropFirmChatSection = ({ onLaunch }: { onLaunch?: (val: string) => void })
           <p className="ai-chat-subtitle">Institutional compliance for challenge phases. Select an asset or a ruleset to initialize.</p>
           
           {/* ASSET CTAs */}
-          <div className="launch-grid-label">Intelligence Assets</div>
+          <div className="launch-grid-label"> Assets</div>
           <div className="symbol-launch-grid mb-6">
             {["XAUUSD", "BTCUSD", "US30", "EURUSD"].map(sym => (
               <button 

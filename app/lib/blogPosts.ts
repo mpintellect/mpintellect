@@ -74,7 +74,7 @@ Lot Size = ($20 ÷ 50 pips) ÷ pip value
     <li>Use micro/mini lots if you're just starting or trading small accounts.</li>
   </ul>
 
-  <p><small>📅 Published: June 16, 2025 — by MPIntellect Intelligence Intelligence</small></p>
+  <p><small>📅 Published: June 16, 2025 — by MPIntellect  </small></p>
 </div>
 `
 },
@@ -130,7 +130,7 @@ Lot Size = ($20 ÷ 50 pips) ÷ pip value
   <h3>🧠 الخلاصة:</h3>
   <p>السوق لا يتعامل مع مجرد أزمة عابرة، بل مع تهديد استراتيجي طويل المدى قد يعيد تشكيل موازين العرض والطلب في الطاقة والمعادن...</p>
 
-  <p style="margin-top: 20px;"><small>📅 نُشر بتاريخ: 17 يونيو 2025 — إعداد فريق MPIntellect Intelligence Intelligence</small></p>
+  <p style="margin-top: 20px;"><small>📅 نُشر بتاريخ: 17 يونيو 2025 — إعداد فريق MPIntellect  </small></p>
 </div>
 `
 },
@@ -241,7 +241,7 @@ Lot Size = ($20 ÷ 50 pips) ÷ pip value
   <p>أي خلل في عملياته قد يفاقم التضخم، ويرفع تكاليف الطاقة، ويغير خريطة التحالفات الجيوسياسية.</p>
   <p>إذا استمر التصعيد، فقد تدخل أسعار النفط مرحلة “التسعير الاستراتيجي”.</p>
 
-  <p><small>📅 نُشر بتاريخ: 18 يونيو 2025 — بواسطة MPIntellect Intelligence</small></p>
+  <p><small>📅 نُشر بتاريخ: 18 يونيو 2025 — بواسطة MPIntellect </small></p>
 </div>
 `
 },
@@ -311,7 +311,7 @@ TP = Entry Price + (3 × ATR)</pre>
     <li>Most professional traders prioritize risk control over profit hunting</li>
   </ul>
 
-  <p><small>📅 Published: June 16, 2025 — by MPIntellect Intelligence</small></p>
+  <p><small>📅 Published: June 16, 2025 — by MPIntellect </small></p>
 </div>
 `
 },
@@ -373,7 +373,7 @@ TP = Entry Price + (3 × ATR)</pre>
   <p>This is not just a temporary reaction — markets are beginning to price in sustained strategic risk. Safe-haven demand is up, inflation hedging is back, and volatility is surging.</p>
   <p>Traders should focus on solid technical zones, avoid emotional entries, and size positions according to risk — not fear.</p>
 
-  <p><small>📅 Published: June 17, 2025 — by MPIntellect Intelligence</small></p>
+  <p><small>📅 Published: June 17, 2025 — by MPIntellect </small></p>
 </div>
 `
 }

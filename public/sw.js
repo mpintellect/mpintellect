@@ -48,7 +48,7 @@ self.addEventListener('push', (event) => {
   const data = event.data.json();
 
   const options = {
-    body: data.body || data.message || 'New market intelligence available.',
+    body: data.body || data.message || 'New market  available.',
     icon: '/logos/icon-512.webp',
     badge: '/logos/icon-512.webp',
     vibrate: [100, 50, 100],
@@ -61,7 +61,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'MZ Intelligence', options)
+    self.registration.showNotification(data.title || 'MZ ', options)
   );
 });
 

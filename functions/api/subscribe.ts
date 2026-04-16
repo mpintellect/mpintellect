@@ -166,7 +166,7 @@ async function sendWelcomeEmailDirect(email: string, name: string | undefined, e
             </div>
             
             <h1 style="margin: 0 0 16px; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; color: #ffffff;">
-              Welcome to MPIntellect Intelligence! <span style="color: #d4af37;">📚</span>
+              Welcome to MPIntellect ! <span style="color: #d4af37;">📚</span>
             </h1>
             
             <p style="margin: 0 0 8px; font-size: 16px; color: #e5e7eb;">
@@ -196,7 +196,7 @@ async function sendWelcomeEmailDirect(email: string, name: string | undefined, e
                 </li>
                 <li style="display: flex; align-items: center; color: #e5e7eb;">
                   <span style="margin-right: 12px; font-size: 20px;">⚡</span>
-                  <span><strong style="color: #d4af37;">Weekly Insights</strong> - Curated trading intelligence and market outlook</span>
+                  <span><strong style="color: #d4af37;">Weekly Insights</strong> - Curated trading  and market outlook</span>
                 </li>
               </ul>
             </div>
@@ -220,7 +220,7 @@ async function sendWelcomeEmailDirect(email: string, name: string | undefined, e
           
           <div style="padding: 24px 32px; background: #050505; border-top: 1px solid #1a1a1a; border-radius: 0 0 24px 24px;">
             <p style="margin: 0; color: #4b5563; font-size: 12px; text-align: center;">
-              MPIntellect INTELLIGENCE • EDUCATIONAL TRADING RESOURCES
+              MPIntellect  • EDUCATIONAL TRADING RESOURCES
             </p>
           </div>
         </div>
@@ -230,7 +230,7 @@ async function sendWelcomeEmailDirect(email: string, name: string | undefined, e
   `;
 
   const text = `
-MPIntellect Intelligence - NEWSLETTER CONFIRMATION
+MPIntellect  - NEWSLETTER CONFIRMATION
 ========================================
 
 Dear ${customerName},
@@ -242,14 +242,14 @@ Thank you for joining our educational community. You'll now receive institutiona
 - Market Analysis - Professional breakdown of forex, crypto & indices
 - Trading Education - Strategies, risk management & psychology tips
 - Economic News - Key events and their market impact
-- Weekly Insights - Curated trading intelligence and market outlook
+- Weekly Insights - Curated trading  and market outlook
 
 Explore our markets: https://mpintellect.com/markets
 
 If you didn't subscribe, you can unsubscribe here:
 https://mpintellect.com/api/unsubscribe?email=${encodeURIComponent(email)}
 
-MPIntellect INTELLIGENCE 
+MPIntellect  
   `;
 
   try {
@@ -260,9 +260,9 @@ MPIntellect INTELLIGENCE
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: env.EMAIL_FROM || 'MPIntellect Intelligence <education@mpintellect.com>',
+        from: env.EMAIL_FROM || 'MPIntellect  <education@mpintellect.com>',
         to: [email],
-        subject: 'Welcome to MPIntellect Intelligence! 📚',
+        subject: 'Welcome to MPIntellect ! 📚',
         html,
         text
       }),

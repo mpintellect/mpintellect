@@ -151,4 +151,4 @@ for symbol in SYMBOLS:
 
 conn.close()
 mt5.shutdown()
-print(f"\n🏛️ MZ Intelligence Engine: Data Sync Complete.")
+print(f"\n🏛️ MZ  Engine: Data Sync Complete.")

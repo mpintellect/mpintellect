@@ -109,8 +109,8 @@ export default function ReferPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'MPIntellect Intelligence Trading',
-          text: 'Join me on MPIntellect Intelligence and get free AI trading setups!',
+          title: 'MPIntellect  Trading',
+          text: 'Join me on MPIntellect  and get free AI trading setups!',
           url: referralLink,
         });
       } catch (err) { console.log("Share failed", err); }

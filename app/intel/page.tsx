@@ -152,7 +152,7 @@ export default function IntelLanding() {
     { icon: Terminal, name: 'API Development & Integration', desc: 'RESTful and GraphQL APIs with seamless third-party integration' },
     { icon: Database, name: 'Database Design & Management', desc: 'SQL, NoSQL, and proprietary database architecture' },
     { icon: Layers, name: 'Enterprise Resource Planning', desc: 'Custom ERP systems for business process automation' },
-    { icon: BarChart, name: 'Business Intelligence Tools', desc: 'Analytics platforms and reporting dashboards' },
+    { icon: BarChart, name: 'Business  Tools', desc: 'Analytics platforms and reporting dashboards' },
     
     { icon: Cpu, name: 'Embedded Systems Development', desc: 'Firmware and IoT device programming' },
     { icon: Users, name: 'CRM Systems', desc: 'Customer relationship management platforms' },
@@ -525,10 +525,10 @@ export default function IntelLanding() {
                 <span></span> WHY CHOOSE US
               </div>
               <h3 className="core-value-title">
-                We Don't Just Implement IT — <strong>We Automate Intelligence</strong>
+                We Don't Just Implement IT — <strong>We Automate </strong>
               </h3>
               <p className="core-value-description">
-                At MZ Intelligence Systems, our primary focus is helping businesses leverage AI to 
+                At MZ  Systems, our primary focus is helping businesses leverage AI to 
                 automate complex processes, reduce operational costs, and elevate quality standards. 
                 From manufacturing to finance, we deploy intelligent systems that learn, adapt, and 
                 optimize your operations in real-time.
@@ -592,7 +592,7 @@ export default function IntelLanding() {
               },
               {
                 icon: Users,
-                title: 'Business Intelligence',
+                title: 'Business ',
                 desc: 'Transform data into actionable insights with AI-powered analytics and reporting.',
                 features: ['Data Visualization', 'Trend Analysis', 'Automated Reporting']
               }
@@ -927,7 +927,7 @@ export default function IntelLanding() {
       <footer className="py-12 md:py-16 px-6 md:px-12 border-t border-white/5">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 text-center md:text-left">
-            MZ INTELLIGENCE SYSTEMS • COMPLETE IT SOLUTIONS FOR INDIVIDUALS AND ENTREPRISES
+            MZ  SYSTEMS • COMPLETE IT SOLUTIONS FOR INDIVIDUALS AND ENTREPRISES
           </div>
           <div className="flex gap-8">
             <Link href="/privacy" className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 hover:text-white">

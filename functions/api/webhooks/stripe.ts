@@ -90,7 +90,7 @@ async function handleCheckoutCompleted(session: any, env: any) {
     let generatedKey: string | undefined;
     let expiryDate: string | undefined;
     let secureDownloadLink: string | undefined;
-    let prodName = "MZ Intelligence Asset";
+    let prodName = "MZ  Asset";
     let setupsToLog = 0;
 
     // 1. Ensure User exists
@@ -170,7 +170,7 @@ async function handleCheckoutCompleted(session: any, env: any) {
     // 5. LOGIC: UNKNOWN PRODUCT
     else {
       console.log("⚠️ Unknown productId:", productId);
-      prodName = productId || "MZ Intelligence Product";
+      prodName = productId || "MZ  Product";
     }
 
     // 6. AUDIT LOG
@@ -254,7 +254,7 @@ async function sendOrderConfirmationEmbedded(order: OrderEmailDetails, env: any)
   console.log("📧 ENTERING sendOrderConfirmationEmbedded");
   
   const apiKey = env.RESEND_API_KEY;
-  const fromEmail = env.EMAIL_FROM || 'MPIntellect Intelligence Team <contact@mpintellect.com>';
+  const fromEmail = env.EMAIL_FROM || 'MPIntellect  Team <contact@mpintellect.com>';
 
   console.log("📧 apiKey exists:", !!apiKey);
   console.log("📧 order.to:", order.to);
@@ -405,7 +405,7 @@ function generateEmailHTML(
               ${isRobot 
                 ? `Your institutional grade robot <b style="color: #d4af37;">${order.productName}</b> has been provisioned. You can download the protected .ex5 file below.`
                 : isSubscription 
-                  ? `Your institutional-grade trading intelligence subscription is now active. You have <strong style="color: #d4af37;">unlimited access</strong> to AI-powered market analysis.`
+                  ? `Your institutional-grade trading  subscription is now active. You have <strong style="color: #d4af37;">unlimited access</strong> to AI-powered market analysis.`
                   : `Thank you for your purchase. Your ${order.productName} has been credited to your account and is ready for immediate use.`
               }
             </p>
@@ -475,7 +475,7 @@ function generateEmailHTML(
           
           <div style="padding: 24px 32px; background: #050505; border-top: 1px solid #1a1a1a; border-radius: 0 0 24px 24px;">
             <p style="margin: 0; color: #4b5563; font-size: 12px; text-align: center;">
-              © ${new Date().getFullYear()} MPIntellect Intelligence · All rights reserved
+              © ${new Date().getFullYear()} MPIntellect  · All rights reserved
             </p>
           </div>
         </div>

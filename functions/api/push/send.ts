@@ -13,7 +13,7 @@ export async function onRequestPost(context: any) {
     const { title, message, url, sendToAll, targetUserId } = body;
 
     const payload = JSON.stringify({
-      title: title || "MZ Intelligence Alert",
+      title: title || "MZ  Alert",
       body: message,
       url: url || "https://mpintellect.com/news",
       icon: "/logos/icon-512.webp"

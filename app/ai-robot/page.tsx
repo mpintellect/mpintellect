@@ -3,11 +3,11 @@ import type { Metadata } from 'next';
 import AIRobotCards from '@/components/AIRobotCards';
 
 export const metadata: Metadata = {
-  title: 'AI Trading Robots – MPIntellect Intelligence',
+  title: 'AI Trading Robots – MPIntellect ',
   description:
     'Automate parts of your trading with tested AI robots for MetaTrader. Simple setup and clear risk options.',
   openGraph: {
-    title: 'AI Trading Robots – MPIntellect Intelligence',
+    title: 'AI Trading Robots – MPIntellect ',
     description:
       'Automate parts of your trading with tested AI robots for MetaTrader. Simple setup and clear risk options.',
     url: 'https://mpintellect.com/ai-robot',
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AI Trading Robots – MPIntellect Intelligence',
+    title: 'AI Trading Robots – MPIntellect ',
     description:
       'Automate parts of your trading with tested AI robots for MetaTrader. Simple setup and clear risk options.',
     images: ['https://mpintellect.com/og/ai-robots.jpg'],

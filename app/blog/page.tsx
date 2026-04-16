@@ -10,7 +10,7 @@ export default async function BlogHub() {
     <main className="blog-hub">
       <div className="blog-container">
         <div className="blog-header">
-          <h1>INTELLIGENCE_BLOG</h1>
+          <h1>_BLOG</h1>
           <p>Strategic Market Insights & Education</p>
         </div>
         

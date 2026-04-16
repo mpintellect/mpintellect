@@ -20,7 +20,7 @@ export async function sendEmail({
   });
 
   await transporter.sendMail({
-    from: `"MPIntellect Intelligence" <${process.env.EMAIL_FROM}>`,
+    from: `"MPIntellect " <${process.env.EMAIL_FROM}>`,
     to,
     subject,
     html,

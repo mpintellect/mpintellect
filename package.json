@@ -9,11 +9,8 @@
   "deploy": "wrangler pages deploy out", 
   "preview": "npm run build && npx wrangler pages dev out --compatibility-flags=nodejs_compat --d1 DB=mpintellect-db",
   "db:pull": "npx wrangler d1 export mpintellect-db --remote --output=./live_backup.sql",
-    "dev": "next dev",
-    "dev:d1": "bash ./dev-with-d1.sh",
-    "dev:api": "wrangler dev functions/api --d1 DB=mpintellect-db --persist-to=./.wrangler/state/v3 --port 8789",
-    "pages:dev": "npm run pages:build && wrangler pages dev out --d1 DB=mpintellect-db --persist-to=./.wrangler/state/v3 --port 8788"
-  },
+  "pages:dev": "npm run build && wrangler pages dev out --d1 DB=mpintellect-db --compatibility-flags=nodejs_compat --port 8788"
+},
   "dependencies": {
     "@cloudflare/puppeteer": "^1.0.6",
     "@ffmpeg/core": "^0.12.10",

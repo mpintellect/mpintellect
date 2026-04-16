@@ -1,11 +1,12 @@
 {
-  "name": "mpintellect-nextjs-v1",
+  "name": "mpintellect",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "build": "next build --webpack",
     "pages:build": "npm run build",
     "prebuild": "rm -rf .next out",
+    "deploy": "npx wrangler pages deploy out" ,
     "preview": "npm run build && npx wrangler pages dev out --compatibility-flags=nodejs_compat --d1 DB=074ccc04-d574-4164-8f48-0b6444b9db88",
     "cf:dev": "npx wrangler pages dev --port 3000 --proxy 3001 --command \"next dev -p 3001\" --compatibility-flags=nodejs_compat --d1 DB=074ccc04-d574-4164-8f48-0b6444b9db88",
     "test:functions": "npx wrangler pages dev --port 8788 --d1 DB=074ccc04-d574-4164-8f48-0b6444b9db88",

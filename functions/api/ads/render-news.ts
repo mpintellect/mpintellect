@@ -228,7 +228,7 @@ function generateStoryHTML(story: any, mzLogo: string | null, partnerLogo: strin
         ">
           <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.6px; padding-right: 30px;">
             <img src="${mzLogo}" style="height: 66px;" />
-            <span style="font-size: 22px; font-weight: 300; letter-spacing: 2px; color: white;">MPIntellect.COM</span>
+            <span style="font-size: 22px; font-weight: 300; letter-spacing: 2px; color: white;">MPINTELLECT.COM</span>
           </div>
           <div style="width: 1px; height: 45px; background: rgba(255,255,255,0.25);"></div>
           <div style="display: flex; align-items: center; justify-content: flex-start; padding-left: 40px;">
@@ -302,7 +302,7 @@ function generateStoryHTML(story: any, mzLogo: string | null, partnerLogo: strin
             Institutional Analysis Feed
           </div>
           <div style="font-size: 12px; color: #334155; letter-spacing: 2px;">
-            MPIntellect  SYSTEM • © 2026 GLOBAL DATA RESEARCH
+            MPINTELLECT  SYSTEM • © 2026 GLOBAL DATA RESEARCH
           </div>
         </div>
 

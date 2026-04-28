@@ -463,7 +463,7 @@ export default function AiChatBox({
 
   // 🆕 Strategy state for Scalper vs Day Trader
   const [strategy, setStrategy] = useState<"scalper" | "daytrader">("daytrader");
-
+  const [showStrategyMenu, setShowStrategyMenu] = useState(false);
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
   useEffect(() => {
@@ -1620,8 +1620,53 @@ export default function AiChatBox({
         {isTyping && <div className="chat-msg ai-msg">⏳ Analyzing market data...</div>}
       </div>
 
-            
-               {step === 1 && (
+      {/* 🆕 FLOATING ACTION BUTTON FOR STRATEGY SELECTION */}
+      <div className="strategy-fab-container">
+        <button
+          className={`strategy-fab ${showStrategyMenu ? 'active' : ''}`}
+          onClick={() => setShowStrategyMenu(!showStrategyMenu)}
+        >
+          <span className="fab-icon">
+            {strategy === 'scalper' ? '⚡' : '🏛️'}
+          </span>
+          <span className="fab-label">{strategy === 'scalper' ? 'Scalper' : 'Day Trader'}</span>
+        </button>
+        
+        {showStrategyMenu && (
+          <div className="strategy-fab-menu">
+            <button
+              className={`strategy-option ${strategy === 'scalper' ? 'active' : ''}`}
+              onClick={() => {
+                setStrategy('scalper');
+                setShowStrategyMenu(false);
+              }}
+            >
+              <span className="option-icon">⚡</span>
+              <div className="option-text">
+                <span className="option-name">Scalper</span>
+                <span className="option-desc">5min candles, fast entries</span>
+              </div>
+              {strategy === 'scalper' && <span className="check-mark">✓</span>}
+            </button>
+            <button
+              className={`strategy-option ${strategy === 'daytrader' ? 'active' : ''}`}
+              onClick={() => {
+                setStrategy('daytrader');
+                setShowStrategyMenu(false);
+              }}
+            >
+              <span className="option-icon">🏛️</span>
+              <div className="option-text">
+                <span className="option-name">Day Trader</span>
+                <span className="option-desc">H1 candles, institutional analysis</span>
+              </div>
+              {strategy === 'daytrader' && <span className="check-mark">✓</span>}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {step === 1 && (
         <>
           <div className="chatbox-input-group">
             <select
@@ -1641,27 +1686,7 @@ export default function AiChatBox({
             </select>
           </div>
           
-          {/* 🆕 STRATEGY SELECTION BUTTONS - Animated */}
-          <div className="strategy-buttons-container">
-            <button
-              className={`strategy-btn ${strategy === 'scalper' ? 'active' : ''}`}
-              onClick={() => setStrategy('scalper')}
-            >
-              <span className="strategy-icon">⚡</span>
-              <span className="strategy-name">Scalper</span>
-              <span className="strategy-timeframe">(5min)</span>
-              {strategy === 'scalper' && <span className="active-indicator"></span>}
-            </button>
-            <button
-              className={`strategy-btn ${strategy === 'daytrader' ? 'active' : ''}`}
-              onClick={() => setStrategy('daytrader')}
-            >
-              <span className="strategy-icon">🏛️</span>
-              <span className="strategy-name">Day Trader</span>
-              <span className="strategy-timeframe">(H1)</span>
-              {strategy === 'daytrader' && <span className="active-indicator"></span>}
-            </button>
-          </div>
+          
         </>
       )}
 

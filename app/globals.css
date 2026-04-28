@@ -30340,73 +30340,126 @@ html {
   }
 }
 /* ==========================================
-   🎛️ STRATEGY TOGGLE SWITCH
+   🎛️ ANIMATED STRATEGY SELECTION BUTTONS
    ========================================== */
-.strategy-toggle-container {
+.strategy-buttons-container {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0 10px 0;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 60px;
+}
+
+.strategy-btn {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin: 15px 0;
-  padding: 8px 16px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 40px;
-}
-
-.strategy-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #888;
-  transition: color 0.2s;
+  gap: 8px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 50px;
   cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.strategy-label.active {
+.strategy-btn .strategy-icon {
+  font-size: 18px;
+  transition: transform 0.3s ease;
+}
+
+.strategy-btn .strategy-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #94a3b8;
+  transition: color 0.3s ease;
+}
+
+.strategy-btn .strategy-timeframe {
+  font-size: 11px;
+  color: #64748b;
+  transition: color 0.3s ease;
+}
+
+/* Active button styles */
+.strategy-btn.active {
+  background: linear-gradient(135deg, #1a2a3a 0%, #0f1a24 100%);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.strategy-btn.active .strategy-icon {
+  transform: scale(1.1);
+}
+
+.strategy-btn.active .strategy-name {
   color: #D4AF37;
 }
 
-/* Toggle Switch */
-.strategy-switch {
-  position: relative;
-  display: inline-block;
-  width: 60px;
-  height: 28px;
+.strategy-btn.active .strategy-timeframe {
+  color: #D4AF37;
 }
 
-.strategy-switch input {
-  opacity: 0;
+/* Hover effects */
+.strategy-btn:hover:not(.active) {
+  background: rgba(212, 175, 55, 0.1);
+  transform: translateY(-2px);
+}
+
+.strategy-btn:hover:not(.active) .strategy-icon {
+  transform: scale(1.05);
+}
+
+.strategy-btn:hover:not(.active) .strategy-name {
+  color: #cbd5e1;
+}
+
+/* Active indicator animation */
+.active-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  background: #D4AF37;
+  border-radius: 3px;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 40px;
+    opacity: 1;
+  }
+}
+
+/* Ripple effect on click */
+.strategy-btn:active {
+  transform: scale(0.98);
+}
+
+.strategy-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
   width: 0;
   height: 0;
-}
-
-.strategy-switch .slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #334155;
-  transition: 0.3s;
-  border-radius: 34px;
-}
-
-.strategy-switch .slider:before {
-  position: absolute;
-  content: "";
-  height: 22px;
-  width: 22px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.3s;
   border-radius: 50%;
+  background: rgba(212, 175, 55, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
 }
 
-.strategy-switch input:checked + .slider {
-  background-color: #D4AF37;
-}
-
-.strategy-switch input:checked + .slider:before {
-  transform: translateX(32px);
+.strategy-btn:active::after {
+  width: 100%;
+  height: 100%;
 }

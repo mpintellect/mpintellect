@@ -1009,9 +1009,15 @@ export default function AiChatBox({
           text: `📊 Current strategy: ${strategy === 'scalper' ? '⚡ Scalper (5min candles)' : '🏛️ Day Trader (H1 candles)'}`
         });
 
-        welcomeMessages.push({
+                welcomeMessages.push({
           sender: "ai" as const, 
           text: "2️⃣ 🔍 Choose a Trading Symbol to begin:"
+        });
+
+        // 🆕 Show current strategy
+        welcomeMessages.push({
+          sender: "ai" as const,
+          text: `📊 Selected strategy: ${strategy === 'scalper' ? '⚡ Scalper (5min candles) - Fast entries, quick targets' : '🏛️ Day Trader (H1 candles) - Institutional analysis, higher conviction'}`
         });
 
         welcomeMessages.push({
@@ -1614,7 +1620,8 @@ export default function AiChatBox({
         {isTyping && <div className="chat-msg ai-msg">⏳ Analyzing market data...</div>}
       </div>
 
-            {step === 1 && (
+            
+               {step === 1 && (
         <>
           <div className="chatbox-input-group">
             <select
@@ -1634,22 +1641,26 @@ export default function AiChatBox({
             </select>
           </div>
           
-          {/* 🆕 STRATEGY TOGGLE */}
-          <div className="strategy-toggle-container">
-            <span className={`strategy-label ${strategy === 'scalper' ? 'active' : ''}`}>
-              ⚡ Scalper (5min)
-            </span>
-            <label className="strategy-switch">
-              <input
-                type="checkbox"
-                checked={strategy === 'daytrader'}
-                onChange={(e) => setStrategy(e.target.checked ? 'daytrader' : 'scalper')}
-              />
-              <span className="slider round"></span>
-            </label>
-            <span className={`strategy-label ${strategy === 'daytrader' ? 'active' : ''}`}>
-              🏛️ Day Trader (H1)
-            </span>
+          {/* 🆕 STRATEGY SELECTION BUTTONS - Animated */}
+          <div className="strategy-buttons-container">
+            <button
+              className={`strategy-btn ${strategy === 'scalper' ? 'active' : ''}`}
+              onClick={() => setStrategy('scalper')}
+            >
+              <span className="strategy-icon">⚡</span>
+              <span className="strategy-name">Scalper</span>
+              <span className="strategy-timeframe">(5min)</span>
+              {strategy === 'scalper' && <span className="active-indicator"></span>}
+            </button>
+            <button
+              className={`strategy-btn ${strategy === 'daytrader' ? 'active' : ''}`}
+              onClick={() => setStrategy('daytrader')}
+            >
+              <span className="strategy-icon">🏛️</span>
+              <span className="strategy-name">Day Trader</span>
+              <span className="strategy-timeframe">(H1)</span>
+              {strategy === 'daytrader' && <span className="active-indicator"></span>}
+            </button>
           </div>
         </>
       )}

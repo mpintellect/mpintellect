@@ -1,3 +1,4 @@
+// app/lib/fetchSetup.ts
 import { SymbolKey } from "@/data/symbols";
 
 /** Individual pending order */
@@ -26,7 +27,7 @@ export interface PendingOrdersData {
   fallback_used?: boolean;
 }
 
-/** 🔥 NEW: Volume Profile Data Structure */
+/** Volume Profile Data Structure */
 export interface VolumeData {
   poc_price: number;
   value_area_high: number;
@@ -39,10 +40,10 @@ export interface VolumeData {
   current_price: number;
 }
 
-/** 🔥 NEW: Market Sessions Data Structure */
+/** Market Sessions Data Structure */
 export interface SessionsData {
   session_name: "Asia" | "London" | "New York" | "Market Rollover";
-  liquidity_rating: number; // 1-5
+  liquidity_rating: number;
   is_high_volume_window: boolean;
   volatility_expectation: "low" | "low_moderate" | "moderate" | "high";
   trading_regime_bias: "structural_accumulation" | "distribution" | "neutral" | "avoid";
@@ -57,9 +58,7 @@ export interface TradeSetupData {
   volatility: any;
   momentum: any;
   zones: any;
-  /** 🔥 NEW: Volume profile analysis */
   volume?: VolumeData;
-  /** 🔥 NEW: Market sessions analysis */
   sessions?: SessionsData;
   pending_orders?: PendingOrdersData;
   tp_sl?: any;
@@ -72,12 +71,15 @@ export interface TradeSetupData {
   component_scores?: Record<string, number>;
   component_weights?: Record<string, number>;
   warnings?: string[];
+  /** Strategy type used for this setup (scalper or daytrader) */
+  _metadata?: {
+    strategy: "scalper" | "daytrader";
+    fetched_at: string;
+  };
 }
 
 /** Extended interface for enhanced data */
-export interface ExtendedTradeSetupData extends TradeSetupData {
-  // Add any additional fields if needed
-}
+export interface ExtendedTradeSetupData extends TradeSetupData {}
 
 /**
  * ✅ Helper function to get volume data safely
@@ -120,35 +122,35 @@ export function getSessionWithEmoji(setup: ExtendedTradeSetupData | null): strin
 }
 
 /**
- * ✅ Fetches setup via API route (more reliable)
+ * ✅ Fetches setup via API route with strategy support
+ * @param symbol - Trading symbol (e.g., "XAUUSD")
+ * @param strategy - Trading strategy: "scalper" (5min) or "daytrader" (H1) - defaults to "daytrader"
  */
-export async function fetchSetup(symbol: SymbolKey): Promise<ExtendedTradeSetupData | null> {
+export async function fetchSetup(
+  symbol: SymbolKey, 
+  strategy: "scalper" | "daytrader" = "daytrader"
+): Promise<ExtendedTradeSetupData | null> {
   try {
-    console.log(`🔍 Fetching setup via API for ${symbol}...`);
+    console.log(`🔍 Fetching setup via API for ${symbol} with strategy: ${strategy}...`);
 
-    const response = await fetch(`/api/setup?symbol=${symbol}`, {
+    const response = await fetch(`/api/setup?symbol=${symbol}&strategy=${strategy}`, {
       method: 'GET',
-      // Cloudflare-compatible headers
       headers: {
         'Accept': 'application/json',
-        // Use cache headers instead of no-cache for better performance
         'Cache-Control': 'public, max-age=60, stale-while-revalidate=300'
       },
-      // Remove next.js specific options
-      // cache: 'no-store' // ❌ REMOVE THIS
     });
     
     console.log(`📡 API response status: ${response.status}, ok: ${response.ok}`);
 
     if (!response.ok) {
-      // Try to get error details
       const errorData = await response.json().catch(() => ({}));
       console.error(`❌ API failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
       return null;
     }
 
     const data = await response.json();
-    console.log(`✅ Successfully fetched setup for ${symbol}:`, {
+    console.log(`✅ Successfully fetched ${strategy} setup for ${symbol}:`, {
       final_decision: data.final_decision,
       analysis_accuracy: data.analysis_accuracy,
       has_pending_orders: !!data.pending_orders,
@@ -167,11 +169,14 @@ export async function fetchSetup(symbol: SymbolKey): Promise<ExtendedTradeSetupD
 /**
  * ✅ Client-side version (for Fetcher components)
  */
-export async function fetchSetupClient(symbol: SymbolKey): Promise<ExtendedTradeSetupData | null> {
+export async function fetchSetupClient(
+  symbol: SymbolKey,
+  strategy: "scalper" | "daytrader" = "daytrader"
+): Promise<ExtendedTradeSetupData | null> {
   try {
-    console.log(`🔍 [Client] Fetching setup for ${symbol}...`);
+    console.log(`🔍 [Client] Fetching setup for ${symbol} with strategy: ${strategy}...`);
 
-    const response = await fetch(`/api/setup?symbol=${symbol}`);
+    const response = await fetch(`/api/setup?symbol=${symbol}&strategy=${strategy}`);
     
     if (!response.ok) {
       console.error(`❌ Client API failed: ${response.status}`);
@@ -222,14 +227,19 @@ export function getMarketContext(setup: ExtendedTradeSetupData | null): string {
 }
 
 /**
+ * ✅ Helper function to get current strategy from setup metadata
+ */
+export function getStrategyFromSetup(setup: ExtendedTradeSetupData | null): "scalper" | "daytrader" | null {
+  return setup?._metadata?.strategy ?? null;
+}
+
+/**
  * ✅ Fetch all setups at once (DEPRECATED - Individual files now)
  * This is kept for backward compatibility but will return empty
  */
 export async function fetchAllSetups(): Promise<Record<string, any> | null> {
   try {
     console.log('⚠️ fetchAllSetups() is deprecated - using individual symbol files now');
-    
-    // Return empty object for backward compatibility
     return {};
   } catch (error) {
     console.error('❌ Error in fetchAllSetups:', error);
@@ -238,17 +248,16 @@ export async function fetchAllSetups(): Promise<Record<string, any> | null> {
 }
 
 /**
- * ✅ Get available symbols - Now returns all supported symbols since we have individual files
+ * ✅ Get available symbols - Returns all supported symbols since we have individual files
  */
 export async function getAvailableSetupSymbols(): Promise<string[]> {
   try {
-    // Since we now have individual files for all symbols, return all supported ones
     const supportedSymbols: string[] = [
       "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD",
       "NZDUSD", "USDCHF", "XAUUSD", "XAUEUR", "XAGUSD",
       "PLATINUM", "BRENT", "BTCUSD", "ETHUSD", "XRPUSD",
       "DOGEUSD", "LTCUSD", "US500", "USTEC", "US30",
-      "HK50", "CAC", "CHINA50", "UK100", "EURJPY",
+      "HK50", "FRANCE40", "CHINA50", "UK100", "EURJPY",
       "EURGBP", "GBPJPY", "GBPCHF"
     ];
     
@@ -261,18 +270,21 @@ export async function getAvailableSetupSymbols(): Promise<string[]> {
 }
 
 /**
- * ✅ NEW: Fetch multiple symbols at once
+ * ✅ NEW: Fetch multiple symbols at once with strategy support
  */
-export async function fetchMultipleSetups(symbols: SymbolKey[]): Promise<Record<string, ExtendedTradeSetupData | null>> {
+export async function fetchMultipleSetups(
+  symbols: SymbolKey[],
+  strategy: "scalper" | "daytrader" = "daytrader"
+): Promise<Record<string, ExtendedTradeSetupData | null>> {
   try {
-    console.log(`🔍 Fetching multiple setups: ${symbols.join(', ')}`);
+    console.log(`🔍 Fetching multiple setups: ${symbols.join(', ')} with strategy: ${strategy}`);
     
     // For client-side, use batch API endpoint
     if (typeof window !== 'undefined') {
       const response = await fetch('/api/batch-setups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbols }),
+        body: JSON.stringify({ symbols, strategy }),
       });
       
       if (!response.ok) return {};
@@ -280,7 +292,7 @@ export async function fetchMultipleSetups(symbols: SymbolKey[]): Promise<Record<
     }
     
     // Server-side: fetch individually
-    const promises = symbols.map(symbol => fetchSetup(symbol));
+    const promises = symbols.map(symbol => fetchSetup(symbol, strategy));
     const results = await Promise.allSettled(promises);
     
     const setups: Record<string, ExtendedTradeSetupData | null> = {};
@@ -305,9 +317,12 @@ export async function fetchMultipleSetups(symbols: SymbolKey[]): Promise<Record<
 }
 
 /**
- * ✅ Client-side: Fetch multiple setups at once
+ * ✅ Client-side: Fetch multiple setups at once with strategy support
  */
-export async function fetchMultipleSetupsClient(symbols: SymbolKey[]): Promise<Record<string, ExtendedTradeSetupData | null>> {
+export async function fetchMultipleSetupsClient(
+  symbols: SymbolKey[],
+  strategy: "scalper" | "daytrader" = "daytrader"
+): Promise<Record<string, ExtendedTradeSetupData | null>> {
   if (typeof window === 'undefined') {
     throw new Error('fetchMultipleSetupsClient can only be called on the client');
   }
@@ -316,7 +331,7 @@ export async function fetchMultipleSetupsClient(symbols: SymbolKey[]): Promise<R
     const response = await fetch('/api/batch-setups', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ symbols }),
+      body: JSON.stringify({ symbols, strategy }),
     });
     
     if (!response.ok) {

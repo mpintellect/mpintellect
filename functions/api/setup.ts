@@ -1,40 +1,47 @@
-// functions/api/setup.ts (Move from app/api/setup/route.ts)
-
+// functions/api/setup.ts
 /**
  * Cloudflare Handler: onRequestGet
  * Fetches specific symbol setup data from R2 storage
+ * Supports both Scalper (5min) and Day Trader (H1) strategies
  */
 export async function onRequestGet(context: any) {
-  // FIXED: Destructure 'request' from 'context' so it's defined
   const { request } = context;
 
   try {
     const { searchParams } = new URL(request.url);
     const symbol = searchParams.get('symbol');
+    const strategy = searchParams.get('strategy') || 'daytrader'; // Default to daytrader
     
     if (!symbol) {
       return Response.json({ error: "Symbol parameter required" }, { status: 400 });
     }
 
-    // Clean the symbol to match your file names (output_BTCUSD.json)
+    // Clean the symbol to match your file names
     const cleanSymbol = symbol.replace(/[-_/]/g, "").toUpperCase();
-    console.log('🚀 Setup API (R2) called for symbol:', cleanSymbol);
+    console.log('🚀 Setup API (R2) called for symbol:', cleanSymbol, 'strategy:', strategy);
     
-    // ✅ NEW CLOUDFLARE R2 URL
+    // ✅ SELECT CORRECT FILE BASED ON STRATEGY
     const R2_URL = 'https://data.mpintellect.com';
-    const fileUrl = `${R2_URL}/output_${cleanSymbol}.json`;
+    let fileName: string;
+    
+    if (strategy === 'scalper') {
+      fileName = `output_${cleanSymbol}.json`;      // Scalper (5min)
+    } else {
+      fileName = `D1_output_${cleanSymbol}.json`;   // Day Trader (H1)
+    }
+    
+    const fileUrl = `${R2_URL}/${fileName}`;
     
     console.log('📡 Fetching from R2:', fileUrl);
     
     const response = await fetch(fileUrl, {
       headers: { 'Accept': 'application/json' },
-      // FIXED: 'next: { revalidate }' changed to Cloudflare native 'cf: { cacheTtl }'
       cf: { cacheTtl: 60 }
     } as any);
     
     if (!response.ok) {
       if (response.status === 404) {
-        console.warn(`❌ Symbol file 'output_${cleanSymbol}.json' not found in R2`);
+        console.warn(`❌ Symbol file '${fileName}' not found in R2`);
         return Response.json({ error: "Symbol setup not found" }, { status: 404 });
       }
       throw new Error(`Cloudflare R2 returned ${response.status}`);
@@ -42,10 +49,18 @@ export async function onRequestGet(context: any) {
 
     const symbolData = await response.json();
     
-    console.log(`✅ Successfully fetched setup for ${cleanSymbol} from R2`);
+    console.log(`✅ Successfully fetched ${strategy} setup for ${cleanSymbol} from R2`);
     
-    // Return with Cache-Control so the browser/Cloudflare Edge helps with the load
-    return Response.json(symbolData, {
+    // Add strategy info to response metadata
+    const enrichedData = {
+      ...symbolData,
+      _metadata: {
+        strategy: strategy,
+        fetched_at: new Date().toISOString()
+      }
+    };
+    
+    return Response.json(enrichedData, {
       headers: {
         'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30',
         'Content-Type': 'application/json'

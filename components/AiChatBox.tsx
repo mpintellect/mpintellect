@@ -450,7 +450,7 @@ export default function AiChatBox({
   const [selectedPlan, setSelectedPlan] = useState<string>("");
 
   // Signal Ticket State
-  const [ticketData, setTicketData] = useState<{
+    const [ticketData, setTicketData] = useState<{
     symbol: string;
     action: string;
     entry: string;
@@ -460,6 +460,9 @@ export default function AiChatBox({
     slDistanceUSD: number;
     tpDistanceUSD: number;
   } | null>(null);
+
+  // 🆕 Strategy state for Scalper vs Day Trader
+  const [strategy, setStrategy] = useState<"scalper" | "daytrader">("daytrader");
 
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -557,7 +560,7 @@ export default function AiChatBox({
     setStep(3);
 
     try {
-      const setup = await fetchSetup(targetSymbol) as ExtendedTradeSetupData;
+          const setup = await fetchSetup(targetSymbol, strategy) as ExtendedTradeSetupData;
       
       if (!setup) {
         setMessages((prev) => [
@@ -988,7 +991,7 @@ export default function AiChatBox({
           },
         ];
 
-        if (user) {
+                if (user) {
           welcomeMessages.push({
             sender: "ai" as const,
             text: `🎯 You have ${setupCount} setup credit${setupCount === 1 ? '' : 's'} available.`
@@ -999,6 +1002,12 @@ export default function AiChatBox({
             text: `🎉 You have ${2 - trialCount} free trial${2 - trialCount === 1 ? '' : 's'} remaining.`
           });
         }
+
+        // 🆕 Show current strategy
+        welcomeMessages.push({
+          sender: "ai" as const,
+          text: `📊 Current strategy: ${strategy === 'scalper' ? '⚡ Scalper (5min candles)' : '🏛️ Day Trader (H1 candles)'}`
+        });
 
         welcomeMessages.push({
           sender: "ai" as const, 
@@ -1130,7 +1139,7 @@ export default function AiChatBox({
       setStep(3);
 
       try {
-        const setup = await fetchSetup(symbol) as ExtendedTradeSetupData;
+            const setup = await fetchSetup(symbol, strategy) as ExtendedTradeSetupData;
         
         if (!setup) {
           setMessages((prev) => [
@@ -1605,24 +1614,44 @@ export default function AiChatBox({
         {isTyping && <div className="chat-msg ai-msg">⏳ Analyzing market data...</div>}
       </div>
 
-      {step === 1 && (
-        <div className="chatbox-input-group">
-          <select
-            value={symbol || ""}
-            onChange={(e) => {
-              const selected = e.target.value as SymbolKey;
-              if (selected) handleUserInput(selected);
-            }}
-            className="chatbox-select"
-          >
-            <option value="">Select a symbol…</option>
-            {ALL_SYMBOLS.map((sym) => (
-              <option key={sym} value={sym}>
-                {SYMBOL_NAMES[sym]} ({sym})
-              </option>
-            ))}
-          </select>
-        </div>
+            {step === 1 && (
+        <>
+          <div className="chatbox-input-group">
+            <select
+              value={symbol || ""}
+              onChange={(e) => {
+                const selected = e.target.value as SymbolKey;
+                if (selected) handleUserInput(selected);
+              }}
+              className="chatbox-select"
+            >
+              <option value="">Select a symbol…</option>
+              {ALL_SYMBOLS.map((sym) => (
+                <option key={sym} value={sym}>
+                  {SYMBOL_NAMES[sym]} ({sym})
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          {/* 🆕 STRATEGY TOGGLE */}
+          <div className="strategy-toggle-container">
+            <span className={`strategy-label ${strategy === 'scalper' ? 'active' : ''}`}>
+              ⚡ Scalper (5min)
+            </span>
+            <label className="strategy-switch">
+              <input
+                type="checkbox"
+                checked={strategy === 'daytrader'}
+                onChange={(e) => setStrategy(e.target.checked ? 'daytrader' : 'scalper')}
+              />
+              <span className="slider round"></span>
+            </label>
+            <span className={`strategy-label ${strategy === 'daytrader' ? 'active' : ''}`}>
+              🏛️ Day Trader (H1)
+            </span>
+          </div>
+        </>
       )}
 
       {step === 2 && (

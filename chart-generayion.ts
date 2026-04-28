@@ -561,3 +561,386 @@ def analyze_tp_sl(df: pd.DataFrame, symbol: str, trend: dict = None, zones: dict
     except Exception as e:
         result.update({"is_valid": False, "notes": f"H1 Risk Audit Error: {str(e)}"})
         return result
+
+
+        ---------
+
+
+        # daytrader/gather_trade_setup.py
+import pandas as pd
+import sqlite3
+import numpy as np
+import os
+from datetime import datetime, timedelta, timezone
+
+# --- Institutional Analysis Modules (Day Trader H1 Versions) ---
+from analysis_modules.analyze_trend import analyze_trend
+from analysis_modules.analyze_volatility import analyze_volatility
+from analysis_modules.analyze_momentum import analyze_momentum
+from analysis_modules.analyze_zones import analyze_zones
+from analysis_modules.analyze_volume_profile import analyze_volume_profile
+from analysis_modules.analyze_market_sessions import analyze_market_sessions
+from analysis_modules.analyze_pending_orders import analyze_pending_orders
+from analysis_modules.analyze_tp_sl import analyze_tp_sl
+from analysis_modules.analyze_risk_score import analyze_risk_score
+from analysis_modules.generate_summary import generate_summary
+from analysis_modules.generate_decision import generate_decision
+from analysis_modules.analyze_trade_parameters import analyze_trade_parameters
+
+# --- Master Configuration (Single Source of Truth) ---
+from data.symbols_config import get_pip_size, get_symbol_settings, SYMBOL_MAP
+
+# 🔧 DATABASE CONFIG
+DATABASE_PATH = "market_dataH1.db"
+
+# ✅ DATA WINDOW SETTINGS (Optimized for H1 Day Trading)
+ANALYSIS_HOURS = 720   # 30 Days (Monthly Institutional Structure)
+SHORT_TERM_HOURS = 168 # 1 Week (Interday Volatility Context)
+
+# 🎯 COMPONENT WEIGHT CONFIGURATION (Day Trader Standard)
+COMPONENT_WEIGHTS = {
+    "trend": 25,        # Interday Cycle (EMA 200 Baseline)
+    "momentum": 20,     # RSI/MACD momentum confirmation
+    "volume": 15,       # Monthly Institutional POC
+    "zones": 15,        # Weekly Structural Walls
+    "volatility": 15,   # Hourly Noise Protection
+    "sessions": 10,     # Global Liquidity Timing
+}
+
+def format_number_for_symbol(value, symbol: str):
+    """Surgically accurate price formatting based on Master Symbol Map."""
+    if value is None: return None
+    try:
+        decimals = SYMBOL_MAP.get(symbol, {}).get("dec", 5)
+        return float(f"{round(float(value), decimals):.{decimals}f}")
+    except (TypeError, ValueError):
+        return value
+
+def load_candles(symbol: str, hours: int) -> pd.DataFrame:
+    """Load H1 candle data and force numeric types for institutional math."""
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+        # FIXED: Use correct table name 'candles_h1'
+        query = "SELECT * FROM candles_h1 WHERE symbol = ? AND time >= ? ORDER BY time ASC"
+        df = pd.read_sql(query, conn, params=(symbol, cutoff), parse_dates=["time"])
+        conn.close()
+        
+        if df.empty: return df
+
+        # Surgical Fix: Ensure data types are floats to prevent binary errors
+        numeric_cols = ['open', 'high', 'low', 'close', 'tick_volume', 'ema_20', 'ema_50', 'ema_200', 'atr', 'rsi']
+        for col in numeric_cols:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+                
+        return df
+    except Exception as e:
+        print(f"❌ H1 Database Error for {symbol}: {e}")
+        return pd.DataFrame()
+
+def gather_trade_setup(symbol: str) -> dict:
+    """
+    Day Trader Orchestrator: Surgically fixed for Null-Safety.
+    Ensures 100% stability even when components are missing.
+    """
+    df = load_candles(symbol, hours=ANALYSIS_HOURS)
+    if df.empty: 
+        return {"symbol": symbol, "error": "No data"}
+
+    last_ts = df['time'].max()
+    df_week = df[df['time'] >= (last_ts - timedelta(hours=SHORT_TERM_HOURS))].copy()
+
+    analysis_results = {}
+    component_scores = {}
+
+    # 1. CORE ANALYTICS - Process all components including momentum
+    for component in COMPONENT_WEIGHTS.keys():
+        try:
+            if component == "trend": 
+                result = analyze_trend(df)
+            elif component == "momentum":  # FIXED: Added momentum processing
+                result = analyze_momentum(df, analysis_results.get("trend"))
+            elif component == "volume": 
+                result = analyze_volume_profile(df, symbol)
+            elif component == "zones": 
+                result = analyze_zones(df, symbol, analysis_results.get("trend"))
+            elif component == "volatility": 
+                result = analyze_volatility(df_week, symbol)
+            elif component == "sessions": 
+                result = analyze_market_sessions(df)
+            else:
+                result = {"component_quality": 50}
+            
+            analysis_results[component] = result
+            # FIXED: Default to 50 instead of 0 for missing quality
+            component_scores[component] = result.get("component_quality", 50) if result else 50
+            
+        except Exception as e:
+            print(f"⚠️ {component} failed for {symbol}: {e}")
+            analysis_results[component] = {"fallback": True, "component_quality": 50}
+            component_scores[component] = 50  # FIXED: Changed from 0 to 50
+
+    # NULL-SAFE PLACEHOLDERS
+    trend = analysis_results.get("trend", {})
+    volatility = analysis_results.get("volatility", {})
+    momentum = analysis_results.get("momentum", {"momentum_bias": "neutral", "component_quality": 50})
+    zones = analysis_results.get("zones", {})
+    volume = analysis_results.get("volume", {})
+    sessions = analysis_results.get("sessions", {})
+
+    # FIXED: Calculate accuracy with proper weighting
+    total_weight = sum(COMPONENT_WEIGHTS.values())
+    accuracy = sum(component_scores.get(c, 50) * COMPONENT_WEIGHTS.get(c, 0) for c in COMPONENT_WEIGHTS) / total_weight
+
+    # 2. EXECUTION MATH
+    pending_orders = analyze_pending_orders(df_week, symbol, trend, zones, momentum, volatility)
+    tp_sl = analyze_tp_sl(df_week, symbol, trend, zones, pending_orders, volatility)
+    
+    risk_score = analyze_risk_score(trend, volatility, momentum, zones, pending_orders, tp_sl, volume, sessions)
+    risk_score = adjust_risk_score_by_accuracy(risk_score, accuracy)
+    
+    final_decision = generate_decision(trend, momentum, zones, risk_score, volatility, pending_orders, tp_sl, None, volume, None, sessions)
+    
+    trade_params = analyze_trade_parameters(df_week, symbol, final_decision, pending_orders, trend, volatility, zones)
+
+    summary = generate_summary(symbol, trend, momentum, volatility, zones, pending_orders, tp_sl, risk_score, final_decision, trade_params, volume, sessions)
+    
+    analysis_results.update({
+        "summary": summary,
+        "symbol": symbol,
+        "analysis_accuracy": round(accuracy, 1),
+        "component_scores": component_scores,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "risk_score": risk_score,
+        "final_decision": final_decision,
+        "trade_parameters": trade_params,
+        "tp_sl": tp_sl,
+        "pending_orders": pending_orders  # FIXED: Added missing pending_orders
+    })
+
+    return analysis_results
+
+# --- 🛠️ HELPER FUNCTIONS ---
+
+def adjust_risk_score_by_accuracy(base_score: dict, accuracy: float) -> dict:
+    """Adjust confidence score based on overall analysis accuracy"""
+    adj_conf = base_score.get("confidence_score", 50) * (accuracy / 100)
+    base_score["confidence_score"] = round(min(100, max(0, adj_conf)))
+    return base_score
+
+def create_weighted_fallback(component: str, df: pd.DataFrame, symbol: str, score: float) -> dict:
+    """Create fallback data for failed components"""
+    curr = df['close'].iloc[-1] if not df.empty else 0
+    return {
+        "diagnostic_symbol": symbol, 
+        "failed_module": component, 
+        "fallback_used": True, 
+        "component_quality": score, 
+        "current_price": curr
+    }
+
+
+    -----
+
+    # daytrader/fetch_h1.py
+import MetaTrader5 as mt5
+import pandas as pd
+import sqlite3
+import os
+from datetime import datetime, timezone
+from ta.volatility import AverageTrueRange
+from ta.trend import EMAIndicator
+from ta.momentum import RSIIndicator
+
+# === CONFIG ===
+SYMBOLS = [
+    "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD", "NZDUSD", "USDCHF",
+    "XAUUSD", "XAUEUR", "XAGUSD", "PLATINUM", "BRENT",
+    "BTCUSD", "ETHUSD", "XRPUSD", "DOGEUSD", "LTCUSD",
+    "US500", "USTEC", "US30", "HK50", "FRANCE40", "CHINA50", "UK100",
+    "EURJPY", "EURGBP", "GBPJPY", "GBPCHF"
+]
+
+# Timeframe to H1 (Day Trading Standard)
+TIMEFRAME = mt5.TIMEFRAME_H1
+
+# FIXED: Keep 1000 candles (approx 41 days) for proper EMA 200 and momentum analysis
+KEEP_ROWS = 1000
+
+# FIXED: Database path (consistent with gather_trade_setup.py)
+DATABASE_PATH = "market_dataH1.db"
+
+# === INSTITUTIONAL MTF BIAS HELPER (H1 Edition) ===
+def get_timeframe_bias(symbol, timeframe):
+    """Calculates bias for Day Trading anchors: D1 and Weekly."""
+    try:
+        rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, 150)
+        if rates is None or len(rates) < 50:
+            return "neutral"
+        
+        df_tf = pd.DataFrame(rates)
+        # Day traders use the EMA 50 on higher timeframes to define the 'Boss' trend
+        ema50 = EMAIndicator(df_tf['close'], window=50).ema_indicator()
+        if ema50.isna().all():
+            return "neutral"
+        ema50_latest = ema50.iloc[-1]
+        current_close = df_tf['close'].iloc[-1]
+        
+        return "bullish" if current_close > ema50_latest else "bearish"
+    except Exception as e:
+        print(f"⚠️ Error getting bias: {e}")
+        return "neutral"
+
+# === MT5 Init ===
+if not mt5.initialize():
+    print("❌ MT5 initialization failed")
+    exit()
+
+print("✅ MT5 initialized successfully")
+
+# === DB Init (Targeting H1 Table) ===
+conn = sqlite3.connect(DATABASE_PATH)
+cursor = conn.cursor()
+
+# Create table if not exists (matching gather_trade_setup.py expectations)
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS candles_h1 (
+    symbol TEXT,
+    time TEXT,
+    open REAL, 
+    high REAL, 
+    low REAL, 
+    close REAL,
+    tick_volume REAL,
+    ema_20 REAL, 
+    ema_50 REAL, 
+    ema_200 REAL,
+    atr REAL, 
+    rsi REAL,
+    d1_bias TEXT, 
+    w1_bias TEXT,
+    PRIMARY KEY (symbol, time)
+)
+""")
+conn.commit()
+print("✅ Database initialized\n")
+
+# === MAIN LOOP ===
+print(f"📥 Syncing Day Trader (H1) Data (Keeping {KEEP_ROWS} candles per symbol)...\n")
+print("=" * 60)
+
+success_count = 0
+fail_count = 0
+
+for symbol in SYMBOLS:
+    try:
+        # FIXED: Fetch 500 candles to ensure we have enough for EMA 200
+        rates = mt5.copy_rates_from_pos(symbol, TIMEFRAME, 0, 500)
+        
+        if rates is None:
+            print(f"❌ {symbol}: No data received from MT5")
+            fail_count += 1
+            continue
+            
+        if len(rates) < 200:
+            print(f"⚠️ {symbol}: Only {len(rates)} candles (need 200+ for EMA 200)")
+            fail_count += 1
+            continue
+
+        df = pd.DataFrame(rates)
+        df['time'] = pd.to_datetime(df['time'], unit='s', utc=True)
+
+        # Calculate the H1 Institutional Indicator Stack (20, 50, 200)
+        df['ema_20'] = EMAIndicator(df['close'], window=20).ema_indicator()
+        df['ema_50'] = EMAIndicator(df['close'], window=50).ema_indicator()
+        df['ema_200'] = EMAIndicator(df['close'], window=200).ema_indicator()
+        df['atr'] = AverageTrueRange(df['high'], df['low'], df['close'], window=14).average_true_range()
+        df['rsi'] = RSIIndicator(df['close'], window=14).rsi()
+
+        # Fill NaN values for initial periods
+        df['ema_20'] = df['ema_20'].fillna(df['close'])
+        df['ema_50'] = df['ema_50'].fillna(df['close'])
+        df['ema_200'] = df['ema_200'].fillna(df['close'])
+        df['atr'] = df['atr'].fillna(df['high'] - df['low'])
+        df['rsi'] = df['rsi'].fillna(50)
+
+        # Fetch Macro Anchors (Daily and Weekly)
+        d1_bias = get_timeframe_bias(symbol, mt5.TIMEFRAME_D1)
+        w1_bias = get_timeframe_bias(symbol, mt5.TIMEFRAME_W1)
+
+        # Count how many rows we'll insert
+        rows_inserted = 0
+        
+        # Insert all rows (not just the last one) to build proper history
+        for idx, row in df.iterrows():
+            try:
+                cursor.execute("""
+                    INSERT OR REPLACE INTO candles_h1 (
+                        symbol, time, open, high, low, close,
+                        tick_volume, ema_20, ema_50, ema_200,
+                        atr, rsi, d1_bias, w1_bias
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    symbol, row['time'].isoformat(),
+                    float(row['open']), float(row['high']), float(row['low']), float(row['close']),
+                    float(row['tick_volume']),
+                    float(row['ema_20']), float(row['ema_50']), float(row['ema_200']),
+                    float(row['atr']), float(row['rsi']),
+                    d1_bias, w1_bias
+                ))
+                rows_inserted += 1
+            except Exception as e:
+                print(f"  ⚠️ Row insert error: {e}")
+                continue
+
+        # Maintenance: Keep only the most recent KEEP_ROWS candles
+        cursor.execute("""
+            DELETE FROM candles_h1 
+            WHERE symbol=? AND time NOT IN (
+                SELECT time FROM candles_h1 
+                WHERE symbol=? 
+                ORDER BY time DESC 
+                LIMIT ?
+            )
+        """, (symbol, symbol, KEEP_ROWS))
+        
+        conn.commit()
+        
+        # Get final count
+        cursor.execute("SELECT COUNT(*) FROM candles_h1 WHERE symbol=?", (symbol,))
+        final_count = cursor.fetchone()[0]
+        
+        print(f"✅ {symbol}: Inserted {rows_inserted} rows | Total: {final_count} candles | D1: {d1_bias} | W1: {w1_bias}")
+        success_count += 1
+
+    except Exception as e:
+        print(f"❌ Error {symbol}: {e}")
+        fail_count += 1
+
+# === FINAL SUMMARY ===
+print("\n" + "=" * 60)
+print(f"📊 SYNC SUMMARY")
+print("=" * 60)
+print(f"✅ Successful: {success_count}")
+print(f"❌ Failed: {fail_count}")
+print(f"📊 Total symbols: {len(SYMBOLS)}")
+print("=" * 60)
+
+# Verify data quality
+print("\n🔍 DATA QUALITY CHECK:")
+cursor.execute("""
+    SELECT symbol, COUNT(*) as count, 
+           SUM(CASE WHEN ema_200 IS NULL THEN 1 ELSE 0 END) as null_ema
+    FROM candles_h1 
+    GROUP BY symbol 
+    ORDER BY count DESC
+    LIMIT 5
+""")
+for row in cursor.fetchall():
+    print(f"  {row[0]}: {row[1]} candles | Null EMA: {row[2]}")
+
+conn.close()
+mt5.shutdown()
+
+print("\n✅ H1 data syncs complete!")

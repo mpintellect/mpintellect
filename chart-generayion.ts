@@ -428,3 +428,136 @@ function generateChartHTML(chartData: any, gold: string, dim: string) {
     </div>
   `;
 }
+
+
+
+
+------
+
+# daytrader/analysis_modules/analyze_tp_sl.py
+import pandas as pd
+import numpy as np
+from data.symbols_config import get_pip_size, get_symbol_settings
+
+# ✅ MASTER DECIMAL LOOKUP
+PRICE_DECIMALS = {
+    "EURUSD": 5, "GBPUSD": 5, "USDJPY": 3, "USDCAD": 5, "AUDUSD": 5,
+    "NZDUSD": 5, "USDCHF": 5,
+    "XAUUSD": 2, "XAUEUR": 2, "XAGUSD": 3,
+    "PLATINUM": 2, "BRENT": 2, "BTCUSD": 1, "ETHUSD": 2, "XRPUSD": 4,
+    "DOGEUSD": 4, "LTCUSD": 2, "US500": 2, "USTEC": 2, "US30": 2, "HK50": 2,
+    "FRANCE40": 2, "CHINA50": 1, "UK100": 1, "EURJPY": 3, "EURGBP": 5,
+    "GBPJPY": 3, "GBPCHF": 5
+}
+
+def format_price(value: float, symbol: str) -> float:
+    if value is None or np.isnan(value): return 0.0
+    decimals = PRICE_DECIMALS.get(symbol, 5)
+    return float(f"{round(float(value), decimals):.{decimals}f}")
+
+def analyze_tp_sl(df: pd.DataFrame, symbol: str, trend: dict = None, zones: dict = None, 
+                  pending_orders: dict = None, volatility: dict = None) -> dict:
+    """
+    Day Trader (H1) Risk Auditor.
+    Optimized for Interday expansions, survivors of news spikes, and professional RR caps.
+    """
+    result = {
+        "entry_price": None, "tp_level": None, "sl_level": None, "rr_ratio": 1.5,
+        "sl_distance_pips": 0.0, "tp_distance_pips": 0.0, "risk_management": "standard",
+        "is_valid": True, "notes": "", "asset_class": "unknown", "rr_validation": "passed"
+    }
+
+    try:
+        # 1. INITIALIZE MASTER RULES FOR DAY TRADING
+        settings = get_symbol_settings(symbol)
+        pip_size = settings["pip_size"]
+        
+        # --- 🛡️ DAY TRADER SAFETY REGISTRY (H1 OPTIMIZED) ---
+        # We increase MIN_SL and MAX_RR to match the H1 volatility cycles.
+        if settings["type"] == "crypto":
+            MIN_SL = 100; MAX_RR = 5.0 # Crypto H1 swings are massive
+        elif "metal" in settings["type"] or "commodity" in settings["type"]:
+            MIN_SL = 50;  MAX_RR = 4.5 # Gold/Brent need more room on H1
+        else: # Forex
+            MIN_SL = 15;  MAX_RR = 4.0 # Forex H1 floor: 15 pips (Scalp was 7)
+        # --------------------------------------------------
+        
+        result["asset_class"] = settings["type"]
+
+        # 2. PATH A: AUDIT PENDING ORDERS
+        if pending_orders and pending_orders.get("is_valid") and pending_orders.get("primary_order"):
+            order = pending_orders["primary_order"]
+            entry = float(order.get("entry_price", 0))
+            sl = float(order.get("sl_price", 0))
+            tp = float(order.get("tp_price", 0))
+            otype = order.get("type", "BUY_LIMIT")
+
+            # --- 🛡️ FIX 1: THE H1 SPREAD & NOISE FLOOR ---
+            risk_pips = abs(entry - sl) / pip_size
+            if risk_pips < MIN_SL:
+                # Widen stop to ensure the trade survives the 24h noise cycle
+                sl = (entry - (MIN_SL * pip_size)) if "BUY" in otype else (entry + (MIN_SL * pip_size))
+                result["notes"] += f" | SL adjusted for H1 cycle ({MIN_SL}p floor)"
+                risk_pips = MIN_SL
+
+            # --- 🛡️ FIX 2: THE DAY TRADE GREED CAP ---
+            risk_amt = abs(entry - sl)
+            reward_amt = abs(tp - entry)
+            current_rr = reward_amt / risk_amt if risk_amt > 0 else 1.0
+            
+            if current_rr > MAX_RR:
+                # Pull the TP in to ensure it's hit within a 48-hour window
+                new_reward = risk_amt * MAX_RR
+                tp = (entry + new_reward) if "BUY" in otype else (entry - new_reward)
+                result["notes"] += f" | TP capped at realistic H1 {MAX_RR}:1 RR"
+                current_rr = MAX_RR
+
+            result.update({
+                "entry_price": format_price(entry, symbol),
+                "sl_level": format_price(sl, symbol),
+                "tp_level": format_price(tp, symbol),
+                "rr_ratio": round(current_rr, 2),
+                "sl_distance_pips": round(risk_pips, 1),
+                "tp_distance_pips": round(abs(tp - entry) / pip_size, 1),
+                "notes": f"H1 Verified {otype}" + result["notes"],
+                "rr_validation": "passed_h1_audit"
+            })
+            return result
+
+        # 3. PATH B: CONTEXTUAL FALLBACK (H1 Structural Logic)
+        curr_p = df['close'].iloc[-1] if not df.empty else 0
+        atr = volatility.get("current_atr", curr_p * 0.002) if volatility else curr_p * 0.002
+        is_buy = "bullish" in trend.get("trend", "neutral") if trend else True
+        
+        # H1 Spacing: 2.0x ATR for safety (Scalper used 1.5x)
+        spacing = max(atr * 2.0, MIN_SL * pip_size)
+        
+        f_entry = curr_p
+        f_sl = (f_entry - spacing) if is_buy else (f_entry + spacing)
+        
+        # Hide stops behind H1 structural zones
+        if zones:
+            sup, res = zones.get("support_zone"), zones.get("resistance_zone")
+            if is_buy and sup and sup < f_entry: f_sl = min(f_sl, sup - (atr * 0.3))
+            elif not is_buy and res and res > f_entry: f_sl = max(f_sl, res + (atr * 0.3))
+
+        # Aim for H1 targets (Default 2.5:1 RR for Day Traders)
+        f_tp = (f_entry + (abs(f_entry - f_sl) * 2.5)) if is_buy else (f_entry - (abs(f_entry - f_sl) * 2.5))
+        
+        # Apply H1 Greed Cap
+        final_rr = abs(f_tp - f_entry) / abs(f_entry - f_sl)
+        if final_rr > MAX_RR:
+            f_tp = f_entry + (abs(f_entry - f_sl) * MAX_RR) if is_buy else f_entry - (abs(f_entry - f_sl) * MAX_RR)
+
+        result.update({
+            "entry_price": format_price(f_entry, symbol),
+            "sl_level": format_price(f_sl, symbol),
+            "tp_level": format_price(f_tp, symbol),
+            "rr_ratio": round(abs(f_tp - f_entry) / abs(f_entry - f_sl), 2),
+            "notes": "H1 Strategic Cycle Fallback"
+        })
+        return result
+
+    except Exception as e:
+        result.update({"is_valid": False, "notes": f"H1 Risk Audit Error: {str(e)}"})
+        return result

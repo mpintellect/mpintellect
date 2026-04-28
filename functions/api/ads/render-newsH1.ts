@@ -211,31 +211,36 @@ function generateCompleteHTML(story: any, chartData: any, mzLogo: string | null,
         <div class="container">
           
           <!-- HEADER -->
-          <div class="glass-header" style="
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between;
-            margin: 0 auto 50px auto; 
-            padding: 12px 40px; 
-            width: 900px;
-          ">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <img src="${mzLogo}" style="height: 50px;" />
-              <span style="font-size: 18px; font-weight: 300; letter-spacing: 2px;">MPINTELLECT.COM</span>
-            </div>
-            <div style="width: 1px; height: 35px; background: rgba(255,255,255,0.2);"></div>
-            <div>
-              ${partnerLogo ? 
-                `<img src="${partnerLogo}" style="height: 50px; border-radius: 10px;" />` : 
-                `<span style="color: rgba(255,255,255,0.4); font-size: 14px;">PARTNER</span>`
-              }
-            </div>
-          </div>
+<div style="
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between;
+  margin: 0 auto 50px auto; 
+  padding: 12px 40px; 
+  width: 900px;
+  background: #000000;
+  border-radius: 100px; 
+  border: 1px solid rgba(255,255,255,0.1);
+">
+  <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.6px; padding-right: 30px;">
+    <img src="${mzLogo}" style="height: 66px;" />
+    <span style="font-size: 22px; font-weight: 300; letter-spacing: 2px; color: white;">MPINTELLECT.COM</span>
+  </div>
+  <div style="width: 1px; height: 45px; background: rgba(255,255,255,0.25);"></div>
+  <div style="display: flex; align-items: center; justify-content: flex-start; padding-left: 40px;">
+    ${partnerLogo ? 
+      `<img src="${partnerLogo}" style="height: 66px; border-radius: 12px;" />` : 
+      `<span style="color: rgba(255,255,255,0.4); font-size: 18px; font-weight: 300; letter-spacing: 2px;">OFFICIAL PARTNER</span>`
+    }
+  </div>
+</div>
 
-          <!-- SUBTITLE -->
-          <div style="text-align: center; margin-bottom: 40px;">
-            <p style="font-size: 14px; letter-spacing: 4px; color: ${dim};">CONTEXT CHANGES EVERYTHING</p>
-          </div>
+        <!-- INSTITUTIONAL SUBTITLE -->
+        <div style="text-align: center; margin-bottom: 60px;">
+          <p style="font-size: 18px; font-weight: 400; text-transform: uppercase; letter-spacing: 6px; color: #94a3b8; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+            Context changes everything. What you need to know before you trade.
+          </p>
+        </div>
 
                     
                     <!-- IDENTITY SECTION -->
@@ -370,6 +375,7 @@ function generateChartHTML(chartData: any, gold: string, dim: string) {
   
   const symbolSpec = SYMBOL_SPECS[symbol] || { decimals: 2, pip: 0.01, contract: 1 };
   const decimals = symbolSpec.decimals;
+  const pipSize = symbolSpec.pip;
   
   function formatPrice(price: number): string {
     if (price === undefined || price === null) return 'N/A';
@@ -386,118 +392,95 @@ function generateChartHTML(chartData: any, gold: string, dim: string) {
   }
   
   // ============================================================
-  // CHART DIMENSIONS
+  // CHART DIMENSIONS - ENLARGED
   // ============================================================
-  const chartWidth = 980;
-  const chartHeight = 480;
-  const chartBoxX = 30;
-  const chartBoxY = 75;
+  const chartWidth = 1400;      // BIGGER (was 980)
+  const chartHeight = 580;      // BIGGER (was 480)
+  const chartBoxX = -30;        // Shift left for price space
+  const chartBoxY = 85;         // Slightly lower
   const chartBoxWidth = chartWidth - 60;
   const chartBoxHeight = chartHeight;
   
   // Show last 35 candles
   const visibleCandles = candles.slice(-35);
-  const candleWidth = Math.max(6, Math.min(12, (chartBoxWidth - 70) / visibleCandles.length - 2));
-  const spacing = candleWidth + 3;
-  const chartLeft = chartBoxX + 55;
+  const candleWidth = Math.max(8, Math.min(15, (chartBoxWidth - 80) / visibleCandles.length - 2));  // BIGGER candles
+  const spacing = candleWidth + 4;  // More spacing
+  const chartLeft = chartBoxX + 60;
   const chartRight = chartBoxX + chartBoxWidth - 20;
   
-  // Get TP level and Pivot level
+  // Get TP, SL, and Pivot levels
   const pendingOrder = chart.pending_order || {};
   const takeProfit = pendingOrder.take_profit;
+  const stopLoss = pendingOrder.stop_loss;
   const pivotLevel = pivot.level;
   const isShort = prediction.direction === 'DOWN' || pendingOrder.type === 'SELL_LIMIT';
   const boxColor = "#10B981";
   
-  // Calculate levels for range
-  let allLevels: number[] = [];
-  for (const c of visibleCandles) {
-    allLevels.push(c.high, c.low);
-  }
-  allLevels.push(chart.current_price);
-  if (pivot.level) allLevels.push(pivot.level);
-  if (pivot.support_1) allLevels.push(pivot.support_1);
-  if (pivot.resistance_1) allLevels.push(pivot.resistance_1);
-  if (takeProfit) allLevels.push(takeProfit);
-  if (pendingOrder.stop_loss) allLevels.push(pendingOrder.stop_loss);
+  // ============================================================
+  // STEP 1: CALCULATE CHART RANGE FROM CANDLES ONLY
+  // ============================================================
   
-  let minPrice = Math.min(...allLevels);
-  let maxPrice = Math.max(...allLevels);
-  const centerPrice = (minPrice + maxPrice) / 2;
-  const range = maxPrice - minPrice;
-  const zoomedRange = range * 0.85;
-  minPrice = centerPrice - (zoomedRange / 2);
-  maxPrice = centerPrice + (zoomedRange / 2);
+  let candleMin = Infinity;
+  let candleMax = -Infinity;
+  for (const c of visibleCandles) {
+    candleMin = Math.min(candleMin, c.low);
+    candleMax = Math.max(candleMax, c.high);
+  }
+  candleMin = Math.min(candleMin, chart.current_price);
+  candleMax = Math.max(candleMax, chart.current_price);
+  
+  if (pivotLevel) {
+    if (pivotLevel < candleMin) candleMin = pivotLevel;
+    if (pivotLevel > candleMax) candleMax = pivotLevel;
+  }
+  
+  const candleRange = candleMax - candleMin;
+  const padding = candleRange * 0.15;
+  let minPrice = candleMin - padding;
+  let maxPrice = candleMax + padding;
   const priceRange = maxPrice - minPrice;
   
   function getY(price: number): number {
+    if (price <= minPrice) return chartBoxY + chartBoxHeight - 2;
+    if (price >= maxPrice) return chartBoxY + 2;
     return chartBoxY + chartBoxHeight - ((price - minPrice) / priceRange) * chartBoxHeight;
   }
   
+  function getClampedY(price: number): number {
+    let y = getY(price);
+    return Math.min(chartBoxY + chartBoxHeight - 2, Math.max(chartBoxY + 2, y));
+  }
+  
   // ============================================================
-  // FORECAST BOX (from PIVOT level to TP level)
+  // STEP 2: FORECAST BOX
   // ============================================================
   const lastCandleIndex = visibleCandles.length - 1;
   const lastCandleX = chartLeft + (lastCandleIndex * spacing);
-  const forecastBoxWidth = spacing * 10;
-  const forecastBoxX = lastCandleX + candleWidth + 8;
+  const forecastBoxWidth = spacing * 12;  // WIDER
+  const forecastBoxX = lastCandleX + candleWidth + 10;
   const forecastBoxRight = forecastBoxX + forecastBoxWidth;
   
-  // Get Y positions for PIVOT and TP
   const pivotY = pivotLevel ? getY(pivotLevel) : null;
-  const tpY = takeProfit ? getY(takeProfit) : null;
+  const tpPrice = takeProfit;
+  const tpY = tpPrice ? getY(tpPrice) : null;
   
-  // Get SL level from pending order
-  const stopLoss = pendingOrder.stop_loss;
-  const slY = stopLoss ? getY(stopLoss) : null;
-  
-  // SL Box boundaries (from PIVOT to SL) - OPPOSITE direction of TP
-  let slBoxTop: number | null = null;
-  let slBoxBottom: number | null = null;
-  let slBoxHeight = 0;
-  
-  if (slY !== null && pivotY !== null) {
-    if (isShort) {
-      // SHORT: SL is ABOVE PIVOT (opposite direction)
-      slBoxTop = pivotY;
-      slBoxBottom = slY;
-    } else {
-      // LONG: SL is BELOW PIVOT (opposite direction)
-      slBoxTop = slY;
-      slBoxBottom = pivotY;
-    }
-    slBoxHeight = Math.abs(slBoxBottom - slBoxTop);
-  }
-  
-  // Box boundaries (from PIVOT to TP)
   let boxTop: number | null = null;
   let boxBottom: number | null = null;
   let boxHeight = 0;
   
   if (pivotY !== null && tpY !== null) {
     if (isShort) {
-      boxTop = pivotY;
-      boxBottom = tpY;
+      boxTop = Math.min(pivotY, tpY);
+      boxBottom = Math.max(pivotY, tpY);
     } else {
-      boxTop = tpY;
-      boxBottom = pivotY;
+      boxTop = Math.min(pivotY, tpY);
+      boxBottom = Math.max(pivotY, tpY);
     }
-    boxHeight = Math.abs(boxBottom - boxTop);
-  } else {
-    const currentPriceY = getY(chart.current_price);
-    if (isShort) {
-      boxTop = currentPriceY;
-      boxBottom = tpY || currentPriceY + 70;
-    } else {
-      boxTop = tpY || currentPriceY - 70;
-      boxBottom = currentPriceY;
-    }
+    boxTop = Math.max(chartBoxY, Math.min(chartBoxY + chartBoxHeight, boxTop));
+    boxBottom = Math.max(chartBoxY, Math.min(chartBoxY + chartBoxHeight, boxBottom));
     boxHeight = Math.abs(boxBottom - boxTop);
   }
   
-  // SL ZONE (Red zone from PIVOT to SL)
-  
-  // Forecast box with direction symbol
   let forecastSVG = '';
   if (takeProfit && pivotLevel && forecastBoxWidth > 0 && boxHeight > 5 && boxTop !== null && boxBottom !== null) {
     const centerX = forecastBoxX + forecastBoxWidth / 2;
@@ -505,35 +488,36 @@ function generateChartHTML(chartData: any, gold: string, dim: string) {
     const directionSymbol = isShort ? '▼' : '▲';
     
     forecastSVG = `
-      <!-- Forecast Box (from PIVOT to TP) -->
-      <rect x="${forecastBoxX}" y="${Math.min(boxTop, boxBottom)}" 
+      <rect x="${forecastBoxX}" y="${boxTop}" 
             width="${forecastBoxWidth}" height="${boxHeight}" 
-            fill="${boxColor}" opacity="0.12" rx="6"/>
-      
-      <!-- Forecast Box Border -->
-      <rect x="${forecastBoxX}" y="${Math.min(boxTop, boxBottom)}" 
+            fill="${boxColor}" opacity="0.12" rx="8"/>
+      <rect x="${forecastBoxX}" y="${boxTop}" 
             width="${forecastBoxWidth}" height="${boxHeight}" 
-            fill="none" stroke="${boxColor}" stroke-width="2" 
-            stroke-dasharray="6,4" rx="6" opacity="0.7"/>
-      
-      <!-- Top border line (PIVOT level) -->
+            fill="none" stroke="${boxColor}" stroke-width="2.5" 
+            stroke-dasharray="8,5" rx="8" opacity="0.7"/>
       <line x1="${forecastBoxX}" y1="${boxTop}" x2="${forecastBoxRight}" y2="${boxTop}" 
-            stroke="${boxColor}" stroke-width="2" opacity="0.8"/>
-      
-      <!-- Bottom border line (TP level) -->
+            stroke="${boxColor}" stroke-width="2.5" opacity="0.8"/>
       <line x1="${forecastBoxX}" y1="${boxBottom}" x2="${forecastBoxRight}" y2="${boxBottom}" 
-            stroke="${boxColor}" stroke-width="2" opacity="0.8"/>
-      
-      <!-- Direction Indicator in the middle -->
+            stroke="${boxColor}" stroke-width="2.5" opacity="0.8"/>
       <g transform="translate(${centerX}, ${centerY})">
-        <circle cx="0" cy="0" r="22" fill="${isShort ? '#EF4444' : '#10B981'}" opacity="0.15" stroke="${isShort ? '#EF4444' : '#10B981'}" stroke-width="2"/>
-        <text x="0" y="8" text-anchor="middle" fill="${isShort ? '#EF4444' : '#10B981'}" font-size="28" font-weight="900">${directionSymbol}</text>
+        <circle cx="0" cy="0" r="28" fill="${isShort ? '#EF4444' : '#10B981'}" opacity="0.15" stroke="${isShort ? '#EF4444' : '#10B981'}" stroke-width="2.5"/>
+        <text x="0" y="10" text-anchor="middle" fill="${isShort ? '#EF4444' : '#10B981'}" font-size="34" font-weight="900">${directionSymbol}</text>
       </g>
     `;
+    
+    if (tpPrice && (tpPrice < minPrice || tpPrice > maxPrice)) {
+      const edgeY = tpPrice < minPrice ? chartBoxY + chartBoxHeight - 5 : chartBoxY + 5;
+      forecastSVG += `
+        <line x1="${forecastBoxRight - 25}" y1="${boxBottom}" x2="${forecastBoxRight}" y2="${edgeY}" 
+              stroke="${boxColor}" stroke-width="2" stroke-dasharray="4,4" opacity="0.6"/>
+        <line x1="${forecastBoxRight}" y1="${boxBottom}" x2="${forecastBoxRight + 40}" y2="${edgeY}" 
+              stroke="${boxColor}" stroke-width="2" stroke-dasharray="4,4" opacity="0.6"/>
+      `;
+    }
   }
   
   // ============================================================
-  // GENERATE CANDLES
+  // STEP 3: GENERATE CANDLES
   // ============================================================
   let candlesSVG = '';
   for (let i = 0; i < visibleCandles.length; i++) {
@@ -549,21 +533,22 @@ function generateChartHTML(chartData: any, gold: string, dim: string) {
     const bodyHeight = Math.max(2, Math.abs(close - open));
     
     candlesSVG += `
-      <line x1="${x + candleWidth/2}" y1="${high}" x2="${x + candleWidth/2}" y2="${low}" stroke="${color}" stroke-width="1.5"/>
-      <rect x="${x}" y="${bodyTop}" width="${candleWidth}" height="${bodyHeight}" fill="${color}" opacity="0.95" rx="1.5"/>
+      <line x1="${x + candleWidth/2}" y1="${high}" x2="${x + candleWidth/2}" y2="${low}" stroke="${color}" stroke-width="2"/>
+      <rect x="${x}" y="${bodyTop}" width="${candleWidth}" height="${bodyHeight}" fill="${color}" opacity="0.95" rx="2"/>
     `;
   }
   
   // ============================================================
-  // GRID LINES (MT5 Style with vertical price axis)
+  // GRID LINES
   // ============================================================
   let gridSVG = '';
   const gridLines = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-  const axisX = chartRight + 15;
+  const axisX = chartRight + 30;
   
   gridSVG += `
-    <!-- Vertical Price Axis Line -->
-    <line x1="${axisX}" y1="${chartBoxY}" x2="${axisX}" y2="${chartBoxY + chartBoxHeight}" stroke="#1f3a4a" stroke-width="1" opacity="0.6"/>
+    <rect x="${chartLeft - 5}" y="${chartBoxY - 3}" width="${axisX - chartLeft + 10}" height="${chartBoxHeight + 6}" 
+          fill="none" stroke="#1f3a4a" stroke-width="2" rx="6" opacity="0.8"/>
+    <line x1="${axisX}" y1="${chartBoxY}" x2="${axisX}" y2="${chartBoxY + chartBoxHeight}" stroke="#1f3a4a" stroke-width="2" opacity="0.8"/>
   `;
   
   for (const percent of gridLines) {
@@ -571,203 +556,218 @@ function generateChartHTML(chartData: any, gold: string, dim: string) {
     const price = maxPrice - (percent / 100) * priceRange;
     
     gridSVG += `
-      <line x1="${chartLeft}" y1="${y}" x2="${chartRight}" y2="${y}" stroke="#1f3a4a" stroke-width="0.5" stroke-dasharray="3,3"/>
-      <line x1="${axisX - 5}" y1="${y}" x2="${axisX}" y2="${y}" stroke="#94a3b8" stroke-width="1" opacity="0.8"/>
-      <text x="${axisX + 6}" y="${y + 4}" text-anchor="start" fill="#94a3b8" font-size="10" class="mono" font-weight="500">${formatYAxisPrice(price)}</text>
+      <line x1="${chartLeft}" y1="${y}" x2="${axisX}" y2="${y}" stroke="#1f3a4a" stroke-width="0.7" stroke-dasharray="4,4"/>
+      <line x1="${axisX}" y1="${y}" x2="${axisX + 10}" y2="${y}" stroke="#94a3b8" stroke-width="2" opacity="0.9"/>
+      <text x="${axisX + 18}" y="${y + 6}" text-anchor="start" fill="#94a3b8" font-size="14" class="mono" font-weight="700">${price.toFixed(decimals)}</text>
     `;
   }
   
+  gridSVG += `
+    <line x1="${axisX}" y1="${chartBoxY - 3}" x2="${axisX}" y2="${chartBoxY + chartBoxHeight + 3}" stroke="#1f3a4a" stroke-width="2" rx="6" opacity="0.8"/>
+  `;
+  
   // ============================================================
-  // LEVELS (Small pill boxes)
+  // LEVELS
+  // ============================================================
+  const r1Price = pivot.resistance_1;
+  const r1Y = r1Price ? getClampedY(r1Price) : null;
+  const isR1Far = r1Price && (r1Price > maxPrice);
+  
+  const s1Price = pivot.support_1;
+  const s1Y = s1Price ? getClampedY(s1Price) : null;
+  const isS1Far = s1Price && (s1Price < minPrice);
+  
+  const tpY_clamped = takeProfit ? getClampedY(takeProfit) : null;
+  const isTPFar = takeProfit && (takeProfit < minPrice || takeProfit > maxPrice);
+  
+  const slY_clamped = stopLoss ? getClampedY(stopLoss) : null;
+  const isSLFar = stopLoss && (stopLoss < minPrice || stopLoss > maxPrice);
+  
+  // ============================================================
+  // LEVELS HTML (LARGER)
   // ============================================================
   let levelsHTML = '';
   
   if (pivot.resistance_1) {
     levelsHTML += `
-      <div style="background: rgba(239,68,68,0.15); border-radius: 20px; padding: 4px 12px; border-left: 3px solid #EF4444;">
-        <span style="color: #EF4444; font-size: 11px; font-weight: 600;">RESISTANCE</span>
-        <span style="color: white; font-size: 13px; font-weight: 700; margin-left: 8px;">R1: ${formatPrice(pivot.resistance_1)}</span>
+      <div style="background: rgba(239,68,68,0.15); border-radius: 25px; padding: 6px 16px; border-left: 4px solid #EF4444;">
+        <span style="color: #EF4444; font-size: 13px; font-weight: 700;">RESISTANCE</span>
+        <span style="color: white; font-size: 15px; font-weight: 800; margin-left: 10px;">R1: ${formatPrice(pivot.resistance_1)}</span>
       </div>
     `;
   }
   
   if (pivot.resistance_2) {
     levelsHTML += `
-      <div style="background: rgba(239,68,68,0.08); border-radius: 20px; padding: 4px 12px; border-left: 3px solid rgba(239,68,68,0.5);">
-        <span style="color: #EF4444; font-size: 10px; font-weight: 500;">RESISTANCE</span>
-        <span style="color: rgba(255,255,255,0.7); font-size: 12px; margin-left: 8px;">R2: ${formatPrice(pivot.resistance_2)}</span>
+      <div style="background: rgba(239,68,68,0.08); border-radius: 25px; padding: 5px 14px; border-left: 4px solid rgba(239,68,68,0.5);">
+        <span style="color: #EF4444; font-size: 12px; font-weight: 600;">RESISTANCE</span>
+        <span style="color: rgba(255,255,255,0.7); font-size: 14px; margin-left: 10px;">R2: ${formatPrice(pivot.resistance_2)}</span>
       </div>
     `;
   }
   
   if (pivot.support_1) {
     levelsHTML += `
-      <div style="background: rgba(16,185,129,0.15); border-radius: 20px; padding: 4px 12px; border-left: 3px solid #10B981;">
-        <span style="color: #10B981; font-size: 11px; font-weight: 600;">SUPPORT</span>
-        <span style="color: white; font-size: 13px; font-weight: 700; margin-left: 8px;">S1: ${formatPrice(pivot.support_1)}</span>
+      <div style="background: rgba(16,185,129,0.15); border-radius: 25px; padding: 6px 16px; border-left: 4px solid #10B981;">
+        <span style="color: #10B981; font-size: 13px; font-weight: 700;">SUPPORT</span>
+        <span style="color: white; font-size: 15px; font-weight: 800; margin-left: 10px;">S1: ${formatPrice(pivot.support_1)}</span>
       </div>
     `;
   }
   
   if (pivot.support_2) {
     levelsHTML += `
-      <div style="background: rgba(16,185,129,0.08); border-radius: 20px; padding: 4px 12px; border-left: 3px solid rgba(16,185,129,0.5);">
-        <span style="color: #10B981; font-size: 10px; font-weight: 500;">SUPPORT</span>
-        <span style="color: rgba(255,255,255,0.7); font-size: 12px; margin-left: 8px;">S2: ${formatPrice(pivot.support_2)}</span>
+      <div style="background: rgba(16,185,129,0.08); border-radius: 25px; padding: 5px 14px; border-left: 4px solid rgba(16,185,129,0.5);">
+        <span style="color: #10B981; font-size: 12px; font-weight: 600;">SUPPORT</span>
+        <span style="color: rgba(255,255,255,0.7); font-size: 14px; margin-left: 10px;">S2: ${formatPrice(pivot.support_2)}</span>
       </div>
     `;
   }
   
   return `
-    <div style="background: #0a0a15; border-radius: 25px; padding: 15px; margin-top: 15px; border: 1px solid rgba(212, 175, 55, 0.2);">
+    <div style="background: #0a0a15; border-radius: 30px; padding: 30px; margin-top: 20px; border: 1px solid rgba(212, 175, 55, 0.25);">
       
-                      <!-- Header -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 10px;">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 15px;">
         <div>
-          <span style="color: ${gold}; font-size: 10px; letter-spacing: 2px;">H1 TECHNICAL ANALYSIS (DAY-TRADER)</span>
-          
+          <span style="color: ${gold}; font-size: 13px; letter-spacing: 3px; font-weight: 600;">H1 TECHNICAL ANALYSIS (DAY-TRADER)</span>
         </div>
-    
       </div>
     
-      
-                   <!-- ============================================================ -->
-      <!-- TWO SCENARIO CARDS (Scenario 1: TP / Scenario 2: SL) -->
-      <!-- RTL Layout - Text Right, Percentage Left - WITH PIVOT -->
-      <!-- ============================================================ -->
-      <div style="display: flex; gap: 12px; margin-bottom: 15px; padding: 0 5px; direction: rtl;">
+      <!-- TWO SCENARIO CARDS - LARGER -->
+      <div style="display: flex; gap: 18px; margin-bottom: 25px; padding: 0 10px; direction: rtl;">
         
-        <!-- Scenario 1 Card (السيناريو المفضل) - Color matches direction -->
-        <div style="flex: 1; background: ${isShort ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)'}; border-radius: 16px; padding: 12px 15px; border: 1px solid ${isShort ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}; display: flex; justify-content: space-between; align-items: center;">
-          
-          <!-- Right Side - Text Content -->
+        <!-- Scenario 1 Card -->
+        <div style="flex: 1; background: ${isShort ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)'}; border-radius: 20px; padding: 16px 20px; border: 1.5px solid ${isShort ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'}; display: flex; justify-content: space-between; align-items: center;">
           <div style="text-align: right;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-              <span style="background: ${isShort ? '#EF4444' : '#10B981'}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
-              <span style="color: ${isShort ? '#EF4444' : '#10B981'}; font-size: 12px; font-weight: 700; letter-spacing: 1px;">السيناريو المفضل</span>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+              <span style="background: ${isShort ? '#EF4444' : '#10B981'}; width: 12px; height: 12px; border-radius: 50%; display: inline-block;"></span>
+              <span style="color: ${isShort ? '#EF4444' : '#10B981'}; font-size: 14px; font-weight: 800;">السيناريو المفضل</span>
             </div>
-            <div style="font-size: 13px; color: ${dim}; margin-bottom: 4px;">
+            <div style="font-size: 15px; color: ${dim}; margin-bottom: 6px;">
               ${isShort ? 
                 `يتحرك السعر أسفل نقطة المحور ${pivotLevel ? formatPrice(pivotLevel) : 'N/A'} نحو ${takeProfit ? formatPrice(takeProfit) : 'N/A'}` : 
                 `يتحرك السعر أعلى نقطة المحور ${pivotLevel ? formatPrice(pivotLevel) : 'N/A'} نحو ${takeProfit ? formatPrice(takeProfit) : 'N/A'}`}
             </div>
-            <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 5px;">
-              <span style="color: white; font-size: 18px; font-weight: 800;">${takeProfit ? formatPrice(takeProfit) : 'N/A'}</span>
-              <span style="color: ${isShort ? '#EF4444' : '#10B981'}; font-size: 14px;">${isShort ? '▼' : '▲'}</span>
+            <div style="display: flex; align-items: baseline; gap: 10px; margin-top: 8px;">
+              <span style="color: white; font-size: 22px; font-weight: 800;">${takeProfit ? formatPrice(takeProfit) : 'N/A'}</span>
+              <span style="color: ${isShort ? '#EF4444' : '#10B981'}; font-size: 16px;">${isShort ? '▼' : '▲'}</span>
             </div>
           </div>
-          
-          <!-- Left Side - Percentage (Bigger, Centered) -->
-          <div style="min-width: 70px; text-align: center;">
-            <span style="background: ${isShort ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.25)'}; border-radius: 30px; padding: 8px 12px; font-size: 22px; font-weight: 800; color: ${isShort ? '#EF4444' : '#10B981'}; display: inline-block;">${prediction.confidence}%</span>
+          <div style="min-width: 85px; text-align: center;">
+            <span style="background: ${isShort ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.25)'}; border-radius: 40px; padding: 10px 16px; font-size: 26px; font-weight: 800; color: ${isShort ? '#EF4444' : '#10B981'}; display: inline-block;">${prediction.confidence}%</span>
           </div>
-          
         </div>
         
-        <!-- Scenario 2 Card (السيناريو البديل) - Opposite color -->
-        <div style="flex: 1; background: ${isShort ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'}; border-radius: 16px; padding: 12px 15px; border: 1px solid ${isShort ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}; display: flex; justify-content: space-between; align-items: center;">
-          
-          <!-- Right Side - Text Content -->
+        <!-- Scenario 2 Card -->
+        <div style="flex: 1; background: ${isShort ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'}; border-radius: 20px; padding: 16px 20px; border: 1.5px solid ${isShort ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'}; display: flex; justify-content: space-between; align-items: center;">
           <div style="text-align: right;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-              <span style="background: ${isShort ? '#10B981' : '#EF4444'}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
-              <span style="color: ${isShort ? '#10B981' : '#EF4444'}; font-size: 12px; font-weight: 700; letter-spacing: 1px;">السيناريو البديل</span>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+              <span style="background: ${isShort ? '#10B981' : '#EF4444'}; width: 12px; height: 12px; border-radius: 50%; display: inline-block;"></span>
+              <span style="color: ${isShort ? '#10B981' : '#EF4444'}; font-size: 14px; font-weight: 800;">السيناريو البديل</span>
             </div>
-            <div style="font-size: 13px; color: ${dim}; margin-bottom: 4px;">
+            <div style="font-size: 15px; color: ${dim}; margin-bottom: 6px;">
               ${isShort ? 
                 `يرتد السعر أعلى نقطة المحور ${pivotLevel ? formatPrice(pivotLevel) : 'N/A'} نحو ${stopLoss ? formatPrice(stopLoss) : 'N/A'}` : 
                 `يرتد السعر أسفل نقطة المحور ${pivotLevel ? formatPrice(pivotLevel) : 'N/A'} نحو ${stopLoss ? formatPrice(stopLoss) : 'N/A'}`}
             </div>
-            <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 5px;">
-              <span style="color: white; font-size: 18px; font-weight: 800;">${stopLoss ? formatPrice(stopLoss) : 'N/A'}</span>
-              <span style="color: ${isShort ? '#10B981' : '#EF4444'}; font-size: 14px;">${isShort ? '▲' : '▼'}</span>
+            <div style="display: flex; align-items: baseline; gap: 10px; margin-top: 8px;">
+              <span style="color: white; font-size: 22px; font-weight: 800;">${stopLoss ? formatPrice(stopLoss) : 'N/A'}</span>
+              <span style="color: ${isShort ? '#10B981' : '#EF4444'}; font-size: 16px;">${isShort ? '▲' : '▼'}</span>
             </div>
           </div>
-          
-          <!-- Left Side - Percentage (Bigger, Centered) -->
-          <div style="min-width: 70px; text-align: center;">
-            <span style="background: ${isShort ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}; border-radius: 30px; padding: 8px 12px; font-size: 22px; font-weight: 800; color: ${isShort ? '#10B981' : '#EF4444'}; display: inline-block;">${100 - (prediction.confidence || 84)}%</span>
+          <div style="min-width: 85px; text-align: center;">
+            <span style="background: ${isShort ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}; border-radius: 40px; padding: 10px 16px; font-size: 26px; font-weight: 800; color: ${isShort ? '#10B981' : '#EF4444'}; display: inline-block;">${100 - (prediction.confidence || 84)}%</span>
           </div>
-          
         </div>
         
       </div>
+      
       <!-- Chart Container Box -->
-      <div style="background: #050505; border-radius: 12px; border: 1px solid #1f3a4a; overflow: hidden;">
+      <div style="background: #050505; border-radius: 16px; border: 1px solid #1f3a4a; overflow: hidden;">
         
-        <!-- SVG Chart -->
-        <svg width="${chartWidth}" height="${chartBoxY + chartBoxHeight + 50}" viewBox="0 0 ${chartWidth} ${chartBoxY + chartBoxHeight + 50}" xmlns="http://www.w3.org/2000/svg" style="display: block; width: 100%; height: auto;">
+        <svg width="${chartWidth}" height="${chartBoxY + chartBoxHeight + 80}" viewBox="0 0 ${chartWidth} ${chartBoxY + chartBoxHeight + 80}" xmlns="http://www.w3.org/2000/svg" style="display: block; width: 100%; height: auto;">
           
-          <!-- Chart Background -->
-          <rect x="${chartBoxX}" y="${chartBoxY}" width="${chartBoxWidth}" height="${chartBoxHeight}" fill="#0a0a15" rx="6"/>
+          <rect x="${chartBoxX}" y="${chartBoxY}" width="${chartBoxWidth}" height="${chartBoxHeight}" fill="#0a0a15" rx="8"/>
           
           ${gridSVG}
           ${candlesSVG}
           
-          
-          
-          <!-- FORECAST BOX (Green) -->
           ${forecastSVG}
           
           <!-- Current Price Line -->
-          <line x1="${chartLeft}" y1="${getY(chart.current_price)}" x2="${chartRight}" y2="${getY(chart.current_price)}" stroke="${gold}" stroke-width="2" stroke-dasharray="6,4"/>
+          <line x1="${chartLeft}" y1="${getY(chart.current_price)}" x2="${chartRight}" y2="${getY(chart.current_price)}" stroke="${gold}" stroke-width="2.5" stroke-dasharray="8,5"/>
           
-          <!-- Pivot Line (Yellow) with Label OUTSIDE -->
-          ${pivot.level ? `
-            <line x1="${chartLeft}" y1="${getY(pivot.level)}" x2="${chartRight}" y2="${getY(pivot.level)}" stroke="${gold}" stroke-width="2" stroke-dasharray="8,5"/>
-            <rect x="${chartRight - 65}" y="${getY(pivot.level) - 10}" width="55" height="16" rx="4" fill="${gold}" opacity="0.9"/>
-            <text x="${chartRight - 37}" y="${getY(pivot.level) + 1}" text-anchor="middle" fill="#000" font-size="9" font-weight="800">PIVOT</text>
+          <!-- Pivot Line -->
+          ${pivot.level && getY(pivot.level) >= chartBoxY && getY(pivot.level) <= chartBoxY + chartBoxHeight ? `
+            <line x1="${chartLeft}" y1="${getY(pivot.level)}" x2="${chartRight}" y2="${getY(pivot.level)}" stroke="${gold}" stroke-width="2.5" stroke-dasharray="10,6"/>
+            <rect x="${chartRight - 75}" y="${getY(pivot.level) - 12}" width="65" height="18" rx="5" fill="${gold}" opacity="0.95"/>
+            <text x="${chartRight - 42}" y="${getY(pivot.level) + 1}" text-anchor="middle" fill="#000" font-size="11" font-weight="800">PIVOT</text>
           ` : ''}
           
           <!-- Resistance 1 Line -->
-          ${pivot.resistance_1 ? `
-            <line x1="${chartLeft}" y1="${getY(pivot.resistance_1)}" x2="${chartRight}" y2="${getY(pivot.resistance_1)}" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="6,4"/>
-            <rect x="${chartRight - 55}" y="${getY(pivot.resistance_1) - 9}" width="45" height="14" rx="3" fill="#EF4444" opacity="0.8"/>
-            <text x="${chartRight - 32}" y="${getY(pivot.resistance_1) + 1}" text-anchor="middle" fill="#000" font-size="8" font-weight="700">R1</text>
+          ${r1Y ? `
+            <line x1="${chartLeft}" y1="${r1Y}" x2="${chartRight}" y2="${r1Y}" stroke="#EF4444" stroke-width="2" stroke-dasharray="${isR1Far ? '3,8' : '8,5'}" ${isR1Far ? 'opacity="0.6"' : ''}/>
+            ${!isR1Far ? `
+              <rect x="${chartRight - 65}" y="${r1Y - 10}" width="55" height="16" rx="4" fill="#EF4444" opacity="0.85"/>
+              <text x="${chartRight - 37}" y="${r1Y + 1}" text-anchor="middle" fill="#000" font-size="9" font-weight="800">R1</text>
+            ` : `
+              <text x="${chartRight - 15}" y="${r1Y + 5}" text-anchor="end" fill="#EF4444" font-size="10" font-weight="700" opacity="0.8">R1 ${formatPrice(r1Price)}</text>
+            `}
           ` : ''}
           
           <!-- Support 1 Line -->
-          ${pivot.support_1 ? `
-            <line x1="${chartLeft}" y1="${getY(pivot.support_1)}" x2="${chartRight}" y2="${getY(pivot.support_1)}" stroke="#10B981" stroke-width="1.5" stroke-dasharray="6,4"/>
-            <rect x="${chartRight - 55}" y="${getY(pivot.support_1) - 9}" width="45" height="14" rx="3" fill="#10B981" opacity="0.8"/>
-            <text x="${chartRight - 32}" y="${getY(pivot.support_1) + 1}" text-anchor="middle" fill="#000" font-size="8" font-weight="700">S1</text>
+          ${s1Y ? `
+            <line x1="${chartLeft}" y1="${s1Y}" x2="${chartRight}" y2="${s1Y}" stroke="#10B981" stroke-width="2" stroke-dasharray="${isS1Far ? '3,8' : '8,5'}" ${isS1Far ? 'opacity="0.6"' : ''}/>
+            ${!isS1Far ? `
+              <rect x="${chartRight - 65}" y="${s1Y - 10}" width="55" height="16" rx="4" fill="#10B981" opacity="0.85"/>
+              <text x="${chartRight - 37}" y="${s1Y + 1}" text-anchor="middle" fill="#000" font-size="9" font-weight="800">S1</text>
+            ` : `
+              <text x="${chartRight - 15}" y="${s1Y + 5}" text-anchor="end" fill="#10B981" font-size="10" font-weight="700" opacity="0.8">S1 ${formatPrice(s1Price)}</text>
+            `}
           ` : ''}
           
           <!-- TP Line -->
-          ${takeProfit ? `
-            <line x1="${chartLeft}" y1="${getY(takeProfit)}" x2="${chartRight}" y2="${getY(takeProfit)}" stroke="${boxColor}" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.5"/>
+          ${tpY_clamped ? `
+            <line x1="${chartLeft}" y1="${tpY_clamped}" x2="${chartRight}" y2="${tpY_clamped}" stroke="${boxColor}" stroke-width="2" stroke-dasharray="5,5" opacity="0.5"/>
+            ${!isTPFar ? `
+              <rect x="${chartRight - 55}" y="${tpY_clamped - 10}" width="45" height="16" rx="4" fill="${boxColor}" opacity="0.75"/>
+              <text x="${chartRight - 32}" y="${tpY_clamped + 1}" text-anchor="middle" fill="#000" font-size="9" font-weight="800"></text>
+            ` : ''}
           ` : ''}
           
           <!-- SL Line -->
-          ${stopLoss ? `
-            <line x1="${chartLeft}" y1="${getY(stopLoss)}" x2="${chartRight}" y2="${getY(stopLoss)}" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.5"/>
+          ${slY_clamped ? `
+            <line x1="${chartLeft}" y1="${slY_clamped}" x2="${chartRight}" y2="${slY_clamped}" stroke="#EF4444" stroke-width="2" stroke-dasharray="5,5" opacity="0.5"/>
+            ${!isSLFar ? `
+              <rect x="${chartRight - 55}" y="${slY_clamped - 10}" width="45" height="16" rx="4" fill="#EF4444" opacity="0.75"/>
+              <text x="${chartRight - 32}" y="${slY_clamped + 1}" text-anchor="middle" fill="#000" font-size="9" font-weight="800"></text>
+            ` : ''}
           ` : ''}
           
         </svg>
       </div>
       
-      <!-- Levels & Indicators Section -->
-      <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 16px;">
+      <!-- Levels & Indicators Section - LARGER -->
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; margin-top: 25px; padding: 18px 20px; background: rgba(0,0,0,0.4); border-radius: 20px;">
         
-        <!-- Key Levels (Small pill boxes) -->
-        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 12px;">
           ${levelsHTML}
-          <div style="background: rgba(212, 175, 55, 0.12); border-radius: 20px; padding: 4px 12px; border-left: 3px solid ${gold};">
-            <span style="color: ${gold}; font-size: 11px; font-weight: 600;">PIVOT</span>
-            <span style="color: white; font-size: 13px; font-weight: 700; margin-left: 8px;">${formatPrice(pivot.level)}</span>
+          <div style="background: rgba(212, 175, 55, 0.12); border-radius: 25px; padding: 6px 16px; border-left: 4px solid ${gold};">
+            <span style="color: ${gold}; font-size: 13px; font-weight: 700;">PIVOT</span>
+            <span style="color: white; font-size: 15px; font-weight: 800; margin-left: 10px;">${formatPrice(pivot.level)}</span>
           </div>
-          <div style="background: rgba(212, 175, 55, 0.08); border-radius: 20px; padding: 4px 12px; border-left: 3px solid ${gold};">
-            <span style="color: ${gold}; font-size: 11px; font-weight: 600;">CURRENT</span>
-            <span style="color: white; font-size: 13px; font-weight: 700; margin-left: 8px;">${formatPrice(chart.current_price)}</span>
+          <div style="background: rgba(212, 175, 55, 0.08); border-radius: 25px; padding: 6px 16px; border-left: 4px solid ${gold};">
+            <span style="color: ${gold}; font-size: 13px; font-weight: 700;">CURRENT</span>
+            <span style="color: white; font-size: 15px; font-weight: 800; margin-left: 10px;">${formatPrice(chart.current_price)}</span>
           </div>
         </div>
         
-        <!-- Technical Indicators -->
-        <div style="display: flex; flex-wrap: wrap; gap: 16px;">
-          <div><span style="color: ${dim}; font-size: 9px;">EMA20</span><br><span style="color: white; font-size: 13px; font-weight: 600;">${formatPrice(chart.indicators.ema_20)}</span></div>
-          <div><span style="color: ${dim}; font-size: 9px;">EMA50</span><br><span style="color: white; font-size: 13px; font-weight: 600;">${formatPrice(chart.indicators.ema_50)}</span></div>
-          <div><span style="color: ${dim}; font-size: 9px;">RSI</span><br><span style="color: ${chart.indicators.rsi > 70 ? '#EF4444' : chart.indicators.rsi < 30 ? '#10B981' : '#FFFFFF'}; font-size: 14px; font-weight: 700;">${chart.indicators.rsi?.toFixed(1) || 'N/A'}</span></div>
-          <div><span style="color: ${dim}; font-size: 9px;">ATR</span><br><span style="color: white; font-size: 13px; font-weight: 600;">${formatPrice(chart.indicators.atr)}</span></div>
+        <div style="display: flex; flex-wrap: wrap; gap: 25px;">
+          <div><span style="color: ${dim}; font-size: 11px;">EMA20</span><br><span style="color: white; font-size: 16px; font-weight: 700;">${formatPrice(chart.indicators.ema_20)}</span></div>
+          <div><span style="color: ${dim}; font-size: 11px;">EMA50</span><br><span style="color: white; font-size: 16px; font-weight: 700;">${formatPrice(chart.indicators.ema_50)}</span></div>
+          <div><span style="color: ${dim}; font-size: 11px;">RSI</span><br><span style="color: ${chart.indicators.rsi > 70 ? '#EF4444' : chart.indicators.rsi < 30 ? '#10B981' : '#FFFFFF'}; font-size: 18px; font-weight: 800;">${chart.indicators.rsi?.toFixed(1) || 'N/A'}</span></div>
+          <div><span style="color: ${dim}; font-size: 11px;">ATR</span><br><span style="color: white; font-size: 16px; font-weight: 700;">${formatPrice(chart.indicators.atr)}</span></div>
         </div>
         
       </div>

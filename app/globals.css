@@ -30339,176 +30339,171 @@ html {
     grid-template-columns: repeat(2, 1fr);
   }
 }
-/* ==========================================
-   🎯 FLOATING ACTION BUTTON (FAB)
-   Strategy Selection - Always Visible on Mobile
-   ========================================== */
-
-.strategy-fab-container {
-  position: relative;
+/* No container - just the buttons */
+.strategy-buttons-inline {
   display: flex;
-  justify-content: flex-end;
-  margin: 10px 0;
-  padding: 0 10px;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 4px 0 0 0;
+  padding: 0;
 }
 
-/* FAB Button */
-.strategy-fab {
-  display: flex;
+.strategy-inline-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  background: linear-gradient(135deg, #1a2a3a 0%, #0f1a24 100%);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 50px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  z-index: 10;
-}
-
-.strategy-fab.active {
-  background: linear-gradient(135deg, #1a2a3a 0%, #1a2a3a 100%);
-  border-color: #D4AF37;
-}
-
-.strategy-fab .fab-icon {
-  font-size: 18px;
-  transition: transform 0.3s ease;
-}
-
-.strategy-fab .fab-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #D4AF37;
-}
-
-.strategy-fab:hover {
-  transform: translateY(-2px);
-  border-color: #D4AF37;
-}
-
-.strategy-fab:active {
-  transform: scale(0.98);
-}
-
-/* FAB Menu */
-.strategy-fab-menu {
-  position: absolute;
-  bottom: 55px;
-  right: 10px;
-  width: 260px;
-  background: #0f1a24;
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-  animation: menuSlideUp 0.2s ease;
-  z-index: 20;
-}
-
-@keyframes menuSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Strategy Options */
-.strategy-option {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 14px 16px;
+  gap: 6px;
   background: transparent;
-  border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #aaa;
+  padding: 5px 12px;
+  font-size: 11px;
+  border-radius: 9999px;
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: left;
 }
 
-.strategy-option:last-child {
-  border-bottom: none;
+.strategy-inline-btn .btn-icon { font-size: 11px; }
+.strategy-inline-btn .btn-text { font-size: 11px; }
+.strategy-inline-btn .btn-badge { font-size: 9px; padding: 1px 4px; background: rgba(255,255,255,0.05); border-radius: 9999px; }
+
+.strategy-inline-btn.active {
+  border-color: #D4AF37;
+  color: #D4AF37;
+  background: rgba(212, 175, 55, 0.08);
 }
 
-.strategy-option:hover {
-  background: rgba(212, 175, 55, 0.1);
+@media (max-width: 480px) {
+  .strategy-buttons-inline { flex-direction: column; gap: 6px; }
+  .strategy-inline-btn { justify-content: center; }
 }
-
-.strategy-option.active {
-  background: rgba(212, 175, 55, 0.15);
-}
-
-.strategy-option .option-icon {
-  font-size: 24px;
-}
-
-.strategy-option .option-text {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.strategy-option .option-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: white;
-}
-
-.strategy-option .option-desc {
+.strategy-inline-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #aaa;
+  padding: 5px 12px;
   font-size: 11px;
-  color: #94a3b8;
+  border-radius: 9999px;
+  cursor: pointer !important;
+  transition: all 0.2s ease;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 100;
+}
+/* ==========================================
+   🎯 STRATEGY SELECTION BUTTONS
+   Standalone - No Card Container
+   ========================================== */
+
+.strategy-buttons-inline {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 8px 0 0 0;
+  padding: 0;
 }
 
-.strategy-option .check-mark {
-  font-size: 16px;
-  color: #D4AF37;
-  font-weight: bold;
+/* Chip style buttons */
+.strategy-inline-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #888;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  text-transform: uppercase;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-/* Active state for selected option */
-.strategy-option.active .option-name {
-  color: #D4AF37;
+.strategy-inline-btn .btn-icon {
+  font-size: 11px;
 }
 
-/* Desktop: Position FAB differently */
-@media (min-width: 768px) {
-  .strategy-fab-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 100;
-    margin: 0;
+.strategy-inline-btn .btn-text {
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.strategy-inline-btn .btn-badge {
+  font-size: 9px;
+  padding: 2px 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 9999px;
+  font-weight: 400;
+}
+
+/* Hover effect */
+.strategy-inline-btn:hover {
+  border-color: #8e793e;
+  color: #8e793e;
+  background: rgba(197, 160, 40, 0.05);
+  transform: translateY(-1px);
+}
+
+/* Active state (selected) */
+.strategy-inline-btn.active {
+  border-color: #8e793e;
+  color: #8e793e;
+  background: rgba(197, 160, 40, 0.08);
+}
+
+.strategy-inline-btn.active .btn-badge {
+  background: rgba(197, 160, 40, 0.15);
+  color: #8e793e;
+}
+
+/* Touch feedback */
+.strategy-inline-btn:active {
+  transform: scale(0.97);
+}
+
+/* ==========================================
+   📱 MOBILE: Stack vertically
+   ========================================== */
+@media (max-width: 480px) {
+  .strategy-buttons-inline {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
   }
   
-  .strategy-fab-menu {
-    bottom: 60px;
-    right: 0;
-    width: 280px;
-  }
-}
-
-/* Mobile: FAB inside chat */
-@media (max-width: 767px) {
-  .strategy-fab-container {
-    margin: 15px 0;
-    padding: 0 15px;
-  }
-  
-  .strategy-fab {
+  .strategy-inline-btn {
+    justify-content: center;
     padding: 8px 16px;
   }
   
-  .strategy-fab-menu {
-    bottom: 50px;
-    right: 15px;
-    width: 240px;
+  .strategy-inline-btn .btn-icon {
+    font-size: 12px;
+  }
+  
+  .strategy-inline-btn .btn-text {
+    font-size: 12px;
+  }
+  
+  .strategy-inline-btn .btn-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+}
+
+/* ==========================================
+   🖥️ DESKTOP
+   ========================================== */
+@media (min-width: 481px) {
+  .strategy-buttons-inline {
+    justify-content: flex-start;
   }
 }

@@ -979,6 +979,61 @@ export default function AiChatBox({
     return newCount;
   };
 
+  
+                    // 🆕 Handle strategy selection from inline buttons (raw HTML)
+  useEffect(() => {
+    const handleStrategyClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const button = target.closest('.strategy-inline-btn');
+      if (button) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const strategyType = button.getAttribute('data-strategy');
+        console.log('🔘 Strategy button clicked:', strategyType);
+        
+        if (strategyType === 'scalper') {
+          setStrategy('scalper');
+        } else if (strategyType === 'daytrader') {
+          setStrategy('daytrader');
+        }
+        
+        // Update the strategy display message
+        setMessages(prev => {
+          const newMessages = [...prev];
+          // Find and update the current strategy message
+          for (let i = 0; i < newMessages.length; i++) {
+            const msg = newMessages[i];
+            if (msg.sender === 'ai' && typeof msg.text === 'string' && msg.text.includes('strategy-buttons-inline')) {
+              // Update the buttons HTML
+              newMessages[i] = {
+                sender: "ai" as const,
+                text: `<div class="strategy-buttons-inline" style="margin: 4px 0 0 0; padding: 0;">
+                  <button class="strategy-inline-btn ${strategyType === 'scalper' ? 'active' : ''}" data-strategy="scalper">
+                    <span class="btn-icon">⚡</span>
+                    <span class="btn-text">Scalper</span>
+                    <span class="btn-badge">5min</span>
+                  </button>
+                  <button class="strategy-inline-btn ${strategyType === 'daytrader' ? 'active' : ''}" data-strategy="daytrader">
+                    <span class="btn-icon">🏛️</span>
+                    <span class="btn-text">Day Trader</span>
+                    <span class="btn-badge">H1</span>
+                  </button>
+                </div>`
+              };
+              break;
+            }
+          }
+          return newMessages;
+        });
+      }
+    };
+
+    // Use capture phase to ensure we catch clicks
+    document.addEventListener('click', handleStrategyClick, true);
+    return () => document.removeEventListener('click', handleStrategyClick, true);
+  }, [strategy]);
+
   useEffect(() => {
     const hasAccess = user || trialCount < 2;
     
@@ -1003,22 +1058,34 @@ export default function AiChatBox({
           });
         }
 
-        // 🆕 Show current strategy
+                
+                     // 🆕 Add strategy selection buttons as a plain HTML string (NO CARD)
         welcomeMessages.push({
           sender: "ai" as const,
-          text: `📊 Current strategy: ${strategy === 'scalper' ? '⚡ Scalper (5min candles)' : '🏛️ Day Trader (H1 candles)'}`
+          text: `🎯 Select Your Trading Style:`
         });
-
-                welcomeMessages.push({
+        
+        welcomeMessages.push({
+          sender: "ai" as const,
+          text: `<div class="strategy-buttons-inline" style="margin: 4px 0 0 0; padding: 0;">
+            <button class="strategy-inline-btn ${strategy === 'scalper' ? 'active' : ''}" data-strategy="scalper">
+              <span class="btn-icon">⚡</span>
+              <span class="btn-text">Scalper</span>
+              <span class="btn-badge">5min</span>
+            </button>
+            <button class="strategy-inline-btn ${strategy === 'daytrader' ? 'active' : ''}" data-strategy="daytrader">
+              <span class="btn-icon">🏛️</span>
+              <span class="btn-text">Day Trader</span>
+              <span class="btn-badge">H1</span>
+            </button>
+          </div>`
+        });
+   
+        welcomeMessages.push({
           sender: "ai" as const, 
           text: "2️⃣ 🔍 Choose a Trading Symbol to begin:"
         });
 
-        // 🆕 Show current strategy
-        welcomeMessages.push({
-          sender: "ai" as const,
-          text: `📊 Selected strategy: ${strategy === 'scalper' ? '⚡ Scalper (5min candles) - Fast entries, quick targets' : '🏛️ Day Trader (H1 candles) - Institutional analysis, higher conviction'}`
-        });
 
         welcomeMessages.push({
           sender: "ai" as const, 
@@ -1577,7 +1644,7 @@ export default function AiChatBox({
       )}
 
       <div className="chatbox-body" ref={chatRef}>
-        {messages.map((msg, idx) => (
+                {messages.map((msg, idx) => (
           <div key={idx} className={`chat-msg ${msg.sender === "ai" ? "ai" : "user"}`}>
             {Array.isArray(msg.text) ? (
               msg.text.map((block: any, i: number) => (
@@ -1592,13 +1659,22 @@ export default function AiChatBox({
                 </div>
               ))
             ) : (
-              <div className={msg.sender === "user" ? "user-bubble" : "ai-bubble"}>
+              // 🆕 SPECIAL CASE: Strategy buttons - NO BUBBLE/CONTAINER
+              typeof msg.text === 'string' && msg.text.includes('strategy-buttons-inline') ? (
                 <div
                   dangerouslySetInnerHTML={{
-                    __html: msg.text.replace(/\n/g, "<br/>"),
+                    __html: msg.text,
                   }}
                 />
-              </div>
+              ) : (
+                <div className={msg.sender === "user" ? "user-bubble" : "ai-bubble"}>
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: msg.text.replace(/\n/g, "<br/>"),
+                    }}
+                  />
+                </div>
+              )
             )}
             
             {msg.text === "🚀 **Quick Setup:** Click any asset below for instant $1,000 analysis:" && (
@@ -1620,74 +1696,24 @@ export default function AiChatBox({
         {isTyping && <div className="chat-msg ai-msg">⏳ Analyzing market data...</div>}
       </div>
 
-      {/* 🆕 FLOATING ACTION BUTTON FOR STRATEGY SELECTION */}
-      <div className="strategy-fab-container">
-        <button
-          className={`strategy-fab ${showStrategyMenu ? 'active' : ''}`}
-          onClick={() => setShowStrategyMenu(!showStrategyMenu)}
-        >
-          <span className="fab-icon">
-            {strategy === 'scalper' ? '⚡' : '🏛️'}
-          </span>
-          <span className="fab-label">{strategy === 'scalper' ? 'Scalper' : 'Day Trader'}</span>
-        </button>
-        
-        {showStrategyMenu && (
-          <div className="strategy-fab-menu">
-            <button
-              className={`strategy-option ${strategy === 'scalper' ? 'active' : ''}`}
-              onClick={() => {
-                setStrategy('scalper');
-                setShowStrategyMenu(false);
-              }}
-            >
-              <span className="option-icon">⚡</span>
-              <div className="option-text">
-                <span className="option-name">Scalper</span>
-                <span className="option-desc">5min candles, fast entries</span>
-              </div>
-              {strategy === 'scalper' && <span className="check-mark">✓</span>}
-            </button>
-            <button
-              className={`strategy-option ${strategy === 'daytrader' ? 'active' : ''}`}
-              onClick={() => {
-                setStrategy('daytrader');
-                setShowStrategyMenu(false);
-              }}
-            >
-              <span className="option-icon">🏛️</span>
-              <div className="option-text">
-                <span className="option-name">Day Trader</span>
-                <span className="option-desc">H1 candles, institutional analysis</span>
-              </div>
-              {strategy === 'daytrader' && <span className="check-mark">✓</span>}
-            </button>
-          </div>
-        )}
-      </div>
-
       {step === 1 && (
-        <>
-          <div className="chatbox-input-group">
-            <select
-              value={symbol || ""}
-              onChange={(e) => {
-                const selected = e.target.value as SymbolKey;
-                if (selected) handleUserInput(selected);
-              }}
-              className="chatbox-select"
-            >
-              <option value="">Select a symbol…</option>
-              {ALL_SYMBOLS.map((sym) => (
-                <option key={sym} value={sym}>
-                  {SYMBOL_NAMES[sym]} ({sym})
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          
-        </>
+        <div className="chatbox-input-group">
+          <select
+            value={symbol || ""}
+            onChange={(e) => {
+              const selected = e.target.value as SymbolKey;
+              if (selected) handleUserInput(selected);
+            }}
+            className="chatbox-select"
+          >
+            <option value="">Select a symbol…</option>
+            {ALL_SYMBOLS.map((sym) => (
+              <option key={sym} value={sym}>
+                {SYMBOL_NAMES[sym]} ({sym})
+              </option>
+            ))}
+          </select>
+        </div>
       )}
 
       {step === 2 && (

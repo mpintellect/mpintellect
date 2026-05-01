@@ -35,16 +35,20 @@ import {
 
 export default function IntelLanding() {
   // --- DOMAIN DETECTION ---
-  const [isLandingDomain, setIsLandingDomain] = useState(false);
+const [isLandingDomain, setIsLandingDomain] = useState(false);
+
+useEffect(() => {
+  const hostname = window.location.hostname;
   
-  useEffect(() => {
-    const hostname = window.location.hostname;
-    setIsLandingDomain(
-      hostname === 'mzprimer.com' || 
-      hostname === 'www.mzprimer.com' ||
-      hostname.includes('mzprimer-landing')
-    );
-  }, []);
+  // ONLY hide header/footer on mzprimer.com and its subdomains
+  const isLanding = 
+    hostname === 'mzprimer.com' || 
+    hostname === 'www.mzprimer.com' ||
+    hostname.endsWith('.mzprimer.com');
+  
+  console.log('Hostname:', hostname, '| isLanding:', isLanding);
+  setIsLandingDomain(isLanding);
+}, []);
 
   // --- FORM STATE ---
   const [formData, setFormData] = useState({

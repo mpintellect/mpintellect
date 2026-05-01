@@ -30507,3 +30507,28 @@ html {
     justify-content: flex-start;
   }
 }
+/* Make strategy button text bold */
+.strategy-inline-btn .btn-text {
+  font-size: 12px;
+  font-weight: 700 !important;  /* Bold */
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+/* Active state - keep bold */
+.strategy-inline-btn.active .btn-text {
+  color: #D4AF37;
+  font-weight: 700 !important;
+}
+
+/* Hover state - keep bold */
+.strategy-inline-btn:hover .btn-text {
+  font-weight: 700 !important;
+}
+.strategy-inline-btn .btn-badge {
+  font-size: 9px;
+  padding: 2px 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 9999px;
+  font-weight: 600 !important;  /* Semi-bold */
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Cpu, 
@@ -34,6 +34,18 @@ import {
 } from 'lucide-react';
 
 export default function IntelLanding() {
+  // --- DOMAIN DETECTION ---
+  const [isLandingDomain, setIsLandingDomain] = useState(false);
+  
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    setIsLandingDomain(
+      hostname === 'mzprimer.com' || 
+      hostname === 'www.mzprimer.com' ||
+      hostname.includes('mzprimer-landing')
+    );
+  }, []);
+
   // --- FORM STATE ---
   const [formData, setFormData] = useState({
     companyName: '',
@@ -191,36 +203,38 @@ export default function IntelLanding() {
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#10B981]/5 rounded-full blur-3xl animate-pulse animation-delay-2000" />
       </div>
 
-      {/* 1. INDEPENDENT HEADER */}
-      <nav className="border-b border-white/5 py-6 px-6 md:py-8 md:px-12 flex justify-between items-center backdrop-blur-xl sticky top-0 z-50 bg-[#050505]/80">
-        <div className="flex items-center gap-3 group">
-          <div className="w-10 h-10 bg-white flex items-center justify-center rounded-sm transform transition-transform group-hover:scale-110 group-hover:rotate-3">
-            <span className="text-black font-black text-sm">MZ</span>
+      {/* 1. INDEPENDENT HEADER - Hidden on landing domain */}
+      {!isLandingDomain && (
+        <nav className="border-b border-white/5 py-6 px-6 md:py-8 md:px-12 flex justify-between items-center backdrop-blur-xl sticky top-0 z-50 bg-[#050505]/80">
+          <div className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-white flex items-center justify-center rounded-sm transform transition-transform group-hover:scale-110 group-hover:rotate-3">
+              <span className="text-black font-black text-sm">MZ</span>
+            </div>
+            <div>
+              <span className="text-sm md:text-xl font-bold tracking-[4px] md:tracking-[6px] uppercase">Intel</span>
+              <span className="text-[#D4AF37] text-sm md:text-xl font-bold tracking-[4px] md:tracking-[6px] uppercase ml-1">Systems</span>
+            </div>
           </div>
-          <div>
-            <span className="text-sm md:text-xl font-bold tracking-[4px] md:tracking-[6px] uppercase">Intel</span>
-            <span className="text-[#D4AF37] text-sm md:text-xl font-bold tracking-[4px] md:tracking-[6px] uppercase ml-1">Systems</span>
+          <div className="hidden md:flex gap-10">
+            <Link href="#solutions" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
+              Solutions
+            </Link>
+            <Link href="#software" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
+              Development
+            </Link>
+            <Link href="#it-services" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
+              Infrastructure
+            </Link>
+            <Link href="#contact" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
+              Contact
+            </Link>
           </div>
-        </div>
-        <div className="hidden md:flex gap-10">
-          <Link href="#solutions" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
-            Solutions
-          </Link>
-          <Link href="#software" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
-            Development
-          </Link>
-          <Link href="#it-services" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
-            Infrastructure
-          </Link>
-          <Link href="#contact" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
-            Contact
-          </Link>
-        </div>
-        <div className="md:hidden flex gap-4">
-          <Link href="#solutions" className="text-[10px] tracking-[3px] uppercase text-[#94a3b8]">Solutions</Link>
-          <Link href="#contact" className="text-[10px] tracking-[3px] uppercase text-[#94a3b8]">Contact</Link>
-        </div>
-      </nav>
+          <div className="md:hidden flex gap-4">
+            <Link href="#solutions" className="text-[10px] tracking-[3px] uppercase text-[#94a3b8]">Solutions</Link>
+            <Link href="#contact" className="text-[10px] tracking-[3px] uppercase text-[#94a3b8]">Contact</Link>
+          </div>
+        </nav>
+      )}
 
       {/* 2. HERO SECTION */}
       <section className="pt-20 md:pt-32 pb-16 md:pb-20 px-6 md:px-12 max-w-7xl mx-auto relative">
@@ -240,15 +254,7 @@ export default function IntelLanding() {
           From software development to hardware implementation. Complete IT solutions for businesses 
           and individuals, including installation, configuration, and maintenance services.
         </p>
-        <div className="flex flex-wrap gap-4 md:gap-6 animate-fade-in-up animation-delay-600">
-          <Link href="#contact" className="group relative px-8 py-4 bg-[#D4AF37] text-black font-bold text-sm tracking-widest overflow-hidden">
-            <span className="relative z-10">DISCUSS YOUR PROJECT</span>
-            <div className="absolute inset-0 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
-          </Link>
-          <Link href="#solutions" className="px-8 py-4 border border-white/20 text-white/80 hover:text-white hover:border-[#D4AF37]/50 transition-all text-sm tracking-widest">
-            EXPLORE SOLUTIONS
-          </Link>
-        </div>
+        
         <div className="flex flex-wrap gap-4 mt-12 md:mt-16">
           <div className="px-4 py-2 bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full">
             <span className="text-[10px] font-mono text-[#D4AF37]">SOFTWARE</span>
@@ -265,357 +271,126 @@ export default function IntelLanding() {
         </div>
       </section>
 
-      {/* 2.5 AI BUSINESS AUTOMATION - CORE SERVICES */}
-      <style jsx>{`
-        .ai-automation-section {
-          padding: 6rem 1.5rem;
-          background: linear-gradient(135deg, #050505 0%, #0a0a0a 100%);
-          border-top: 1px solid rgba(255,255,255,0.05);
-          border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        
-        .ai-automation-container {
-          max-width: 80rem;
-          margin: 0 auto;
-        }
-        
-        .ai-automation-header {
-          text-align: center;
-          margin-bottom: 4rem;
-        }
-        
-        .ai-automation-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.5rem 1rem;
-          background: rgba(212, 175, 55, 0.1);
-          border: 1px solid rgba(212, 175, 55, 0.3);
-          border-radius: 2rem;
-          font-size: 0.75rem;
-          font-weight: 500;
-          letter-spacing: 0.1em;
-          color: #D4AF37;
-          margin-bottom: 1.5rem;
-        }
-        
-        .ai-automation-title {
-          font-size: 2.5rem;
-          font-weight: 300;
-          line-height: 1.2;
-          margin-bottom: 1rem;
-        }
-        
-        .ai-automation-title span {
-          font-weight: 700;
-          background: linear-gradient(135deg, #D4AF37 0%, #f3e6b0 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-        
-        .ai-automation-subtitle {
-          color: #94a3b8;
-          max-width: 48rem;
-          margin: 0 auto;
-          font-size: 1.125rem;
-          line-height: 1.6;
-        }
-        
-        .core-value-proposition {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 4rem;
-          margin-bottom: 5rem;
-          padding: 3rem;
-          background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(255,255,255,0.05);
-          border-radius: 1rem;
-        }
-        
-        .core-value-tag {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-size: 0.7rem;
-          letter-spacing: 0.2em;
-          color: #D4AF37;
-          margin-bottom: 1rem;
-        }
-        
-        .core-value-tag span {
-          width: 2rem;
-          height: 1px;
-          background: #D4AF37;
-        }
-        
-        .core-value-title {
-          font-size: 2rem;
-          font-weight: 300;
-          margin-bottom: 1.5rem;
-        }
-        
-        .core-value-title strong {
-          font-weight: 700;
-          color: #D4AF37;
-        }
-        
-        .core-value-description {
-          color: #94a3b8;
-          line-height: 1.6;
-          margin-bottom: 2rem;
-        }
-        
-        .core-value-stats {
-          display: flex;
-          gap: 2rem;
-        }
-        
-        .stat-item {
-          text-align: center;
-        }
-        
-        .stat-number {
-          font-size: 2rem;
-          font-weight: 700;
-          color: #D4AF37;
-          margin-bottom: 0.5rem;
-        }
-        
-        .stat-label {
-          font-size: 0.7rem;
-          letter-spacing: 0.1em;
-          color: #94a3b8;
-        }
-        
-        .core-value-image {
-          background: linear-gradient(135deg, rgba(212,175,55,0.1) 0%, rgba(16,185,129,0.05) 100%);
-          border-radius: 1rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        
-        .ai-network-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 2rem;
-          padding: 2rem;
-        }
-        
-        .grid-dot {
-          width: 0.5rem;
-          height: 0.5rem;
-          background: #D4AF37;
-          border-radius: 50%;
-          animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.5); }
-        }
-        
-        .ai-services-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          gap: 2rem;
-          margin-top: 3rem;
-        }
-        
-        .ai-service-card {
-          padding: 2rem;
-          background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(255,255,255,0.05);
-          border-radius: 1rem;
-          transition: all 0.3s ease;
-        }
-        
-        .ai-service-card:hover {
-          border-color: rgba(212,175,55,0.3);
-          transform: translateY(-4px);
-        }
-        
-        .service-icon {
-          width: 3rem;
-          height: 3rem;
-          background: rgba(212,175,55,0.1);
-          border-radius: 0.75rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 1.5rem;
-        }
-        
-        .service-icon svg {
-          width: 1.5rem;
-          height: 1.5rem;
-          color: #D4AF37;
-        }
-        
-        .service-title {
-          font-size: 1.25rem;
-          font-weight: 700;
-          margin-bottom: 0.75rem;
-        }
-        
-        .service-description {
-          color: #94a3b8;
-          font-size: 0.875rem;
-          line-height: 1.5;
-          margin-bottom: 1rem;
-        }
-        
-        .service-features {
-          list-style: none;
-          padding: 0;
-        }
-        
-        .service-features li {
-          color: #D4AF37;
-          font-size: 0.75rem;
-          padding: 0.25rem 0;
-          position: relative;
-          padding-left: 1rem;
-        }
-        
-        .service-features li::before {
-          content: "→";
-          position: absolute;
-          left: 0;
-          color: #D4AF37;
-        }
-        
-        @media (max-width: 768px) {
-          .core-value-proposition {
-            grid-template-columns: 1fr;
-            gap: 2rem;
-            padding: 1.5rem;
-          }
-          
-          .ai-automation-title {
-            font-size: 1.75rem;
-          }
-          
-          .core-value-title {
-            font-size: 1.5rem;
-          }
-        }
-      `}</style>
-      <section className="ai-automation-section">
-        <div className="ai-automation-container">
-          <div className="ai-automation-header">
-            <div className="ai-automation-badge">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-pulse"></span>
-              CORE COMPETENCY • AI BUSINESS AUTOMATION
-            </div>
-            <h2 className="ai-automation-title">
-              Transform Your Business with <span>Intelligent Automation</span>
-            </h2>
-            <p className="ai-automation-subtitle">
-              We help enterprises automate processes, enhance quality, and drive efficiency through 
-              advanced AI integration. Our core mission is to future-proof your operations.
-            </p>
-          </div>
+     {/* 2.5 AI BUSINESS AUTOMATION - CORE SERVICES */}
+<section className="py-24 md:py-32 px-6 md:px-12 bg-[#080808]">
+  <div className="max-w-7xl mx-auto">
+    <div className="text-center mb-16">
+      <h2 className="text-xs font-bold tracking-[10px] uppercase text-[#D4AF37] mb-4">
+        CORE COMPETENCY • AI BUSINESS AUTOMATION
+      </h2>
+      <h3 className="text-3xl md:text-5xl font-light mb-6">
+        Transform Your Business with <span className="font-bold text-[#D4AF37]">Intelligent Automation</span>
+      </h3>
+      <p className="text-[#94a3b8] max-w-2xl mx-auto">
+        We help enterprises automate processes, enhance quality, and drive efficiency through 
+        advanced AI integration. Our core mission is to future-proof your operations.
+      </p>
+    </div>
 
-          {/* Core Value Proposition */}
-          <div className="core-value-proposition">
-            <div className="core-value-content">
-              <div className="core-value-tag">
-                <span></span> WHY CHOOSE US
-              </div>
-              <h3 className="core-value-title">
-                We Don't Just Implement IT — <strong>We Automate </strong>
-              </h3>
-              <p className="core-value-description">
-                At MZ  Systems, our primary focus is helping businesses leverage AI to 
-                automate complex processes, reduce operational costs, and elevate quality standards. 
-                From manufacturing to finance, we deploy intelligent systems that learn, adapt, and 
-                optimize your operations in real-time.
-              </p>
-              <div className="core-value-stats">
-                <div className="stat-item">
-                  <div className="stat-number">87%</div>
-                  <div className="stat-label">PROCESS EFFICIENCY GAIN</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-number">99.9%</div>
-                  <div className="stat-label">QUALITY IMPROVEMENT</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-number">24/7</div>
-                  <div className="stat-label">AI OPERATIONS</div>
-                </div>
-              </div>
-            </div>
-            <div className="core-value-image">
-              <div className="ai-network-grid">
-                {[...Array(9)].map((_, i) => (
-                  <div key={i} className="grid-dot"></div>
-                ))}
-              </div>
-            </div>
+    {/* Core Value Proposition */}
+    <div className="grid md:grid-cols-2 gap-12 mb-16 p-8 md:p-12 bg-[#050505] border border-white/5">
+      <div>
+        <div className="text-xs font-bold tracking-[8px] uppercase text-[#D4AF37] mb-4">Why Choose Us</div>
+        <h3 className="text-2xl md:text-3xl font-light mb-6">
+          We Don't Just Implement IT — <span className="font-bold text-[#D4AF37]">We Automate Intelligence</span>
+        </h3>
+        <p className="text-[#94a3b8] leading-relaxed mb-8">
+          At MZ Systems, our primary focus is helping businesses leverage AI to 
+          automate complex processes, reduce operational costs, and elevate quality standards. 
+          From manufacturing to finance, we deploy intelligent systems that learn, adapt, and 
+          optimize your operations in real-time.
+        </p>
+        <div className="flex gap-8">
+          <div className="text-center">
+            <div className="text-2xl font-black text-[#D4AF37] mb-1">87%</div>
+            <div className="text-[10px] tracking-wider text-[#94a3b8]">EFFICIENCY GAIN</div>
           </div>
-
-          {/* AI Services Grid */}
-          <div className="ai-services-grid">
-            {[
-              {
-                icon: Cpu,
-                title: 'Intelligent Process Automation',
-                desc: 'AI-powered automation for repetitive tasks, workflows, and business processes.',
-                features: ['Workflow Optimization', 'Task Automation', 'Process Mining']
-              },
-              {
-                icon: Zap,
-                title: 'Quality Enhancement Systems',
-                desc: 'Machine learning models that monitor, analyze, and improve output quality in real-time.',
-                features: ['Real-time Monitoring', 'Defect Detection', 'Quality Analytics']
-              },
-              {
-                icon: TrendingUp,
-                title: 'Predictive Operations',
-                desc: 'Anticipate issues before they occur with AI-driven predictive maintenance and forecasting.',
-                features: ['Predictive Maintenance', 'Demand Forecasting', 'Risk Prevention']
-              },
-              {
-                icon: GitBranch,
-                title: 'Cognitive Automation',
-                desc: 'Advanced AI that understands context, makes decisions, and executes complex tasks.',
-                features: ['Decision Automation', 'Context Awareness', 'Self-optimizing Systems']
-              },
-              {
-                icon: Cloud,
-                title: 'AI Infrastructure',
-                desc: 'Scalable cloud infrastructure optimized for AI/ML workloads and deployment.',
-                features: ['ML Pipeline Setup', 'Model Deployment', 'Inference Optimization']
-              },
-              {
-                icon: Users,
-                title: 'Business ',
-                desc: 'Transform data into actionable insights with AI-powered analytics and reporting.',
-                features: ['Data Visualization', 'Trend Analysis', 'Automated Reporting']
-              }
-            ].map((service, index) => {
-              const Icon = service.icon;
-              return (
-                <div key={index} className="ai-service-card">
-                  <div className="service-icon">
-                    <Icon />
-                  </div>
-                  <h3 className="service-title">{service.title}</h3>
-                  <p className="service-description">{service.desc}</p>
-                  <ul className="service-features">
-                    {service.features.map((feature, i) => (
-                      <li key={i}>{feature}</li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
+          <div className="text-center">
+            <div className="text-2xl font-black text-[#D4AF37] mb-1">99.9%</div>
+            <div className="text-[10px] tracking-wider text-[#94a3b8]">QUALITY IMPROVEMENT</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-black text-[#D4AF37] mb-1">24/7</div>
+            <div className="text-[10px] tracking-wider text-[#94a3b8]">AI OPERATIONS</div>
           </div>
         </div>
-      </section>
+      </div>
+      <div className="bg-[#0a0a0a] border border-white/5 flex items-center justify-center">
+        <div className="grid grid-cols-3 gap-6 p-8">
+          {[...Array(9)].map((_, i) => (
+            <div key={i} className="w-3 h-3 bg-[#D4AF37] rounded-full animate-pulse" 
+                 style={{ animationDelay: `${i * 0.2}s` }}></div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {/* AI Services Grid */}
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[
+        {
+          icon: Cpu,
+          title: 'Intelligent Process Automation',
+          desc: 'AI-powered automation for repetitive tasks, workflows, and business processes.',
+          features: ['Workflow Optimization', 'Task Automation', 'Process Mining']
+        },
+        {
+          icon: Zap,
+          title: 'Quality Enhancement Systems',
+          desc: 'Machine learning models that monitor, analyze, and improve output quality in real-time.',
+          features: ['Real-time Monitoring', 'Defect Detection', 'Quality Analytics']
+        },
+        {
+          icon: TrendingUp,
+          title: 'Predictive Operations',
+          desc: 'Anticipate issues before they occur with AI-driven predictive maintenance and forecasting.',
+          features: ['Predictive Maintenance', 'Demand Forecasting', 'Risk Prevention']
+        },
+        {
+          icon: GitBranch,
+          title: 'Cognitive Automation',
+          desc: 'Advanced AI that understands context, makes decisions, and executes complex tasks.',
+          features: ['Decision Automation', 'Context Awareness', 'Self-optimizing Systems']
+        },
+        {
+          icon: Cloud,
+          title: 'AI Infrastructure',
+          desc: 'Scalable cloud infrastructure optimized for AI/ML workloads and deployment.',
+          features: ['ML Pipeline Setup', 'Model Deployment', 'Inference Optimization']
+        },
+        {
+          icon: Users,
+          title: 'Business Intelligence',
+          desc: 'Transform data into actionable insights with AI-powered analytics and reporting.',
+          features: ['Data Visualization', 'Trend Analysis', 'Automated Reporting']
+        }
+      ].map((service, index) => {
+        const Icon = service.icon;
+        return (
+          <div key={index} 
+               className="group p-8 border border-white/5 hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all duration-500">
+            <div className="p-3 bg-[#D4AF37]/10 rounded-lg inline-block mb-4 group-hover:scale-110 transition-transform">
+              <Icon className="w-6 h-6 text-[#D4AF37]" />
+            </div>
+            <h3 className="text-lg font-bold mb-3 group-hover:text-[#D4AF37] transition-colors">
+              {service.title}
+            </h3>
+            <p className="text-sm text-[#94a3b8] leading-relaxed mb-4">
+              {service.desc}
+            </p>
+            <ul className="space-y-1">
+              {service.features.map((feature, i) => (
+                <li key={i} className="text-xs text-[#D4AF37] pl-4 relative before:content-['→'] before:absolute before:left-0">
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</section>
 
       {/* 3. COMPREHENSIVE SOLUTIONS SECTION (French Services in English) */}
       <section id="solutions" className="py-24 md:py-32 px-6 md:px-12 bg-[#080808]">
@@ -761,190 +536,192 @@ export default function IntelLanding() {
       </section>
 
       {/* 8. B2B CONTACT SECTION - Professional Inquiry Form */}
-      <section id="contact" className="py-24 md:py-32 px-6 md:px-12 bg-white text-black">
-        <div className="max-w-7xl mx-auto">
-          {/* Section Header */}
-          <div className="text-center mb-16">
-            <h2 className="text-xs font-bold tracking-[10px] uppercase text-[#D4AF37] mb-4">
-              BUSINESS INQUIRIES
-            </h2>
-            <h3 className="text-3xl md:text-5xl font-light mb-6">Initiate a Partnership</h3>
-            <p className="text-[#4a5568] max-w-2xl mx-auto">
-              Submit your corporate requirements and a dedicated account manager will respond within 24 hours.
-            </p>
-          </div>
+<section id="contact" className="py-24 md:py-32 px-6 md:px-12 bg-[#080808]">
+  <div className="max-w-7xl mx-auto">
+    {/* Section Header */}
+    <div className="text-center mb-16">
+      <h2 className="text-xs font-bold tracking-[10px] uppercase text-[#D4AF37] mb-4">
+        BUSINESS INQUIRIES
+      </h2>
+      <h3 className="text-3xl md:text-5xl font-light mb-6 text-white">Initiate a Partnership</h3>
+      <p className="text-[#94a3b8] max-w-2xl mx-auto">
+        Submit your corporate requirements and a dedicated account manager will respond within 24 hours.
+      </p>
+    </div>
 
-          <div className="grid lg:grid-cols-2 gap-16 items-start">
-            {/* Contact Information */}
-            <div className="space-y-8">
-              <div className="border-l-4 border-[#D4AF37] pl-6">
-                <h4 className="text-2xl font-bold mb-2">Corporate Headquarters</h4>
-                <p className="text-[#4a5568]">71-75 Shelton Street, Covent Garden<br />London, WC2H 9JQ, United Kingdom</p>
-              </div>
-              
-              <div className="border-l-4 border-[#10B981] pl-6">
-                <h4 className="text-2xl font-bold mb-2">Direct Contacts</h4>
-                <p className="text-[#4a5568]">📧 contact@mpintellect.com</p>
-              </div>
-              
-              <div className="border-l-4 border-[#D4AF37] pl-6">
-                <h4 className="text-2xl font-bold mb-2">Company Registration</h4>
-                <p className="text-[#4a5568] mb-1">MPIntellect LTD •</p>
-                <p className="text-[#4a5568]">• SIC: 62012, 62090</p>
-              </div>
+    <div className="grid lg:grid-cols-2 gap-16 items-start">
+      {/* Contact Information */}
+      <div className="space-y-8">
+        <div className="border-l-4 border-[#D4AF37] pl-6">
+          <h4 className="text-2xl font-bold mb-2 text-white">Corporate Headquarters</h4>
+          <p className="text-[#94a3b8]">71-75 Shelton Street, Covent Garden<br />London, WC2H 9JQ, United Kingdom</p>
+        </div>
+        
+        <div className="border-l-4 border-[#10B981] pl-6">
+          <h4 className="text-2xl font-bold mb-2 text-white">Direct Contacts</h4>
+          <p className="text-[#94a3b8]">📧 contact@mzprimer.com</p>
+        </div>
+        
+        <div className="border-l-4 border-[#D4AF37] pl-6">
+          <h4 className="text-2xl font-bold mb-2 text-white">Company Registration</h4>
+          <p className="text-[#94a3b8] mb-1">MZPRIMER LTD</p>
+          <p className="text-[#94a3b8]">SIC: 62012, 62090</p>
+        </div>
+      </div>
+
+      {/* B2B Inquiry Form */}
+      <div className="bg-[#050505] p-8 md:p-10 border border-white/5">
+        <h4 className="text-2xl font-bold mb-6 text-white">Request a Proposal</h4>
+        
+        <form className="space-y-6" onSubmit={onSubmit}>
+          {/* Honeypot */}
+          <input type="text" value={hp} onChange={(e)=>setHp(e.target.value)} className="hidden" tabIndex={-1} />
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold tracking-wider text-[#94a3b8] mb-2">COMPANY NAME *</label>
+              <input 
+                name="companyName" type="text" required value={formData.companyName} onChange={handleChange}
+                className="w-full px-4 py-3 bg-[#0a0a0a] border border-white/10 focus:border-[#D4AF37] outline-none transition-colors text-white placeholder:text-white/30"
+                placeholder="Your Company Ltd."
+              />
             </div>
-
-            {/* B2B Inquiry Form - Updated with state management */}
-            <div className="bg-[#f8f8f8] p-8 md:p-10 border border-gray-200">
-              <h4 className="text-2xl font-bold mb-6">Request a Proposal</h4>
-              
-              <form className="space-y-6" onSubmit={onSubmit}>
-                {/* Honeypot */}
-                <input type="text" value={hp} onChange={(e)=>setHp(e.target.value)} className="hidden" tabIndex={-1} />
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">COMPANY NAME *</label>
-                    <input 
-                      name="companyName" type="text" required value={formData.companyName} onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-                      placeholder="Your Company Ltd."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">REGISTRATION NO.</label>
-                    <input 
-                      name="regNo" type="text" value={formData.regNo} onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-                      placeholder="Company registration"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">CONTACT PERSON *</label>
-                    <input 
-                      name="contactPerson" type="text" required value={formData.contactPerson} onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-                      placeholder="Full name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">POSITION</label>
-                    <input 
-                      name="position" type="text" value={formData.position} onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-                      placeholder="e.g., IT Director, CTO"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">BUSINESS EMAIL *</label>
-                    <input 
-                      name="email" type="email" required value={formData.email} onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-                      placeholder="name@company.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">PHONE NUMBER</label>
-                    <input 
-                      name="phone" type="tel" value={formData.phone} onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-                      placeholder="+44 20 1234 5678"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">SERVICE CATEGORY *</label>
-                  <select 
-                    name="category" required value={formData.category} onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-                  >
-                    <option value="">Select a service category</option>
-                    <option value="software">SIC 62012 - Software Development</option>
-                    <option value="infrastructure">SIC 62090 - IT Infrastructure</option>
-                    <option value="consulting">Technology Consulting</option>
-                    <option value="integration">System Integration</option>
-                    <option value="procurement">Hardware Procurement</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold tracking-wider text-gray-600 mb-2">PROJECT SCOPE / REQUIREMENTS *</label>
-                  <textarea 
-                    name="requirements" required rows={5} value={formData.requirements} onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 focus:border-[#D4AF37] outline-none transition-colors"
-                    placeholder="Please describe your business requirements, timeline, and any specific technical needs..."
-                  ></textarea>
-                </div>
-
-                {/* Corporate Compliance */}
-                <div className="flex items-start gap-3">
-                  <input type="checkbox" id="compliance" required className="mt-1" />
-                  <label htmlFor="compliance" className="text-sm text-gray-600">
-                    I confirm that I represent a registered business and agree to the 
-                    <Link href="/terms" className="text-[#D4AF37] hover:underline mx-1">Terms of Service</Link> 
-                    and
-                    <Link href="/privacy" className="text-[#D4AF37] hover:underline mx-1">Privacy Policy</Link>.
-                  </label>
-                </div>
-
-                <button 
-                  type="submit" 
-                  disabled={sending}
-                  className="w-full py-4 bg-[#D4AF37] text-black font-bold tracking-widest hover:bg-black hover:text-[#D4AF37] transition-all duration-300 disabled:opacity-50"
-                >
-                  {sending ? 'TRANSMITTING...' : 'SUBMIT INQUIRY'}
-                </button>
-
-                {result && result.ok && (
-                  <div className="mt-4 p-4 border border-[#D4AF37]/20 bg-[#D4AF37]/5 text-center">
-                    <p className="text-[#D4AF37] text-xs font-bold">✓ INQUIRY SENT SUCCESSFULLY</p>
-                  </div>
-                )}
-                
-                {result && !result.ok && (
-                  <div className="mt-4 p-4 border border-red-200 bg-red-50 text-center">
-                    <p className="text-red-600 text-xs font-bold">✗ {result.error || 'ERROR SENDING INQUIRY'}</p>
-                  </div>
-                )}
-
-                <p className="text-xs text-gray-500 text-center mt-4">
-                  All inquiries are handled by our B2B team. Your information will be processed according to GDPR.
-                </p>
-              </form>
+            <div>
+              <label className="block text-xs font-bold tracking-wider text-[#94a3b8] mb-2">REGISTRATION NO.</label>
+              <input 
+                name="regNo" type="text" value={formData.regNo} onChange={handleChange}
+                className="w-full px-4 py-3 bg-[#0a0a0a] border border-white/10 focus:border-[#D4AF37] outline-none transition-colors text-white placeholder:text-white/30"
+                placeholder="Company registration"
+              />
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* 9. FOOTER */}
-      <footer className="py-12 md:py-16 px-6 md:px-12 border-t border-white/5">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 text-center md:text-left">
-            MZ  SYSTEMS • COMPLETE IT SOLUTIONS FOR INDIVIDUALS AND ENTREPRISES
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold tracking-wider text-[#94a3b8] mb-2">CONTACT PERSON *</label>
+              <input 
+                name="contactPerson" type="text" required value={formData.contactPerson} onChange={handleChange}
+                className="w-full px-4 py-3 bg-[#0a0a0a] border border-white/10 focus:border-[#D4AF37] outline-none transition-colors text-white placeholder:text-white/30"
+                placeholder="Full name"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold tracking-wider text-[#94a3b8] mb-2">POSITION</label>
+              <input 
+                name="position" type="text" value={formData.position} onChange={handleChange}
+                className="w-full px-4 py-3 bg-[#0a0a0a] border border-white/10 focus:border-[#D4AF37] outline-none transition-colors text-white placeholder:text-white/30"
+                placeholder="e.g., IT Director, CTO"
+              />
+            </div>
           </div>
-          <div className="flex gap-8">
-            <Link href="/privacy" className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 hover:text-white">
-              Privacy
-            </Link>
-            <Link href="/terms" className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 hover:text-white">
-              Terms
-            </Link>
-            <Link href="/compliance" className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 hover:text-white">
-              Compliance
-            </Link>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold tracking-wider text-[#94a3b8] mb-2">BUSINESS EMAIL *</label>
+              <input 
+                name="email" type="email" required value={formData.email} onChange={handleChange}
+                className="w-full px-4 py-3 bg-[#0a0a0a] border border-white/10 focus:border-[#D4AF37] outline-none transition-colors text-white placeholder:text-white/30"
+                placeholder="name@company.com"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold tracking-wider text-[#94a3b8] mb-2">PHONE NUMBER</label>
+              <input 
+                name="phone" type="tel" value={formData.phone} onChange={handleChange}
+                className="w-full px-4 py-3 bg-[#0a0a0a] border border-white/10 focus:border-[#D4AF37] outline-none transition-colors text-white placeholder:text-white/30"
+                placeholder="+44 20 1234 5678"
+              />
+            </div>
           </div>
-          <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600">
-            © 2026 MPIntellect LTD
+
+          <div>
+            <label className="block text-xs font-bold tracking-wider text-[#94a3b8] mb-2">SERVICE CATEGORY *</label>
+            <select 
+              name="category" required value={formData.category} onChange={handleChange}
+              className="w-full px-4 py-3 bg-[#0a0a0a] border border-white/10 focus:border-[#D4AF37] outline-none transition-colors text-white"
+            >
+              <option value="" className="bg-[#0a0a0a]">Select a service category</option>
+              <option value="software" className="bg-[#0a0a0a]">SIC 62012 - Software Development</option>
+              <option value="infrastructure" className="bg-[#0a0a0a]">SIC 62090 - IT Infrastructure</option>
+              <option value="consulting" className="bg-[#0a0a0a]">Technology Consulting</option>
+              <option value="integration" className="bg-[#0a0a0a]">System Integration</option>
+              <option value="procurement" className="bg-[#0a0a0a]">Hardware Procurement</option>
+            </select>
           </div>
-        </div>
-      </footer>
+
+          <div>
+            <label className="block text-xs font-bold tracking-wider text-[#94a3b8] mb-2">PROJECT SCOPE / REQUIREMENTS *</label>
+            <textarea 
+              name="requirements" required rows={5} value={formData.requirements} onChange={handleChange}
+              className="w-full px-4 py-3 bg-[#0a0a0a] border border-white/10 focus:border-[#D4AF37] outline-none transition-colors text-white placeholder:text-white/30 resize-none"
+              placeholder="Please describe your business requirements, timeline, and any specific technical needs..."
+            ></textarea>
+          </div>
+
+          {/* Corporate Compliance */}
+          <div className="flex items-start gap-3">
+            <input type="checkbox" id="compliance" required className="mt-1 accent-[#D4AF37]" />
+            <label htmlFor="compliance" className="text-sm text-[#94a3b8]">
+              I confirm that I represent a registered business and agree to the 
+              <Link href="/terms" className="text-[#D4AF37] hover:underline mx-1">Terms of Service</Link> 
+              and
+              <Link href="/privacy" className="text-[#D4AF37] hover:underline mx-1">Privacy Policy</Link>.
+            </label>
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={sending}
+            className="w-full py-4 bg-[#D4AF37] text-black font-bold tracking-widest hover:bg-white hover:text-black transition-all duration-300 disabled:opacity-50"
+          >
+            {sending ? 'TRANSMITTING...' : 'SUBMIT INQUIRY'}
+          </button>
+
+          {result && result.ok && (
+            <div className="mt-4 p-4 border border-[#D4AF37]/20 bg-[#D4AF37]/5 text-center">
+              <p className="text-[#D4AF37] text-xs font-bold">✓ INQUIRY SENT SUCCESSFULLY</p>
+            </div>
+          )}
+          
+          {result && !result.ok && (
+            <div className="mt-4 p-4 border border-red-500/20 bg-red-500/5 text-center">
+              <p className="text-red-400 text-xs font-bold">✗ {result.error || 'ERROR SENDING INQUIRY'}</p>
+            </div>
+          )}
+
+          <p className="text-xs text-[#94a3b8] text-center mt-4">
+            All inquiries are handled by our B2B team. Your information will be processed according to GDPR.
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+      {/* 9. FOOTER - Hidden on landing domain */}
+      {!isLandingDomain && (
+        <footer className="py-12 md:py-16 px-6 md:px-12 border-t border-white/5">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 text-center md:text-left">
+              MZ  SYSTEMS • COMPLETE IT SOLUTIONS FOR INDIVIDUALS AND ENTREPRISES
+            </div>
+            <div className="flex gap-8">
+              <Link href="/privacy" className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 hover:text-white">
+                Privacy
+              </Link>
+              <Link href="/terms" className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 hover:text-white">
+                Terms
+              </Link>
+              <Link href="/compliance" className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 hover:text-white">
+                Compliance
+              </Link>
+            </div>
+            <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600">
+              © 2026 MZPRIMER LTD
+            </div>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }

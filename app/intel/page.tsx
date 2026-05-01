@@ -550,24 +550,7 @@ export default function IntelLanding() {
     </div>
 
     <div className="grid lg:grid-cols-2 gap-16 items-start">
-      {/* Contact Information */}
-      <div className="space-y-8">
-        <div className="border-l-4 border-[#D4AF37] pl-6">
-          <h4 className="text-2xl font-bold mb-2 text-white">Corporate Headquarters</h4>
-          <p className="text-[#94a3b8]">71-75 Shelton Street, Covent Garden<br />London, WC2H 9JQ, United Kingdom</p>
-        </div>
-        
-        <div className="border-l-4 border-[#10B981] pl-6">
-          <h4 className="text-2xl font-bold mb-2 text-white">Direct Contacts</h4>
-          <p className="text-[#94a3b8]">📧 contact@mzprimer.com</p>
-        </div>
-        
-        <div className="border-l-4 border-[#D4AF37] pl-6">
-          <h4 className="text-2xl font-bold mb-2 text-white">Company Registration</h4>
-          <p className="text-[#94a3b8] mb-1">MZPRIMER LTD</p>
-          <p className="text-[#94a3b8]">SIC: 62012, 62090</p>
-        </div>
-      </div>
+      
 
       {/* B2B Inquiry Form */}
       <div className="bg-[#050505] p-8 md:p-10 border border-white/5">
@@ -705,17 +688,7 @@ export default function IntelLanding() {
             <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 text-center md:text-left">
               MZ  SYSTEMS • COMPLETE IT SOLUTIONS FOR INDIVIDUALS AND ENTREPRISES
             </div>
-            <div className="flex gap-8">
-              <Link href="/privacy" className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 hover:text-white">
-                Privacy
-              </Link>
-              <Link href="/terms" className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 hover:text-white">
-                Terms
-              </Link>
-              <Link href="/compliance" className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 hover:text-white">
-                Compliance
-              </Link>
-            </div>
+            
             <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600">
               © 2026 MZPRIMER LTD
             </div>

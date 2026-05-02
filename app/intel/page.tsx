@@ -42,9 +42,9 @@ useEffect(() => {
   
   // ONLY hide header/footer on mzprimer.com and its subdomains
   const isLanding = 
-    hostname === 'mzprimer.com' || 
-    hostname === 'www.mzprimer.com' ||
-    hostname.endsWith('.mzprimer.com');
+    hostname === 'domain.com' || 
+    hostname === 'domain.com' ||
+    hostname.endsWith('domain.com');
   
   console.log('Hostname:', hostname, '| isLanding:', isLanding);
   setIsLandingDomain(isLanding);
@@ -649,11 +649,7 @@ useEffect(() => {
           <div className="flex items-start gap-3">
             <input type="checkbox" id="compliance" required className="mt-1 accent-[#D4AF37]" />
             <label htmlFor="compliance" className="text-sm text-[#94a3b8]">
-              I confirm that I represent a registered business and agree to the 
-              <Link href="/terms" className="text-[#D4AF37] hover:underline mx-1">Terms of Service</Link> 
-              and
-              <Link href="/privacy" className="text-[#D4AF37] hover:underline mx-1">Privacy Policy</Link>.
-            </label>
+              I confirm that I represent a registered business and agree to the terms of Service and Privacy Policy. </label>
           </div>
 
           <button 

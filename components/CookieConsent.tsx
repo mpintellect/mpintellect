@@ -62,7 +62,7 @@ export default function CookieConsent() {
                     <Cookie size={16} />
                 </div>
                 <p className="cookie-text">
-                   This site uses cookies to enhance your AI trading experience and analyze traffic.
+                   This site uses cookies to enhance your browsing experience, analyze site traffic, and personalize content.
                 </p>
             </div>
 

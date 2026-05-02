@@ -394,21 +394,19 @@ function generateChartHTML(chartData: any, gold: string, dim: string) {
   // ============================================================
   // CHART DIMENSIONS - ENLARGED
   // ============================================================
-  const chartWidth = 1400;      // BIGGER (was 980)
-  const chartHeight = 580;      // BIGGER (was 480)
-  const chartBoxX = -30;        // Shift left for price space
-  const chartBoxY = 85;         // Slightly lower
+  const chartWidth = 1400;
+  const chartHeight = 580;
+  const chartBoxX = -30;
+  const chartBoxY = 85;
   const chartBoxWidth = chartWidth - 60;
   const chartBoxHeight = chartHeight;
   
-  // Show last 35 candles
   const visibleCandles = candles.slice(-35);
-  const candleWidth = Math.max(8, Math.min(15, (chartBoxWidth - 80) / visibleCandles.length - 2));  // BIGGER candles
-  const spacing = candleWidth + 4;  // More spacing
+  const candleWidth = Math.max(8, Math.min(15, (chartBoxWidth - 80) / visibleCandles.length - 2));
+  const spacing = candleWidth + 4;
   const chartLeft = chartBoxX + 60;
   const chartRight = chartBoxX + chartBoxWidth - 20;
   
-  // Get TP, SL, and Pivot levels
   const pendingOrder = chart.pending_order || {};
   const takeProfit = pendingOrder.take_profit;
   const stopLoss = pendingOrder.stop_loss;
@@ -456,7 +454,7 @@ function generateChartHTML(chartData: any, gold: string, dim: string) {
   // ============================================================
   const lastCandleIndex = visibleCandles.length - 1;
   const lastCandleX = chartLeft + (lastCandleIndex * spacing);
-  const forecastBoxWidth = spacing * 12;  // WIDER
+  const forecastBoxWidth = spacing * 12;
   const forecastBoxX = lastCandleX + candleWidth + 10;
   const forecastBoxRight = forecastBoxX + forecastBoxWidth;
   
@@ -539,7 +537,7 @@ function generateChartHTML(chartData: any, gold: string, dim: string) {
   }
   
   // ============================================================
-  // GRID LINES
+  // GRID LINES WITH COLORED PRICE BOXES
   // ============================================================
   let gridSVG = '';
   const gridLines = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -565,6 +563,47 @@ function generateChartHTML(chartData: any, gold: string, dim: string) {
   gridSVG += `
     <line x1="${axisX}" y1="${chartBoxY - 3}" x2="${axisX}" y2="${chartBoxY + chartBoxHeight + 3}" stroke="#1f3a4a" stroke-width="2" rx="6" opacity="0.8"/>
   `;
+  
+  // ============================================================
+  // COLORED PRICE BOXES FOR KEY LEVELS (OVERLAY ON GRID)
+  // ============================================================
+  
+  // Pivot Level - Yellow Box (matches pivot line)
+  if (pivot.level && getY(pivot.level) >= chartBoxY && getY(pivot.level) <= chartBoxY + chartBoxHeight) {
+    const pivotYPos = getY(pivot.level);
+    gridSVG += `
+      <rect x="${axisX + 12}" y="${pivotYPos - 10}" width="65" height="18" rx="4" fill="#D4AF37" opacity="0.95"/>
+      <text x="${axisX + 44.5}" y="${pivotYPos + 4}" text-anchor="middle" fill="#000" font-size="11" class="mono" font-weight="800">${formatPrice(pivot.level)}</text>
+    `;
+  }
+  
+  // Resistance 1 - Red Box (matches R1 line)
+  if (pivot.resistance_1 && getY(pivot.resistance_1) >= chartBoxY && getY(pivot.resistance_1) <= chartBoxY + chartBoxHeight) {
+    const r1YPos = getY(pivot.resistance_1);
+    gridSVG += `
+      <rect x="${axisX + 12}" y="${r1YPos - 10}" width="65" height="18" rx="4" fill="#EF4444" opacity="0.95"/>
+      <text x="${axisX + 44.5}" y="${r1YPos + 4}" text-anchor="middle" fill="#FFFFFF" font-size="11" class="mono" font-weight="800">${formatPrice(pivot.resistance_1)}</text>
+    `;
+  }
+  
+  // Support 1 - Green Box (matches S1 line)
+  if (pivot.support_1 && getY(pivot.support_1) >= chartBoxY && getY(pivot.support_1) <= chartBoxY + chartBoxHeight) {
+    const s1YPos = getY(pivot.support_1);
+    gridSVG += `
+      <rect x="${axisX + 12}" y="${s1YPos - 10}" width="65" height="18" rx="4" fill="#10B981" opacity="0.95"/>
+      <text x="${axisX + 44.5}" y="${s1YPos + 4}" text-anchor="middle" fill="#FFFFFF" font-size="11" class="mono" font-weight="800">${formatPrice(pivot.support_1)}</text>
+    `;
+  }
+  
+  
+    // Current Price Box (Gold/Yellow) - Right side (matches pivot/R1/S1)
+  const currentPriceY = getY(chart.current_price);
+  if (currentPriceY >= chartBoxY && currentPriceY <= chartBoxY + chartBoxHeight) {
+    gridSVG += `
+      <rect x="${axisX + 12}" y="${currentPriceY - 10}" width="65" height="18" rx="4" fill="#D4AF37" opacity="0.95"/>
+      <text x="${axisX + 44.5}" y="${currentPriceY + 4}" text-anchor="middle" fill="#000" font-size="11" class="mono" font-weight="800">${formatPrice(chart.current_price)}</text>
+    `;
+  }
   
   // ============================================================
   // LEVELS
@@ -730,19 +769,11 @@ function generateChartHTML(chartData: any, gold: string, dim: string) {
           <!-- TP Line -->
           ${tpY_clamped ? `
             <line x1="${chartLeft}" y1="${tpY_clamped}" x2="${chartRight}" y2="${tpY_clamped}" stroke="${boxColor}" stroke-width="2" stroke-dasharray="5,5" opacity="0.5"/>
-            ${!isTPFar ? `
-              <rect x="${chartRight - 55}" y="${tpY_clamped - 10}" width="45" height="16" rx="4" fill="${boxColor}" opacity="0.75"/>
-              <text x="${chartRight - 32}" y="${tpY_clamped + 1}" text-anchor="middle" fill="#000" font-size="9" font-weight="800"></text>
-            ` : ''}
           ` : ''}
           
           <!-- SL Line -->
           ${slY_clamped ? `
             <line x1="${chartLeft}" y1="${slY_clamped}" x2="${chartRight}" y2="${slY_clamped}" stroke="#EF4444" stroke-width="2" stroke-dasharray="5,5" opacity="0.5"/>
-            ${!isSLFar ? `
-              <rect x="${chartRight - 55}" y="${slY_clamped - 10}" width="45" height="16" rx="4" fill="#EF4444" opacity="0.75"/>
-              <text x="${chartRight - 32}" y="${slY_clamped + 1}" text-anchor="middle" fill="#000" font-size="9" font-weight="800"></text>
-            ` : ''}
           ` : ''}
           
         </svg>

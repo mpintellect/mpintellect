@@ -12087,7 +12087,11 @@ img[src*="logo"]:hover {
   z-index: 10;
   position: relative;
 }
-
+@media (min-width: 769px) {
+  .gateway-content-wrapper {
+    margin-top: 40px;  /* Adjust this value as needed */
+  }
+}
 /* Compact Header */
 .gateway-header {
   text-align: center;

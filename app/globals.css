@@ -32646,3 +32646,20 @@ html {
 .telegram-btn:hover {
   animation: telegramGlow 1.5s ease-in-out infinite;
 }
+/* Single Contact Button - Centralized Support Hub */
+.main-contact-btn {
+  border-right: 2px solid #D4AF37; /* Champagne gold border for trust */
+  background: #1a1a1a;
+}
+
+.main-contact-btn:hover .contact-icon svg {
+  stroke: #D4AF37; /* Gold accent on hover */
+}
+
+.main-contact-btn .contact-title {
+  font-weight: 800;
+}
+
+.main-contact-btn .contact-subtitle {
+  color: #D4AF37; /* Gold subtitle to indicate premium support */
+}

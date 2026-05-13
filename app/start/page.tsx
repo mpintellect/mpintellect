@@ -57,7 +57,15 @@ export default function StartPage() {
     }
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`, '_blank');
   };
-
+  const handleContactClick = () => {
+    if ((window as any).fbq) {
+      (window as any).fbq('trackCustom', 'Linktree_Click', {
+        action: 'contact_center',
+        destination: 'linktree'
+      });
+    }
+    window.open('https://linktr.ee/LiteFinanceMorocco', '_blank');
+  };
   const handleTelegramClick = () => {
     if ((window as any).fbq) {
       (window as any).fbq('trackCustom', 'Telegram_Support', {
@@ -243,35 +251,38 @@ export default function StartPage() {
           </Link>
         </div>
 
-        {/* Contact Support Buttons - WhatsApp & Telegram */}
-        <div className="contact-buttons">
-          <button onClick={handleWhatsAppClick} className="contact-btn whatsapp-btn">
-            <div className="contact-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C6.48 2 2 6.48 2 12c0 2.45.97 4.76 2.55 6.46L3 22l3.54-.96C8.24 22.03 10.09 23 12 23c5.52 0 10-4.48 10-10S17.52 2 12 2z" fill="#25D366"/>
-                <path d="M16.92 15.48c-.28.79-1.65 1.46-2.42 1.51-.65.04-1.22-.13-1.83-.34-1.06-.37-2.21-1.06-3.04-1.89-.83-.83-1.52-1.98-1.89-3.04-.21-.61-.38-1.18-.34-1.83.05-.77.72-2.14 1.51-2.42.23-.08.47-.05.67.11.32.26.66.6.92.95.17.23.33.5.44.79.11.29.07.61-.1.85-.17.24-.38.48-.54.73-.16.25-.34.49-.23.75.26.59.84 1.24 1.43 1.83.59.59 1.24 1.17 1.83 1.43.26.11.5-.07.75-.23.25-.16.49-.37.73-.54.24-.17.56-.21.85-.1.29.11.56.27.79.44.35.26.69.6.95.92.16.2.19.44.11.67z" fill="white"/>
-              </svg>
-            </div>
-            <div className="contact-text">
-              <span className="contact-title">واتساب</span>
-              <span className="contact-subtitle">دعم بالدارجة</span>
-            </div>
-          </button>
+        {/* Contact Support Buttons - Linktree & Telegram */}
+<div className="contact-buttons">
+  {/* Linktree Button - All channels */}
+  <button onClick={handleContactClick} className="contact-btn main-contact-btn">
+    <div className="contact-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <path d="M2 17L12 22L22 17" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      </svg>
+    </div>
+    <div className="contact-text">
+      <span className="contact-title">مركز الدعم</span>
+      <span className="contact-subtitle">جميع القنوات</span>
+    </div>
+  </button>
 
-          <button onClick={handleTelegramClick} className="contact-btn telegram-btn">
-            <div className="contact-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#26A5E4"/>
-                <path d="M16.5 8.5L7.5 12l3.5 1.5L14 15l1-3.5-1-3z" fill="white"/>
-                <path d="M11 13l-1 3-2-2 3-1z" fill="white" opacity="0.8"/>
-              </svg>
-            </div>
-            <div className="contact-text">
-              <span className="contact-title">تيليغرام</span>
-              <span className="contact-subtitle">تواصل مباشر</span>
-            </div>
-          </button>
-        </div>
+  {/* Telegram Button - Direct Contact */}
+  <button onClick={handleTelegramClick} className="contact-btn telegram-btn">
+    <div className="contact-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#26A5E4"/>
+        <path d="M16.5 8.5L7.5 12l3.5 1.5L14 15l1-3.5-1-3z" fill="white"/>
+        <path d="M11 13l-1 3-2-2 3-1z" fill="white" opacity="0.8"/>
+      </svg>
+    </div>
+    <div className="contact-text">
+      <span className="contact-title">تيليغرام</span>
+      <span className="contact-subtitle">تواصل مباشر</span>
+    </div>
+  </button>
+</div>
 
         {/* Footer */}
         <div className="gateway-footer">

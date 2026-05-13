@@ -4,8 +4,9 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/app/hooks/useUser";
-import { Globe, ArrowRight, Trophy, X, BarChart3, CreditCard, LogOut, Menu, Star, Zap, Shield, TrendingUp } from 'lucide-react';
+import { Globe, ArrowRight, Trophy, X, BarChart3, CreditCard, LogOut, Menu, Star, Zap, Shield, TrendingUp, LineChart } from 'lucide-react';
 import { createPortal } from "react-dom";
+import InstantChart from "@/components/InstantChart";
 import AiChatBox from "@/components/AiChatBox";
 import PropFirmChat from "@/components/PropFirmChat";
 import UserAnalytics from "./components/AnalyticsSection";
@@ -18,10 +19,17 @@ function DashboardContent() {
   const [buyLoading, setBuyLoading] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"10" | "20" | "30" | null>(null);
-  const [activeTool, setActiveTool] = useState<'ai' | 'prop' | null>(null);
+  const [activeTool, setActiveTool] = useState<'ai' | 'prop' | 'chart' | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [isNavExpanded, setIsNavExpanded] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // Chart state
+  const [chartData, setChartData] = useState<any>(null);
+  const [selectedSymbol, setSelectedSymbol] = useState<string>("XAUUSD");
+  const [chartCapital, setChartCapital] = useState<number>(10000);
+  const [chartRiskPercent, setChartRiskPercent] = useState<number>(2);
+  const [chartStrategy, setChartStrategy] = useState<"scalper" | "daytrader">("daytrader");
+  const [chartLoading, setChartLoading] = useState(false);
   
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -66,22 +74,37 @@ function DashboardContent() {
       router.push("/client/login");
     }
   };
-
-// ✅ 1. Only opens the tool. DOES NOT deduct credits yet.
-  const openTool = (tool: 'ai' | 'prop') => {
+  // Fetch chart data when opening chart tool
+  const fetchChartData = async (symbol: string, strategy: "scalper" | "daytrader") => {
+    setChartLoading(true);
+    try {
+      const response = await fetch(`/api/setup?symbol=${symbol}&strategy=${strategy}`);
+      if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+      const data = await response.json();
+      setChartData(data);
+      return data;
+    } catch (err) {
+      console.error("Error fetching chart data:", err);
+      toast.error("Failed to load chart data");
+      return null;
+    } finally {
+      setChartLoading(false);
+    }
+  };
+  const openTool = (tool: 'ai' | 'prop' | 'chart') => {
     if (!user) {
       toast.error("Please login to use this feature");
       return;
     }
     
-    // We only CHECK if they have credits here to prevent entering an empty tool.
+    // Chart tool uses same credit system
     if (setupCount <= 0) {
       toast.error("No setups available. Please purchase more setups.");
       return;
     }
 
     // Just open the terminal. 
-    // The credit is deducted inside AiChatBox.tsx ONLY when analysis is successful.
+    // The credit is deducted inside the component ONLY when analysis is successful.
     setActiveTool(tool);
     setShowAnalytics(false);
     setIsNavExpanded(false);
@@ -184,13 +207,23 @@ function DashboardContent() {
             <span>Portfolio</span>
           </button>
           
-          <button 
+                    <button 
             className="premium-nav-item" 
             onClick={() => openTool('ai')}
             disabled={setupCount <= 0}
           >
             <Zap size={18} className="premium-nav-icon" /> 
             <span>AI </span>
+            {setupCount <= 0 && <span className="premium-nav-badge">No Credits</span>}
+          </button>
+          
+          <button 
+            className="premium-nav-item" 
+            onClick={() => openTool('chart')}
+            disabled={setupCount <= 0}
+          >
+            <BarChart3 size={18} className="premium-nav-icon" /> 
+            <span>Chart</span>
             {setupCount <= 0 && <span className="premium-nav-badge">No Credits</span>}
           </button>
           
@@ -265,7 +298,7 @@ function DashboardContent() {
             <span>Portfolio</span>
           </button>
           
-          <button 
+                    <button 
             className="premium-mobile-item"
             onClick={() => {
               openTool('ai');
@@ -275,6 +308,19 @@ function DashboardContent() {
           >
             <Zap size={18} className="premium-nav-icon" />
             <span>AI </span>
+            {setupCount <= 0 && <span className="premium-mobile-badge">No Credits</span>}
+          </button>
+          
+          <button 
+            className="premium-mobile-item"
+            onClick={() => {
+              openTool('chart');
+              setIsMobileMenuOpen(false);
+            }}
+            disabled={setupCount <= 0}
+          >
+            <BarChart3 size={18} className="premium-nav-icon" />
+            <span>Chart</span>
             {setupCount <= 0 && <span className="premium-mobile-badge">No Credits</span>}
           </button>
           
@@ -386,13 +432,28 @@ function DashboardContent() {
                 </div>
               </div>
 
-              <div className="premium-action-card">
+                            <div className="premium-action-card">
                 <h3>PROP FIRM</h3>
                 <p>Specialized risk-management AI designed for funding challenges.</p>
                 <div className="premium-action-footer">
                   <span className="premium-action-cost">1 credit/use</span>
                   <button 
                     onClick={() => openTool('prop')} 
+                    className={`premium-action-btn ${setupCount > 0 ? '' : 'disabled'}`}
+                    disabled={setupCount <= 0}
+                  >
+                    {setupCount > 0 ? 'Initialize' : 'No Credits'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="premium-action-card">
+                <h3>INSTANT CHART</h3>
+                <p>Institutional-grade technical charts with precise lot sizing and risk management.</p>
+                <div className="premium-action-footer">
+                  <span className="premium-action-cost">1 credit/use</span>
+                  <button 
+                    onClick={() => openTool('chart')} 
                     className={`premium-action-btn ${setupCount > 0 ? '' : 'disabled'}`}
                     disabled={setupCount <= 0}
                   >
@@ -582,11 +643,13 @@ function DashboardContent() {
               </button>
             </div>
             <div className="premium-tool-content">
-              {activeTool === 'ai' ? (
-                <AiChatBox mode="section" onClose={closeTool} autoStart={true} />
-              ) : (
-                <PropFirmChat onClose={closeTool} />
-              )}
+                            {activeTool === 'chart' ? (
+  <InstantChart onClose={closeTool} />
+) : activeTool === 'ai' ? (
+  <AiChatBox mode="section" onClose={closeTool} autoStart={true} />
+) : (
+  <PropFirmChat onClose={closeTool} />
+)}
             </div>
           </div>
         </div>,

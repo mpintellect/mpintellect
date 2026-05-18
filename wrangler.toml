@@ -6,7 +6,7 @@ compatibility_date = "2025-01-01"
 
 # Environment variables
 [vars]
-TELEGRAM_BOT_TOKEN = "8421497330:AAH1BgJlfXvMMst8NAWuWNIdrOcIy2qFbH8"
+TELEGRAM_BOT_TOKEN = "8431004689:AAGEiddLu5A-wL7NWDlKl9R-BUv8KhLPrpY"
 TELEGRAM_CHANNEL_ID = "1003282499801"
 ADMIN_SECRET = "mpintellecttelegram"
 CRON_SECRET = "mpintellect"

@@ -1,30 +1,97 @@
 // functions/api/telegram/smart-post.ts
 
-export interface ExtractedData {
-  symbol: string;
-  currentPrice: number;
-  entry: number;
-  tp: number;
-  sl: number;
-  rr: number;
-  trend: string;
-  trendIcon: string;
-  trendDirection: 'bullish' | 'bearish' | 'neutral';
-  confidence: number;
-  rsi: number;
-  rsiZone: string;
-  rsiIcon: string;
-  ema50: number;
+export async function onRequestPost(context: any): Promise<Response> {
+  const { request, env } = context;
+  
+  // Log all environment variables (without exposing full tokens)
+  console.log('🔍 Checking environment variables:');
+  console.log('  ADMIN_SECRET exists:', !!env.ADMIN_SECRET);
+  console.log('  TELEGRAM_BOT_TOKEN exists:', !!env.TELEGRAM_BOT_TOKEN);
+  console.log('  TELEGRAM_CHANNEL_ID exists:', !!env.TELEGRAM_CHANNEL_ID);
+  console.log('  API_URL:', env.API_URL);
+  
+  try {
+    // Security check
+    const authHeader = request.headers.get('Authorization');
+    console.log('🔐 Auth header received:', authHeader ? 'Yes' : 'No');
+    
+    if (authHeader !== `Bearer ${env.ADMIN_SECRET}`) {
+      console.log('❌ Auth failed');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    }
+    
+    const body = await request.json();
+    const symbol = body.symbol || 'XAUUSD';
+    console.log(`📊 Processing symbol: ${symbol}`);
+    
+    // Fetch data from your data API
+    const dataUrl = `https://data.mpintellect.com/D1_output_${symbol}.json`;
+    console.log(`📡 Fetching data from: ${dataUrl}`);
+    
+    const dataRes = await fetch(dataUrl);
+    console.log(`📡 Response status: ${dataRes.status}`);
+    
+    if (!dataRes.ok) {
+      return new Response(JSON.stringify({ error: `Failed to fetch data for ${symbol}: ${dataRes.status}` }), { status: 500 });
+    }
+    
+    const rawData = await dataRes.json();
+    console.log(`✅ Data fetched successfully`);
+    
+    // Extract data
+    const extractedData = extractData(rawData, symbol);
+    if (!extractedData) {
+      return new Response(JSON.stringify({ error: 'Failed to extract data' }), { status: 500 });
+    }
+    console.log(`✅ Data extracted: Price=${extractedData.currentPrice}, Confidence=${extractedData.confidence}`);
+    
+    // Generate chart image URL
+    const baseUrl = env.API_URL || 'https://mpintellect.com';
+    const chartUrl = `${baseUrl}/api/chart/generate?symbol=${symbol}&type=story&refresh=true`;
+    console.log(`🖼️ Chart URL: ${chartUrl}`);
+    
+    // Format caption
+    const caption = formatCaption(extractedData);
+    console.log(`📝 Caption generated (length: ${caption.length})`);
+    
+    // Send to Telegram
+    console.log(`📤 Sending to Telegram...`);
+    const success = await sendPhotoToTelegram(
+      env.TELEGRAM_BOT_TOKEN,
+      env.TELEGRAM_CHANNEL_ID,
+      chartUrl,
+      caption
+    );
+    
+    if (!success) {
+      console.log(`❌ Telegram send failed`);
+      return new Response(JSON.stringify({ error: 'Telegram send failed - check bot token and channel ID' }), { status: 500 });
+    }
+    
+    console.log(`✅ Success!`);
+    return new Response(JSON.stringify({
+      success: true,
+      symbol: symbol,
+      confidence: extractedData.confidence,
+      trend: extractedData.trend,
+    }), { status: 200 });
+    
+  } catch (error: any) {
+    console.error('💥 Smart post error:', error.message);
+    console.error('Stack:', error.stack);
+    return new Response(JSON.stringify({ error: error.message, stack: error.stack }), { status: 500 });
+  }
 }
 
-function extractData(rawData: any, symbol: string): ExtractedData | null {
+// Helper functions (keep the same as before)
+function extractData(rawData: any, symbol: string): any {
   if (!rawData) return null;
   
   const trendRaw = rawData.trend?.trend || 'neutral';
   const isBullish = trendRaw.includes('bullish');
   const isBearish = trendRaw.includes('bearish');
   
-  let trendDirection: 'bullish' | 'bearish' | 'neutral' = 'neutral';
+  let trendDirection = 'neutral';
   let trendIcon = '🟡➡️';
   
   if (isBullish) {
@@ -71,11 +138,10 @@ function extractData(rawData: any, symbol: string): ExtractedData | null {
   };
 }
 
-function formatCaption(data: ExtractedData): string {
+function formatCaption(data: any): string {
   const priceFormatted = data.currentPrice.toLocaleString();
   const entryFormatted = data.entry.toLocaleString();
   const tpFormatted = data.tp.toLocaleString();
-  const emaFormatted = data.ema50.toLocaleString();
   
   let trendText = '';
   if (data.trendDirection === 'bullish') {
@@ -98,17 +164,14 @@ function formatCaption(data: ExtractedData): string {
 
 📉 *Key Insights:*
 • RSI: ${data.rsi} ${data.rsiIcon} (${data.rsiZone})
-• EMA50: ${emaFormatted}
 
-⚡ *AI Confidence:* ${data.confidence}% | R/R: ${data.rr}
+⚡ *AI Confidence:* ${data.confidence}%
 
-📊 *Chart attached 👆*
+📊 *Chart attached*
 
-[🔗 Full Analysis on MPIntellect](https://mpintellect.com/analysis/${data.symbol})
+[🔗 Full Analysis](https://mpintellect.com/analysis/${data.symbol})
 
-[🏦 Open Live Account - LiteFinance](https://my.litefinance.org/registration/?uid=967798214)
-
-#${data.symbol} #${data.trendDirection === 'bullish' ? 'Bullish' : data.trendDirection === 'bearish' ? 'Bearish' : 'Neutral'} #ForexSignals #TradingMorocco
+[🏦 Open Account](https://my.litefinance.org/registration/?uid=967798214)
   `.trim();
 }
 
@@ -130,6 +193,8 @@ async function sendPhotoToTelegram(
     const response = await fetch(url, { method: 'POST', body: formData });
     const result = await response.json();
     
+    console.log('📨 Telegram response:', result);
+    
     if (!result.ok) {
       console.error('Telegram API Error:', result.description);
       return false;
@@ -138,64 +203,5 @@ async function sendPhotoToTelegram(
   } catch (error) {
     console.error('Failed to send to Telegram:', error);
     return false;
-  }
-}
-
-export async function onRequestPost(context: any): Promise<Response> {
-  const { request, env } = context;
-  
-  try {
-    // Security check
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader !== `Bearer ${env.ADMIN_SECRET}`) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
-    }
-    
-    const body = await request.json();
-    const symbol = body.symbol || 'XAUUSD';
-    
-    // Fetch data from your data API
-    const dataUrl = `https://data.mpintellect.com/D1_output_${symbol}.json`;
-    const dataRes = await fetch(dataUrl);
-    
-    if (!dataRes.ok) {
-      return new Response(JSON.stringify({ error: `Failed to fetch data for ${symbol}` }), { status: 500 });
-    }
-    
-    const rawData = await dataRes.json();
-    const extractedData = extractData(rawData, symbol);
-    
-    if (!extractedData) {
-      return new Response(JSON.stringify({ error: 'Failed to extract data' }), { status: 500 });
-    }
-    
-    // Generate chart image URL (using your existing chart API)
-    const chartUrl = `${env.API_URL || 'https://mpintellect.com'}/api/chart/generate?symbol=${symbol}&type=story&refresh=true`;
-    
-    // Format caption
-    const caption = formatCaption(extractedData);
-    
-    // Send to Telegram
-    const success = await sendPhotoToTelegram(
-      env.TELEGRAM_BOT_TOKEN,
-      env.TELEGRAM_CHANNEL_ID,
-      chartUrl,
-      caption
-    );
-    
-    if (!success) {
-      return new Response(JSON.stringify({ error: 'Telegram send failed' }), { status: 500 });
-    }
-    
-    return new Response(JSON.stringify({
-      success: true,
-      symbol: symbol,
-      confidence: extractedData.confidence,
-      trend: extractedData.trend,
-    }), { status: 200 });
-    
-  } catch (error: any) {
-    console.error('Smart post error:', error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }

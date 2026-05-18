@@ -1,0 +1,26 @@
+# wrangler.toml
+
+name = "mpintellect-telegram"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# Environment variables
+[vars]
+TELEGRAM_BOT_TOKEN = "8421497330:AAH1BgJlfXvMMst8NAWuWNIdrOcIy2qFbH8"
+TELEGRAM_CHANNEL_ID = "1003282499801"
+ADMIN_SECRET = "mpintellecttelegram"
+CRON_SECRET = "mpintellect"
+API_URL = "https://mpintellect.com"
+
+# KV Namespace for state tracking
+[[kv_namespaces]]
+binding = "TELEGRAM_STATE"
+id = "your-kv-namespace-id"
+
+# Cron trigger - every 5 minutes during active hours
+# Note: Runs every 5 minutes, but schedule logic checks if it should post
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Optional: Separate cron for weekends off
+# crons = ["*/5 9-17 * * 1-5"]

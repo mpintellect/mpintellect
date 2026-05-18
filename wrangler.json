@@ -1,30 +1,39 @@
 {
-  "name": "mpintellect",
-  "compatibility_date": "2024-11-18",
-  "compatibility_flags": ["nodejs_compat"],
-  "pages_build_output_dir": "out",
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "mzprimer-db",
-      "database_id": "074ccc04-d574-4164-8f48-0b6444b9db88"
-    }
-  ],
-  "browser": {
-    "binding": "BROWSER"
-  },
-  "r2_buckets": [
-    {
-      "binding": "VAULT",
-      "bucket_name": "mzprimer-private-vault"
-    },
-    {
-      "binding": "AD_STORAGE",
-      "bucket_name": "mzprimer-ads"
-    },
-    {
-      "binding": "ASSETS_STORAGE",
-      "bucket_name": "assets"
-    }
-  ]
+	"name": "mpintellect",
+	"compatibility_date": "2024-11-18",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"pages_build_output_dir": "out",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "mzprimer-db",
+			"database_id": "074ccc04-d574-4164-8f48-0b6444b9db88"
+		}
+	],
+	"browser": {
+		"binding": "BROWSER"
+	},
+	"r2_buckets": [
+		{
+			"binding": "VAULT",
+			"bucket_name": "mzprimer-private-vault"
+		},
+		{
+			"binding": "AD_STORAGE",
+			"bucket_name": "mzprimer-ads"
+		},
+		{
+			"binding": "ASSETS_STORAGE",
+			"bucket_name": "assets"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "TELEGRAM_STATE",
+			"id": "512606c8e793416b90079bd8d0936705",
+			"remote": true
+		}
+	]
 }

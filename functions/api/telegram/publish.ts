@@ -57,7 +57,7 @@ export async function onRequestPost(context: any) {
     const buttons = {
       inline_keyboard: [
         [
-          { text: "🔹 افتح حسابك من هنا", url: `https://my.litefinance.org/registration/?uid=967798214&utm_source=telegram&utm_medium=signal&utm_campaign=${symbol.toLowerCase()}` }
+          { text: "✅ افتح حسابك من هنا", url: `https://my.litefinance.org/registration/?uid=967798214&utm_source=telegram&utm_medium=signal&utm_campaign=${symbol.toLowerCase()}` }
         ],
         [
           { text: "📊 عرض التحليل الكامل", url: `https://mpintellect.com/` }
@@ -170,27 +170,14 @@ function generateCaptionFromData(data: any, symbol: string): string {
   if (rsi > 70) rsiZone = 'Overbought';
   else if (rsi < 30) rsiZone = 'Oversold';
   
-  // Confidence bar (10 chars max)
-  const confidenceBar = '█'.repeat(Math.floor(confidence / 10));
-  
-  // Calculate padding for alignment (box width = 38 chars)
-  const symbolName = symbol.padEnd(25);
-  const priceLine = `💰 Price: ${price.toLocaleString().padEnd(20)}`;
-  const targetLine = `🎯 Target: ${entry.toLocaleString()} → ${tp.toLocaleString()}`;
-  const trendLine = `📈 Trend: ${trendIcon} ${trendText.padEnd(15)}`;
-  const rsiLine = `📉 RSI: ${rsi.toFixed(1)} (${rsiZone})`.padEnd(31);
-  const confidenceLine = `⚡ Confidence: ${confidence}% ${confidenceBar}`;
-  
   return `
-╔══════════════════════════════════════╗
-║  🤖 MPIntellect - Institutional Feed  ║
-╠══════════════════════════════════════╣
-║  📊 ${symbolName}║
-║  ${priceLine}║
-║  ${targetLine.padEnd(31)}║
-║  ${trendLine.padEnd(31)}║
-║  ${rsiLine.padEnd(31)}║
-║  ${confidenceLine.padEnd(31)}║
-╚══════════════════════════════════════╝
+🤖 MPIntellect - AI Analysis
+
+📊 ${symbol}
+💰 Price: ${price.toLocaleString()}
+🎯 Target Zone: ${entry.toLocaleString()} → ${tp.toLocaleString()}
+📈 Trend: ${trendIcon} ${trendText}
+📉 RSI: ${rsi.toFixed(1)} (${rsiZone})
+⚡ Confidence: ${confidence}%
   `.trim();
 }

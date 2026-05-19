@@ -120,6 +120,7 @@ async function sendPhotoWithButtonsToTelegram(
   formData.append('chat_id', chatId);
   formData.append('photo', imageUrl);
   formData.append('caption', caption);
+  formData.append('parse_mode', 'Markdown');  // ← ADD THIS LINE
   formData.append('reply_markup', JSON.stringify(replyMarkup));
   
   try {

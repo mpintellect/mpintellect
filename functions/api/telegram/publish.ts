@@ -189,8 +189,8 @@ function generateCaptionFromData(data: any, symbol: string): string {
 
 📊 *${symbol}*
 💰 Price: ${price.toLocaleString()}
-🎯 Target Zone: ${entry.toLocaleString()} → ${tp.toLocaleString()}
-📈 Trend: ${trendIcon} ${trendText}
+🎯 Target Zone: *${entry.toLocaleString()}* → *${tp.toLocaleString()}*
+📈 Trend: ${trendIcon} *${trendText}*
 📉 RSI: ${rsi.toFixed(1)} (${rsiZone})
 ⚡ Confidence: *${confidence}%*
   `.trim();

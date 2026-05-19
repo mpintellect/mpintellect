@@ -31,16 +31,6 @@ export async function onRequestPost(context: any) {
       });
     }
     
-    // ============================================
-    // FIX: Remove Markdown formatting to avoid errors
-    // ============================================
-    // Remove *bold* markers
-    message = message.replace(/\*/g, '');
-    // Remove _italic_ markers  
-    message = message.replace(/\_/g, '');
-    // Remove `code` markers
-    message = message.replace(/\`/g, '');
-    
     console.log(`📤 Sending message to Telegram...`);
     
     // Prepare inline keyboard if buttons are provided
@@ -63,7 +53,7 @@ export async function onRequestPost(context: any) {
     const payload: any = {
       chat_id: env.TELEGRAM_CHANNEL_ID,
       text: message,
-      parse_mode: undefined,  // Disable Markdown parsing
+      parse_mode: 'Markdown',  // ← ENABLED for bold text
       disable_web_page_preview: false,
     };
     

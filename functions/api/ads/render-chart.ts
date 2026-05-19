@@ -2,28 +2,6 @@
 
 import puppeteer from "@cloudflare/puppeteer";
 
-async function saveToBucket(screenshot: ArrayBuffer, symbol: string, env: any) {
-  console.log(`🔍 Checking bucket binding: ASSETS_STORAGE = ${!!env.ASSETS_STORAGE}`);
-  
-  if (!env.ASSETS_STORAGE) {
-    console.error(`❌ ASSETS_STORAGE binding is undefined! Check wrangler.json`);
-    return false;
-  }
-  
-  const filename = `${symbol}.png`;
-  
-  try {
-    await env.ASSETS_STORAGE.put(filename, screenshot, {
-      httpMetadata: { contentType: 'image/png' },
-    });
-    console.log(`✅ Uploaded to bucket: ${filename}`);
-    return true;
-  } catch (uploadError: any) {
-    console.error(`❌ Upload failed:`, uploadError.message);
-    return false;
-  }
-}
-
 export async function onRequestGet(context: any) {
   const { request, env } = context;
   const { searchParams } = new URL(request.url);
@@ -36,9 +14,6 @@ export async function onRequestGet(context: any) {
   let browser: any;
 
   try {
-    // Log all available bindings for debugging
-    console.log(`🔍 Available bindings:`, Object.keys(env).join(', '));
-
     // Fetch chart data
     const chartDataUrl = `https://data.mpintellect.com/D1_output_${symbol}.json`;
     console.log(`📊 Fetching chart data for ${symbol}`);
@@ -63,10 +38,35 @@ export async function onRequestGet(context: any) {
     await browser.close();
     browser = null;
     
-    // Save to bucket
-    await saveToBucket(screenshot, symbol, env);
-    
-    console.log(`✅ Chart generated and saved for ${symbol}`);
+    // ============================================
+    // SAVE TO BUCKET - WITH DEBUGGING
+    // ============================================
+    const filename = `${symbol}.png`;
+
+    console.log(`🔍 DEBUG: Checking bucket binding...`);
+    console.log(`🔍 env.ASSETS_STORAGE = ${!!env.ASSETS_STORAGE}`);
+
+    if (env.ASSETS_STORAGE) {
+      console.log(`🔍 ASSETS_STORAGE exists, attempting to save ${filename}...`);
+      try {
+        await env.ASSETS_STORAGE.put(filename, screenshot, { 
+          httpMetadata: { contentType: "image/png" } 
+        });
+        console.log(`✅ SUCCESS: Saved ${filename} to ASSETS_STORAGE`);
+        
+        // Try to list objects to verify
+        const list = await env.ASSETS_STORAGE.list();
+        const keys = list.objects.map((obj: { key: string }) => obj.key);
+        console.log(`🔍 Objects in bucket: ${keys.join(', ')}`);
+        
+      } catch (uploadError: any) {
+        console.error(`❌ Upload failed:`, uploadError.message);
+        console.error(`❌ Full error:`, JSON.stringify(uploadError));
+      }
+    } else {
+      console.error(`❌ ASSETS_STORAGE binding is NOT available!`);
+      console.error(`🔍 Available bindings: ${Object.keys(env).join(', ')}`);
+    }
 
     return new Response(screenshot, {
       headers: {

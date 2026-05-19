@@ -60,7 +60,7 @@ export async function onRequestPost(context: any) {
           { text: "✅ افتح حسابك من هنا", url: `https://my.litefinance.org/registration/?uid=967798214&utm_source=telegram&utm_medium=signal&utm_campaign=${symbol.toLowerCase()}` }
         ],
         [
-          { text: "📊 عرض التحليل الكامل", url: `https://mpintellect.com/` }
+          { text: "📊 عرض التحليل الكامل", url: `https://mpintellect.com/start` }
         ]
       ]
     };
@@ -162,6 +162,16 @@ function generateCaptionFromData(data: any, symbol: string): string {
   const trend = data.trend?.trend || 'neutral';
   const rsi = data.momentum?.rsi_latest || 50;
   
+  // Get UTC timestamp from data file
+  const timestamp = data.generated_at || data.trend?.timestamp || new Date().toISOString();
+  const date = new Date(timestamp);
+  
+  // Format as UTC: DD/MM/YYYY HH:MM UTC
+  const formattedTime = `${date.getUTCDate().toString().padStart(2, '0')}/${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCFullYear()} ${date.getUTCHours().toString().padStart(2, '0')}:${date.getUTCMinutes().toString().padStart(2, '0')} UTC`;
+  
+  // Get session from data
+  const session = data.sessions?.session_name || 'Market Hours';
+  
   const trendIcon = trend.includes('bullish') ? '🟢' : trend.includes('bearish') ? '🔴' : '⚪';
   const trendText = trend.replace(/_/g, ' ').toUpperCase();
   
@@ -172,6 +182,9 @@ function generateCaptionFromData(data: any, symbol: string): string {
   
   return `
 🤖 MPIntellect - AI Analysis
+
+📅 ${formattedTime}
+⏰ Session: ${session}
 
 📊 ${symbol}
 💰 Price: ${price.toLocaleString()}

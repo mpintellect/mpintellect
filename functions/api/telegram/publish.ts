@@ -181,16 +181,16 @@ function generateCaptionFromData(data: any, symbol: string): string {
   else if (rsi < 30) rsiZone = 'Oversold';
   
   return `
-🤖 MPIntellect - AI Analysis
+🤖 *MPIntellect - AI Analysis*
 
 📅 ${formattedTime}
 ⏰ Session: ${session}
 
-📊 ${symbol}
+📊 *${symbol}*
 💰 Price: ${price.toLocaleString()}
 🎯 Target Zone: ${entry.toLocaleString()} → ${tp.toLocaleString()}
 📈 Trend: ${trendIcon} ${trendText}
 📉 RSI: ${rsi.toFixed(1)} (${rsiZone})
-⚡ Confidence: ${confidence}%
+⚡ Confidence: *${confidence}%*
   `.trim();
 }

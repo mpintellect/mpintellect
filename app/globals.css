@@ -32444,10 +32444,13 @@ html {
 }
 
 /* Hide quick buttons on desktop */
-@media (min-width: 768px) {
-  .mobile-quick-actions {
-    display: none;
-  }
+.mobile-quick-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  margin: 20px 0 24px 0;
+  padding: 0;
+  width: 100%;
 }
 
 /* Emoji icons - lightweight replacement for Lucide */
@@ -32666,4 +32669,302 @@ html {
 
 .main-contact-btn .contact-subtitle {
   color: #D4AF37; /* Gold subtitle to indicate premium support */
+}
+/* ==========================================
+   POPUP STYLES
+   ========================================== */
+
+/* Desktop: Bottom right corner */
+.popup-overlay {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  animation: slideInRight 0.4s ease;
+}
+
+.popup-container-small {
+  background: linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%);
+  border-radius: 16px;
+  padding: 16px 20px;
+  width: 280px;
+  text-align: center;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.popup-close-small {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 18px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.popup-close-small:hover {
+  color: #D4AF37;
+}
+
+.popup-icon-small {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.popup-text-small {
+  font-size: 13px;
+  color: #ddd;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.popup-text-small strong {
+  color: #D4AF37;
+}
+
+.popup-fomo-small {
+  background: rgba(212, 175, 55, 0.12);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: #D4AF37;
+  margin-bottom: 14px;
+  display: inline-block;
+}
+
+.popup-btn-small {
+  background: linear-gradient(135deg, #D4AF37 0%, #b8941a 100%);
+  color: #0a0a0a;
+  border: none;
+  border-radius: 40px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  transition: transform 0.2s;
+}
+
+.popup-btn-small:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+/* Desktop animation */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ==========================================
+   MOBILE: CENTERED POPUP
+   ========================================== */
+@media (max-width: 768px) {
+  .popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .popup-container-small {
+    width: 85%;
+    max-width: 320px;
+    margin: 0;
+    animation: scaleUp 0.3s ease;
+  }
+  
+  /* Remove the bottom/right positioning on mobile */
+  .popup-overlay {
+    bottom: auto;
+    right: auto;
+  }
+}
+
+/* Mobile animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+/* ==========================================
+   QUICK ACTION BUTTONS - ALL DEVICES
+   ========================================== */
+.quick-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  margin: 20px 0 24px 0;
+  padding: 0;
+  width: 100%;
+}
+
+.quick-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  text-align: center;
+}
+
+.broker-btn {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.tools-btn {
+  background: linear-gradient(135deg, #064e3b 0%, #10b981 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.quick-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+.quick-btn:active {
+  transform: scale(0.97);
+}
+
+/* ==========================================
+   SMALL CORNER POPUP STYLES
+   ========================================== */
+.popup-overlay {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  animation: slideInRight 0.4s ease;
+}
+
+.popup-container-small {
+  background: linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%);
+  border-radius: 16px;
+  padding: 16px 20px;
+  width: 280px;
+  text-align: center;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.popup-close-small {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 18px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.popup-close-small:hover {
+  color: #D4AF37;
+}
+
+.popup-icon-small {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.popup-text-small {
+  font-size: 13px;
+  color: #ddd;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.popup-text-small strong {
+  color: #D4AF37;
+}
+
+.popup-fomo-small {
+  background: rgba(212, 175, 55, 0.12);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: #D4AF37;
+  margin-bottom: 14px;
+  display: inline-block;
+}
+
+.popup-btn-small {
+  background: linear-gradient(135deg, #D4AF37 0%, #b8941a 100%);
+  color: #0a0a0a;
+  border: none;
+  border-radius: 40px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  transition: transform 0.2s;
+}
+
+.popup-btn-small:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+@media (max-width: 768px) {
+  .quick-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .quick-btn {
+    padding: 12px 16px;
+  }
 }

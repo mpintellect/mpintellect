@@ -13,7 +13,7 @@ const TOOLS_LINK = "/";
 // WhatsApp support number (update with your number)
 const WHATSAPP_NUMBER = "+212604065652"; 
 const WHATSAPP_MESSAGE = "مرحبا، عندي سؤال بخصوص منصة";
-const TELEGRAM_USERNAME = "LFMaroc";
+const TELEGRAM_USERNAME = "mpintellect";
 
 export default function StartPage() {
   const [isMobile, setIsMobile] = useState(false);

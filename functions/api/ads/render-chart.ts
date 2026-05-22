@@ -2,6 +2,11 @@
 
 import puppeteer from "@cloudflare/puppeteer";
 
+interface R2Object {
+  key: string;
+  uploaded: Date;
+}
+
 export async function onRequestGet(context: any) {
   const { request, env } = context;
   const { searchParams } = new URL(request.url);
@@ -12,6 +17,7 @@ export async function onRequestGet(context: any) {
   if (!symbol) return new Response("Missing Symbol", { status: 400 });
 
   let browser: any;
+  let generatedImageUrl = "";
 
   try {
     // Fetch chart data
@@ -39,39 +45,51 @@ export async function onRequestGet(context: any) {
     browser = null;
     
     // ============================================
-    // SAVE TO BUCKET - WITH DEBUGGING
+    // SAVE WITH TIMESTAMP + CLEANUP OLD IMAGES
     // ============================================
-    const filename = `${symbol}.png`;
+    const timestamp = Date.now();
+    const filename = `${symbol}_${timestamp}.png`;
+    generatedImageUrl = `https://news.mpintellect.com/${filename}`;
 
-    console.log(`🔍 DEBUG: Checking bucket binding...`);
-    console.log(`🔍 env.ASSETS_STORAGE = ${!!env.ASSETS_STORAGE}`);
+    console.log(`🔍 Saving new image: ${filename}`);
 
     if (env.ASSETS_STORAGE) {
-      console.log(`🔍 ASSETS_STORAGE exists, attempting to save ${filename}...`);
-      try {
-        await env.ASSETS_STORAGE.put(filename, screenshot, { 
-          httpMetadata: { contentType: "image/png" } 
+      // Save new image with timestamp
+      await env.ASSETS_STORAGE.put(filename, screenshot, { 
+        httpMetadata: { contentType: "image/png" } 
+      });
+      console.log(`✅ Saved: ${filename}`);
+      
+      // ============================================
+      // CLEANUP: Delete old images (keep only last 2)
+      // ============================================
+      const list = await env.ASSETS_STORAGE.list({ prefix: `${symbol}_` });
+      const files = list.objects
+        .filter((obj: R2Object) => obj.key !== filename)
+        .sort((a: R2Object, b: R2Object) => {
+          const dateA = new Date(a.uploaded).getTime();
+          const dateB = new Date(b.uploaded).getTime();
+          return dateB - dateA;
         });
-        console.log(`✅ SUCCESS: Saved ${filename} to ASSETS_STORAGE`);
-        
-        // Try to list objects to verify
-        const list = await env.ASSETS_STORAGE.list();
-        const keys = list.objects.map((obj: { key: string }) => obj.key);
-        console.log(`🔍 Objects in bucket: ${keys.join(', ')}`);
-        
-      } catch (uploadError: any) {
-        console.error(`❌ Upload failed:`, uploadError.message);
-        console.error(`❌ Full error:`, JSON.stringify(uploadError));
+      
+      // Keep only the 2 most recent, delete the rest
+      const toDelete = files.slice(2);
+      for (const file of toDelete) {
+        await env.ASSETS_STORAGE.delete(file.key);
+        console.log(`🗑️ Deleted old image: ${file.key}`);
       }
+      
+      console.log(`📊 ${symbol}: ${Math.min(files.length, 2)} images kept, ${toDelete.length} deleted`);
     } else {
       console.error(`❌ ASSETS_STORAGE binding is NOT available!`);
-      console.error(`🔍 Available bindings: ${Object.keys(env).join(', ')}`);
     }
 
+    // Return the image with the new URL in headers
     return new Response(screenshot, {
       headers: {
         "Content-Type": "image/png",
-        "Cache-Control": refresh ? "no-cache, no-store, must-revalidate" : "public, max-age=300",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "X-Image-Url": generatedImageUrl,
       }
     });
 

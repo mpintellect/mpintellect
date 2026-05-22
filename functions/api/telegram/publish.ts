@@ -31,7 +31,7 @@ export async function onRequestPost(context: any) {
     
     console.log(`📊 Publishing ${symbol} to Telegram...`);
     
-    // Generate the chart image
+    // Generate the chart image (returns timestamped image URL in headers)
     const chartApiUrl = `https://mpintellect.com/api/ads/render-chart?symbol=${symbol}&refresh=true`;
     console.log(`🎨 Generating chart: ${chartApiUrl}`);
     
@@ -40,16 +40,16 @@ export async function onRequestPost(context: any) {
       throw new Error(`Chart generation failed: ${chartRes.status}`);
     }
     
-    // Image URL
-    const imageUrl = `https://news.mpintellect.com/${symbol}.png`;
-    console.log(`🖼️ Image URL: ${imageUrl}`);
+    // Get the new timestamped image URL from response headers
+    const imageUrl = chartRes.headers.get('X-Image-Url') || `https://news.mpintellect.com/${symbol}.png`;
+    console.log(`🖼️ New Image URL: ${imageUrl}`);
     
     // Fetch data for caption
     const dataUrl = `https://data.mpintellect.com/D1_output_${symbol}.json`;
     const dataRes = await fetch(dataUrl);
     const data = await dataRes.json();
     
-    // Generate caption (plain text, no Markdown)
+    // Generate caption
     const caption = generateCaptionFromData(data, symbol);
     console.log(`📝 Caption generated`);
     
@@ -106,7 +106,7 @@ export async function onRequestPost(context: any) {
   }
 }
 
-// NEW: Send photo with inline keyboard buttons
+// Send photo with inline keyboard buttons
 async function sendPhotoWithButtonsToTelegram(
   botToken: string,
   chatId: string,
@@ -120,7 +120,7 @@ async function sendPhotoWithButtonsToTelegram(
   formData.append('chat_id', chatId);
   formData.append('photo', imageUrl);
   formData.append('caption', caption);
-  formData.append('parse_mode', 'Markdown');  // ← ADD THIS LINE
+  formData.append('parse_mode', 'Markdown');
   formData.append('reply_markup', JSON.stringify(replyMarkup));
   
   try {

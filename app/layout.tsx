@@ -13,15 +13,19 @@ import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata = {
-  title: 'MPIntellect – Your Gateway to Smart Trading',
-  description:
-    'MPIntellect is a premium platform built to help traders get started with speed, confidence, and security. Access exclusive insights, AI tools, and global markets.',
-  manifest: '/manifest.json',
-};
-
 // 🔥 Build-time environment variable
 const isIntelOnlyBuild = process.env.NEXT_PUBLIC_BUILD_TARGET === 'intel';
+
+// Conditional metadata based on build target
+export const metadata = {
+  title: isIntelOnlyBuild 
+    ? 'MZ Primer – Intel Systems'
+    : 'MPIntellect – Your Gateway to Smart Trading',
+  description: isIntelOnlyBuild
+    ? 'Complete IT solutions for businesses and individuals. Development, hardware, integration, and support.'
+    : 'MPIntellect is a premium platform built to help traders get started with speed, confidence, and security. Access exclusive insights, AI tools, and global markets.',
+  manifest: '/manifest.json',
+};
 
 export default function Layout({ children }: { children: ReactNode }) {
   

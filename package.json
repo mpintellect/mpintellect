@@ -3,18 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build --webpack",
-    "pages:build": "npm run build",
+    "build:all": "next build --webpack",
     "prebuild": "rm -rf .next out",
-    "deploy": "wrangler pages deploy out",
-    "preview": "npm run build && npx wrangler pages dev out --compatibility-flags=nodejs_compat --d1 DB=mpintellect-db",
+    
+    "build:intel": "NEXT_PUBLIC_BUILD_TARGET=intel next build --webpack --config next.config.intel.mjs",
+    "build:main": "NEXT_PUBLIC_BUILD_TARGET=main next build --webpack --config next.config.main.mjs",
+    
+    "deploy:intel": "npm run build:intel && wrangler pages deploy out --project-name=mzprimer",
+    "deploy:main": "npm run build:main && wrangler pages deploy out --project-name=mpintellect",
+    
+    "preview:intel": "npm run build:intel && npx wrangler pages dev out --compatibility-flags=nodejs_compat --d1 DB=mpintellect-db",
+    "preview:main": "npm run build:main && npx wrangler pages dev out --compatibility-flags=nodejs_compat --d1 DB=mpintellect-db",
+    
     "dev": "next dev",
     "dev:d1": "bash ./dev-with-d1.sh",
     "cf:dev": "npx wrangler pages dev --port 3000 --proxy 3001 --command \"next dev -p 3001\" --compatibility-flags=nodejs_compat --d1 DB=074ccc04-d574-4164-8f48-0b6444b9db88",
     "test:functions": "npx wrangler pages dev --port 8788 --d1 DB=074ccc04-d574-4164-8f48-0b6444b9db88",
-    "db:pull": "npx wrangler d1 export mzprimer-db --remote --output=./live_backup.sql",
-    "dev:api": "wrangler dev functions/api --d1 DB=mzprimer-db --persist-to=./.wrangler/state/v3 --port 8789",
-    "pages:dev": "npm run build && wrangler pages dev out --d1 DB=mpintellect-db --compatibility-flags=nodejs_compat --port 8788"
+    "db:pull": "npx wrangler d1 export mpintellect-db --remote --output=./live_backup.sql",
+    "dev:api": "wrangler dev functions/api --d1 DB=mpintellect-db --persist-to=./.wrangler/state/v3 --port 8789",
+    "pages:dev": "npm run build:main && wrangler pages dev out --d1 DB=mpintellect-db --compatibility-flags=nodejs_compat --port 8788"
   },
   "dependencies": {
     "@cloudflare/puppeteer": "^1.0.6",

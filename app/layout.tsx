@@ -1,4 +1,5 @@
 // app/layout.tsx
+// @ts-ignore
 import './globals.css';
 import { ReactNode, Suspense } from 'react';
 import { Inter } from 'next/font/google';

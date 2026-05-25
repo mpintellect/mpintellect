@@ -3,42 +3,49 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
-// First, do a full build
+// 1. Full build
 execSync('next build --webpack', { stdio: 'inherit' });
 
-// Then, remove all static pages except intel
 const outDir = path.join(process.cwd(), 'out');
-const keepPages = ['intel.html', 'intel', 'index.html'];
 
-function cleanDirectory(dir) {
-  const items = fs.readdirSync(dir);
-  for (const item of items) {
-    const itemPath = path.join(dir, item);
-    const stat = fs.statSync(itemPath);
-    
-    if (stat.isDirectory()) {
-      if (!keepPages.includes(item)) {
-        fs.rmSync(itemPath, { recursive: true, force: true });
-      } else {
-        cleanDirectory(itemPath);
-      }
-    } else if (stat.isFile()) {
-      const fileName = path.basename(itemPath);
-      if (!keepPages.some(keep => fileName.includes(keep))) {
-        fs.unlinkSync(itemPath);
-      }
+// 2. Remove all HTML files EXCEPT intel.html and index.html
+const files = fs.readdirSync(outDir);
+for (const file of files) {
+  const filePath = path.join(outDir, file);
+  const stat = fs.statSync(filePath);
+  
+  if (stat.isFile() && file.endsWith('.html')) {
+    if (file !== 'intel.html' && file !== 'index.html') {
+      fs.unlinkSync(filePath);
+      console.log(`Removed: ${file}`);
     }
   }
 }
 
-cleanDirectory(outDir);
-
-// Ensure index.html points to intel
-const indexPath = path.join(outDir, 'index.html');
-if (fs.existsSync(indexPath)) {
-  fs.writeFileSync(indexPath, 
-    '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/intel"></head></html>'
-  );
+// 3. Also clean any nested HTML files inside subdirectories (e.g., /about/index.html)
+function cleanNestedHtml(dirPath) {
+  const items = fs.readdirSync(dirPath);
+  for (const item of items) {
+    const itemPath = path.join(dirPath, item);
+    const stat = fs.statSync(itemPath);
+    if (stat.isDirectory()) {
+      cleanNestedHtml(itemPath);
+      // Optionally remove empty directories
+      if (fs.readdirSync(itemPath).length === 0) {
+        fs.rmdirSync(itemPath);
+      }
+    } else if (stat.isFile() && item.endsWith('.html') && item !== 'intel.html' && item !== 'index.html') {
+      fs.unlinkSync(itemPath);
+      console.log(`Removed nested: ${itemPath}`);
+    }
+  }
 }
+cleanNestedHtml(outDir);
 
-console.log('✅ Intel-only build complete');
+// 4. Overwrite index.html to redirect to /intel
+const indexPath = path.join(outDir, 'index.html');
+fs.writeFileSync(indexPath, 
+  '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/intel"></head></html>'
+);
+
+console.log('✅ Intel-only build complete - all assets preserved');

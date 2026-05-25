@@ -9,9 +9,8 @@
     "deploy": "wrangler pages deploy out",
     "build:all": "next build --webpack",
     
-    
-    "build:intel": "NEXT_PUBLIC_BUILD_TARGET=intel next build --webpack --config next.config.intel.mjs",
-    "build:main": "NEXT_PUBLIC_BUILD_TARGET=main next build --webpack --config next.config.main.mjs",
+    "build:intel": "NEXT_PUBLIC_BUILD_TARGET=intel next build --webpack",
+    "build:main": "NEXT_PUBLIC_BUILD_TARGET=main next build --webpack",
     
     "deploy:intel": "npm run build:intel && wrangler pages deploy out --project-name=mzprimer",
     "deploy:main": "npm run build:main && wrangler pages deploy out --project-name=mpintellect",

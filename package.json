@@ -3,8 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build:all": "next build --webpack",
+    "build": "next build --webpack",
+    "pages:build": "npm run build",
     "prebuild": "rm -rf .next out",
+    "deploy": "wrangler pages deploy out",
+    "build:all": "next build --webpack",
+    
     
     "build:intel": "NEXT_PUBLIC_BUILD_TARGET=intel next build --webpack --config next.config.intel.mjs",
     "build:main": "NEXT_PUBLIC_BUILD_TARGET=main next build --webpack --config next.config.main.mjs",

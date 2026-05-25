@@ -7,10 +7,26 @@ import ConditionalMobileMenu from '@/components/ConditionalMobileMenu';
 import ConditionalNavbar from '@/components/ConditionalNavbar'; 
 import Footer from '@/components/Footer';
 
-export default function ClientLayoutWrapper({ children }: { children: ReactNode }) {
+interface ClientLayoutWrapperProps {
+  children: ReactNode;
+  isIntelOnlyBuild?: boolean; // 🔥 NEW: Passed from layout.tsx
+}
+
+export default function ClientLayoutWrapper({ children, isIntelOnlyBuild = false }: ClientLayoutWrapperProps) {
   const pathname = usePathname();
   
-  // ✅ THE LOGIC: Hide trading UI if we are on the /intel page
+  // For intel-only build (mzprimer.com), NEVER show header/footer
+  if (isIntelOnlyBuild) {
+    return (
+      <>
+        <main className="flex-grow">
+          {children}
+        </main>
+      </>
+    );
+  }
+  
+  // For main build (mpintellect.com), use existing logic
   const isIntelPage = pathname === '/intel' || pathname?.startsWith('/intel');
 
   return (

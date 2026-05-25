@@ -28,32 +28,4 @@ const baseConfig: NextConfig = {
   },
 };
 
-// Check which build we're running
-const buildTarget = process.env.NEXT_PUBLIC_BUILD_TARGET || 'main';
-
-// Build the appropriate config based on target
-let finalConfig: NextConfig;
-
-if (buildTarget === 'intel') {
-  // INTEL-ONLY BUILD: Only export the /intel page
-  finalConfig = {
-    ...baseConfig,
-    exportPathMap: async () => ({
-      '/': { page: '/intel' },
-      '/intel': { page: '/intel' },
-    }),
-  };
-} else {
-  // MAIN BUILD: Export all pages EXCEPT /intel
-  finalConfig = {
-    ...baseConfig,
-    exportPathMap: async (defaultPathMap: Record<string, { page: string }>) => {
-      const allPaths = { ...defaultPathMap };
-      // Remove the intel page from the main build
-      delete allPaths['/intel'];
-      return allPaths;
-    },
-  };
-}
-
-export default finalConfig;
+export default baseConfig;

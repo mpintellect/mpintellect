@@ -37,7 +37,7 @@ export default function LegalPage() {
           By using MPIntellect  services, you agree not to misuse the tools or attempt to bypass access controls. Our tools are provided “as is” without guarantees of performance or market accuracy.
         </p>
         <p className="mb-4">
-          You may not redistribute or resell any tools, code, or assets without written permission. All rights are reserved by MPIntellect  LTD.
+          You may not redistribute or resell any tools, code, or assets without written permission. All rights are reserved by MPIntellect.
         </p>
         <p>
           Use of this platform implies your full understanding that it is for educational and simulation purposes, not trading advice.

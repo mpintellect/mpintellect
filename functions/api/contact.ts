@@ -173,7 +173,7 @@ The MPIntellect Team
               <!-- FOOTER -->
               <div style="padding: 24px 32px; background: #050505; border-top: 1px solid #1a1a1a; border-radius: 0 0 24px 24px; text-align: center;">
                 <p style="margin: 0; color: #4b5563; font-size: 12px;">
-                  © ${new Date().getFullYear()} MPIntellect  LTD
+                  © ${new Date().getFullYear()} MPIntellect
                 </p>
                 <p style="margin: 8px 0 0; color: #d4af37; font-size: 8px; text-transform: uppercase; letter-spacing: 2px;">
                   INSTITUTIONAL GRADE • SECURE COMMUNICATION

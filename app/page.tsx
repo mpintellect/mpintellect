@@ -36,18 +36,7 @@ import {
 export default function IntelLanding() {
   const [isIntelOnlyDomain, setIsIntelOnlyDomain] = useState(false);
 
-  useEffect(() => {
-    const hostname = window.location.hostname;
-    
-    // Check if this is the mzprimer.com domain (which should ONLY show intel)
-    const isMzprimer = 
-      hostname === 'mzprimer.com' || 
-      hostname === 'www.mzprimer.com' ||
-      hostname.endsWith('.mzprimer.com');
-    
-    console.log('Hostname:', hostname, '| isMzprimer:', isMzprimer);
-    setIsIntelOnlyDomain(isMzprimer);
-  }, []);
+  
 
   // --- FORM STATE ---
   const [formData, setFormData] = useState({

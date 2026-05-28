@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Cpu, 
@@ -26,11 +26,29 @@ import {
   Box,
   RefreshCw,
   Monitor,
+  Cpu as Processor,
+  HardDrive as Hdd,
+  MousePointer,
   Gauge,
   TrendingUp
 } from 'lucide-react';
 
 export default function IntelLanding() {
+  const [isIntelOnlyDomain, setIsIntelOnlyDomain] = useState(false);
+
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    
+    // Check if this is the mzprimer.com domain (which should ONLY show intel)
+    const isMzprimer = 
+      hostname === 'mzprimer.com' || 
+      hostname === 'www.mzprimer.com' ||
+      hostname.endsWith('.mzprimer.com');
+    
+    console.log('Hostname:', hostname, '| isMzprimer:', isMzprimer);
+    setIsIntelOnlyDomain(isMzprimer);
+  }, []);
+
   // --- FORM STATE ---
   const [formData, setFormData] = useState({
     companyName: '',
@@ -42,7 +60,7 @@ export default function IntelLanding() {
     category: '',
     requirements: ''
   });
-  const [hp, setHp] = useState('');
+  const [hp, setHp] = useState(''); // Honeypot
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<null | {ok:boolean; error?:string}>(null);
 
@@ -55,6 +73,7 @@ export default function IntelLanding() {
     setSending(true);
     setResult(null);
 
+    // Combine B2B data into a structured message for your existing email API
     const structuredMessage = `
       B2B INQUIRY DETAILS:
       --------------------
@@ -98,7 +117,7 @@ export default function IntelLanding() {
     }
   }
 
-  // Service descriptions
+  // Original French service description translated to English
   const frenchServicesEnglish = [
     {
       icon: Package,
@@ -180,36 +199,38 @@ export default function IntelLanding() {
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#10B981]/5 rounded-full blur-3xl animate-pulse animation-delay-2000" />
       </div>
 
-      {/* 1. HEADER - MZ Primer Intel Branding */}
-      <nav className="border-b border-white/5 py-6 px-6 md:py-8 md:px-12 flex justify-between items-center backdrop-blur-xl sticky top-0 z-50 bg-[#050505]/80">
-        <div className="flex items-center gap-3 group">
-          <div className="w-10 h-10 bg-white flex items-center justify-center rounded-sm transform transition-transform group-hover:scale-110 group-hover:rotate-3">
-            <span className="text-black font-black text-sm">MZ</span>
+      {/* 1. INDEPENDENT HEADER - Hidden on intel-only domain (mzprimer.com) */}
+      {!isIntelOnlyDomain && (
+        <nav className="border-b border-white/5 py-6 px-6 md:py-8 md:px-12 flex justify-between items-center backdrop-blur-xl sticky top-0 z-50 bg-[#050505]/80">
+          <div className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-white flex items-center justify-center rounded-sm transform transition-transform group-hover:scale-110 group-hover:rotate-3">
+              <span className="text-black font-black text-sm">MP</span>
+            </div>
+            <div>
+              <span className="text-sm md:text-xl font-bold tracking-[4px] md:tracking-[6px] uppercase">Intel</span>
+              <span className="text-[#D4AF37] text-sm md:text-xl font-bold tracking-[4px] md:tracking-[6px] uppercase ml-1">Systems</span>
+            </div>
           </div>
-          <div>
-            <span className="text-sm md:text-xl font-bold tracking-[4px] md:tracking-[6px] uppercase">Primer</span>
-            <span className="text-[#D4AF37] text-sm md:text-xl font-bold tracking-[4px] md:tracking-[6px] uppercase ml-1">Intel</span>
+          <div className="hidden md:flex gap-10">
+            <Link href="#solutions" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
+              Solutions
+            </Link>
+            <Link href="#software" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
+              Development
+            </Link>
+            <Link href="#it-services" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
+              Infrastructure
+            </Link>
+            <Link href="#contact" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
+              Contact
+            </Link>
           </div>
-        </div>
-        <div className="hidden md:flex gap-10">
-          <Link href="#solutions" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
-            Solutions
-          </Link>
-          <Link href="#software" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
-            Development
-          </Link>
-          <Link href="#it-services" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
-            Infrastructure
-          </Link>
-          <Link href="#contact" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
-            Contact
-          </Link>
-        </div>
-        <div className="md:hidden flex gap-4">
-          <Link href="#solutions" className="text-[10px] tracking-[3px] uppercase text-[#94a3b8]">Solutions</Link>
-          <Link href="#contact" className="text-[10px] tracking-[3px] uppercase text-[#94a3b8]">Contact</Link>
-        </div>
-      </nav>
+          <div className="md:hidden flex gap-4">
+            <Link href="#solutions" className="text-[10px] tracking-[3px] uppercase text-[#94a3b8]">Solutions</Link>
+            <Link href="#contact" className="text-[10px] tracking-[3px] uppercase text-[#94a3b8]">Contact</Link>
+          </div>
+        </nav>
+      )}
 
       {/* 2. HERO SECTION */}
       <section className="pt-20 md:pt-32 pb-16 md:pb-20 px-6 md:px-12 max-w-7xl mx-auto relative">
@@ -270,7 +291,7 @@ export default function IntelLanding() {
                 We Don't Just Implement IT — <span className="font-bold text-[#D4AF37]">We Automate Intelligence</span>
               </h3>
               <p className="text-[#94a3b8] leading-relaxed mb-8">
-                At MZ Primer Intel, our primary focus is helping businesses leverage AI to 
+                At MP Intel Systems, our primary focus is helping businesses leverage AI to 
                 automate complex processes, reduce operational costs, and elevate quality standards. 
                 From manufacturing to finance, we deploy intelligent systems that learn, adapt, and 
                 optimize your operations in real-time.
@@ -513,6 +534,7 @@ export default function IntelLanding() {
       {/* 8. B2B CONTACT SECTION - Professional Inquiry Form */}
       <section id="contact" className="py-24 md:py-32 px-6 md:px-12 bg-[#080808]">
         <div className="max-w-7xl mx-auto">
+          {/* Section Header */}
           <div className="text-center mb-16">
             <h2 className="text-xs font-bold tracking-[10px] uppercase text-[#D4AF37] mb-4">
               BUSINESS INQUIRIES
@@ -524,10 +546,12 @@ export default function IntelLanding() {
           </div>
 
           <div className="grid lg:grid-cols-2 gap-16 items-start">
+            {/* B2B Inquiry Form */}
             <div className="bg-[#050505] p-8 md:p-10 border border-white/5 lg:col-span-2 max-w-3xl mx-auto w-full">
               <h4 className="text-2xl font-bold mb-6 text-white text-center">Request a Proposal</h4>
               
               <form className="space-y-6" onSubmit={onSubmit}>
+                {/* Honeypot */}
                 <input type="text" value={hp} onChange={(e)=>setHp(e.target.value)} className="hidden" tabIndex={-1} />
 
                 <div className="grid md:grid-cols-2 gap-4">
@@ -611,6 +635,7 @@ export default function IntelLanding() {
                   ></textarea>
                 </div>
 
+                {/* Corporate Compliance */}
                 <div className="flex items-start gap-3">
                   <input type="checkbox" id="compliance" required className="mt-1 accent-[#D4AF37]" />
                   <label htmlFor="compliance" className="text-sm text-[#94a3b8]">
@@ -647,18 +672,20 @@ export default function IntelLanding() {
         </div>
       </section>
 
-      {/* 9. FOOTER - MZ Primer Intel Branding */}
-      <footer className="py-12 md:py-16 px-6 md:px-12 border-t border-white/5">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 text-center md:text-left">
-            MZ PRIMER INTEL • COMPLETE IT SOLUTIONS FOR INDIVIDUALS AND ENTERPRISES
+      {/* 9. FOOTER - Hidden on intel-only domain (mzprimer.com) */}
+      {!isIntelOnlyDomain && (
+        <footer className="py-12 md:py-16 px-6 md:px-12 border-t border-white/5">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 text-center md:text-left">
+              MP INTEL SYSTEMS • COMPLETE IT SOLUTIONS FOR INDIVIDUALS AND ENTREPRISES
+            </div>
+            
+            <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600">
+              © 2026 MZPRIMER LTD
+            </div>
           </div>
-          
-          <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600">
-            © {new Date().getFullYear()} @2026 - MZPRIMER LTD
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

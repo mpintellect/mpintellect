@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "build": "next build --webpack",
-    "build:intel": "node scripts/build-intel.mjs",
-    "build:main": "next build --webpack",
+    "build:intel": "NEXT_PUBLIC_BUILD_TARGET=intel node scripts/build-intel.mjs",
+    "build:main": "NEXT_PUBLIC_BUILD_TARGET=main next build --webpack",
     "prebuild": "rm -rf .next out",
     "deploy": "wrangler pages deploy out",
     "build:all": "next build --webpack",

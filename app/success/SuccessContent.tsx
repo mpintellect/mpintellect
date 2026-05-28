@@ -73,7 +73,7 @@ export default function SuccessContent() {
         </Link>
         
         <div className="support-note">
-          <p>Didn't receive the email? Check your spam folder or <a href="mailto:contact@mpintellect.com">contact support</a>.</p>
+          <p>Didn't receive the email? Check your spam folder or <a href="mailto:info@mpintellect.com">contact support</a>.</p>
         </div>
       </div>
     </div>

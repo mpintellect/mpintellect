@@ -26,7 +26,7 @@ export async function onRequestPost(context: any) {
     }
 
     // 2. TARGET EMAIL: This is where YOU receive the client's message
-    const MY_INBOX = "contact@mpintellect.com"; 
+    const MY_INBOX = "info@mpintellect.com"; 
 
     // 3. Create text version for email clients that don't support HTML
     const textVersion = `
@@ -84,7 +84,7 @@ You can expect a response within 24 hours during business days.
 Your message:
 "${message}"
 
-For urgent matters, please contact us directly at contact@mpintellect.com.
+For urgent matters, please contact us directly at info@mpintellect.com.
 
 Best regards,
 The MPIntellect Team

@@ -29,7 +29,7 @@ export default function AboutPage() {
 
       <p className="about-contact">
         Want to connect or collaborate? Reach out via{' '}
-        <a href="mailto:contact@mpintellect.com" className="about-link">contact@mpintellect.com</a>.
+        <a href="mailto:info@mpintellect.com" className="about-link">info@mpintellect.com</a>.
       </p>
     </main>
   );

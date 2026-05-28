@@ -254,7 +254,7 @@ async function sendOrderConfirmationEmbedded(order: OrderEmailDetails, env: any)
   console.log("📧 ENTERING sendOrderConfirmationEmbedded");
   
   const apiKey = env.RESEND_API_KEY;
-  const fromEmail = env.EMAIL_FROM || 'MPIntellect  Team <contact@mpintellect.com>';
+  const fromEmail = env.EMAIL_FROM || 'MPIntellect  Team <info@mpintellect.com>';
 
   console.log("📧 apiKey exists:", !!apiKey);
   console.log("📧 order.to:", order.to);
@@ -527,7 +527,7 @@ Your ${order.productName} has been credited to your account.
   text += `
 
 Thank you for choosing MPIntellect!
-Questions? Contact contact@mpintellect.com`;
+Questions? Contact info@mpintellect.com`;
 
   return text;
 }

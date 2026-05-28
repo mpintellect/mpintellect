@@ -97,7 +97,7 @@ function UnsubscribeContent() {
             <a href="/" className="bg-zinc-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-zinc-700 transition">
               Home
             </a>
-            <a href="mailto:contact@mpintellect.com" className="bg-yellow-500 text-black px-6 py-2 rounded-lg font-bold hover:bg-yellow-400 transition">
+            <a href="mailto:info@mpintellect.com" className="bg-yellow-500 text-black px-6 py-2 rounded-lg font-bold hover:bg-yellow-400 transition">
               Contact Support
             </a>
           </div>

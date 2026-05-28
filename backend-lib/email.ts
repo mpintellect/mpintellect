@@ -30,7 +30,7 @@ export async function sendEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: env.EMAIL_FROM || 'MPIntellect  <@mpintellect.com>',
+        from: env.EMAIL_FROM || 'MPIntellect  <info@mpintellect.com>',
         to: [details.to],
         subject: details.subject,
         html: details.html,
@@ -51,7 +51,7 @@ export async function sendEmail(
 }
 export async function sendOrderConfirmation(order: OrderEmailDetails, env: any): Promise<void> {
   const apiKey = env.RESEND_API_KEY;
-  const fromEmail = env.EMAIL_FROM || 'MPIntellect  Team <contact@mpintellect.com>';
+  const fromEmail = env.EMAIL_FROM || 'MPIntellect  Team <info@mpintellect.com>';
 
   if (!apiKey) {
     console.error("❌ RESEND_API_KEY is missing");
@@ -379,7 +379,7 @@ Access your dashboard: ${ctaLink}
   text += `
 
 Thank you for choosing MPIntellect !
-Questions? Contact contact@mpintellect.com`;
+Questions? Contact info@mpintellect.com`;
 
   return text;
 }

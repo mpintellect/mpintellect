@@ -6716,3 +6716,18 @@ svg.w-full.h-full.-rotate-90 {
     background: var(--black-deep, #050505);
   }
 }
+
+
+/* === Form Input Styles - Dark theme with visible text === */
+input, textarea, select {
+  
+  padding: 0.3rem 1rem;
+  background: #0a0a0a;
+  border: 1px solid #333333;
+  color: #ffffff;  /* White text */
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  border-radius: 0.5rem;
+  font-weight: 500;  /* Slightly bolder text */
+}
+

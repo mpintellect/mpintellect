@@ -20,7 +20,7 @@ export async function sendEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: env.EMAIL_FROM || 'MZ Primer Intel <noreply@mzpintel.com>',
+        from: env.EMAIL_FROM || 'MZ Primer Intel <info@mzpintel.com>',
         to: [details.to],
         subject: details.subject,
         html: details.html,

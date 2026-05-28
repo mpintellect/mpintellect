@@ -188,7 +188,7 @@ export default function IntelLanding() {
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#10B981]/5 rounded-full blur-3xl animate-pulse animation-delay-2000" />
       </div>
 
-      {/* 1. INDEPENDENT HEADER - Hidden on intel-only domain (mzprimer.com) */}
+      {/* 1. */}
       {!isIntelOnlyDomain && (
         <nav className="border-b border-white/5 py-6 px-6 md:py-8 md:px-12 flex justify-between items-center backdrop-blur-xl sticky top-0 z-50 bg-[#050505]/80">
           <div className="flex items-center gap-3 group">
@@ -661,7 +661,7 @@ export default function IntelLanding() {
         </div>
       </section>
 
-      {/* 9. FOOTER - Hidden on intel-only domain (mzprimer.com) */}
+      {/* 9.  */}
       {!isIntelOnlyDomain && (
         <footer className="py-12 md:py-16 px-6 md:px-12 border-t border-white/5">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
@@ -670,7 +670,7 @@ export default function IntelLanding() {
             </div>
             
             <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600">
-              © 2026 MZPRIMER LTD
+              © 2026 MZ PRIMER Intel
             </div>
           </div>
         </footer>

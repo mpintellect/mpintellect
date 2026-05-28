@@ -151,7 +151,7 @@ The MZ Primer Intel Team
               
               <div style="padding: 24px 32px; background: #050505; border-top: 1px solid #1a1a1a; border-radius: 0 0 24px 24px; text-align: center;">
                 <p style="margin: 0; color: #4b5563; font-size: 12px;">
-                  © ${new Date().getFullYear()} MZ Primer Intel Ltd
+                  © ${new Date().getFullYear()} MZ Primer Intel
                 </p>
               </div>
             </div>

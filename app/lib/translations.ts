@@ -27,6 +27,93 @@ export const toolDisplay = {
     calculator: "الحاسبة", indicator: "المؤشرات", forecast: "التوقعات"
   }
 };
+// app/lib/translations.ts
+
+// Add these after commonTranslations, before the final closing brace
+
+// ============================================================
+// LOADING TEXTS FOR EACH TOOL
+// ============================================================
+export const loadingTexts = {
+  en: {
+    analysis: (symbol: string) => `Loading analysis for ${symbol}...`,
+    trade: (symbol: string) => `Loading ${symbol} trade setup...`,
+    trend: (symbol: string) => `Loading trend for ${symbol}...`,
+    momentum: (symbol: string) => `Analyzing momentum for ${symbol}...`,
+    zones: (symbol: string) => `Loading zones for ${symbol}...`,
+    volatility: (symbol: string) => `Loading volatility for ${symbol}...`,
+    calculator: (symbol: string) => `Calculating risk levels for ${symbol}...`,
+    indicator: (symbol: string) => `Scanning RSI momentum for ${symbol}...`,
+    forecast: (symbol: string) => `Generating ${symbol} forecast...`
+  },
+  ar: {
+    analysis: (symbol: string) => `جاري تحميل تحليل ${symbol}...`,
+    trade: (symbol: string) => `جاري تحميل إعداد صفقة ${symbol}...`,
+    trend: (symbol: string) => `جاري تحميل اتجاه ${symbol}...`,
+    momentum: (symbol: string) => `جاري تحليل زخم ${symbol}...`,
+    zones: (symbol: string) => `جاري تحميل مناطق ${symbol}...`,
+    volatility: (symbol: string) => `جاري تحميل تقلبات ${symbol}...`,
+    calculator: (symbol: string) => `جاري حساب مستويات المخاطرة لـ ${symbol}...`,
+    indicator: (symbol: string) => `جاري فحص زخم RSI لـ ${symbol}...`,
+    forecast: (symbol: string) => `جاري إنشاء توقعات ${symbol}...`
+  }
+};
+
+// ============================================================
+// ERROR TITLES FOR EACH TOOL
+// ============================================================
+export const errorTitles = {
+  en: {
+    analysis: "Analysis not available",
+    trade: "Trade Data Unavailable",
+    trend: "Trend Data Unavailable",
+    momentum: "Momentum Data Unavailable",
+    zones: "Data Unavailable",
+    volatility: "Volatility Data Unavailable",
+    calculator: "Calculator Unavailable",
+    indicator: "Indicator Unavailable",
+    forecast: "Forecast Unavailable"
+  },
+  ar: {
+    analysis: "التحليل غير متاح",
+    trade: "بيانات الصفقة غير متاحة",
+    trend: "بيانات الاتجاه غير متاحة",
+    momentum: "بيانات الزخم غير متاحة",
+    zones: "البيانات غير متاحة",
+    volatility: "بيانات التقلب غير متاحة",
+    calculator: "الحاسبة غير متاحة",
+    indicator: "المؤشرات غير متاحة",
+    forecast: "التوقعات غير متاحة"
+  }
+};
+
+// ============================================================
+// TOOL DESCRIPTIONS FOR META TAGS
+// ============================================================
+export const toolDescriptions = {
+  en: {
+    analysis: (symbol: string) => `Live AI-powered technical analysis for ${symbol}. Get real-time trend, momentum, volatility and market structure insights.`,
+    trade: (symbol: string) => `Professional trade setup for ${symbol} with entry levels, take profit, and stop loss. AI-powered risk management.`,
+    trend: (symbol: string) => `${symbol} trend analysis with institutional strength score. Real-time trend direction and momentum confirmation.`,
+    momentum: (symbol: string) => `${symbol} momentum analysis with RSI, divergence detection, and velocity metrics.`,
+    zones: (symbol: string) => `${symbol} key support and resistance zones. Institutional supply and demand levels.`,
+    volatility: (symbol: string) => `${symbol} volatility regime analysis with ATR, range status, and optimal stop placement.`,
+    calculator: (symbol: string) => `${symbol} position size calculator based on risk tolerance. Professional risk management tool.`,
+    indicator: (symbol: string) => `Complete technical indicators dashboard for ${symbol} including RSI, and key levels.`,
+    forecast: (symbol: string) => `${symbol} AI price forecast with confidence score. Short-term price predictions based on institutional data.`
+  },
+  ar: {
+    analysis: (symbol: string) => `تحليل فني مباشر بالذكاء الاصطناعي لـ ${symbol}. احصل على رؤى فورية حول اتجاه السوق والزخم والتقلبات.`,
+    trade: (symbol: string) => `إعداد صفقة احترافي لـ ${symbol} مع مستويات الدخول وجني الأرباح ووقف الخسارة.`,
+    trend: (symbol: string) => `تحليل اتجاه ${symbol} مع درجة القوة المؤسسية. اتجاه فوري وتأكيد الزخم.`,
+    momentum: (symbol: string) => `تحليل زخم ${symbol} مع RSI واكتشاف التباعد ومقاييس السرعة.`,
+    zones: (symbol: string) => `مناطق الدعم والمقاومة الرئيسية لـ ${symbol}. مستويات العرض والطلب المؤسسية.`,
+    volatility: (symbol: string) => `تحليل نظام التقلب لـ ${symbol} مع ATR وحالة النطاق ووضع الوقف الأمثل.`,
+    calculator: (symbol: string) => `حاسبة حجم المركز لـ ${symbol} بناءً على تحمل المخاطر. أداة احترافية لإدارة المخاطر.`,
+    indicator: (symbol: string) => `لوحة تحكم المؤشرات الفنية الكاملة لـ ${symbol} بما في ذلك RSI والمستويات الرئيسية.`,
+    forecast: (symbol: string) => `توقعات سعر ${symbol} بالذكاء الاصطناعي مع درجة الثقة. توقعات سعرية قصيرة المدى.`
+  }
+};
 
 export const commonTranslations = {
   en: {

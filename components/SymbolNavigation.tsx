@@ -12,7 +12,7 @@ interface SymbolNavigationProps {
 }
 
 export default function SymbolNavigation({ symbol, locale = 'en' }: SymbolNavigationProps) {
-  const cleanSymbol = symbol.toUpperCase();
+  const cleanSymbol = symbol.toLowerCase();
   const t = toolMapping[locale];
   
   return (

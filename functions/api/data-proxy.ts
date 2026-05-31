@@ -23,7 +23,7 @@ export async function onRequestGet(context: any) {
     
     // 2. Construct R2 URL
     const R2_URL = "https://data.mpintellect.com";
-    const r2Url = `${R2_URL}/output_${cleanSymbol}.json`;
+    const r2Url = `${R2_URL}/D1_output_${cleanSymbol}.json`;
     
     console.log(`[API Proxy] Fetching from R2: ${r2Url}`);
 

@@ -90,7 +90,7 @@ export const errorTitles = {
 // ============================================================
 // TOOL DESCRIPTIONS FOR META TAGS
 // ============================================================
-export const toolDescriptions = {
+export const toolDescriptions: Record<Locale, Record<string, (symbol: string) => string>> = {
   en: {
     analysis: (symbol: string) => `Live AI-powered technical analysis for ${symbol}. Get real-time trend, momentum, volatility and market structure insights.`,
     trade: (symbol: string) => `Professional trade setup for ${symbol} with entry levels, take profit, and stop loss. AI-powered risk management.`,
@@ -114,6 +114,43 @@ export const toolDescriptions = {
     forecast: (symbol: string) => `توقعات سعر ${symbol} بالذكاء الاصطناعي مع درجة الثقة. توقعات سعرية قصيرة المدى.`
   }
 };
+// app/lib/translations.ts
+
+// Add this after toolDisplay and before commonTranslations
+
+// ============================================================
+// TOOL SEO TITLES (for page metadata)
+// ============================================================
+export const toolSeo: Record<Locale, Record<string, (symbol: string) => string>> = {
+  en: {
+    analysis: (symbol: string) => `${symbol} Technical Analysis | AI-Powered Market Insights`,
+    trade: (symbol: string) => `${symbol} Trade Setup | Entry, TP, SL Levels`,
+    trend: (symbol: string) => `${symbol} Trend Analysis | Direction & Strength`,
+    momentum: (symbol: string) => `${symbol} Momentum | RSI & Divergence Analysis`,
+    zones: (symbol: string) => `${symbol} Key Zones | Support & Resistance Levels`,
+    volatility: (symbol: string) => `${symbol} Volatility | ATR & Market Regime`,
+    calculator: (symbol: string) => `${symbol} Position Size Calculator | Risk Management`,
+    indicator: (symbol: string) => `${symbol} Technical Indicators | Complete Dashboard`,
+    forecast: (symbol: string) => `${symbol} Price Forecast | AI Prediction`
+  },
+  ar: {
+    analysis: (symbol: string) => `${symbol} تحليل فني | رؤى السوق بالذكاء الاصطناعي`,
+    trade: (symbol: string) => `${symbol} إعداد صفقة | نقاط الدخول والخروج`,
+    trend: (symbol: string) => `${symbol} تحليل الاتجاه | قوة الاتجاه`,
+    momentum: (symbol: string) => `${symbol} تحليل الزخم | RSI`,
+    zones: (symbol: string) => `${symbol} المناطق الرئيسية | دعم ومقاومة`,
+    volatility: (symbol: string) => `${symbol} التقلبات | ATR`,
+    calculator: (symbol: string) => `${symbol} حاسبة حجم المركز | إدارة المخاطر`,
+    indicator: (symbol: string) => `${symbol} المؤشرات الفنية`,
+    forecast: (symbol: string) => `${symbol} توقعات السعر | توقع الذكاء الاصطناعي`
+  }
+};
+// app/lib/translations.ts
+
+// ============================================================
+// TOOL DESCRIPTIONS (for meta description tags)
+// ============================================================
+
 
 export const commonTranslations = {
   en: {

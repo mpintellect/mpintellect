@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BrainCircuit, Radar, ShieldCheck, ArrowRight, TrendingUp, Bot } from 'lucide-react';
+import { BrainCircuit, Radar, ShieldCheck, TrendingUp, Bot } from 'lucide-react';
 import NotificationButton from '@/components/NotificationButton';
 import SymbolNavigation from '@/components/SymbolNavigation';
 import LiveSeoSchema from '@/components/LiveSeoSchema';
@@ -41,7 +41,7 @@ export default function ForecastClientView({ data, symbol, locale, onRefresh }: 
     return (
       <div className="min-h-screen bg-black flex flex-col justify-center items-center text-zinc-500 font-mono gap-4">
         <div className="w-10 h-10 border-t-2 border-purple-500 rounded-full animate-spin"></div>
-        <p>{t.loading}</p>
+        <p>Loading forecast data...</p>
       </div>
     );
   }
@@ -49,6 +49,11 @@ export default function ForecastClientView({ data, symbol, locale, onRefresh }: 
   // Generate report with locale
   const report = unifiedGenerator({ data, symbol, locale, tool: 'forecast' });
   
+  // Safely extract forecast-specific properties
+  const executive = (report as any).executive || '';
+  const riskAnalysis = (report as any).risk_analysis || '';
+  const conclusion = (report as any).conclusion || '';
+
   // Extract data with proper fallbacks
   const accuracy = data.analysis_accuracy || 75;
   const qualityScores = data.component_scores || {
@@ -88,11 +93,6 @@ export default function ForecastClientView({ data, symbol, locale, onRefresh }: 
   if (finalDecision === "BUY") decisionColor = "text-emerald-400";
   if (finalDecision === "SELL") decisionColor = "text-red-400";
 
-  // Get report sections
-  const executive = report.executive || '';
-  const riskAnalysis = report.risk_analysis || '';
-  const conclusion = report.conclusion || '';
-
   return (
     <div className="min-h-screen bg-black text-white pb-24 font-sans selection:bg-purple-500/30" dir={isRtl ? 'rtl' : 'ltr'}>
       
@@ -102,27 +102,27 @@ export default function ForecastClientView({ data, symbol, locale, onRefresh }: 
       {/* HEADER */}
       <div className="pt-28 pb-10 px-6 text-center max-w-4xl mx-auto">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-6 rounded-full border border-purple-500/20 bg-purple-900/10 text-purple-300 text-[10px] uppercase font-bold tracking-widest">
-          <BrainCircuit size={12} className="text-purple-400" /> {t.aiPredictiveModel}
+          <BrainCircuit size={12} className="text-purple-400" /> AI Predictive Model
         </div>
         
         <h1 className="text-4xl md:text-6xl font-black mb-4 uppercase tracking-tighter text-white">
-          {data.symbol} <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">{t.forecast}</span>
+          {data.symbol} <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">Forecast</span>
         </h1>
         
         <p className="text-zinc-400 text-sm md:text-base max-w-lg mx-auto opacity-70">
-          {t.pricePrediction} {formattedDate}
+          Price Prediction for {formattedDate}
         </p>
 
         <div className="flex items-center justify-center gap-4 mt-4">
           <p className="text-zinc-400 text-sm">
-            {t.updated}: {new Date(lastUpdated).toLocaleTimeString()}
+            Updated: {new Date(lastUpdated).toLocaleTimeString()}
           </p>
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
             className="px-3 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 rounded-md disabled:opacity-50"
           >
-            {isRefreshing ? t.refreshing : t.refresh}
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
       </div>
@@ -134,7 +134,7 @@ export default function ForecastClientView({ data, symbol, locale, onRefresh }: 
             
           <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-10">
             <span className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-2">
-              <Radar size={14} /> {t.probabilityMatrix}
+              <Radar size={14} /> Probability Matrix
             </span>
             <span className={`text-[10px] font-bold px-3 py-1 rounded-full border border-white/10 bg-white/5 uppercase ${gradeColor}`}>
               {qualityLabel}
@@ -162,12 +162,12 @@ export default function ForecastClientView({ data, symbol, locale, onRefresh }: 
               </div>
               
               <div>
-                <h2 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">{t.aiDecision}</h2>
+                <h2 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">AI Decision</h2>
                 <p className={`text-2xl md:text-3xl font-black mb-2 ${decisionColor}`}>
                   {finalDecision}
                 </p>
                 <p className="text-sm text-zinc-400">
-                  {t.confidence}: <span className="text-white font-semibold">{confidence}%</span>
+                  Confidence: <span className="text-white font-semibold">{confidence}%</span>
                 </p>
                 <p className="text-xs text-zinc-500 mt-1">
                   {data.risk_score?.risk_category || "Medium Risk"}
@@ -189,26 +189,26 @@ export default function ForecastClientView({ data, symbol, locale, onRefresh }: 
         <div className="md:col-span-4 flex flex-col gap-6">
           <div className="p-6 rounded-3xl border border-zinc-800 bg-zinc-900/30 h-full flex flex-col gap-4">
             <h4 className="text-white font-bold text-sm flex items-center gap-2 mb-2">
-              <ShieldCheck size={16} className="text-zinc-500" /> {t.dataIntegrity}
+              <ShieldCheck size={16} className="text-zinc-500" /> Data Integrity
             </h4>
             
             <div className="space-y-4">
-              <QualityRow label={t.trendQuality} score={qualityScores.trend} />
-              <QualityRow label={t.volatility} score={qualityScores.volatility} />
-              <QualityRow label={t.momentumBias} score={qualityScores.momentum} />
-              <QualityRow label={t.zoneClarity} score={qualityScores.zones} />
+              <QualityRow label="Trend Quality" score={qualityScores.trend} />
+              <QualityRow label="Volatility" score={qualityScores.volatility} />
+              <QualityRow label="Momentum Bias" score={qualityScores.momentum} />
+              <QualityRow label="Zone Clarity" score={qualityScores.zones} />
             </div>
 
             <div className="validation-container">
-              <h5 className="validation-header">{t.validation}</h5>
+              <h5 className="validation-header">Validation</h5>
               <div className="validation-status">
                 <div className={`status-indicator ${data.validation?.is_valid ? 'valid' : 'invalid'}`}></div>
                 <span className="status-text">
-                  {data.validation?.is_valid ? t.validated : t.needsReview}
+                  {data.validation?.is_valid ? 'Validated' : 'Needs Review'}
                 </span>
               </div>
               <p className="validation-score">
-                {t.score}: <span className="score-value">{data.validation?.validation_score || 'N/A'}%</span>
+                Score: <span className="score-value">{data.validation?.validation_score || 'N/A'}%</span>
               </p>
               
               <div className="validation-score-bar" 
@@ -218,7 +218,7 @@ export default function ForecastClientView({ data, symbol, locale, onRefresh }: 
             </div>
 
             <div className="mt-auto border-t border-zinc-800 pt-6">
-              <NotificationButton locale={locale} />
+              <NotificationButton />
             </div>
           </div>
         </div>
@@ -228,7 +228,7 @@ export default function ForecastClientView({ data, symbol, locale, onRefresh }: 
       <section className="algo-section">
         <div className="algo-card">
           <span className="algo-label">
-            {t.finalAlgorithmDecision}
+            Final Algorithm Decision
           </span>
           
           <p className="algo-text">
@@ -238,7 +238,7 @@ export default function ForecastClientView({ data, symbol, locale, onRefresh }: 
       </section>
 
       {/* FOOTER */}
-      <SymbolNavigation symbol={symbol} locale={locale} />
+      <SymbolNavigation symbol={symbol} />
     </div>
   );
 }

@@ -1,17 +1,29 @@
-// functions/_middleware.ts
-export const onRequest = async (context: any) => {
-  const { request, next } = context;
-  const url = new URL(request.url);
-  const hostname = request.headers.get("host") || "";
+// middleware.ts
 
-  // Map intel.mpintellect.com to the NEW /intel page
-  if (hostname.startsWith("intel.")) {
-    if (url.pathname === "/" || url.pathname === "") {
-      // Rewrite to the new internal path
-      const newUrl = new URL("/intel", request.url);
-      return context.env.ASSETS.fetch(new Request(newUrl, request));
-    }
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  const { pathname } = url;
+  
+  // Match pattern: /locale/tool/SYMBOL (where SYMBOL is uppercase)
+  // Example: /en/forecast/XAUUSD → /en/forecast/xauusd
+  const match = pathname.match(/^\/([a-z]{2})\/([a-z]+)\/([A-Z]+)$/);
+  
+  if (match) {
+    const [, locale, tool, symbol] = match;
+    const lowercaseSymbol = symbol.toLowerCase();
+    const newPathname = `/${locale}/${tool}/${lowercaseSymbol}`;
+    
+    // Redirect to lowercase version
+    url.pathname = newPathname;
+    return NextResponse.redirect(url, { status: 301 });
   }
+  
+  return NextResponse.next();
+}
 
-  return next();
+export const config = {
+  matcher: '/:path*',
 };

@@ -4,8 +4,9 @@ export async function onRequestPost(context: any) {
 
   try {
     const body = await request.json();
-    // FIX: The frontend sends { userId, code } not { userId, referralCode }
-    const { userId, code } = body;
+    const userId = body.userId;
+    const rawCode = body.code || body.referralCode;
+    const code = rawCode ? String(rawCode).trim().toUpperCase() : "";
     
     console.log("🎁 Redeem request:", { userId, code });
 

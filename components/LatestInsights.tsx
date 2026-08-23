@@ -29,12 +29,12 @@ export default function LatestInsights() {
       <div className="latest-insights animate-pulse">
         <div className="max-w-7xl mx-auto px-6 py-24">
           <div className="insights-header">
-            <div className="h-10 w-64 bg-zinc-900 rounded" />
+            <div className="h-10 w-64 bg-gray-200 rounded" />
           </div>
           <div className="insights-grid">
-            <div className="insight-card h-64 bg-zinc-900" />
-            <div className="insight-card h-64 bg-zinc-900" />
-            <div className="insight-card h-64 bg-zinc-900" />
+            <div className="insight-card h-64 bg-gray-200" />
+            <div className="insight-card h-64 bg-gray-200" />
+            <div className="insight-card h-64 bg-gray-200" />
           </div>
         </div>
       </div>
@@ -44,7 +44,7 @@ export default function LatestInsights() {
   if (posts.length === 0) return null;
 
   return (
-    <section className="latest-insights w-full bg-[#050505] border-t border-white/5">
+    <section className="latest-insights w-full bg-white border-t border-black/5">
       <div className="max-w-7xl mx-auto px-6 py-24">
         {/* Premium Header with MZ  styling */}
         <div className="insights-header">
@@ -95,7 +95,7 @@ export default function LatestInsights() {
                 <div className="card-date">
                   {post.date}
                 </div>
-                <h3 className="card-title group-hover:text-[#D4AF37] transition-colors duration-300">
+                <h3 className="card-title group-hover:text-[#3B82F6] transition-colors duration-300">
                   {post.title}
                 </h3>
                 <p className="card-desc">

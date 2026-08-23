@@ -42,7 +42,10 @@ export function useOneSetup() {
       
       if (data.success) {
         // Update local user data with new setup count
-        const updatedUser = { ...user, setup_count: data.newCount };
+        const newCount = typeof data.remaining === 'number' 
+          ? data.remaining 
+          : (data.user?.setup_count ?? data.newCount ?? Math.max(0, (user.setup_count || 1) - 1));
+        const updatedUser = { ...user, setup_count: newCount };
         localStorage.setItem('cf_user', JSON.stringify(updatedUser));
         return "ok";
       } else {

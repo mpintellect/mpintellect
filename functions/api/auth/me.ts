@@ -40,6 +40,13 @@ export async function onRequestGet(context: any) {
       "SELECT * FROM users WHERE id = ?"
     ).bind(session.user_id).first();
 
+    if (!user) {
+      return new Response(
+        JSON.stringify({ success: false, error: "User not found" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     console.log(`✅ [ME] Authorized user: ${user.email}`);
 
     return new Response(JSON.stringify({ success: true, user }), {

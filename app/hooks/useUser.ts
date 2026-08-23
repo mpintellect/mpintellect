@@ -27,15 +27,19 @@ export function useUser() {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
+      } else if (response.status === 401 || response.status === 403) {
+        console.warn("Hooks: Session expired or invalid token");
+        localStorage.removeItem("cf_token");
+        localStorage.removeItem("cf_user");
+        localStorage.removeItem("cf_session_id");
+        setUser(null);
       } else {
-        console.warn("Hooks: Auth not ready, retrying...");
-        setTimeout(checkAuth, 800); // retry instead of wiping token
-        return;
+        console.warn("Hooks: Auth check returned non-ok status:", response.status);
+        setUser(null);
       }
     } catch (e) {
-      console.warn("Hooks: Auth error, retrying…");
-      setTimeout(checkAuth, 800);
-      return;
+      console.warn("Hooks: Auth network error:", e);
+      setUser(null);
     } finally {
       setLoading(false);
     }

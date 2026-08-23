@@ -183,8 +183,8 @@ const handleSubmit = async (e: React.FormEvent) => {
   </span>
   
   {/* Concise Financial Disclaimer */}
-  <p className="disclaimer-text text-xs text-zinc-500 mt-4 max-w-3xl mx-auto text-center border-t border-[#D4AF37]/20 pt-4">
-    <span className="text-[#D4AF37] font-bold">DISCLAIMER:</span> MPIntellect  provides 
+  <p className="disclaimer-text text-xs text-zinc-500 mt-4 max-w-3xl mx-auto text-center border-t border-blue-500/20 pt-4">
+    <span className="text-[#3B82F6] font-bold">DISCLAIMER:</span> MPIntellect  provides 
     educational content and analytical tools for informational purposes only. We do not provide 
     financial advice, and nothing on this website should be construed as a recommendation to 
     buy or sell any financial instruments. Trading involves substantial risk of loss. 
@@ -231,7 +231,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           </div>
 
           <div className="footer-subscribe subscribe-column">
-            <h4 className="text-sm md:text-base font-semibold text-white mb-3">
+            <h4 className="text-sm md:text-base font-semibold text-gray-900 mb-3">
               Subscribe to Updates
             </h4>
 

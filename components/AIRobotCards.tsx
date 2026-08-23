@@ -143,7 +143,7 @@ export default function AIRobotCards() {
           <div key={bot.id} className="robot-card">
             <h3 className="robot-name">{bot.name}</h3>
             {bot.badge && (
-  <div className="mt-2 inline-flex items-center rounded-full border border-emerald-800 bg-emerald-900/40 px-2 py-0.5 text-xs text-emerald-200">
+  <div className="mt-2 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">
     {bot.badge}
   </div>
 )}

@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function AiToolsSection() {
   return (
-    <section id="aitrading" className="bg-black text-white py-20 px-6">
+    <section id="aitrading" className="bg-white text-gray-900 py-20 px-6">
       <div className="max-w-6xl mx-auto text-center">
         <h2 className="text-3xl md:text-5xl font-bold mb-6">
           AI-Powered Trading Tools

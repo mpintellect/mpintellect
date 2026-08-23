@@ -24,7 +24,7 @@ export default function UserSetups() {
   useEffect(() => {
     const token = localStorage.getItem('cf_token');
     const userData = localStorage.getItem('cf_user');
-    
+
     if (!token || !userData) {
       console.log("❌ No user authenticated");
       setLoading(false);
@@ -34,7 +34,7 @@ export default function UserSetups() {
     try {
       const user = JSON.parse(userData);
       setUserId(user.id);
-      
+
       fetchSetups(user.id);
     } catch (error) {
       console.error("❌ Error parsing user data:", error);
@@ -46,18 +46,25 @@ export default function UserSetups() {
   const fetchSetups = async (userId: string) => {
     try {
       console.log("🔍 Fetching setups for user:", userId);
-      
-      const response = await fetch(`/api/setups?userId=${userId}&limit=20`);
-      
+      const token = localStorage.getItem('cf_token') || "";
+
+      const response = await fetch(`/api/setups?userId=${userId}&token=${encodeURIComponent(token)}&limit=20`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'x-mz-token': token,
+          'Content-Type': 'application/json'
+        }
+      });
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       if (data.success && data.setups) {
         console.log("🔍 Fetched setups:", data.setups.length);
-        
+
         // Transform the data to match our interface
         const transformedSetups: Setup[] = data.setups.map((setup: any) => ({
           id: setup.id,
@@ -71,7 +78,7 @@ export default function UserSetups() {
           capital: parseFloat(setup.capital) || 1000,
           riskReward: parseFloat(setup.risk_reward) || 1.5
         }));
-        
+
         setSetups(transformedSetups);
       } else {
         throw new Error(data.error || "Failed to fetch setups");
@@ -102,15 +109,15 @@ export default function UserSetups() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-700';
+        return 'bg-amber-100 text-amber-700';
       case 'hit_tp':
-        return 'bg-green-700';
+        return 'bg-green-100 text-green-700';
       case 'hit_sl':
-        return 'bg-red-700';
+        return 'bg-red-100 text-red-700';
       case 'expired':
-        return 'bg-gray-700';
+        return 'bg-gray-200 text-gray-600';
       default:
-        return 'bg-gray-700';
+        return 'bg-gray-200 text-gray-600';
     }
   };
 
@@ -135,22 +142,22 @@ export default function UserSetups() {
   // =============================
   if (loading) {
     return (
-      <div className="setup-history mt-6 p-4 rounded-lg bg-[#1b1b1b]">
-        <h3 className="text-lg font-semibold text-white mb-4">
+      <div className="setup-history mt-6 p-4 rounded-lg bg-gray-50 border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
           📈 My Trade Setups
         </h3>
-        <p className="text-center text-sm text-gray-400">Loading setups...</p>
+        <p className="text-center text-sm text-gray-500">Loading setups...</p>
       </div>
     );
   }
 
   if (setups.length === 0) {
     return (
-      <div className="setup-history mt-6 p-4 rounded-lg bg-[#1b1b1b]">
-        <h3 className="text-lg font-semibold text-white mb-4">
+      <div className="setup-history mt-6 p-4 rounded-lg bg-gray-50 border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
           📈 My Trade Setups
         </h3>
-        <p className="text-center text-sm text-gray-400">
+        <p className="text-center text-sm text-gray-500">
           No setups found yet. Start analyzing to see your trade history.
         </p>
       </div>
@@ -158,14 +165,14 @@ export default function UserSetups() {
   }
 
   return (
-    <div className="setup-history mt-6 p-4 rounded-lg bg-[#1b1b1b]">
+    <div className="setup-history mt-6 p-4 rounded-lg bg-gray-50 border border-gray-200">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-white">
+        <h3 className="text-lg font-semibold text-gray-900">
           📈 My Trade Setups ({setups.length})
         </h3>
-        <button 
+        <button
           onClick={() => userId && fetchSetups(userId)}
-          className="text-xs text-gray-400 hover:text-white px-3 py-1 border border-gray-700 rounded hover:bg-gray-800 transition-colors"
+          className="text-xs text-gray-500 hover:text-gray-900 px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 transition-colors"
         >
           Refresh
         </button>
@@ -173,7 +180,7 @@ export default function UserSetups() {
 
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm text-left">
-          <thead className="border-b border-gray-600 text-gray-300">
+          <thead className="border-b border-gray-200 text-gray-600">
             <tr>
               <th className="px-2 py-1">Symbol</th>
               <th className="px-2 py-1">Entry</th>
@@ -187,26 +194,26 @@ export default function UserSetups() {
 
           <tbody>
             {setups.map((setup) => (
-              <tr key={setup.id} className="border-b border-gray-800 text-white hover:bg-gray-900 transition-colors">
+              <tr key={setup.id} className="border-b border-gray-100 text-gray-900 hover:bg-gray-100 transition-colors">
                 <td className="px-2 py-2 font-medium">
                   <div className="font-bold">{setup.symbol}</div>
-                  <div className="text-xs text-gray-400">Lot: {setup.lotSize}</div>
+                  <div className="text-xs text-gray-500">Lot: {setup.lotSize}</div>
                 </td>
                 <td className="px-2 py-2 font-mono">
                   {setup.entryPrice.toFixed(5)}
                 </td>
-                <td className="px-2 py-2 font-mono text-green-400">
+                <td className="px-2 py-2 font-mono text-green-600">
                   {setup.takeProfit.toFixed(5)}
                 </td>
-                <td className="px-2 py-2 font-mono text-red-400">
+                <td className="px-2 py-2 font-mono text-red-600">
                   {setup.stopLoss.toFixed(5)}
                 </td>
                 <td className="px-2 py-2">
-                  <span className="text-xs bg-blue-900 px-2 py-1 rounded">
+                  <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
                     {setup.riskReward.toFixed(1)}:1
                   </span>
                 </td>
-                <td className="px-2 py-2 text-gray-300 text-xs">
+                <td className="px-2 py-2 text-gray-500 text-xs">
                   {formatDate(setup.generatedAt)}
                 </td>
                 <td className="px-2 py-2">
@@ -220,7 +227,7 @@ export default function UserSetups() {
         </table>
       </div>
 
-      <div className="mt-4 text-xs text-gray-500 text-center">
+      <div className="mt-4 text-xs text-gray-400 text-center">
         Showing {setups.length} most recent setups
       </div>
     </div>

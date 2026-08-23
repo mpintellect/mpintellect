@@ -42,30 +42,30 @@ export default function BrokerInvitePage() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center font-sans">
-      
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center font-sans">
+
       {/* CARD */}
-      <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
-        
+      <div className="max-w-md w-full bg-white border border-gray-200 rounded-2xl p-8 shadow-xl relative overflow-hidden">
+
         {/* Top Glow */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500"></div>
 
         {/* Icon */}
-        <div className="mx-auto w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mb-6 border border-zinc-700">
+        <div className="mx-auto w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-6 border border-gray-200">
           <ShieldCheck className="text-green-500 w-8 h-8" />
         </div>
 
-        <h1 className="text-2xl font-bold text-white mb-2">Secure Handoff</h1>
-        <p className="text-zinc-400 text-sm mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Secure Handoff</h1>
+        <p className="text-gray-500 text-sm mb-8">
           Redirecting you to our verified partner broker for secure registration.
         </p>
 
         {/* Status Box */}
-        <div className="bg-black/50 border border-zinc-800 rounded-lg p-4 mb-8 flex items-center justify-center gap-3">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-8 flex items-center justify-center gap-3">
           {count > 0 ? (
             <>
               <Loader2 className="animate-spin text-blue-500" size={20} />
-              <span className="text-zinc-300 text-sm">Redirecting in {count}s...</span>
+              <span className="text-gray-600 text-sm">Redirecting in {count}s...</span>
             </>
           ) : (
             <span className="text-green-500 text-sm font-bold">Transferring...</span>
@@ -80,7 +80,7 @@ export default function BrokerInvitePage() {
           Continue to Broker <ArrowRight size={18} />
         </button>
 
-        <p className="mt-6 text-[10px] text-zinc-600">
+        <p className="mt-6 text-[10px] text-gray-400">
           You are leaving MPIntellect. Ensure you are on the official broker URL.
         </p>
 

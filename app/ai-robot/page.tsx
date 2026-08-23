@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <main className="min-h-screen bg-black">
+    <main className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 py-12">
        
         {/* This can be a Client Component; it’s fine to render it here */}

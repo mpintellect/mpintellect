@@ -57,12 +57,12 @@ const CATEGORIES = {
 
 export default function MarketsHub() {
   return (
-    <div className="min-h-screen bg-black pt-32 pb-24 px-6">
+    <div className="min-h-screen bg-white pt-32 pb-24 px-6">
       
       {/* 1. HERO TITLE */}
       <div className="max-w-4xl mx-auto text-center mb-20">
         <span className="text-yellow-500 font-bold uppercase tracking-[0.2em] text-xs mb-4 block">Institutional </span>
-        <h1 className="text-4xl md:text-6xl font-black text-white mb-6 leading-tight">
+        <h1 className="text-4xl md:text-6xl font-black text-gray-900 mb-6 leading-tight">
           Live Market <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">Command Center</span>
         </h1>
         <p className="text-zinc-400 text-lg">
@@ -132,7 +132,7 @@ function AssetButton({ ticker, name }: { ticker: string, name?: string }) {
     return (
         <Link href={`/analysis/${ticker.toLowerCase()}`} className="market-asset-card group">
             <div>
-                <span className="asset-ticker group-hover:text-white transition-colors">{ticker}</span>
+                <span className="asset-ticker group-hover:text-gray-900 transition-colors">{ticker}</span>
                 <span className="asset-name">{name}</span>
             </div>
             <ArrowRight size={16} className="text-zinc-600 group-hover:text-yellow-500 transform group-hover:translate-x-1 transition-all" />

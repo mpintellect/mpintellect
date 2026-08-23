@@ -49,7 +49,7 @@ export const generateForecastReport = (data: SymbolData) => {
     // 4. RISK PROFILE BLOCK
     risk_analysis: `
       Risk Assessment: **${cleanRisk}**. 
-      The component quality check reveals strong validation from ${data.component_quality?.zones ?? 0}% Zone Integrity and ${data.component_quality?.momentum ?? 0}% Momentum Flow. 
+      The component quality check reveals strong validation from ${(data as any).component_quality?.zones ?? (data as any).validation?.component_quality?.zones ?? 0}% Zone Integrity and ${(data as any).component_quality?.momentum ?? (data as any).validation?.component_quality?.momentum ?? 0}% Momentum Flow. 
       ${isHighConfidence ? "This high confluence suggests aggressive entry tactics are permissible." : "Given the moderate confidence, reduced position sizing is recommended."}
     `,
 

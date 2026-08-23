@@ -13,14 +13,17 @@ const baseConfig: NextConfig = {
   // Required for Next.js 16 to allow custom build flags/webpack fallbacks
   turbopack: {},
 
-  // Add ONLY this for local development
+  // Proxy API calls in local development
   async rewrites() {
-    // Proxy API calls to wrangler during local dev
     if (process.env.NODE_ENV === 'development') {
       return [
         {
+          // First try local wrangler (port 8788); if not running, this falls through
+          // In practice during local dev without wrangler, we proxy to production API
           source: '/api/:path*',
-          destination: 'http://localhost:8788/api/:path*',
+          destination: process.env.LOCAL_API === 'true'
+            ? 'http://localhost:8788/api/:path*'
+            : 'https://mpintellect.com/api/:path*',
         },
       ];
     }

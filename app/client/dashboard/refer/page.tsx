@@ -134,12 +134,14 @@ export default function ReferPage() {
         },
         body: JSON.stringify({
           userId: user.id,
+          code: inputCode.trim(),
           referralCode: inputCode.trim()
         })
       });
       const data = await res.json();
-      if(res.ok) {
-        toast.success("🎉 Referral Redeemed!");
+      if(res.ok && data.success) {
+        toast.success("🎉 Referral Redeemed! +5 Setups added.");
+        setInputCode("");
         fetchStats(user.id);
       } else {
         toast.error(data.error || "Failed to redeem");

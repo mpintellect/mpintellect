@@ -38,8 +38,7 @@ export async function incrementTrialCount(userId: string): Promise<number> {
     throw new Error("Database not available");
   }
 
-  // Get current trial count
-  const userQuery = await db.prepare(
+  const userQuery: any = await db.prepare(
     "SELECT trial_count FROM users WHERE id = ?"
   ).bind(userId).first();
 

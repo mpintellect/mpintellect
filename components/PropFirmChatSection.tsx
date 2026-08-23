@@ -97,7 +97,7 @@ const PropFirmChatSection = ({ onLaunch }: { onLaunch?: (val: string) => void })
               <div className="pulse-indicator gold"></div>
               <span>Risk Protocol: Calibrated</span>
             </div>
-            <div className="launch-icon-box text-amber-500">
+            <div className="launch-icon-box text-blue-500">
               <Trophy size={32} strokeWidth={1.5} />
             </div>
             <button 

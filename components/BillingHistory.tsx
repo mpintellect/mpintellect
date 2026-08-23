@@ -29,6 +29,19 @@ export default function BillingHistory() {
 
   if (loading) return <div className="py-10 text-center text-zinc-500 text-[10px] animate-pulse">SYNCING_TRANSACTIONS...</div>;
 
+  const formatDate = (dateVal: any) => {
+    try {
+      if (!dateVal) return 'N/A';
+      if (typeof dateVal === 'number') {
+        const ms = dateVal < 1e11 ? dateVal * 1000 : dateVal;
+        return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+      return new Date(dateVal).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch {
+      return 'N/A';
+    }
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="billing-table w-full">
@@ -44,7 +57,7 @@ export default function BillingHistory() {
           {history.length > 0 ? history.map((item: any, i: number) => (
             <tr key={i}>
               <td className="font-mono text-zinc-500 text-[11px]">
-                {new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {formatDate(item.created_at)}
               </td>
               <td className="font-bold text-white">
                 {PRODUCT_MAP[item.price_id] || "MZ Setup Plan"}

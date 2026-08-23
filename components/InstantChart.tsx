@@ -257,7 +257,7 @@ function PricingPlansModal({ onClose, onPlanSelect, onRegisterClick }: any) {
 // ==========================================
 // MAIN COMPONENT
 // ==========================================
-export default function InstantChart() {
+export default function InstantChart({ onClose }: { onClose?: () => void } = {}) {
   const [symbol, setSymbol] = useState<string>("XAUUSD");
   const [strategy, setStrategy] = useState<Strategy>("daytrader");
   const [capital, setCapital] = useState<number>(10000);
@@ -724,7 +724,7 @@ export default function InstantChart() {
             <div className="display-card">
               <span className="label">💵 RISK AMOUNT</span>
               <div className="value" style={{ color: "#EF4444" }}>${riskAmount.toFixed(2)}</div>
-              <div style={{ fontSize: "12px", color: "#71717A" }}>({riskPercent}%)</div>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>({riskPercent}%)</div>
             </div>
             <div className="display-card">
               <span className="label">🎯 REWARD AMOUNT</span>
@@ -783,7 +783,7 @@ export default function InstantChart() {
               <span>RSI</span>
               <strong style={{
                 color: chartData?.chart?.indicators?.rsi > 70 ? "#EF4444" :
-                  chartData?.chart?.indicators?.rsi < 30 ? "#10B981" : "#FFFFFF"
+                  chartData?.chart?.indicators?.rsi < 30 ? "#10B981" : "#111827"
               }}>
                 {chartData?.chart?.indicators?.rsi?.toFixed(1)}
               </strong>

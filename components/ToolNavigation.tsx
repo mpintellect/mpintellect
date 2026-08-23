@@ -17,7 +17,7 @@ export default function ToolNavigation({ currentTool, currentSymbol, locale }: T
   const t = toolDisplay[locale];
   
   return (
-    <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-sm border-b border-zinc-800">
+    <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex overflow-x-auto no-scrollbar gap-1 py-2">
           {tools.map((tool) => (
@@ -26,8 +26,8 @@ export default function ToolNavigation({ currentTool, currentSymbol, locale }: T
               href={`/${locale}/${tool === 'analysis' ? 'analysis' : tool}/${currentSymbol}`}
               className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-all duration-200
                 ${currentTool === tool 
-                  ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' 
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+                  ? 'bg-blue-500/10 text-blue-600 border border-blue-500/30' 
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
                 }`}
             >
               {t[tool as keyof typeof t]}

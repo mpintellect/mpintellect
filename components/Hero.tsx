@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useEffect } from "react";
 import Image from "next/image";
 
 export default function Hero() {
-  useEffect(() => {}, []);
+  useEffect(() => { }, []);
 
   const handleClick = () => {
     const el = document.getElementById("aiassistant");
@@ -29,8 +30,8 @@ export default function Hero() {
 
       {/* Headline */}
       <h1>
-        Enhance Your Trading with<br />
-        <span className="hero-gold">AI-Driven Tools</span>
+        <span className="hero-black">Enhance Your Trading with</span><br />
+        <span className="hero-blue">AI-Driven Tools</span>
       </h1>
 
       {/* Subtitle */}

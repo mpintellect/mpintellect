@@ -4,6 +4,7 @@ import './globals.css';
 import { ReactNode, Suspense } from 'react';
 import { Inter } from 'next/font/google';
 
+import AnimatedBackground from '@/components/AnimatedBackground';
 import ClientLayoutWrapper from '@/components/ClientLayoutWrapper';
 import CtaTracker from '@/components/CTATracker';
 import FacebookPixel from "@/components/FacebookPixel";
@@ -39,9 +40,11 @@ export default function Layout({ children }: { children: ReactNode }) {
       </head>
       
       <body 
-        className={`${inter.className} bg-black text-white relative`}
+        className={`${inter.className} bg-white text-gray-900 relative`}
         suppressHydrationWarning 
       >      
+        <AnimatedBackground />
+
         <Script id="consent-mode-defaults" strategy="beforeInteractive">
           {`
             window.dataLayer = window.dataLayer || [];

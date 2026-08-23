@@ -1,6 +1,13 @@
 "use client";
 import React, { useState } from "react";
-import { Candle } from "../app/utils/determineTradeSide";
+
+export interface Candle {
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  time?: string | number;
+}
 
 interface TradeChartProps {
   candles: Candle[];

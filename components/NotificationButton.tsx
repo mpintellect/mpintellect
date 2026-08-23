@@ -10,7 +10,7 @@ import {
 
 const TELEGRAM_LINK = "https://t.me/mpintellect"; 
 
-export default function NotificationButton() {
+export default function NotificationButton({ locale }: { locale?: any } = {}) {
   const { isSupported, subscription, subscribeToPush, loading } = usePush();
   const [mounted, setMounted] = useState(false);
   

@@ -1,6 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Tailwind v4's automatic content detection misses this directory for
+   unclear reasons (confirmed independently of Next/Turbopack via the
+   standalone Tailwind CLI) - force it explicitly. */
+@source "./admin/facebook-ads";
 
 /* === Reset & Base === */
 * {
@@ -34829,11 +34832,6 @@ circle {
 html {
   scroll-behavior: smooth;
 }
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 
 :root {
   --foreground-rgb: 17, 24, 39;

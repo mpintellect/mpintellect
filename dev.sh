@@ -8,15 +8,19 @@ lsof -ti:8788,3000 | xargs kill -9 2>/dev/null
 
 # Step 1: Start Next.js in dev mode
 echo "📦 Starting Next.js dev server on port 3000..."
-npm run dev &
+LOCAL_API=true npm run dev &
 NEXT_PID=$!
 
 # Wait for Next.js to start
 sleep 5
 
 # Step 2: Start Wrangler in LOCAL mode (no Cloudflare API call)
+# Uses wrangler.local.json, which drops the BROWSER binding and the
+# KV namespace's remote:true flag from wrangler.json - both force a
+# remote proxy session even with --local, which crashes the dev server
+# if that session can't be established.
 echo "⚡ Starting Wrangler on port 8788..."
-npx wrangler pages dev ./functions --port 8788 --local --compatibility-flags=nodejs_compat
+npx wrangler pages dev ./functions --port 8788 --local --compatibility-flags=nodejs_compat --config wrangler.local.json
 
 # Cleanup on exit
 kill $NEXT_PID 2>/dev/null

@@ -11,6 +11,7 @@ import {
   verifyAdminAuth,
   fetchInsights,
   fetchCampaignStatuses,
+  fetchAccountCurrency,
   aggregateRows,
   generateRecommendations,
   FacebookApiError,
@@ -37,10 +38,11 @@ export async function onRequestGet(context: any) {
     const range = getDateRange(period);
     const comparisonRange = getComparisonDateRange(period);
 
-    const [statuses, mainRows, comparisonRows] = await Promise.all([
+    const [statuses, mainRows, comparisonRows, currency] = await Promise.all([
       fetchCampaignStatuses(env),
       fetchInsights(env, { level: 'campaign', range }),
       fetchInsights(env, { level: 'campaign', range: comparisonRange }),
+      fetchAccountCurrency(env),
     ]);
 
     const mainById = new Map<string, typeof mainRows>();
@@ -66,7 +68,7 @@ export async function onRequestGet(context: any) {
         comparisonMetrics: aggregateRows(comparisonById.get(s.id) || [], env),
       }));
 
-    const recommendations = generateRecommendations(campaigns, period, env);
+    const recommendations = generateRecommendations(campaigns, period, env, currency);
 
     return new Response(
       JSON.stringify({

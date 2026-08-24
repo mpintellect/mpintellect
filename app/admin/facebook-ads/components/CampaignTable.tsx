@@ -36,7 +36,7 @@ function statusLabel(status: string): string {
   return STATUS_LABELS[status] || status.replace(/_/g, ' ');
 }
 
-export function CampaignTable({ campaigns, period }: { campaigns: Campaign[]; period: Period }) {
+export function CampaignTable({ campaigns, period, currency }: { campaigns: Campaign[]; period: Period; currency: string }) {
   const [sortKey, setSortKey] = useState<SortKey>('spend');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -163,7 +163,7 @@ export function CampaignTable({ campaigns, period }: { campaigns: Campaign[]; pe
                   <td className="px-4 py-3">
                     <StatusBadge status={c.effectiveStatus} />
                   </td>
-                  <td className="px-4 py-3 text-slate-700">{formatCurrency(c.metrics.spend)}</td>
+                  <td className="px-4 py-3 text-slate-700">{formatCurrency(c.metrics.spend, currency)}</td>
                   <td className="px-4 py-3 text-slate-700">{formatNumber(c.metrics.impressions)}</td>
                   <td className="px-4 py-3 text-slate-700">{formatNumber(c.metrics.clicks)}</td>
                   <td className="px-4 py-3">
@@ -177,7 +177,7 @@ export function CampaignTable({ campaigns, period }: { campaigns: Campaign[]; pe
                   <td className="px-4 py-3 text-slate-700">{formatNumber(c.metrics.linkClicks)}</td>
                   <td className="px-4 py-3 text-slate-700">{formatPercent(c.metrics.conversionRate)}</td>
                   <td className="px-4 py-3">
-                    <ColorFlagBadge flag={c.flags.cpa} label={formatCurrency(c.metrics.cpa)} />
+                    <ColorFlagBadge flag={c.flags.cpa} label={formatCurrency(c.metrics.cpa, currency)} />
                   </td>
                   <td className="px-4 py-3">
                     <ColorFlagBadge flag={c.flags.roas} label={formatRoas(c.metrics.roas)} />
@@ -201,7 +201,7 @@ export function CampaignTable({ campaigns, period }: { campaigns: Campaign[]; pe
                 {expanded && (
                   <tr>
                     <td colSpan={17} className="bg-slate-50 px-4 py-4">
-                      <CampaignDetails campaign={c} />
+                      <CampaignDetails campaign={c} currency={currency} />
                     </td>
                   </tr>
                 )}
@@ -216,20 +216,20 @@ export function CampaignTable({ campaigns, period }: { campaigns: Campaign[]; pe
   );
 }
 
-function CampaignDetails({ campaign }: { campaign: Campaign }) {
+function CampaignDetails({ campaign, currency }: { campaign: Campaign; currency: string }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-        <Detail label="Revenue" value={formatCurrency(campaign.metrics.revenue)} />
-        <Detail label="Daily Budget" value={campaign.dailyBudget ? formatCurrency(campaign.dailyBudget) : '—'} />
+        <Detail label="Revenue" value={formatCurrency(campaign.metrics.revenue, currency)} />
+        <Detail label="Daily Budget" value={campaign.dailyBudget ? formatCurrency(campaign.dailyBudget, currency) : '—'} />
         <Detail
           label="Budget Remaining"
-          value={campaign.budgetRemaining !== null ? formatCurrency(campaign.budgetRemaining) : '—'}
+          value={campaign.budgetRemaining !== null ? formatCurrency(campaign.budgetRemaining, currency) : '—'}
         />
         {campaign.startDate !== undefined && <Detail label="Start Date" value={formatDate(campaign.startDate ?? null)} />}
         <Detail label="End Date" value={formatDate(campaign.endDate)} />
-        {campaign.avgCpc !== undefined && <Detail label="Avg. CPC" value={formatCurrency(campaign.avgCpc)} />}
-        {campaign.avgCpm !== undefined && <Detail label="Avg. CPM" value={formatCurrency(campaign.avgCpm)} />}
+        {campaign.avgCpc !== undefined && <Detail label="Avg. CPC" value={formatCurrency(campaign.avgCpc, currency)} />}
+        {campaign.avgCpm !== undefined && <Detail label="Avg. CPM" value={formatCurrency(campaign.avgCpm, currency)} />}
         {campaign.qualityScore !== undefined && (
           <Detail label="Quality Score" value={campaign.qualityScore !== null ? `${campaign.qualityScore.toFixed(1)}/10` : '—'} />
         )}
@@ -259,7 +259,7 @@ function CampaignDetails({ campaign }: { campaign: Campaign }) {
                 {campaign.dailyBreakdown.map((day) => (
                   <tr key={day.date}>
                     <td className="px-3 py-2 text-slate-600">{day.date}</td>
-                    <td className="px-3 py-2 text-slate-700">{formatCurrency(day.spend)}</td>
+                    <td className="px-3 py-2 text-slate-700">{formatCurrency(day.spend, currency)}</td>
                     <td className="px-3 py-2 text-slate-700">{formatPercent(day.ctr)}</td>
                     <td className="px-3 py-2 text-slate-700">{formatNumber(day.reach)}</td>
                     <td className="px-3 py-2 text-slate-700">{formatFrequency(day.frequency)}</td>

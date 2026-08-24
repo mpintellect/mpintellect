@@ -19,17 +19,17 @@ interface CardDef {
   format: (v: number) => string;
 }
 
-const CARD_DEFS: CardDef[] = [
-  { key: 'spend', label: 'Spend', format: formatCurrency },
-  { key: 'conversions', label: 'Conversions', format: formatNumber },
-  { key: 'ctr', label: 'CTR', format: formatPercent },
-  { key: 'cpa', label: 'Cost Per Result', format: formatCurrency },
-  { key: 'roas', label: 'ROAS', format: formatRoas },
-  { key: 'reach', label: 'Reach', format: formatNumber },
-  { key: 'frequency', label: 'Frequency', format: formatFrequency },
-];
-
 export function OverviewCards({ data, period }: { data: InsightsResponse; period: Period }) {
+  const CARD_DEFS: CardDef[] = [
+    { key: 'spend', label: 'Spend', format: (v) => formatCurrency(v, data.currency) },
+    { key: 'conversions', label: 'Conversions', format: formatNumber },
+    { key: 'ctr', label: 'CTR', format: formatPercent },
+    { key: 'cpa', label: 'Cost Per Result', format: (v) => formatCurrency(v, data.currency) },
+    { key: 'roas', label: 'ROAS', format: formatRoas },
+    { key: 'reach', label: 'Reach', format: formatNumber },
+    { key: 'frequency', label: 'Frequency', format: formatFrequency },
+  ];
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
       {CARD_DEFS.map((def) => {

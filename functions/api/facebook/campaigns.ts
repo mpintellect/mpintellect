@@ -12,6 +12,7 @@ import {
   verifyAdminAuth,
   fetchInsights,
   fetchCampaignStatuses,
+  fetchAccountCurrency,
   normalizeRow,
   aggregateRows,
   classifyCtr,
@@ -44,11 +45,12 @@ export async function onRequestGet(context: any) {
     const comparisonRange = getComparisonDateRange(period);
     const weekly = isWeeklyPeriod(period);
 
-    const [statuses, mainRows, comparisonRows, dailyRows] = await Promise.all([
+    const [statuses, mainRows, comparisonRows, dailyRows, currency] = await Promise.all([
       fetchCampaignStatuses(env),
       fetchInsights(env, { level: 'campaign', range }),
       fetchInsights(env, { level: 'campaign', range: comparisonRange }),
       weekly ? fetchInsights(env, { level: 'campaign', range, timeIncrement: 1 }) : Promise.resolve([]),
+      fetchAccountCurrency(env),
     ]);
 
     const statusById = new Map(statuses.map((s) => [s.id, s]));
@@ -126,6 +128,7 @@ export async function onRequestGet(context: any) {
         period,
         range,
         comparisonRange,
+        currency,
         campaigns,
       }),
       { status: 200, headers: CORS_HEADERS }

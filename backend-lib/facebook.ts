@@ -118,6 +118,12 @@ async function graphGet(env: FBEnv, path: string, params: Record<string, string>
   return json;
 }
 
+/** ISO 4217 currency code the ad account bills in (e.g. "GBP") - the dashboard must not assume USD. */
+export async function fetchAccountCurrency(env: FBEnv): Promise<string> {
+  const json = await graphGet(env, adAccountPath(env), { fields: 'currency' });
+  return json.currency || 'USD';
+}
+
 export interface RawInsightRow {
   campaign_id?: string;
   campaign_name?: string;
@@ -367,10 +373,20 @@ export interface CampaignForRecommendation {
   comparisonMetrics: NormalizedMetrics;
 }
 
+/** Minimal money formatting for recommendation message text - the frontend's formatCurrency (Intl-based) isn't reachable from backend-lib, and this only needs to avoid a hardcoded "$" for non-USD accounts. */
+function formatMoney(value: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
+  } catch {
+    return `${currency} ${value.toFixed(2)}`;
+  }
+}
+
 export function generateRecommendations(
   campaigns: CampaignForRecommendation[],
   period: Period,
-  env: FBEnv = {}
+  env: FBEnv = {},
+  currency: string = 'USD'
 ): Recommendation[] {
   const weekly = isWeeklyPeriod(period);
   const scopeWord = weekly ? 'this week' : 'today';
@@ -487,7 +503,7 @@ export function generateRecommendations(
           icon: '🔍',
           campaignId: c.id,
           campaignName: c.name,
-          message: `${c.name} spent $${spend.toFixed(2)} ${scopeWord} with only ${clicks} clicks - check ad relevance score`,
+          message: `${c.name} spent ${formatMoney(spend, currency)} ${scopeWord} with only ${clicks} clicks - check ad relevance score`,
         });
       }
 

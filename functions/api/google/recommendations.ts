@@ -13,6 +13,7 @@ import {
   fetchCampaignRows,
   fetchReachByCampaign,
   fetchImpressionShareLostByCampaign,
+  fetchAccountCurrency,
   aggregateCampaignRows,
   generateGoogleRecommendations,
   GoogleAdsApiError,
@@ -39,10 +40,11 @@ export async function onRequestGet(context: any) {
     const range = getDateRange(period);
     const weekly = isWeeklyPeriod(period);
 
-    const [mainRows, reachByCampaign, impressionShareLostByCampaign] = await Promise.all([
+    const [mainRows, reachByCampaign, impressionShareLostByCampaign, currency] = await Promise.all([
       fetchCampaignRows(env, range, false),
       fetchReachByCampaign(env, range),
       fetchImpressionShareLostByCampaign(env, range),
+      fetchAccountCurrency(env),
     ]);
 
     const campaigns: GoogleCampaignForRecommendation[] = mainRows.map((row) => {
@@ -55,7 +57,7 @@ export async function onRequestGet(context: any) {
       };
     });
 
-    const recommendations = generateGoogleRecommendations(campaigns, period, env);
+    const recommendations = generateGoogleRecommendations(campaigns, period, env, currency);
 
     return new Response(
       JSON.stringify({ period, scope: weekly ? 'weekly' : 'daily', range, recommendations }),

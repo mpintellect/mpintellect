@@ -5,11 +5,12 @@
 // shared period/date-range math and color scoring live in ad-shared.ts.
 //
 // NOTE: unlike the Facebook build, this was NOT verified against a live
-// account - the GOOGLE_REFRESH_TOKEN available during development was
-// invalid (invalid_grant). Field names and GAQL shapes follow Google's
-// documented API behavior, but the reach/frequency and quality-score
-// queries in particular are best-effort (see comments below) and should be
-// checked against a real account once credentials are working.
+// account - GOOGLE_DEVELOPER_TOKEN is currently rejected by Google as
+// DEVELOPER_TOKEN_INVALID (the refresh token itself works fine). Field
+// names and GAQL shapes follow Google's documented API behavior, but the
+// reach/frequency and quality-score queries in particular are best-effort
+// (see comments below) and should be checked against a real account once
+// the developer token is fixed.
 
 import {
   type Period,
@@ -63,7 +64,13 @@ function loginCustomerId(env: GoogleEnv): string | undefined {
 }
 
 function apiVersion(env: GoogleEnv): string {
-  return env.GOOGLE_ADS_API_VERSION || 'v17';
+  // Google sunsets old API versions on a rolling basis (roughly one per
+  // quarter) - v17 (this code's original default) 404s at Google's
+  // front-end before auth is even checked, which silently masked real
+  // auth/token errors during testing. Bump this default periodically;
+  // check https://developers.google.com/google-ads/api/docs/release-notes
+  // for the current supported range.
+  return env.GOOGLE_ADS_API_VERSION || 'v25';
 }
 
 /**
@@ -124,10 +131,12 @@ async function gaqlSearch(env: GoogleEnv, query: string): Promise<any[]> {
   let pageCount = 0;
 
   do {
+    // No pageSize - the API rejects it as of v25 (PAGE_SIZE_NOT_SUPPORTED),
+    // fixed page size of 10000 rows regardless.
     const res = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ query, pageToken, pageSize: 1000 }),
+      body: JSON.stringify({ query, pageToken }),
     });
     const json: any = await res.json().catch(() => ({}));
 
@@ -142,6 +151,12 @@ async function gaqlSearch(env: GoogleEnv, query: string): Promise<any[]> {
   } while (pageToken && pageCount < 10);
 
   return results;
+}
+
+/** ISO 4217 currency code the account bills in (e.g. "MAD") - confirmed live that this is not reliably USD, so the dashboard must not assume it. */
+export async function fetchAccountCurrency(env: GoogleEnv): Promise<string> {
+  const rows = await gaqlSearch(env, 'SELECT customer.currency_code FROM customer');
+  return rows[0]?.customer?.currencyCode || 'USD';
 }
 
 // ---------------------------------------------------------------------------
@@ -183,8 +198,8 @@ function campaignQuery(range: DateRange, daily: boolean): string {
       campaign.id,
       campaign.name,
       campaign.status,
-      campaign.start_date,
-      campaign.end_date,
+      campaign.start_date_time,
+      campaign.end_date_time,
       campaign_budget.amount_micros,
       metrics.cost_micros,
       metrics.impressions,
@@ -197,7 +212,14 @@ function campaignQuery(range: DateRange, daily: boolean): string {
       ${daily ? ', segments.date' : ''}
     FROM campaign
     WHERE segments.date BETWEEN '${range.since}' AND '${range.until}'
+      AND campaign.status != 'REMOVED'
   `;
+}
+
+/** campaign.start_date_time/end_date_time return "YYYY-MM-DD HH:MM:SS" (renamed from the old date-only start_date/end_date fields, which v25 rejects as UNRECOGNIZED_FIELD) - trim to the date portion to match the date-only format the frontend expects. */
+function dateOnly(value: string | null | undefined): string | null {
+  if (!value) return null;
+  return value.split(' ')[0];
 }
 
 function parseCampaignRow(row: any): GoogleCampaignRow {
@@ -214,8 +236,8 @@ function parseCampaignRow(row: any): GoogleCampaignRow {
     id: String(c.id ?? ''),
     name: c.name || 'Unknown campaign',
     status: c.status || 'UNKNOWN',
-    startDate: c.startDate || null,
-    endDate: c.endDate || null,
+    startDate: dateOnly(c.startDateTime),
+    endDate: dateOnly(c.endDateTime),
     dailyBudget: budget.amountMicros ? microsToDollars(budget.amountMicros) : null,
     date: row.segments?.date,
     spend,
@@ -255,6 +277,7 @@ export async function fetchReachByCampaign(env: GoogleEnv, range: DateRange): Pr
         SELECT campaign.id, metrics.unique_users
         FROM campaign
         WHERE segments.date BETWEEN '${range.since}' AND '${range.until}'
+          AND campaign.status != 'REMOVED'
       `
     );
     for (const row of rows) {
@@ -278,6 +301,7 @@ export async function fetchDailyReachByCampaign(env: GoogleEnv, range: DateRange
         SELECT campaign.id, metrics.unique_users, segments.date
         FROM campaign
         WHERE segments.date BETWEEN '${range.since}' AND '${range.until}'
+          AND campaign.status != 'REMOVED'
       `
     );
     for (const row of rows) {
@@ -308,6 +332,7 @@ export async function fetchImpressionShareLostByCampaign(env: GoogleEnv, range: 
         SELECT campaign.id, metrics.search_budget_lost_impression_share, metrics.search_rank_lost_impression_share
         FROM campaign
         WHERE segments.date BETWEEN '${range.since}' AND '${range.until}'
+          AND campaign.status != 'REMOVED'
       `
     );
     for (const row of rows) {
@@ -328,16 +353,20 @@ export async function fetchImpressionShareLostByCampaign(env: GoogleEnv, range: 
 // campaigns (Display/Video-only) will simply get no scores back.
 // ---------------------------------------------------------------------------
 
-export async function fetchQualityScoreByCampaign(env: GoogleEnv, range: DateRange): Promise<Map<string, number>> {
+export async function fetchQualityScoreByCampaign(env: GoogleEnv, _range: DateRange): Promise<Map<string, number>> {
   const sums = new Map<string, { total: number; count: number }>();
   try {
+    // ad_group_criterion is a resource snapshot, not a time-series metric -
+    // segments.date can't be selected or filtered on for this resource
+    // (confirmed live: PROHIBITED_SEGMENT_IN_SELECT_OR_WHERE_CLAUSE). Quality
+    // Score has no date range in the API at all; it's always "current".
     const rows = await gaqlSearch(
       env,
       `
         SELECT campaign.id, ad_group_criterion.quality_info.quality_score
         FROM ad_group_criterion
         WHERE ad_group_criterion.type = 'KEYWORD'
-          AND segments.date BETWEEN '${range.since}' AND '${range.until}'
+          AND campaign.status != 'REMOVED'
       `
     );
     for (const row of rows) {
@@ -469,10 +498,20 @@ export interface GoogleCampaignForRecommendation {
   impressionShareLostPct: number | null;
 }
 
+/** Minimal money formatting for recommendation message text - the frontend's formatCurrency (Intl-based) isn't reachable from backend-lib, and this only needs to avoid a hardcoded "$" for non-USD accounts. */
+function formatMoney(value: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
+  } catch {
+    return `${currency} ${value.toFixed(2)}`;
+  }
+}
+
 export function generateGoogleRecommendations(
   campaigns: GoogleCampaignForRecommendation[],
   period: Period,
-  env: GoogleEnv = {}
+  env: GoogleEnv = {},
+  currency: string = 'USD'
 ): GoogleRecommendation[] {
   const weekly = isWeeklyPeriod(period);
   const scopeWord = weekly ? 'this week' : 'today';
@@ -500,7 +539,7 @@ export function generateGoogleRecommendations(
         icon: '💸',
         campaignId: row.id,
         campaignName: row.name,
-        message: `${row.name} has an average CPC of $${row.avgCpc.toFixed(2)} ${scopeWord} - optimize Quality Score or lower bids`,
+        message: `${row.name} has an average CPC of ${formatMoney(row.avgCpc, currency)} ${scopeWord} - optimize Quality Score or lower bids`,
       });
     }
 

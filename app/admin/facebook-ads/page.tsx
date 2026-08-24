@@ -234,7 +234,13 @@ export default function AdsDashboard() {
         ) : (
           <>
             {current.insights && <OverviewCards data={current.insights} period={period} />}
-            {current.campaignsData && <CampaignTable campaigns={current.campaignsData.campaigns} period={period} />}
+            {current.campaignsData && (
+              <CampaignTable
+                campaigns={current.campaignsData.campaigns}
+                period={period}
+                currency={current.campaignsData.currency}
+              />
+            )}
             {current.recs && <Recommendations scope={current.recs.scope} recommendations={current.recs.recommendations} />}
           </>
         )}

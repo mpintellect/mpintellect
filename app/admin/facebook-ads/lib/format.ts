@@ -2,8 +2,19 @@
 
 import type { ColorFlag } from './types';
 
-export function formatCurrency(value: number): string {
-  return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+/** currency defaults to USD only as a last resort - callers should always pass the account's real currency from the API response (see InsightsResponse/CampaignsResponse). */
+export function formatCurrency(value: number, currency: string = 'USD'): string {
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  } catch {
+    // Unrecognized currency code - fall back to a labeled plain number rather than throwing.
+    return `${currency} ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
 }
 
 export function formatNumber(value: number): string {

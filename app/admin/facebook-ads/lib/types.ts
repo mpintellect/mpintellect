@@ -31,6 +31,7 @@ export interface KpiCard {
 export interface InsightsResponse {
   period: Period;
   isWeekly: boolean;
+  currency: string; // ISO 4217, e.g. "GBP" / "MAD" - the account's real billing currency, not necessarily USD
   cards: {
     spend: KpiCard;
     conversions: KpiCard;
@@ -69,6 +70,7 @@ export interface Campaign {
 
 export interface CampaignsResponse {
   period: Period;
+  currency: string; // ISO 4217, e.g. "GBP" / "MAD" - the account's real billing currency, not necessarily USD
   campaigns: Campaign[];
 }
 

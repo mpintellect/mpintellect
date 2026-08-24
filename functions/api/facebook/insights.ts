@@ -11,6 +11,7 @@ import {
   verifyAdminAuth,
   fetchInsights,
   fetchCampaignStatuses,
+  fetchAccountCurrency,
   aggregateRows,
   classifyCtr,
   classifyRoas,
@@ -48,10 +49,11 @@ export async function onRequestGet(context: any) {
     const range = getDateRange(period);
     const comparisonRange = getComparisonDateRange(period);
 
-    const [mainRows, comparisonRows, statuses] = await Promise.all([
+    const [mainRows, comparisonRows, statuses, currency] = await Promise.all([
       fetchInsights(env, { level: 'account', range }),
       fetchInsights(env, { level: 'account', range: comparisonRange }),
       fetchCampaignStatuses(env),
+      fetchAccountCurrency(env),
     ]);
 
     const main = aggregateRows(mainRows, env);
@@ -116,6 +118,7 @@ export async function onRequestGet(context: any) {
         range,
         comparisonRange,
         isWeekly: isWeeklyPeriod(period),
+        currency,
         cards,
       }),
       { status: 200, headers: CORS_HEADERS }

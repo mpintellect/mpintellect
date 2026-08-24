@@ -21,6 +21,7 @@ import {
   fetchReachByCampaign,
   fetchDailyReachByCampaign,
   fetchQualityScoreByCampaign,
+  fetchAccountCurrency,
   aggregateCampaignRows,
   GoogleAdsApiError,
 } from '../../../backend-lib/google-ads';
@@ -54,6 +55,7 @@ export async function onRequestGet(context: any) {
       comparisonReachByCampaign,
       dailyReachByCampaign,
       qualityScoreByCampaign,
+      currency,
     ] = await Promise.all([
       fetchCampaignRows(env, range, false),
       fetchCampaignRows(env, comparisonRange, false),
@@ -62,6 +64,7 @@ export async function onRequestGet(context: any) {
       fetchReachByCampaign(env, comparisonRange),
       weekly ? fetchDailyReachByCampaign(env, range) : Promise.resolve(new Map<string, number>()),
       fetchQualityScoreByCampaign(env, range),
+      fetchAccountCurrency(env),
     ]);
 
     const comparisonById = new Map(comparisonRows.map((r) => [r.id, r]));
@@ -122,7 +125,7 @@ export async function onRequestGet(context: any) {
     });
 
     return new Response(
-      JSON.stringify({ period, range, comparisonRange, campaigns }),
+      JSON.stringify({ period, range, comparisonRange, currency, campaigns }),
       { status: 200, headers: CORS_HEADERS }
     );
   } catch (error: any) {

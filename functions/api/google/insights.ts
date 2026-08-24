@@ -18,6 +18,7 @@ import {
 import {
   fetchCampaignRows,
   fetchReachByCampaign,
+  fetchAccountCurrency,
   aggregateCampaignRows,
   budgetCapFor,
   conversionTargetFor,
@@ -49,11 +50,12 @@ export async function onRequestGet(context: any) {
     const range = getDateRange(period);
     const comparisonRange = getComparisonDateRange(period);
 
-    const [mainRows, comparisonRows, reachByCampaign, comparisonReachByCampaign] = await Promise.all([
+    const [mainRows, comparisonRows, reachByCampaign, comparisonReachByCampaign, currency] = await Promise.all([
       fetchCampaignRows(env, range, false),
       fetchCampaignRows(env, comparisonRange, false),
       fetchReachByCampaign(env, range),
       fetchReachByCampaign(env, comparisonRange),
+      fetchAccountCurrency(env),
     ]);
 
     const main = aggregateCampaignRows(mainRows, reachByCampaign);
@@ -113,7 +115,7 @@ export async function onRequestGet(context: any) {
     };
 
     return new Response(
-      JSON.stringify({ period, range, comparisonRange, isWeekly: isWeeklyPeriod(period), cards }),
+      JSON.stringify({ period, range, comparisonRange, isWeekly: isWeeklyPeriod(period), currency, cards }),
       { status: 200, headers: CORS_HEADERS }
     );
   } catch (error: any) {

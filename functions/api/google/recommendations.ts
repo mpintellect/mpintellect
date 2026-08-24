@@ -12,7 +12,9 @@ import {
 import {
   fetchCampaignRows,
   fetchReachByCampaign,
+  fetchDailyReachByCampaign,
   fetchImpressionShareLostByCampaign,
+  fetchSearchTerms,
   fetchAccountCurrency,
   aggregateCampaignRows,
   generateGoogleRecommendations,
@@ -40,12 +42,24 @@ export async function onRequestGet(context: any) {
     const range = getDateRange(period);
     const weekly = isWeeklyPeriod(period);
 
-    const [mainRows, reachByCampaign, impressionShareLostByCampaign, currency] = await Promise.all([
-      fetchCampaignRows(env, range, false),
-      fetchReachByCampaign(env, range),
-      fetchImpressionShareLostByCampaign(env, range),
-      fetchAccountCurrency(env),
-    ]);
+    const [mainRows, reachByCampaign, impressionShareLostByCampaign, searchTerms, currency, dailyRows, dailyReachByCampaign] =
+      await Promise.all([
+        fetchCampaignRows(env, range, false),
+        fetchReachByCampaign(env, range),
+        fetchImpressionShareLostByCampaign(env, range),
+        fetchSearchTerms(env, range),
+        fetchAccountCurrency(env),
+        weekly ? fetchCampaignRows(env, range, true) : Promise.resolve([]),
+        weekly ? fetchDailyReachByCampaign(env, range) : Promise.resolve(new Map<string, number>()),
+      ]);
+
+    // Reach per day, oldest first, for the reach_declining trend check.
+    const dailyReachSeriesByCampaign = new Map<string, number[]>();
+    for (const row of [...dailyRows].sort((a, b) => (a.date! < b.date! ? -1 : 1))) {
+      const list = dailyReachSeriesByCampaign.get(row.id) || [];
+      list.push(dailyReachByCampaign.get(`${row.id}|${row.date}`) || 0);
+      dailyReachSeriesByCampaign.set(row.id, list);
+    }
 
     const campaigns: GoogleCampaignForRecommendation[] = mainRows.map((row) => {
       const derived = aggregateCampaignRows([row], reachByCampaign);
@@ -53,11 +67,13 @@ export async function onRequestGet(context: any) {
         row,
         conversionRate: derived.conversionRate,
         budgetUsedPct: budgetUsedPct(row.spend, row.dailyBudget ?? undefined, weekly),
-        impressionShareLostPct: impressionShareLostByCampaign.get(row.id) ?? null,
+        impressionShareLost: impressionShareLostByCampaign.get(row.id) ?? null,
+        reach: derived.reach,
+        dailyReach: dailyReachSeriesByCampaign.get(row.id),
       };
     });
 
-    const recommendations = generateGoogleRecommendations(campaigns, period, env, currency);
+    const recommendations = generateGoogleRecommendations(campaigns, period, env, currency, searchTerms);
 
     return new Response(
       JSON.stringify({ period, scope: weekly ? 'weekly' : 'daily', range, recommendations }),

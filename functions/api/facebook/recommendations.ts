@@ -12,8 +12,11 @@ import {
   fetchInsights,
   fetchCampaignStatuses,
   fetchAccountCurrency,
+  fetchPlacementBreakdown,
   aggregateRows,
+  normalizeRow,
   generateRecommendations,
+  generatePlacementRecommendations,
   FacebookApiError,
   type CampaignForRecommendation,
 } from '../../../backend-lib/facebook';
@@ -37,13 +40,25 @@ export async function onRequestGet(context: any) {
   try {
     const range = getDateRange(period);
     const comparisonRange = getComparisonDateRange(period);
+    const weekly = isWeeklyPeriod(period);
 
-    const [statuses, mainRows, comparisonRows, currency] = await Promise.all([
+    const [statuses, mainRows, comparisonRows, currency, placements, dailyRows] = await Promise.all([
       fetchCampaignStatuses(env),
       fetchInsights(env, { level: 'campaign', range }),
       fetchInsights(env, { level: 'campaign', range: comparisonRange }),
       fetchAccountCurrency(env),
+      fetchPlacementBreakdown(env, range),
+      weekly ? fetchInsights(env, { level: 'campaign', range, timeIncrement: 1 }) : Promise.resolve([]),
     ]);
+
+    // Reach per day, oldest first, for the reach_declining trend check.
+    const dailyReachByCampaign = new Map<string, number[]>();
+    for (const row of [...dailyRows].sort((a, b) => (a.date_start! < b.date_start! ? -1 : 1))) {
+      const id = row.campaign_id || 'unknown';
+      const list = dailyReachByCampaign.get(id) || [];
+      list.push(normalizeRow(row, env).reach);
+      dailyReachByCampaign.set(id, list);
+    }
 
     const mainById = new Map<string, typeof mainRows>();
     for (const row of mainRows) {
@@ -66,9 +81,13 @@ export async function onRequestGet(context: any) {
         status: s,
         metrics: aggregateRows(mainById.get(s.id) || [], env),
         comparisonMetrics: aggregateRows(comparisonById.get(s.id) || [], env),
+        dailyReach: dailyReachByCampaign.get(s.id),
       }));
 
-    const recommendations = generateRecommendations(campaigns, period, env, currency);
+    const recommendations = [
+      ...generateRecommendations(campaigns, period, env, currency),
+      ...generatePlacementRecommendations(placements, period, env, currency),
+    ];
 
     return new Response(
       JSON.stringify({

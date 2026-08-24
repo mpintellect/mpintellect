@@ -111,14 +111,15 @@ export function parsePeriod(value: string | null): Period {
 }
 
 // ---------------------------------------------------------------------------
-// Color-flag scoring (same thresholds for both platforms, per the original
-// Facebook dashboard spec: CTR/ROAS green >3 / yellow 1-3 / red <1)
+// Color-flag scoring (same thresholds for both platforms). CTR/frequency
+// bands per the "what good looks like" spec for accounts without
+// conversion tracking set up yet: CTR green >1.5% / yellow 1-1.5% / red <1%.
 // ---------------------------------------------------------------------------
 
 export type ColorFlag = 'green' | 'yellow' | 'red' | 'neutral';
 
 export function classifyCtr(ctr: number): ColorFlag {
-  if (ctr > 3) return 'green';
+  if (ctr > 1.5) return 'green';
   if (ctr >= 1) return 'yellow';
   return 'red';
 }
@@ -148,11 +149,45 @@ export function classifyConversions(conversions: number, target: number | undefi
   return conversions >= target ? 'green' : 'yellow';
 }
 
+/** green <= threshold-1, yellow (threshold-1, threshold], red > threshold - with the default threshold of 3 that's green <=2x / yellow 2-3x / red >3x. */
 export function classifyFrequency(frequency: number, threshold: number): ColorFlag {
   if (frequency <= 0) return 'neutral';
   if (frequency > threshold) return 'red';
-  if (frequency > threshold * 0.7) return 'yellow';
+  if (frequency > threshold - 1) return 'yellow';
   return 'green';
+}
+
+/** Cost-per-click-style value (dollars) - green <= goodMax, red > badMin, yellow in between. Defaults (0.05/0.10) are just numbers in whatever currency the account bills in, same convention as the other dollar-denominated thresholds in this file - override per-account via env if not GBP/USD-scale. */
+export function classifyCostPerClick(value: number, goodMax: number = 0.05, badMin: number = 0.1): ColorFlag {
+  if (value <= 0) return 'neutral';
+  if (value <= goodMax) return 'green';
+  if (value <= badMin) return 'yellow';
+  return 'red';
+}
+
+/** Reach as a percentage of impressions - low values mean the same people are seeing the ad repeatedly rather than reaching new people (closely related to, but a distinct lens from, classifyFrequency). green >=50%, yellow 30-50%, red <30%. */
+export function classifyReachRatio(reach: number, impressions: number): ColorFlag {
+  if (impressions <= 0 || reach <= 0) return 'neutral';
+  const pct = (reach / impressions) * 100;
+  if (pct >= 50) return 'green';
+  if (pct >= 30) return 'yellow';
+  return 'red';
+}
+
+/**
+ * Budget utilization where LOW is the bad direction (opposite of
+ * classifySpend, which flags overspend) - a campaign not spending its
+ * budget usually means the bid is too low to compete, not that it's
+ * "under control". green >=70%, yellow 50-70%, red <50%. Like
+ * budgetUsedPct itself, only meaningful for the "today" view - checked
+ * mid-day this will read low even for a perfectly healthy campaign that
+ * simply hasn't finished spending yet.
+ */
+export function classifyBudgetUtilizationLow(pct: number | null): ColorFlag {
+  if (pct === null) return 'neutral';
+  if (pct >= 70) return 'green';
+  if (pct >= 50) return 'yellow';
+  return 'red';
 }
 
 export function computeHealth(flags: ColorFlag[]): 'good' | 'warning' | 'bad' {
@@ -166,6 +201,29 @@ export function budgetUsedPct(spend: number, dailyBudget: number | undefined, we
   if (!dailyBudget || dailyBudget <= 0) return null;
   const cap = weekly ? dailyBudget * 7 : dailyBudget;
   return (spend / cap) * 100;
+}
+
+/**
+ * Spend-weighted average CPA across campaigns that got at least one
+ * conversion in the period - a self-calibrating baseline for "high/low CPA"
+ * recommendations. Unlike CTR (roughly universal ~1%+) a sane CPA target
+ * varies wildly by vertical, so rather than a hardcoded default this is
+ * compared against the account's own blended CPA (an explicit env target,
+ * where configured, always takes precedence - see cpaTargetFor in each
+ * platform's backend-lib file). Returns 0 if no campaign converted.
+ */
+export function computeAverageCpa(entries: Array<{ spend: number; conversions: number }>): number {
+  const totals = entries.reduce(
+    (acc, e) => {
+      if (e.conversions > 0) {
+        acc.spend += e.spend;
+        acc.conversions += e.conversions;
+      }
+      return acc;
+    },
+    { spend: 0, conversions: 0 }
+  );
+  return totals.conversions > 0 ? totals.spend / totals.conversions : 0;
 }
 
 // ---------------------------------------------------------------------------

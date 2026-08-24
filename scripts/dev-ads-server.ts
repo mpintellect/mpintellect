@@ -124,5 +124,5 @@ server.listen(PORT, () => {
   console.log('Routes:');
   for (const p of Object.keys(GET_ROUTES)) console.log(`  GET  ${p}`);
   for (const p of Object.keys(POST_ROUTES)) console.log(`  POST ${p}`);
-  console.log('\nRun `LOCAL_API=true npm run dev` in another terminal, then visit /admin/facebook-ads/');
+  console.log('\nRun `LOCAL_API=true npm run dev` in another terminal, then visit /admin/monitoring/');
 });

@@ -1,4 +1,4 @@
-// app/admin/facebook-ads/lib/format.ts
+// app/admin/monitoring/lib/format.ts
 
 import type { ColorFlag } from './types';
 

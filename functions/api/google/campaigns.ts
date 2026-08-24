@@ -21,6 +21,7 @@ import {
   fetchReachByCampaign,
   fetchDailyReachByCampaign,
   fetchQualityScoreByCampaign,
+  fetchImpressionShareLostByCampaign,
   fetchAccountCurrency,
   aggregateCampaignRows,
   GoogleAdsApiError,
@@ -55,6 +56,7 @@ export async function onRequestGet(context: any) {
       comparisonReachByCampaign,
       dailyReachByCampaign,
       qualityScoreByCampaign,
+      impressionShareLostByCampaign,
       currency,
     ] = await Promise.all([
       fetchCampaignRows(env, range, false),
@@ -64,6 +66,7 @@ export async function onRequestGet(context: any) {
       fetchReachByCampaign(env, comparisonRange),
       weekly ? fetchDailyReachByCampaign(env, range) : Promise.resolve(new Map<string, number>()),
       fetchQualityScoreByCampaign(env, range),
+      fetchImpressionShareLostByCampaign(env, range),
       fetchAccountCurrency(env),
     ]);
 
@@ -113,6 +116,8 @@ export async function onRequestGet(context: any) {
         avgCpc: row.avgCpc,
         avgCpm: row.avgCpm,
         qualityScore: qualityScoreByCampaign.get(row.id) ?? null,
+        impressionShareLostBudgetPct: impressionShareLostByCampaign.get(row.id)?.budgetLostPct ?? null,
+        impressionShareLostRankPct: impressionShareLostByCampaign.get(row.id)?.rankLostPct ?? null,
         budgetUsedPct: used,
         budgetRemaining: budgetCapDollars !== null ? budgetCapDollars - row.spend : null,
         metrics: main,

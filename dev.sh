@@ -15,12 +15,28 @@ NEXT_PID=$!
 sleep 5
 
 # Step 2: Start Wrangler in LOCAL mode (no Cloudflare API call)
-# Uses wrangler.local.json, which drops the BROWSER binding and the
-# KV namespace's remote:true flag from wrangler.json - both force a
-# remote proxy session even with --local, which crashes the dev server
-# if that session can't be established.
-echo "⚡ Starting Wrangler on port 8788..."
-npx wrangler pages dev ./functions --port 8788 --local --compatibility-flags=nodejs_compat --config wrangler.local.json
+# `wrangler pages dev` rejects --config with a custom path ("Pages does not
+# support custom paths for the Wrangler configuration file"), so instead of
+# pointing at a separate wrangler.local.json we swap the real wrangler.json
+# in place for the duration of this script: drop the BROWSER binding and
+# the KV namespace's remote:true flag, both of which force a remote proxy
+# session even with --local and crash the dev server if that session can't
+# be established. Restored via the EXIT trap below no matter how this
+# script ends (Ctrl+C included).
+cp wrangler.json wrangler.json.bak
+node -e "
+  const fs = require('fs');
+  const cfg = JSON.parse(fs.readFileSync('wrangler.json', 'utf8'));
+  delete cfg.browser;
+  (cfg.kv_namespaces || []).forEach((kv) => delete kv.remote);
+  fs.writeFileSync('wrangler.json', JSON.stringify(cfg, null, 2) + '\n');
+"
 
-# Cleanup on exit
-kill $NEXT_PID 2>/dev/null
+cleanup() {
+  kill $NEXT_PID 2>/dev/null
+  mv wrangler.json.bak wrangler.json
+}
+trap cleanup EXIT
+
+echo "⚡ Starting Wrangler on port 8788..."
+npx wrangler pages dev ./functions --port 8788 --local --compatibility-flags=nodejs_compat

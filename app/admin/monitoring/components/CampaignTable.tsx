@@ -1,21 +1,12 @@
 'use client';
 
 import { Fragment, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
-import type { Campaign, Period } from '../lib/types';
-import { COMPARISON_LABELS } from '../lib/types';
-import {
-  formatCurrency,
-  formatNumber,
-  formatPercent,
-  formatRoas,
-  formatFrequency,
-  formatChangePct,
-  formatDate,
-} from '../lib/format';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import type { Campaign } from '../lib/types';
+import { formatCurrency, formatNumber, formatPercent, formatFrequency, formatDate } from '../lib/format';
 import { StatusBadge, ColorFlagBadge, HealthBadge } from './StatusBadge';
 
-type SortKey = 'spend' | 'ctr' | 'cpa' | 'roas';
+type SortKey = 'spend' | 'ctr' | 'reach';
 
 const STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Active',
@@ -36,7 +27,14 @@ function statusLabel(status: string): string {
   return STATUS_LABELS[status] || status.replace(/_/g, ' ');
 }
 
-export function CampaignTable({ campaigns, period, currency }: { campaigns: Campaign[]; period: Period; currency: string }) {
+/**
+ * Deliberately just Spend / Impressions / Reach / CTR / Frequency / Cost
+ * per Link Click / Budget Used - the signals that are meaningful without
+ * conversion tracking set up. Clicks/Conversions/Conv. Rate/CPA/ROAS/Revenue
+ * are still in Campaign (see lib/types.ts) and CampaignDetails can bring
+ * them back once a Pixel/GAQL conversion action is actually configured.
+ */
+export function CampaignTable({ campaigns, currency }: { campaigns: Campaign[]; currency: string }) {
   const [sortKey, setSortKey] = useState<SortKey>('spend');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -134,25 +132,17 @@ export function CampaignTable({ campaigns, period, currency }: { campaigns: Camp
             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
             {sortHeader('spend', 'Spend')}
             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Impressions</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Clicks</th>
+            {sortHeader('reach', 'Reach')}
             {sortHeader('ctr', 'CTR')}
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Conversions</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Reach</th>
             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Frequency</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Link Clicks</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Conv. Rate</th>
-            {sortHeader('cpa', 'CPA')}
-            {sortHeader('roas', 'ROAS')}
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Cost / Click</th>
             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Budget Used</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{COMPARISON_LABELS[period]}</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Health</th>
             <th className="px-4 py-3" />
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 bg-white">
           {sorted.map((c) => {
             const expanded = expandedId === c.id;
-            const trendUp = (c.vsPrevPct ?? 0) > 0;
             return (
               <Fragment key={c.id}>
                 <tr
@@ -165,34 +155,18 @@ export function CampaignTable({ campaigns, period, currency }: { campaigns: Camp
                   </td>
                   <td className="px-4 py-3 text-slate-700">{formatCurrency(c.metrics.spend, currency)}</td>
                   <td className="px-4 py-3 text-slate-700">{formatNumber(c.metrics.impressions)}</td>
-                  <td className="px-4 py-3 text-slate-700">{formatNumber(c.metrics.clicks)}</td>
+                  <td className="px-4 py-3 text-slate-700">{formatNumber(c.metrics.reach)}</td>
                   <td className="px-4 py-3">
                     <ColorFlagBadge flag={c.flags.ctr} label={formatPercent(c.metrics.ctr)} />
                   </td>
-                  <td className="px-4 py-3 text-slate-700">{formatNumber(c.metrics.conversions)}</td>
-                  <td className="px-4 py-3 text-slate-700">{formatNumber(c.metrics.reach)}</td>
                   <td className="px-4 py-3">
                     <ColorFlagBadge flag={c.flags.frequency} label={formatFrequency(c.metrics.frequency)} />
                   </td>
-                  <td className="px-4 py-3 text-slate-700">{formatNumber(c.metrics.linkClicks)}</td>
-                  <td className="px-4 py-3 text-slate-700">{formatPercent(c.metrics.conversionRate)}</td>
-                  <td className="px-4 py-3">
-                    <ColorFlagBadge flag={c.flags.cpa} label={formatCurrency(c.metrics.cpa, currency)} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <ColorFlagBadge flag={c.flags.roas} label={formatRoas(c.metrics.roas)} />
+                  <td className="px-4 py-3 text-slate-700">
+                    {c.metrics.linkClicks > 0 ? formatCurrency(c.metrics.costPerLinkClick, currency) : '—'}
                   </td>
                   <td className="px-4 py-3 text-slate-700">
                     {c.budgetUsedPct !== null ? formatPercent(c.budgetUsedPct) : '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center gap-1 text-sm ${trendUp ? 'text-green-600' : 'text-red-600'}`}>
-                      {trendUp ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                      {formatChangePct(c.vsPrevPct)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <HealthBadge health={c.health} />
                   </td>
                   <td className="px-4 py-3 text-slate-400">
                     {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -200,7 +174,7 @@ export function CampaignTable({ campaigns, period, currency }: { campaigns: Camp
                 </tr>
                 {expanded && (
                   <tr>
-                    <td colSpan={17} className="bg-slate-50 px-4 py-4">
+                    <td colSpan={9} className="bg-slate-50 px-4 py-4">
                       <CampaignDetails campaign={c} currency={currency} />
                     </td>
                   </tr>
@@ -220,7 +194,6 @@ function CampaignDetails({ campaign, currency }: { campaign: Campaign; currency:
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-        <Detail label="Revenue" value={formatCurrency(campaign.metrics.revenue, currency)} />
         <Detail label="Daily Budget" value={campaign.dailyBudget ? formatCurrency(campaign.dailyBudget, currency) : '—'} />
         <Detail
           label="Budget Remaining"
@@ -228,10 +201,21 @@ function CampaignDetails({ campaign, currency }: { campaign: Campaign; currency:
         />
         {campaign.startDate !== undefined && <Detail label="Start Date" value={formatDate(campaign.startDate ?? null)} />}
         <Detail label="End Date" value={formatDate(campaign.endDate)} />
-        {campaign.avgCpc !== undefined && <Detail label="Avg. CPC" value={formatCurrency(campaign.avgCpc, currency)} />}
         {campaign.avgCpm !== undefined && <Detail label="Avg. CPM" value={formatCurrency(campaign.avgCpm, currency)} />}
         {campaign.qualityScore !== undefined && (
           <Detail label="Quality Score" value={campaign.qualityScore !== null ? `${campaign.qualityScore.toFixed(1)}/10` : '—'} />
+        )}
+        {campaign.impressionShareLostBudgetPct !== undefined && (
+          <Detail
+            label="Impr. Share Lost (Budget)"
+            value={campaign.impressionShareLostBudgetPct !== null ? formatPercent(campaign.impressionShareLostBudgetPct) : '—'}
+          />
+        )}
+        {campaign.impressionShareLostRankPct !== undefined && (
+          <Detail
+            label="Impr. Share Lost (Rank)"
+            value={campaign.impressionShareLostRankPct !== null ? formatPercent(campaign.impressionShareLostRankPct) : '—'}
+          />
         )}
         <Detail label="Status" value={campaign.status} />
         <Detail label="Health" value={campaign.health} />
@@ -246,13 +230,11 @@ function CampaignDetails({ campaign, currency }: { campaign: Campaign; currency:
                 <tr>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">Date</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">Spend</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">CTR</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">Impressions</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">Reach</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">CTR</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">Frequency</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">Link Clicks</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">Conversions</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">Conv. Rate</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">ROAS</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">Cost / Click</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -260,13 +242,13 @@ function CampaignDetails({ campaign, currency }: { campaign: Campaign; currency:
                   <tr key={day.date}>
                     <td className="px-3 py-2 text-slate-600">{day.date}</td>
                     <td className="px-3 py-2 text-slate-700">{formatCurrency(day.spend, currency)}</td>
-                    <td className="px-3 py-2 text-slate-700">{formatPercent(day.ctr)}</td>
+                    <td className="px-3 py-2 text-slate-700">{formatNumber(day.impressions)}</td>
                     <td className="px-3 py-2 text-slate-700">{formatNumber(day.reach)}</td>
+                    <td className="px-3 py-2 text-slate-700">{formatPercent(day.ctr)}</td>
                     <td className="px-3 py-2 text-slate-700">{formatFrequency(day.frequency)}</td>
-                    <td className="px-3 py-2 text-slate-700">{formatNumber(day.linkClicks)}</td>
-                    <td className="px-3 py-2 text-slate-700">{formatNumber(day.conversions)}</td>
-                    <td className="px-3 py-2 text-slate-700">{formatPercent(day.conversionRate)}</td>
-                    <td className="px-3 py-2 text-slate-700">{formatRoas(day.roas)}</td>
+                    <td className="px-3 py-2 text-slate-700">
+                      {day.linkClicks > 0 ? formatCurrency(day.costPerLinkClick, currency) : '—'}
+                    </td>
                   </tr>
                 ))}
               </tbody>

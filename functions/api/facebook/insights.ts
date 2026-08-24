@@ -19,6 +19,7 @@ import {
   classifySpend,
   classifyConversions,
   classifyFrequency,
+  classifyCostPerClick,
   budgetCapFor,
   conversionTargetFor,
   FacebookApiError,
@@ -73,6 +74,12 @@ export async function onRequestGet(context: any) {
         flag: classifySpend(main.spend, cap),
         budgetCap: cap ?? null,
       },
+      impressions: {
+        value: main.impressions,
+        previousValue: previous.impressions,
+        changePct: pctChange(main.impressions, previous.impressions),
+        flag: 'neutral' as const,
+      },
       conversions: {
         value: main.conversions,
         previousValue: previous.conversions,
@@ -109,6 +116,12 @@ export async function onRequestGet(context: any) {
         previousValue: previous.frequency,
         changePct: pctChange(main.frequency, previous.frequency),
         flag: classifyFrequency(main.frequency, 3),
+      },
+      costPerLinkClick: {
+        value: main.costPerLinkClick,
+        previousValue: previous.costPerLinkClick,
+        changePct: pctChange(main.costPerLinkClick, previous.costPerLinkClick),
+        flag: classifyCostPerClick(main.costPerLinkClick),
       },
     };
 

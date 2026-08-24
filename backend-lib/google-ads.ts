@@ -16,6 +16,8 @@ import {
   type Period,
   type DateRange,
   isWeeklyPeriod,
+  computeAverageCpa,
+  classifyReachRatio,
 } from './ad-shared';
 
 interface GoogleEnv {
@@ -37,6 +39,15 @@ interface GoogleEnv {
   GOOGLE_LOW_CTR_THRESHOLD?: string; // percent, default 1
   GOOGLE_HIGH_CPC_THRESHOLD?: string; // dollars, default 2
   GOOGLE_LOW_CONVERSION_RATE_THRESHOLD?: string; // percent, default 1
+  GOOGLE_NEGATIVE_KEYWORD_MIN_SPEND_DAILY?: string; // dollars, default 5
+  GOOGLE_NEGATIVE_KEYWORD_MIN_SPEND_WEEKLY?: string; // dollars, default 15
+  GOOGLE_TARGET_CPA_DAILY?: string; // dollars - if unset, falls back to the account's own blended CPA for the period
+  GOOGLE_TARGET_CPA_WEEKLY?: string; // dollars
+  GOOGLE_LOW_IMPRESSIONS_THRESHOLD_DAILY?: string; // default 50
+  GOOGLE_LOW_IMPRESSIONS_THRESHOLD_WEEKLY?: string; // default 350
+  GOOGLE_LOW_REACH_THRESHOLD_DAILY?: string; // default 100 - best-effort, see fetchReachByCampaign
+  GOOGLE_LOW_REACH_THRESHOLD_WEEKLY?: string; // default 500
+  GOOGLE_MIN_AUDIENCE_SIZE?: string; // default 1000 - see computeGoogleAudienceHealth
   ADMIN_PASSWORD?: string;
   ADMIN_KEY?: string;
 }
@@ -323,8 +334,13 @@ export async function fetchDailyReachByCampaign(env: GoogleEnv, range: DateRange
 // entirely).
 // ---------------------------------------------------------------------------
 
-export async function fetchImpressionShareLostByCampaign(env: GoogleEnv, range: DateRange): Promise<Map<string, number>> {
-  const map = new Map<string, number>();
+export interface ImpressionShareLost {
+  budgetLostPct: number; // impression share lost specifically to budget constraints - raise budget to recover
+  rankLostPct: number; // impression share lost specifically to ad rank - raise bids or improve Quality Score to recover
+}
+
+export async function fetchImpressionShareLostByCampaign(env: GoogleEnv, range: DateRange): Promise<Map<string, ImpressionShareLost>> {
+  const map = new Map<string, ImpressionShareLost>();
   try {
     const rows = await gaqlSearch(
       env,
@@ -339,7 +355,7 @@ export async function fetchImpressionShareLostByCampaign(env: GoogleEnv, range: 
       const id = String(row.campaign?.id ?? '');
       const budgetLost = Number(row.metrics?.searchBudgetLostImpressionShare || 0);
       const rankLost = Number(row.metrics?.searchRankLostImpressionShare || 0);
-      if (id) map.set(id, Math.max(budgetLost, rankLost) * 100); // fractions -> percentage
+      if (id) map.set(id, { budgetLostPct: budgetLost * 100, rankLostPct: rankLost * 100 }); // fractions -> percentage
     }
   } catch {
     // Not available for this account/campaign mix (e.g. no Search campaigns).
@@ -390,6 +406,415 @@ export async function fetchQualityScoreByCampaign(env: GoogleEnv, _range: DateRa
 }
 
 // ---------------------------------------------------------------------------
+// Search terms - best-effort, Search campaigns only. The #1 source of
+// "why is CPA high": actual queries triggering ads, separate from the
+// keywords you bid on. High-spend/zero-conversion terms are negative
+// keyword candidates.
+// ---------------------------------------------------------------------------
+
+export interface SearchTermRow {
+  searchTerm: string;
+  campaignId: string;
+  campaignName: string;
+  impressions: number;
+  clicks: number;
+  spend: number;
+  conversions: number;
+  ctr: number; // percentage
+}
+
+export async function fetchSearchTerms(env: GoogleEnv, range: DateRange): Promise<SearchTermRow[]> {
+  try {
+    const rows = await gaqlSearch(
+      env,
+      `
+        SELECT search_term_view.search_term, campaign.id, campaign.name,
+          metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
+        FROM search_term_view
+        WHERE segments.date BETWEEN '${range.since}' AND '${range.until}'
+          AND campaign.status != 'REMOVED'
+        ORDER BY metrics.cost_micros DESC
+        LIMIT 500
+      `
+    );
+    return rows.map((row) => {
+      const m = row.metrics || {};
+      const impressions = Number(m.impressions || 0);
+      const clicks = Number(m.clicks || 0);
+      return {
+        searchTerm: row.searchTermView?.searchTerm || '(unknown)',
+        campaignId: String(row.campaign?.id ?? ''),
+        campaignName: row.campaign?.name || 'Unknown campaign',
+        impressions,
+        clicks,
+        spend: microsToDollars(m.costMicros),
+        conversions: Number(m.conversions || 0),
+        ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+      };
+    });
+  } catch {
+    // Not available for this account (e.g. no Search campaigns) - Display/Video-only accounts get no search terms.
+    return [];
+  }
+}
+
+function negativeKeywordMinSpend(env: GoogleEnv, period: Period): number {
+  const weekly = isWeeklyPeriod(period);
+  if (weekly) return env.GOOGLE_NEGATIVE_KEYWORD_MIN_SPEND_WEEKLY ? parseFloat(env.GOOGLE_NEGATIVE_KEYWORD_MIN_SPEND_WEEKLY) : 15;
+  return env.GOOGLE_NEGATIVE_KEYWORD_MIN_SPEND_DAILY ? parseFloat(env.GOOGLE_NEGATIVE_KEYWORD_MIN_SPEND_DAILY) : 5;
+}
+
+/** Search terms that spent real money with zero conversions - the clearest negative-keyword candidates. */
+export function findNegativeKeywordCandidates(rows: SearchTermRow[], period: Period, env: GoogleEnv = {}): SearchTermRow[] {
+  const minSpend = negativeKeywordMinSpend(env, period);
+  return rows
+    .filter((r) => r.spend >= minSpend && r.conversions === 0)
+    .sort((a, b) => b.spend - a.spend);
+}
+
+// ---------------------------------------------------------------------------
+// Audiences - Google has no "Custom Audiences" the way Facebook does; the
+// closest verifiable equivalent is the user_list resource (covers
+// Remarketing, Customer Match ["CRM_BASED"], Similar/lookalike ["SIMILAR"],
+// rule-based, and combined/"LOGICAL" lists in one unified type). Confirmed
+// live against this account - remarketing_action (an older resource some
+// docs still reference) does NOT return usable audience-list data; user_list
+// does. Whether a list is used by a campaign is read from campaign_criterion
+// / ad_group_criterion where type = 'USER_LIST' (criterion.negative = true
+// means it's excluded, not included). Per-list 30-day delivery comes from
+// campaign_audience_view / ad_group_audience_view - both best-effort
+// (try/catch), matching fetchReachByCampaign's convention above, since
+// audience-segmented reporting isn't available for every account/campaign
+// mix (e.g. Performance Max's automatic audience signals don't surface here
+// the same way).
+// ---------------------------------------------------------------------------
+
+export interface GoogleUserList {
+  id: string;
+  name: string;
+  type: string; // REMARKETING | CRM_BASED | SIMILAR | RULE_BASED | LOGICAL | ...
+  description: string;
+  membershipStatus: string; // OPEN | CLOSED
+  membershipLifeSpanDays: number; // how long an individual member stays on the list, in days - NOT a list-level expiration date, see typeLabel's doc comment
+  sizeForDisplay: number;
+  sizeForSearch: number;
+}
+
+/** Human-readable audience type - user_list.type is a real API enum, this is just a friendlier label for it (no separate "App"/"YouTube" type exists at this resource level, so those aren't fabricated here). */
+export function googleAudienceTypeLabel(type: string): string {
+  switch (type) {
+    case 'REMARKETING':
+      return 'Website';
+    case 'CRM_BASED':
+      return 'Customer Match';
+    case 'SIMILAR':
+      return 'Similar Audience';
+    case 'RULE_BASED':
+      return 'Website (Rule-Based)';
+    case 'LOGICAL':
+      return 'Combined List';
+    default:
+      return type;
+  }
+}
+
+export async function fetchUserLists(env: GoogleEnv): Promise<GoogleUserList[]> {
+  const rows = await gaqlSearch(
+    env,
+    `
+      SELECT user_list.id, user_list.name, user_list.type, user_list.description,
+        user_list.membership_status, user_list.membership_life_span,
+        user_list.size_for_display, user_list.size_for_search
+      FROM user_list
+    `
+  );
+  return rows.map((row) => {
+    const u = row.userList || {};
+    return {
+      id: String(u.id ?? ''),
+      name: u.name || 'Unnamed list',
+      type: u.type || 'UNKNOWN',
+      description: u.description || '',
+      membershipStatus: u.membershipStatus || 'UNKNOWN',
+      membershipLifeSpanDays: Number(u.membershipLifeSpan || 0),
+      sizeForDisplay: Number(u.sizeForDisplay || 0),
+      sizeForSearch: Number(u.sizeForSearch || 0),
+    };
+  });
+}
+
+export interface UserListCriterion {
+  userListId: string;
+  campaignId: string;
+  campaignName: string;
+  campaignStatus: string; // ENABLED | PAUSED
+  negative: boolean; // true = excluded from targeting, false = included
+}
+
+/** resourceName looks like "customers/123/userLists/9089462071" - the id is the trailing path segment. */
+function userListIdFromResourceName(resourceName: string | undefined): string | null {
+  if (!resourceName) return null;
+  const parts = resourceName.split('/');
+  return parts[parts.length - 1] || null;
+}
+
+export async function fetchUserListCriteria(env: GoogleEnv): Promise<UserListCriterion[]> {
+  const [campaignRows, adGroupRows] = await Promise.all([
+    gaqlSearch(
+      env,
+      `
+        SELECT campaign.id, campaign.name, campaign.status, campaign_criterion.negative, campaign_criterion.user_list.user_list
+        FROM campaign_criterion
+        WHERE campaign_criterion.type = 'USER_LIST' AND campaign.status != 'REMOVED'
+      `
+    ),
+    gaqlSearch(
+      env,
+      `
+        SELECT campaign.id, campaign.name, campaign.status, ad_group_criterion.negative, ad_group_criterion.user_list.user_list
+        FROM ad_group_criterion
+        WHERE ad_group_criterion.type = 'USER_LIST' AND campaign.status != 'REMOVED'
+      `
+    ),
+  ]);
+
+  const parse = (row: any, criterion: any): UserListCriterion | null => {
+    const userListId = userListIdFromResourceName(criterion?.userList?.userList);
+    if (!userListId) return null;
+    return {
+      userListId,
+      campaignId: String(row.campaign?.id ?? ''),
+      campaignName: row.campaign?.name || 'Unknown campaign',
+      campaignStatus: row.campaign?.status || 'UNKNOWN',
+      negative: !!criterion?.negative,
+    };
+  };
+
+  const results: UserListCriterion[] = [];
+  for (const row of campaignRows) {
+    const parsed = parse(row, row.campaignCriterion);
+    if (parsed) results.push(parsed);
+  }
+  for (const row of adGroupRows) {
+    const parsed = parse(row, row.adGroupCriterion);
+    if (parsed) results.push(parsed);
+  }
+  return results;
+}
+
+/** Set of user_list ids that had impressions in the last 30 days, from either campaign- or ad-group-level audience targeting. */
+export async function fetchUserListDeliveryLast30Days(env: GoogleEnv): Promise<Set<string>> {
+  const delivered = new Set<string>();
+
+  try {
+    const rows = await gaqlSearch(
+      env,
+      `
+        SELECT campaign_criterion.user_list.user_list, metrics.impressions
+        FROM campaign_audience_view
+        WHERE segments.date DURING LAST_30_DAYS AND campaign_criterion.type = 'USER_LIST'
+      `
+    );
+    for (const row of rows) {
+      const id = userListIdFromResourceName(row.campaignCriterion?.userList?.userList);
+      const impressions = Number(row.metrics?.impressions || 0);
+      if (id && impressions > 0) delivered.add(id);
+    }
+  } catch {
+    // Not available for this account/campaign mix.
+  }
+
+  try {
+    const rows = await gaqlSearch(
+      env,
+      `
+        SELECT ad_group_criterion.user_list.user_list, metrics.impressions
+        FROM ad_group_audience_view
+        WHERE segments.date DURING LAST_30_DAYS AND ad_group_criterion.type = 'USER_LIST'
+      `
+    );
+    for (const row of rows) {
+      const id = userListIdFromResourceName(row.adGroupCriterion?.userList?.userList);
+      const impressions = Number(row.metrics?.impressions || 0);
+      if (id && impressions > 0) delivered.add(id);
+    }
+  } catch {
+    // Not available for this account/campaign mix.
+  }
+
+  return delivered;
+}
+
+export interface GoogleAudienceRow {
+  id: string;
+  name: string;
+  type: string; // human-readable, via googleAudienceTypeLabel
+  size: number; // max(sizeForDisplay, sizeForSearch) - the two networks have different eligibility minimums (Search ~1000, Display ~100), this is "reach on whichever network is bigger", not a blended total
+  membershipLifeSpanDays: number;
+  usedInCampaigns: string[]; // names of every non-removed campaign that includes (not excludes) this list, any status
+  usedInActiveCampaign: boolean;
+  usedInLast30Days: boolean; // best-effort, see fetchUserListDeliveryLast30Days
+  status: 'Active' | 'Closed'; // from membership_status (OPEN/CLOSED) - Google has no per-list "Paused" concept, and no list-level "expiring" date (membership_life_span is per-member, not a countdown to closure), so CLOSED is the closest honest analog to "winding down"
+  health: 'good' | 'warning' | 'issue';
+}
+
+export interface GoogleAudienceSummary {
+  totalLists: number;
+  activeLists: number; // used in an ENABLED campaign
+  listsWithSize: number; // size >= the configured minimum (default 1000)
+  listsWithIssues: number; // health 'issue' or 'warning'
+}
+
+function minAudienceSize(env: GoogleEnv): number {
+  return env.GOOGLE_MIN_AUDIENCE_SIZE ? parseFloat(env.GOOGLE_MIN_AUDIENCE_SIZE) : 1000;
+}
+
+export function computeGoogleAudienceHealth(
+  lists: GoogleUserList[],
+  criteria: UserListCriterion[],
+  deliveredLast30Days: Set<string>,
+  env: GoogleEnv = {}
+): { summary: GoogleAudienceSummary; audiences: GoogleAudienceRow[] } {
+  const minSize = minAudienceSize(env);
+
+  const criteriaByList = new Map<string, UserListCriterion[]>();
+  for (const c of criteria) {
+    const list = criteriaByList.get(c.userListId) || [];
+    list.push(c);
+    criteriaByList.set(c.userListId, list);
+  }
+
+  let activeLists = 0;
+  let listsWithSize = 0;
+  let listsWithIssues = 0;
+
+  const rows: GoogleAudienceRow[] = lists.map((l) => {
+    const size = Math.max(l.sizeForDisplay, l.sizeForSearch);
+    const usage = criteriaByList.get(l.id) || [];
+    const inclusions = usage.filter((c) => !c.negative);
+    const usedInCampaigns = Array.from(new Set(inclusions.map((c) => c.campaignName)));
+    const usedInActiveCampaign = inclusions.some((c) => c.campaignStatus === 'ENABLED');
+    const usedInLast30Days = deliveredLast30Days.has(l.id);
+    const status: GoogleAudienceRow['status'] = l.membershipStatus === 'CLOSED' ? 'Closed' : 'Active';
+
+    let health: GoogleAudienceRow['health'];
+    if (size < minSize) {
+      health = 'issue';
+    } else if (!usedInLast30Days || status === 'Closed') {
+      health = 'warning';
+    } else {
+      health = 'good';
+    }
+
+    if (usedInActiveCampaign) activeLists++;
+    if (size >= minSize) listsWithSize++;
+    if (health === 'issue' || health === 'warning') listsWithIssues++;
+
+    return {
+      id: l.id,
+      name: l.name,
+      type: googleAudienceTypeLabel(l.type),
+      size,
+      membershipLifeSpanDays: l.membershipLifeSpanDays,
+      usedInCampaigns,
+      usedInActiveCampaign,
+      usedInLast30Days,
+      status,
+      health,
+    };
+  });
+
+  return {
+    summary: { totalLists: lists.length, activeLists, listsWithSize, listsWithIssues },
+    audiences: rows,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Exclusion gaps (Google) - simpler than the Facebook version: no spend/
+// savings estimate was requested, just "which ENABLED campaign is missing
+// which exclusion". A list is a "conversion audience" candidate (the thing
+// that should be excluded from prospecting) if its name or description
+// mentions purchasing/converting - text-matched against real fields, not a
+// fixed category enum (Google doesn't have Facebook's CUSTOM/WEBSITE/
+// LOOKALIKE subtype split to key off of).
+// ---------------------------------------------------------------------------
+
+export interface GoogleCampaignSummary {
+  id: string;
+  name: string;
+  status: string;
+}
+
+export async function fetchCampaignSummaries(env: GoogleEnv): Promise<GoogleCampaignSummary[]> {
+  const rows = await gaqlSearch(env, `SELECT campaign.id, campaign.name, campaign.status FROM campaign WHERE campaign.status != 'REMOVED'`);
+  return rows.map((row) => ({
+    id: String(row.campaign?.id ?? ''),
+    name: row.campaign?.name || 'Unknown campaign',
+    status: row.campaign?.status || 'UNKNOWN',
+  }));
+}
+
+export interface GoogleExclusionGap {
+  campaignId: string;
+  campaignName: string;
+  status: string;
+  missingExclusion: string;
+  recommendation: string;
+}
+
+export interface GoogleExclusionGapsSummary {
+  campaignsChecked: number;
+  campaignsWithGaps: number;
+}
+
+/** True if this list's own name/description signals it's built from people who already converted (purchased, signed up, etc) - the audience prospecting campaigns should exclude. */
+function isConversionAudience(list: GoogleUserList): boolean {
+  return /purchas|convert/i.test(`${list.name} ${list.description}`);
+}
+
+export function findGoogleExclusionGaps(
+  campaigns: GoogleCampaignSummary[],
+  lists: GoogleUserList[],
+  criteria: UserListCriterion[]
+): { summary: GoogleExclusionGapsSummary; gaps: GoogleExclusionGap[] } {
+  const conversionAudiences = lists.filter(isConversionAudience);
+
+  const excludedByCampaign = new Map<string, Set<string>>();
+  for (const c of criteria) {
+    if (!c.negative) continue;
+    const set = excludedByCampaign.get(c.campaignId) || new Set<string>();
+    set.add(c.userListId);
+    excludedByCampaign.set(c.campaignId, set);
+  }
+
+  const evaluated = campaigns.filter((c) => c.status === 'ENABLED');
+  const gaps: GoogleExclusionGap[] = [];
+  const campaignsWithGaps = new Set<string>();
+
+  for (const campaign of evaluated) {
+    if (conversionAudiences.length === 0) continue; // nothing to recommend excluding - don't fabricate a gap
+    const excluded = excludedByCampaign.get(campaign.id) || new Set<string>();
+    for (const audience of conversionAudiences) {
+      if (excluded.has(audience.id)) continue;
+      campaignsWithGaps.add(campaign.id);
+      gaps.push({
+        campaignId: campaign.id,
+        campaignName: campaign.name,
+        status: campaign.status,
+        missingExclusion: audience.name,
+        recommendation: `Add "${audience.name}" to exclusions so people who already converted aren't targeted again`,
+      });
+    }
+  }
+
+  return {
+    summary: { campaignsChecked: evaluated.length, campaignsWithGaps: campaignsWithGaps.size },
+    gaps,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Aggregation (account-level rollup for the executive summary)
 // ---------------------------------------------------------------------------
 
@@ -409,6 +834,8 @@ export interface GoogleAggregateMetrics {
   avgCpm: number;
   /** Equal to `clicks` - Google has no separate "engagement click" concept the way Facebook does, so all clicks are link clicks. Kept as its own field only so the frontend's shared Metrics shape (built for Facebook) doesn't need a Google-specific branch. */
   linkClicks: number;
+  /** Equal to `avgCpc` - Google has no separate link-click cost concept, all clicks are link clicks. Kept as its own field for the same reason as linkClicks above. */
+  costPerLinkClick: number;
 }
 
 export function aggregateCampaignRows(rows: GoogleCampaignRow[], reachByCampaign?: Map<string, number>): GoogleAggregateMetrics {
@@ -436,7 +863,7 @@ export function aggregateCampaignRows(rows: GoogleCampaignRow[], reachByCampaign
   const avgCpc = merged.clicks > 0 ? merged.spend / merged.clicks : 0;
   const avgCpm = merged.impressions > 0 ? (merged.spend / merged.impressions) * 1000 : 0;
 
-  return { ...merged, ctr, cpa, roas, reach, frequency, conversionRate, avgCpc, avgCpm, linkClicks: merged.clicks };
+  return { ...merged, ctr, cpa, roas, reach, frequency, conversionRate, avgCpc, avgCpm, linkClicks: merged.clicks, costPerLinkClick: avgCpc };
 }
 
 // ---------------------------------------------------------------------------
@@ -463,14 +890,30 @@ interface GoogleRecommendationThresholds {
   lowCtr: number;
   highCpc: number;
   lowConversionRate: number;
+  lowImpressions: number;
+  lowReach: number;
 }
 
-function thresholdsFor(env: GoogleEnv): GoogleRecommendationThresholds {
+function thresholdsFor(env: GoogleEnv, period: Period): GoogleRecommendationThresholds {
+  const weekly = isWeeklyPeriod(period);
   return {
     lowCtr: env.GOOGLE_LOW_CTR_THRESHOLD ? parseFloat(env.GOOGLE_LOW_CTR_THRESHOLD) : 1,
     highCpc: env.GOOGLE_HIGH_CPC_THRESHOLD ? parseFloat(env.GOOGLE_HIGH_CPC_THRESHOLD) : 2,
     lowConversionRate: env.GOOGLE_LOW_CONVERSION_RATE_THRESHOLD ? parseFloat(env.GOOGLE_LOW_CONVERSION_RATE_THRESHOLD) : 1,
+    lowImpressions: weekly
+      ? env.GOOGLE_LOW_IMPRESSIONS_THRESHOLD_WEEKLY ? parseFloat(env.GOOGLE_LOW_IMPRESSIONS_THRESHOLD_WEEKLY) : 350
+      : env.GOOGLE_LOW_IMPRESSIONS_THRESHOLD_DAILY ? parseFloat(env.GOOGLE_LOW_IMPRESSIONS_THRESHOLD_DAILY) : 50,
+    lowReach: weekly
+      ? env.GOOGLE_LOW_REACH_THRESHOLD_WEEKLY ? parseFloat(env.GOOGLE_LOW_REACH_THRESHOLD_WEEKLY) : 500
+      : env.GOOGLE_LOW_REACH_THRESHOLD_DAILY ? parseFloat(env.GOOGLE_LOW_REACH_THRESHOLD_DAILY) : 100,
   };
+}
+
+/** Explicit CPA target if configured, else undefined (caller falls back to the account's own blended CPA). */
+function cpaTargetFor(env: GoogleEnv, period: Period): number | undefined {
+  const weekly = isWeeklyPeriod(period);
+  const raw = weekly ? env.GOOGLE_TARGET_CPA_WEEKLY : env.GOOGLE_TARGET_CPA_DAILY;
+  return raw ? parseFloat(raw) : undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -484,7 +927,16 @@ export interface GoogleRecommendation {
     | 'low_conversion_rate'
     | 'budget_depleted'
     | 'no_conversion_tracking'
-    | 'high_impression_share_lost';
+    | 'high_impression_share_lost_budget'
+    | 'high_impression_share_lost_rank'
+    | 'wasted_search_terms'
+    | 'high_cpa'
+    | 'efficient_cpa'
+    | 'low_impressions'
+    | 'low_reach'
+    | 'low_budget_utilization'
+    | 'low_reach_ratio'
+    | 'reach_declining';
   icon: string;
   campaignId: string;
   campaignName: string;
@@ -495,7 +947,23 @@ export interface GoogleCampaignForRecommendation {
   row: GoogleCampaignRow;
   conversionRate: number;
   budgetUsedPct: number | null;
-  impressionShareLostPct: number | null;
+  impressionShareLost: ImpressionShareLost | null;
+  reach: number; // best-effort, see fetchReachByCampaign - 0 if unavailable for this account/campaign mix
+  /** Reach per day, oldest first - weekly periods only, used for the reach_declining trend check. Omit/empty for daily periods. */
+  dailyReach?: number[];
+}
+
+/** True if the second half of the period averaged reach.dropPct% or more below the first half - a simple two-bucket trend, not a full regression (7 data points don't warrant one). */
+function isReachDeclining(dailyReach: number[] | undefined, dropPct: number): boolean {
+  if (!dailyReach || dailyReach.length < 4) return false;
+  const mid = Math.ceil(dailyReach.length / 2);
+  const firstHalf = dailyReach.slice(0, mid);
+  const secondHalf = dailyReach.slice(mid);
+  const avg = (arr: number[]) => arr.reduce((s, v) => s + v, 0) / arr.length;
+  const firstAvg = avg(firstHalf);
+  const secondAvg = avg(secondHalf);
+  if (firstAvg <= 0) return false;
+  return (firstAvg - secondAvg) / firstAvg >= dropPct / 100;
 }
 
 /** Minimal money formatting for recommendation message text - the frontend's formatCurrency (Intl-based) isn't reachable from backend-lib, and this only needs to avoid a hardcoded "$" for non-USD accounts. */
@@ -511,15 +979,26 @@ export function generateGoogleRecommendations(
   campaigns: GoogleCampaignForRecommendation[],
   period: Period,
   env: GoogleEnv = {},
-  currency: string = 'USD'
+  currency: string = 'USD',
+  searchTerms: SearchTermRow[] = []
 ): GoogleRecommendation[] {
   const weekly = isWeeklyPeriod(period);
   const scopeWord = weekly ? 'this week' : 'today';
-  const thresholds = thresholdsFor(env);
+  const thresholds = thresholdsFor(env, period);
   const recs: GoogleRecommendation[] = [];
 
+  const negativeCandidatesByCampaign = new Map<string, SearchTermRow[]>();
+  for (const term of findNegativeKeywordCandidates(searchTerms, period, env)) {
+    const list = negativeCandidatesByCampaign.get(term.campaignId) || [];
+    list.push(term);
+    negativeCandidatesByCampaign.set(term.campaignId, list);
+  }
+
+  // Self-calibrating CPA baseline - see computeAverageCpa's doc comment.
+  const cpaTarget = cpaTargetFor(env, period) || computeAverageCpa(campaigns.map((c) => c.row));
+
   for (const c of campaigns) {
-    const { row, conversionRate, budgetUsedPct: used, impressionShareLostPct } = c;
+    const { row, conversionRate, budgetUsedPct: used, impressionShareLost, reach } = c;
     if (row.status !== 'ENABLED' && row.status !== 'PAUSED') continue;
     if (row.spend <= 0 && row.impressions <= 0) continue;
 
@@ -553,14 +1032,94 @@ export function generateGoogleRecommendations(
       });
     }
 
-    if (row.status === 'ENABLED' && used !== null && used >= 95) {
+    // CPA vs. the account's own blended CPA (or an explicit env target) -
+    // the most direct "is this campaign worth the spend" signal.
+    if (row.status === 'ENABLED' && row.conversions > 0 && cpaTarget > 0) {
+      const cpa = row.spend / row.conversions;
+      if (cpa > cpaTarget * 1.3) {
+        const pctAbove = ((cpa - cpaTarget) / cpaTarget) * 100;
+        recs.push({
+          type: 'high_cpa',
+          icon: '🧯',
+          campaignId: row.id,
+          campaignName: row.name,
+          message: `${row.name} has a CPA of ${formatMoney(cpa, currency)} ${scopeWord} - ${pctAbove.toFixed(0)}% above the account average, review keywords or bids`,
+        });
+      } else if (cpa < cpaTarget * 0.7) {
+        recs.push({
+          type: 'efficient_cpa',
+          icon: '🎯',
+          campaignId: row.id,
+          campaignName: row.name,
+          message: `${row.name} has a CPA of ${formatMoney(cpa, currency)} ${scopeWord} - well below the account average, a good candidate to scale`,
+        });
+      }
+    }
+
+    // Active-only: a paused campaign having few/no impressions is expected, not a delivery problem.
+    if (row.status === 'ENABLED' && row.spend > 0 && row.impressions < thresholds.lowImpressions) {
       recs.push({
-        type: 'budget_depleted',
-        icon: '💳',
+        type: 'low_impressions',
+        icon: '📡',
         campaignId: row.id,
         campaignName: row.name,
-        message: `${row.name} is at ${used.toFixed(0)}% of its budget ${scopeWord} - campaign hitting daily budget limit`,
+        message: `${row.name} only got ${Math.round(row.impressions).toLocaleString('en-US')} impressions ${scopeWord} despite active spend - check for a disapproval, low Quality Score, or a bid too low to compete`,
       });
+    }
+
+    let lowReachFlagged = false;
+    if (row.status === 'ENABLED' && row.impressions > 0 && reach > 0 && reach < thresholds.lowReach) {
+      lowReachFlagged = true;
+      recs.push({
+        type: 'low_reach',
+        icon: '📉',
+        campaignId: row.id,
+        campaignName: row.name,
+        message: `${row.name} only reached ${Math.round(reach).toLocaleString('en-US')} people ${scopeWord} - audience may be too narrow, broaden keywords or targeting`,
+      });
+    }
+
+    // Same underlying issue as low_reach (too few unique people) viewed from the
+    // impressions-vs-reach ratio - skip if already flagged above to avoid duplicate noise.
+    if (!lowReachFlagged && row.status === 'ENABLED' && classifyReachRatio(reach, row.impressions) === 'red') {
+      const reachPct = (reach / row.impressions) * 100;
+      recs.push({
+        type: 'low_reach_ratio',
+        icon: '🔁',
+        campaignId: row.id,
+        campaignName: row.name,
+        message: `${row.name}: only ${reachPct.toFixed(0)}% of impressions ${scopeWord} reached new people - the same audience is seeing this ad repeatedly`,
+      });
+    }
+
+    if (weekly && isReachDeclining(c.dailyReach, 20)) {
+      recs.push({
+        type: 'reach_declining',
+        icon: '📉',
+        campaignId: row.id,
+        campaignName: row.name,
+        message: `${row.name}: reach has been dropping through the week - audience may be exhausted, expand targeting`,
+      });
+    }
+
+    if (row.status === 'ENABLED' && used !== null) {
+      if (used >= 95) {
+        recs.push({
+          type: 'budget_depleted',
+          icon: '💳',
+          campaignId: row.id,
+          campaignName: row.name,
+          message: `${row.name} is at ${used.toFixed(0)}% of its budget ${scopeWord} - campaign hitting daily budget limit`,
+        });
+      } else if (!weekly && used < 50) {
+        recs.push({
+          type: 'low_budget_utilization',
+          icon: '🐌',
+          campaignId: row.id,
+          campaignName: row.name,
+          message: `${row.name} has only spent ${used.toFixed(0)}% of today's budget - if this is late in the day, the bid may be too low to compete; consider raising it`,
+        });
+      }
     }
 
     if (row.spend > 0 && row.conversions === 0) {
@@ -573,13 +1132,37 @@ export function generateGoogleRecommendations(
       });
     }
 
-    if (row.status === 'ENABLED' && impressionShareLostPct !== null && impressionShareLostPct >= 20) {
+    if (row.status === 'ENABLED' && impressionShareLost !== null) {
+      if (impressionShareLost.budgetLostPct >= 20) {
+        recs.push({
+          type: 'high_impression_share_lost_budget',
+          icon: '📈',
+          campaignId: row.id,
+          campaignName: row.name,
+          message: `${row.name} is losing ${impressionShareLost.budgetLostPct.toFixed(0)}% impression share ${scopeWord} to budget limits - increase budget to show up more often`,
+        });
+      }
+      if (impressionShareLost.rankLostPct >= 20) {
+        recs.push({
+          type: 'high_impression_share_lost_rank',
+          icon: '🏅',
+          campaignId: row.id,
+          campaignName: row.name,
+          message: `${row.name} is losing ${impressionShareLost.rankLostPct.toFixed(0)}% impression share ${scopeWord} to ad rank - raise bids or improve Quality Score`,
+        });
+      }
+    }
+
+    const negatives = negativeCandidatesByCampaign.get(row.id);
+    if (negatives && negatives.length > 0) {
+      const totalWasted = negatives.reduce((sum, t) => sum + t.spend, 0);
+      const topTerms = negatives.slice(0, 3).map((t) => `"${t.searchTerm}"`).join(', ');
       recs.push({
-        type: 'high_impression_share_lost',
-        icon: '📈',
+        type: 'wasted_search_terms',
+        icon: '🧹',
         campaignId: row.id,
         campaignName: row.name,
-        message: `${row.name} is losing ${impressionShareLostPct.toFixed(0)}% impression share ${scopeWord} - increase budget or bid`,
+        message: `${row.name}: ${negatives.length} search term${negatives.length > 1 ? 's' : ''} spent ${formatMoney(totalWasted, currency)} ${scopeWord} with 0 conversions (e.g. ${topTerms}) - add as negative keywords`,
       });
     }
   }

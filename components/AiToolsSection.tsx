@@ -10,13 +10,13 @@ export default function AiToolsSection() {
           AI-Powered Trading Tools
         </h2>
 
-        <p className="text-gray-300 text-lg md:text-xl mb-12">
+        <p className="text-gray-600 text-lg md:text-xl mb-12">
           Optimize your decisions using predictive models, automation, and machine learning–enhanced strategies.
         </p>
 
         {/* 🧠 Why Trade with AI – Simple Fade Card */}
         <div className="ai-why-card scroll-fade-up">
-          <h3 className="text-2xl md:text-3xl font-bold mb-4 text-white">Why Trade with AI?</h3>
+          <h3 className="text-2xl md:text-3xl font-bold mb-4">Why Trade with AI?</h3>
           <p className="text-gray-400 text-base md:text-lg leading-relaxed mb-4">
             AI-based systems can monitor markets 24/7, eliminate emotional bias, and adapt to fast-changing conditions in real time.
             With access to large datasets, machine learning models can detect subtle trends and hidden patterns that manual traders often miss.

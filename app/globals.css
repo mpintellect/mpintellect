@@ -63,6 +63,14 @@ body {
 }
 
 /* === Typography === */
+/* color was #fff (leftover dark-theme default, contradicting body's own
+   #111827 above) - any heading with no more specific color rule/class fell
+   through to invisible white on the site's now-white background (e.g.
+   ContactSection's plain <h2>Get in Touch</h2>). Pages/sections that are
+   still fully dark (about/faq/login/register/verify-email/start) all give
+   their headings their own specific classes (.section-title, .faq-question,
+   .register-title, .gateway-h1, .choice-title, etc.) which set their own
+   color and are unaffected by this change. */
 h1,
 h2,
 h3,
@@ -70,7 +78,7 @@ h4,
 h5,
 h6 {
   font-weight: bold;
-  color: #fff;
+  color: #111827;
   margin-bottom: 1rem;
 }
 
@@ -25922,6 +25930,19 @@ button.px-4.py-2:hover {
   .section-title {
     font-size: var(--text-5xl, 42px);
   }
+}
+
+/* .section-title is shared with still-dark pages (about/faq/login/verify-email)
+   that rely on the gold-to-white gradient text-fill defined further up this
+   file - only the color override above, so that gradient/background-clip/
+   text-fill-color never get cleared for them. Scoped to this white-bg section
+   specifically so the heading isn't gold-fading-to-invisible on white. */
+.ai-robot-section .section-title {
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  -webkit-text-fill-color: unset;
+  color: #111827;
 }
 
 .section-description {

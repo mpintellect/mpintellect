@@ -115,6 +115,11 @@ const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: nu
 // ==========================================
 // 💾 LOCAL STORAGE TRIAL FUNCTIONS
 // ==========================================
+// Temporary dev-testing bump (2 -> 500) so the paywall doesn't interrupt
+// every other test run. Only active outside a production build - revert
+// to a flat `2` when asked.
+const FREE_TRIAL_LIMIT = process.env.NODE_ENV === "production" ? 2 : 500;
+
 const getTrialCount = (): number => {
   if (typeof window === 'undefined') return 0;
   const saved = localStorage.getItem("MZP_PROP_TRIAL_COUNT");
@@ -702,8 +707,8 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
     console.log("  - user:", user);
     console.log("  - trialCount:", trialCount);
     
-    if (!user && trialCount >= 2) {
-      console.log("❌ Blocked: !user && trialCount >= 2 is TRUE");
+    if (!user && trialCount >= FREE_TRIAL_LIMIT) {
+      console.log("❌ Blocked: !user && trialCount >= FREE_TRIAL_LIMIT is TRUE");
       setShowPricingModal(true);
       return;
     }
@@ -756,7 +761,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
         return;
       }
       
-      if (trialCount < 2) {
+      if (trialCount < FREE_TRIAL_LIMIT) {
         proceed = true;
       } else {
         setShowPricingModal(true);
@@ -1097,7 +1102,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
             text: [
               {
                 title: "🚫 TRIAL LIMIT REACHED",
-                content: "You've used all 2 free trials. Register and buy setups to continue using Prop Firm AI Assistant.",
+                content: `You've used all ${FREE_TRIAL_LIMIT} free trials. Register and buy setups to continue using Prop Firm AI Assistant.`,
               },
             ],
           },
@@ -1119,7 +1124,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
   // 💬 WELCOME MESSAGE WITH STRATEGY SELECTION
   // ==========================================
   useEffect(() => {
-    const hasAccess = user || trialCount < 2;
+    const hasAccess = user || trialCount < FREE_TRIAL_LIMIT;
     
     if ((!preselectedSymbol && messages.length === 0 && !userLoading && hasAccess) || showWelcome) {
       if (showWelcome) setShowWelcome(false);
@@ -1156,7 +1161,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
         } else {
           setMessages([
             welcomeMsg,
-            { sender: "ai", text: `🎉 You have ${2 - trialCount} free trial${2 - trialCount === 1 ? '' : 's'} remaining.` },
+            { sender: "ai", text: `🎉 You have ${FREE_TRIAL_LIMIT - trialCount} free trial${FREE_TRIAL_LIMIT - trialCount === 1 ? '' : 's'} remaining.` },
             strategyButtons
           ]);
         }
@@ -1176,7 +1181,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
   // ==========================================
   // 🎨 RENDER - WITH PAYWALL SUPPORT
   // ==========================================
-  const showPaywall = !userLoading && ((!user && trialCount >= 2) || (user && setupCount <= 0));
+  const showPaywall = !userLoading && ((!user && trialCount >= FREE_TRIAL_LIMIT) || (user && setupCount <= 0));
 
   if (showPaywall && !userLoading) {
     return (
@@ -1186,7 +1191,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
           <p>
             {user 
               ? "You've used all your setup credits. Buy more setups to continue using advanced trading analysis."
-              : "You've used all 2 free trials. Register or buy setups to continue using advanced trading analysis."
+              : `You've used all ${FREE_TRIAL_LIMIT} free trials. Register or buy setups to continue using advanced trading analysis.`
             }
           </p>
         </div>
@@ -1415,7 +1420,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
             }} 
             className="chatbox-reset"
           >
-            {(!user && trialCount >= 2) || (user && setupCount <= 0) ? "Buy More Setups" : "Start New Prop Firm Analysis"}
+            {(!user && trialCount >= FREE_TRIAL_LIMIT) || (user && setupCount <= 0) ? "Buy More Setups" : "Start New Prop Firm Analysis"}
           </button>
         </div>
       )}

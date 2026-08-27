@@ -5,19 +5,34 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSession } from '@/app/hooks/useSession';
 
 // CONFIG
 const BROKER_LINK = "https://www.litefinance.org/fr/?uid=967798214&utm_source=mpintellect&utm_medium=refmp&utm_campaign=mpi";
 const TOOLS_LINK = "/";
 
 // WhatsApp support number
-const WHATSAPP_NUMBER = "+212604065652"; 
+const WHATSAPP_NUMBER = "+212604065652";
 const WHATSAPP_MESSAGE = "مرحبا، عندي سؤال بخصوص منصة";
 const TELEGRAM_USERNAME = "mpintellect";
+
+// useSession() returns English session names (matches the Hero/ticker
+// convention) - this page is entirely in Darija, so map to Arabic instead
+// of mixing scripts mid-sentence.
+const SESSION_NAME_AR: Record<string, string> = {
+  LONDON: 'لندن',
+  'NEW YORK': 'نيويورك',
+  TOKYO: 'طوكيو',
+  SYDNEY: 'سيدني',
+  ROLLOVER: 'التجديد',
+  OFFLINE: 'مغلقة',
+};
 
 export default function StartPage() {
   const [showPopup, setShowPopup] = useState(false);
   const [randomCount, setRandomCount] = useState(0);
+  const [activeTab, setActiveTab] = useState<'broker' | 'tools'>('broker');
+  const { sessionName, isWeekend } = useSession();
 
   useEffect(() => {
     // Set random number for FOMO (client-side only)
@@ -140,217 +155,234 @@ export default function StartPage() {
         </div>
       )}
       
-      <div className="gateway-container">
-        <div className="gateway-glow glow-top-left" />
-        <div className="gateway-glow glow-bottom-right" />
+      <div className="start-page">
+        <div className="start-glow start-glow-top" />
+        <div className="start-glow start-glow-bottom" />
 
-        <div className="gateway-content-wrapper">
+        <div className="start-wrapper">
           {/* Header with Moroccan Flag */}
-          <div className="gateway-header">
-            <div className="flag-badge">
-              <Image 
-                src="/logos/mo.webp" 
-                alt="Morocco Flag" 
-                width={32} 
-                height={32}
-                className="moroccan-flag"
+          <div className="start-header">
+            <div className="start-flag-badge start-anim start-anim-1">
+              <Image
+                src="/logos/mo.webp"
+                alt="Morocco Flag"
+                width={22}
+                height={22}
+                className="start-flag-img"
                 priority
                 loading="eager"
               />
-              <span className="exclusive-badge">عرض حصري للمغرب</span>
+              <span>عرض حصري للمغرب</span>
             </div>
-            
-            <h1 className="gateway-h1">
+
+            <h1 className="start-h1 start-anim start-anim-2">
               أنت متداول مغربي؟<br />
-              <span>هاد الصفحة خصيصاً ليك</span>
+              <span className="start-h1-accent">هاد الصفحة خصيصاً ليك</span>
             </h1>
-            
-            <p className="gateway-subtitle">
+
+            <p className="start-subtitle start-anim start-anim-3">
               اختر المسار المناسب ليك<br />
               بين التحليل والتعلم ولا التداول المباشر مع وسيط موثوق
             </p>
+
+            {/* Trust strip: real live session status + FOMO activity counter */}
+            <div className="start-trust-strip start-anim start-anim-3">
+              <span className="start-trust-chip">
+                <span className="navbar-live-dot">
+                  <span className="navbar-live-dot-ping" />
+                  <span className="navbar-live-dot-core" />
+                </span>
+                {isWeekend ? 'الأسواق مغلقة حالياً' : `جلسة ${SESSION_NAME_AR[sessionName] || sessionName} نشيطة الآن`}
+              </span>
+              {randomCount > 0 && (
+                <span className="start-trust-chip">
+                  🔥 +{randomCount} متداول مغربي فتحو حساب هاد الأسبوع
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Quick Action Buttons - Visible on ALL devices */}
-          <div className="quick-actions">
-            <button onClick={handleBrokerClick} className="quick-btn broker-btn">
-              <span className="icon-emoji">⚡</span>
-              <span>تداول مباشر</span>
-              <span className="icon-emoji">→</span>
+          {/* Segmented switch - replaces the old "two competing cards"
+              layout. One focused panel instead of a side-by-side (or, on
+              mobile, stacked-and-duplicated) comparison: less to scan,
+              feels like picking a path in an app rather than reading two
+              ads, and gives the panel switch somewhere real to animate. */}
+          <div className="start-switch start-anim start-anim-4">
+            <div
+              className="start-switch-indicator"
+              style={{ insetInlineStart: activeTab === 'broker' ? '5px' : 'calc(50% + 2px)' }}
+            />
+            <button
+              className={`start-switch-btn ${activeTab === 'broker' ? 'active' : ''}`}
+              onClick={() => setActiveTab('broker')}
+            >
+              ⚡ تداول مباشر
             </button>
-            <button onClick={handleToolsClick} className="quick-btn tools-btn">
-              <span className="icon-emoji">📊</span>
-              <span>تحليل فني</span>
-              <span className="icon-emoji">→</span>
+            <button
+              className={`start-switch-btn ${activeTab === 'tools' ? 'active' : ''}`}
+              onClick={() => setActiveTab('tools')}
+            >
+              📊 تحليل فني
             </button>
           </div>
 
-          {/* OPTIONS GRID */}
-          <div className="choice-grid">
-
-            {/* OPTION A: LiteFinance - Live Trading */}
-            <div onClick={handleBrokerClick} className="choice-card choice-card-blue">
-              <div className="card-badge broker-badge">
-                <span className="icon-emoji">⚡</span> تداول مباشر
-              </div>
-
-              <div className="card-logo-top" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', direction: 'ltr' }}>
-                <Image 
-                  src="/logos/lftrans.webp" 
-                  alt="LiteFinance Logo" 
-                  width={160} 
-                  height={48}
-                  className="broker-logo"
-                  loading="lazy"
-                />
-                <div className="flag-icon-small">
-                  <Image 
-                    src="/logos/mo.webp" 
-                    alt="" 
-                    width={20} 
-                    height={20}
-                    loading="lazy"
+          <div key={activeTab} className="start-panel">
+            {activeTab === 'broker' ? (
+              <>
+                <div className="start-card-logo-row">
+                  {/* lftrans.webp is a square 1024x1024 lockup (icon +
+                      wordmark + "MOROCCO" stacked vertically), not a wide
+                      wordmark - width/height props previously didn't match
+                      its real aspect ratio, which made the browser fall
+                      back to stretching it to the full row width instead
+                      of the intended small logo mark. */}
+                  <Image
+                    src="/logos/lftrans.webp"
+                    alt="LiteFinance Logo"
+                    width={80}
+                    height={80}
+                    className="start-broker-logo"
                   />
                 </div>
-              </div>
 
-              {/* TEXT SECTION - LEFT ALIGNED */}
-              <div style={{ textAlign: 'left' }}>
-                <h3 className="choice-title title-blue">
-                 LiteFinance - تداول مباشر مع وسيط موثوق
+                <h3 className="start-card-title">
+                  LiteFinance - تداول مباشر مع وسيط موثوق
                 </h3>
 
-                <p className="choice-desc">
-                  فتح حساب حقيقي، تنفيذ أوامر سريع، وسحب وإيداع سهل. 
+                <p className="start-card-desc">
+                  فتح حساب حقيقي، تنفيذ أوامر سريع، وسحب وإيداع سهل.
                   منصة احترافية للمتداولين المغاربة.
                 </p>
 
-                <ul className="feature-list">
-                  <li className="feature-item">
-                    <span className="icon-emoji-small">✅</span> فتح حساب خلال 3 دقائق فقط
-                  </li>
-                  <li className="feature-item">
-                    <span className="icon-emoji-small">✅</span> إيداع وسحب بالدرهم المغربي
-                  </li>
-                  <li className="feature-item">
-                    <span className="icon-emoji-small">✅</span> MetaTrader 4, MetaTrader 5, cTrader
-                  </li>
-                  <li className="feature-item">
-                    <span className="icon-emoji-small">✅</span> دعم بالدارجة والفرونسي والعربية
-                  </li>
-                  <li className="feature-item">
-                    <span className="icon-emoji-small">✅</span> أسواق عالمية: عملات، ذهب، مؤشرات
-                  </li>
-                </ul>
-              </div>
-
-              <button className="choice-btn choice-btn-primary">
-                افتح الحساب الآن 🚀 <span className="icon-emoji">→</span>
-              </button>
-            </div>
-
-            {/* OPTION B: MPIntellect - Analysis Tools */}
-            <Link href={TOOLS_LINK} className="block h-full" onClick={handleToolsClick}>
-              <div className="choice-card choice-card-green">
-                <div className="card-badge free-badge">
-                  <span className="icon-emoji">📊</span> تحليل فني 
-                </div>
-
-                <div className="card-logo-top" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', direction: 'ltr' }}>
-                  <Image 
-                    src="/logos/mzlogo.webp" 
-                    alt="MPIntellect Logo" 
-                    width={160} 
-                    height={48}
-                    className="mpi-logo"
-                    loading="lazy"
-                  />
-                  <div className="flag-icon-small">
-                    <Image 
-                      src="/logos/mo.webp" 
-                      alt="" 
-                      width={20} 
-                      height={20}
-                      loading="lazy"
-                    />
+                <div className="start-stat-row">
+                  <div className="start-stat-chip">
+                    <span className="start-stat-emoji">⏱</span>
+                    <span>3 دقائق</span>
+                  </div>
+                  <div className="start-stat-chip">
+                    <span className="start-stat-emoji">🇲🇦</span>
+                    <span>بالدرهم</span>
+                  </div>
+                  <div className="start-stat-chip">
+                    <span className="start-stat-emoji">💬</span>
+                    <span>بالدارجة</span>
                   </div>
                 </div>
 
-                {/* TEXT SECTION - LEFT ALIGNED */}
-                <div style={{ textAlign: 'left', paddingLeft: '35px' }}>
-                  <h3 className="choice-title title-green">
-                    أدوات MPIntellect – تحليل السوق
-                  </h3>
+                <ul className="start-feature-list">
+                  <li>✅ فتح حساب خلال 3 دقائق فقط</li>
+                  <li>✅ إيداع وسحب بالدرهم المغربي</li>
+                  <li>✅ MetaTrader 4, MetaTrader 5, cTrader</li>
+                  <li>✅ دعم بالدارجة والفرونسي والعربية</li>
+                  <li>✅ أسواق عالمية: عملات، ذهب، مؤشرات</li>
+                </ul>
 
-                  <p className="choice-desc">
-                    تحليل فني وبيانات السوق. 
-                    مناسب للتعليم والبحث قبل ما تبدأ التداول.
-                  </p>
-
-                  <ul className="feature-list">
-                    <li className="feature-item">
-                      <span className="icon-emoji-small">✅</span> شاهد تحليل الأسواق اليومي – عملات، ذهب، مؤشرات
-                    </li>
-                    <li className="feature-item">
-                      <span className="icon-emoji-small">✅</span> استراتيجيات تداول جاهزة ومجربة
-                    </li>
-                    <li className="feature-item">
-                      <span className="icon-emoji-small">✅</span> تعلم أساسيات التداول من الصفر
-                    </li>
-                    <li className="feature-item">
-                      <span className="icon-emoji-small">✅</span> أدوات تفاعلية لفهم اتجاهات السوق
-                    </li>
-                    <li className="feature-item">
-                      <span className="icon-emoji-small">✅</span> ممارسة بدون مخاطرة – مثالي للمبتدئين
-                    </li>
-                  </ul>
+                <div className="start-platform-badges">
+                  <span className="start-platform-badge">MT4</span>
+                  <span className="start-platform-badge">MT5</span>
+                  <span className="start-platform-badge">cTrader</span>
                 </div>
 
-                <button className="choice-btn choice-btn-secondary">
-                  شوف التحليل الآن 📊 <span className="icon-emoji">→</span>
+                <button onClick={handleBrokerClick} className="start-card-btn start-card-btn-primary">
+                  افتح الحساب الآن 🚀 <span>→</span>
                 </button>
-              </div>
-            </Link>
+              </>
+            ) : (
+              <>
+                <div className="start-card-logo-row">
+                  {/* mzlogo.webp is the square brand mark (same asset used
+                      in the Navbar/StickyLogo) - forcing it into
+                      LiteFinance's wide 160x48 box made it balloon into an
+                      oversized square that dominated the card. A small
+                      icon + text wordmark reads as a proper logo lockup
+                      instead. */}
+                  <Image
+                    src="/logos/mzlogo.webp"
+                    alt="MPIntellect"
+                    width={36}
+                    height={36}
+                    className="start-mpi-icon"
+                  />
+                  <span className="start-mpi-wordmark">MPIntellect</span>
+                </div>
+
+                <h3 className="start-card-title">
+                  أدوات MPIntellect – تحليل السوق
+                </h3>
+
+                <p className="start-card-desc">
+                  تحليل فني وبيانات السوق.
+                  مناسب للتعليم والبحث قبل ما تبدأ التداول.
+                </p>
+
+                <div className="start-stat-row">
+                  <div className="start-stat-chip">
+                    <span className="start-stat-emoji">🆓</span>
+                    <span>100% مجاني</span>
+                  </div>
+                  <div className="start-stat-chip">
+                    <span className="start-stat-emoji">📊</span>
+                    <span>تحليل يومي</span>
+                  </div>
+                  <div className="start-stat-chip">
+                    <span className="start-stat-emoji">🎓</span>
+                    <span>من الصفر</span>
+                  </div>
+                </div>
+
+                <ul className="start-feature-list">
+                  <li>✅ شاهد تحليل الأسواق اليومي – عملات، ذهب، مؤشرات</li>
+                  <li>✅ استراتيجيات تداول جاهزة ومجربة</li>
+                  <li>✅ تعلم أساسيات التداول من الصفر</li>
+                  <li>✅ أدوات تفاعلية لفهم اتجاهات السوق</li>
+                  <li>✅ ممارسة بدون مخاطرة – مثالي للمبتدئين</li>
+                </ul>
+
+                <Link href={TOOLS_LINK} onClick={handleToolsClick} className="start-card-btn start-card-btn-secondary">
+                  شوف التحليل الآن 📊 <span>→</span>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Contact Support Buttons - Linktree & Telegram */}
-          <div className="contact-buttons">
+          <div className="start-contact-row start-anim start-anim-7">
             {/* Linktree Button - All channels */}
-            <button onClick={handleContactClick} className="contact-btn main-contact-btn">
-              <div className="contact-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <button onClick={handleContactClick} className="start-contact-btn">
+              <div className="start-contact-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                   <path d="M2 17L12 22L22 17" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                   <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                 </svg>
               </div>
-              <div className="contact-text">
-                <span className="contact-title">مركز الدعم</span>
-                <span className="contact-subtitle">جميع القنوات</span>
+              <div className="start-contact-text">
+                <span className="start-contact-title">مركز الدعم</span>
+                <span className="start-contact-subtitle">جميع القنوات</span>
               </div>
             </button>
 
             {/* Telegram Button - Direct Contact */}
-            <button onClick={handleTelegramClick} className="contact-btn telegram-btn">
-              <div className="contact-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <button onClick={handleTelegramClick} className="start-contact-btn">
+              <div className="start-contact-icon start-contact-icon-telegram">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#26A5E4"/>
                   <path d="M16.5 8.5L7.5 12l3.5 1.5L14 15l1-3.5-1-3z" fill="white"/>
                   <path d="M11 13l-1 3-2-2 3-1z" fill="white" opacity="0.8"/>
                 </svg>
               </div>
-              <div className="contact-text">
-                <span className="contact-title">تيليغرام</span>
-                <span className="contact-subtitle">تواصل مباشر</span>
+              <div className="start-contact-text">
+                <span className="start-contact-title">تيليغرام</span>
+                <span className="start-contact-subtitle">تواصل مباشر</span>
               </div>
             </button>
           </div>
 
           {/* Footer */}
-          <div className="gateway-footer">
-            <p className="gateway-disclaimer">
-              <strong>تنبيه:</strong> أدوات MPIntellect ديال التحليل فقط للمعلومات والتعليم. 
-              الوسيط الخارجي (LiteFinance) مستقل وعندو شروطو الخاصة. 
+          <div className="start-footer">
+            <p className="start-disclaimer">
+              <strong>تنبيه:</strong> أدوات MPIntellect ديال التحليل فقط للمعلومات والتعليم.
+              الوسيط الخارجي (LiteFinance) مستقل وعندو شروطو الخاصة.
               التداول فيه مخاطرة مالية، تأكد باش تفهم المخاطر قبل ما تبدأ.
             </p>
           </div>

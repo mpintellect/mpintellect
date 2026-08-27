@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 // Pixel ID (from env or fallback)
 const PIXEL_ID =
-  process.env.NEXT_PUBLIC_FB_PIXEL_ID || "719990012398471004";
+  process.env.NEXT_PUBLIC_FB_PIXEL_ID || "1804900084267814";
 
 // Type declaration for window.fbq
 declare global {

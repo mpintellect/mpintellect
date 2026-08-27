@@ -4,6 +4,18 @@
    unclear reasons (confirmed independently of Next/Turbopack via the
    standalone Tailwind CLI) - force it explicitly. */
 @source "./admin/facebook-ads";
+@source "./components";
+
+/* NOTE: --container-xl is a Tailwind v4 default theme token (36rem = 576px,
+   for its container-query utilities) injected by the @import above - it
+   collides by name with this file's own unrelated "wide section" convention
+   (max-width: var(--container-xl, 1280px), used in ~8 places). Redeclaring
+   --container-xl in a plain :root block here does NOT win: Lightning CSS's
+   build-time minification of this file (both in `next dev`/Turbopack and
+   `next build`) merges/dedupes :root custom-property declarations and keeps
+   Tailwind's theme value, so the var() fallback never actually activates.
+   Fix is to hardcode 1280px directly at each call site instead of relying
+   on this variable name. */
 
 /* === Reset & Base === */
 * {
@@ -66,11 +78,13 @@ body {
 /* color was #fff (leftover dark-theme default, contradicting body's own
    #111827 above) - any heading with no more specific color rule/class fell
    through to invisible white on the site's now-white background (e.g.
-   ContactSection's plain <h2>Get in Touch</h2>). Pages/sections that are
-   still fully dark (about/faq/login/register/verify-email/start) all give
-   their headings their own specific classes (.section-title, .faq-question,
-   .register-title, .gateway-h1, .choice-title, etc.) which set their own
-   color and are unaffected by this change. */
+   ContactSection's plain <h2>Get in Touch</h2>). about/faq/client-login/
+   client-register/client-verify-email/start were the last still-dark
+   pages/sections and have since been converted to the white/blue theme too
+   (their headings' own classes - .section-title, .faq-question,
+   .register-title, .gateway-h1, .choice-title, etc. - were updated in the
+   same pass), so there are no remaining pages relying on dark-theme colors
+   here. */
 h1,
 h2,
 h3,
@@ -83,7 +97,7 @@ h6 {
 }
 
 p {
-  color: #ccc;
+  color: #4b5563;
   margin-bottom: 1rem;
   max-width: 800px;
   margin-left: auto;
@@ -1961,9 +1975,9 @@ h1.page-title {
 /* === FAQ Section Styles === */
 
 .section-container {
-  background-color: #0b0b0b;
+  background-color: #ffffff;
   padding: 60px 20px;
-  color: #dcdcdc;
+  color: #374151;
 }
 
 .section-title {
@@ -1980,30 +1994,31 @@ h1.page-title {
 }
 
 .faq-item {
-  background: #111214;
-  border: 1px solid #2a2d31;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 24px 28px;
   margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .faq-item:hover {
   transform: translateY(-3px);
-  box-shadow: 0 0 0 1px #00ff83;
+  box-shadow: 0 0 0 1px #3b82f6;
 }
 
 .faq-question {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #facc15;
+  color: #3b82f6;
   margin-bottom: 10px;
 }
 
 .faq-answer {
   font-size: 0.95rem;
   line-height: 1.65;
-  color: #c5c5c5;
+  color: #4b5563;
 }
 
 /* === About Page Styles === */
@@ -2012,14 +2027,14 @@ h1.page-title {
   max-width: 880px;
   margin: 0 auto;
   padding: 80px 20px;
-  color: #dcdcdc;
+  color: #374151;
 }
 
 .about-text {
   margin-bottom: 24px;
   line-height: 1.7;
   font-size: 1rem;
-  color: #c7c7c7;
+  color: #4b5563;
 }
 
 .about-list {
@@ -2027,7 +2042,7 @@ h1.page-title {
   padding-left: 1.5rem;
   margin-top: 10px;
   margin-bottom: 40px;
-  color: #eeeeee;
+  color: #374151;
 }
 
 .about-list li {
@@ -2038,11 +2053,11 @@ h1.page-title {
 .about-contact {
   margin-top: 32px;
   font-size: 1rem;
-  color: #bbbbbb;
+  color: #4b5563;
 }
 
 .about-link {
-  color: #facc15;
+  color: #3b82f6;
   text-decoration: underline;
 }
 
@@ -2546,15 +2561,15 @@ h1.page-title {
 }
 
 .ai-chat-title {
-  font-size: 1.7rem;
-  font-weight: 800;
-  margin-bottom: 1rem;
-  color: #fff;
+  font-size: var(--text-4xl, 36px);
+  font-weight: var(--weight-black, 900);
+  margin-bottom: var(--space-3, 12px);
+  color: #111827;
 }
 
 .ai-chat-subtitle {
   font-size: 1rem;
-  color: #b0b3b8;
+  color: #6b7280;
   margin-bottom: 2rem;
 }
 
@@ -3518,14 +3533,14 @@ h1.page-title {
 
 /* Text styles */
 .text-normal {
-  color: #d1d5db;
+  color: #374151;
   font-size: 1rem;
   margin-bottom: 1rem;
 }
 
 .text-small-muted {
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: #6b7280;
   margin-top: 1rem;
 }
 
@@ -3641,7 +3656,7 @@ h1.page-title {
   justify-content: center;
   align-items: center;
   padding: 2rem 1rem;
-  background: radial-gradient(circle at 50% 30%, #1a1a1a 0%, #000000 100%);
+  background: radial-gradient(circle at 50% 30%, #f0f6ff 0%, #ffffff 100%);
   position: relative;
 }
 
@@ -3652,8 +3667,8 @@ h1.page-title {
   position: absolute;
   width: 300px;
   height: 300px;
-  background: rgba(250, 204, 21, 0.05);
-  /* Very subtle gold glow */
+  background: rgba(59, 130, 246, 0.08);
+  /* Very subtle blue glow */
   filter: blur(100px);
   border-radius: 50%;
   z-index: 0;
@@ -3665,24 +3680,22 @@ h1.page-title {
 .register-card {
   position: relative;
   z-index: 1;
-  background: rgba(17, 17, 19, 0.95);
-  /* Deep dark background */
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 24px;
   /* Softer corners */
   padding: 3rem 2.5rem;
   width: 100%;
   max-width: 440px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
-  /* Inner rim light */
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(15, 23, 42, 0.02) inset;
   backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-/* Top Gold Line Highlight */
+/* Top Blue Line Highlight */
 .card-container::after,
 .register-card::after {
   content: '';
@@ -3692,7 +3705,7 @@ h1.page-title {
   transform: translateX(-50%);
   width: 60%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(250, 204, 21, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.5), transparent);
 }
 
 /* 3. Titles */
@@ -3702,11 +3715,8 @@ h1.page-title {
   font-weight: 800;
   text-align: center;
   margin-bottom: 1rem;
-  color: #fff;
+  color: #111827;
   letter-spacing: -0.5px;
-  background: linear-gradient(to bottom right, #FACC15, #FFFFFF);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 /* 4. Form Layouts */
@@ -3723,11 +3733,11 @@ h1.page-title {
 .input-field,
 .register-input {
   width: 100%;
-  background-color: #0a0a0a;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
   border-radius: 12px;
   padding: 14px 16px;
-  color: #ffffff;
+  color: #111827;
   font-size: 1rem;
   font-weight: 400;
   transition: all 0.2s ease;
@@ -3736,15 +3746,15 @@ h1.page-title {
 
 .input-field::placeholder,
 .register-input::placeholder {
-  color: #52525B;
+  color: #94a3b8;
   /* Text Dim */
 }
 
 .input-field:focus,
 .register-input:focus {
-  border-color: #FACC15;
-  background-color: #0f0f0f;
-  box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.1);
+  border-color: #3B82F6;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
 .input-field:disabled,
@@ -3759,15 +3769,15 @@ h1.page-title {
   width: 100%;
   padding: 14px;
   margin-top: 0.5rem;
-  background: linear-gradient(180deg, #FACC15 0%, #EAB308 100%);
-  color: #000000;
+  background: linear-gradient(180deg, #3B82F6 0%, #2563EB 100%);
+  color: #ffffff;
   font-size: 1rem;
   font-weight: 700;
   border: none;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 15px rgba(234, 179, 8, 0.2);
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -3775,7 +3785,7 @@ h1.page-title {
 .btn-primary:hover,
 .register-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(234, 179, 8, 0.3);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
   filter: brightness(1.1);
 }
 
@@ -3786,8 +3796,8 @@ h1.page-title {
 
 .btn-primary:disabled,
 .register-btn:disabled {
-  background: #333;
-  color: #666;
+  background: #cbd5e1;
+  color: #64748b;
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
@@ -3797,7 +3807,7 @@ h1.page-title {
 .error-banner,
 .error-box,
 .alert-box {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.08);
   border: 1px solid rgba(239, 68, 68, 0.2);
   padding: 12px;
   border-radius: 10px;
@@ -3808,7 +3818,7 @@ h1.page-title {
 .error-banner,
 .error-text,
 .alert-text {
-  color: #FCA5A5;
+  color: #DC2626;
   font-size: 0.9rem;
   font-weight: 500;
   margin: 0;
@@ -3834,14 +3844,14 @@ h1.page-title {
 .small-muted,
 .register-footer {
   text-align: center;
-  color: #71717A;
+  color: #64748b;
   font-size: 0.9rem;
   margin-top: 1rem;
 }
 
 .text-link,
 .register-link {
-  color: #FACC15;
+  color: #3B82F6;
   font-weight: 600;
   text-decoration: none;
   transition: color 0.2s;
@@ -3850,7 +3860,7 @@ h1.page-title {
 
 .text-link:hover,
 .register-link:hover {
-  color: #FFF;
+  color: #2563EB;
   text-decoration: underline;
 }
 
@@ -11670,7 +11680,7 @@ a:focus-visible,
 /* Strong text styling */
 strong {
   font-weight: 600;
-  color: #ffffff;
+  color: #111827;
 }
 
 /* globales.css - Mobile-First Responsive Styles */
@@ -16113,24 +16123,6 @@ img[src*="mzlogo"] {
   object-position: center !important;
 }
 
-/* Hero logo specific fixes */
-#hero img[src*="mzlogo"] {
-  width: 160px !important;
-  /* Fixed width for mobile */
-  height: 160px !important;
-  /* Fixed height to match */
-  margin: 0 auto;
-  /* Center if needed */
-}
-
-@media (min-width: 768px) {
-  #hero img[src*="mzlogo"] {
-    width: 224px !important;
-    /* Desktop size */
-    height: 224px !important;
-  }
-}
-
 /* Footer logo fix */
 .footer-logo {
   width: 120px !important;
@@ -16148,21 +16140,22 @@ img[src*="mzlogo"] {
   margin: 0 8px !important;
 }
 
-/* Sticky logo fix */
+/* Sticky logo fix - sized by its .sticky-logo container (see the
+   dedicated "Sticky Logo Positioning" rule further down) rather than a
+   fixed px value here, so it stays responsive between the 40px desktop
+   and 34px mobile container width instead of overflowing either. */
 .sticky-logo-img {
-  width: 60px !important;
-  height: 60px !important;
-  border-radius: 8px !important;
-  /* Optional: add slight rounding */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  width: 100% !important;
+  height: auto !important;
 }
 
-/* Prevent any parent container from distorting logos */
+/* Prevent any parent container from distorting logos.
+   NOTE: .footer-grid used to be listed here too, which forced it to
+   display:flex !important and silently broke its intended CSS grid
+   column layout (the footer's link/subscribe columns) - removed. */
 .footer-logo-badges,
 .footer-content,
-.footer-grid,
-.sticky-logo,
-#hero>div {
+.sticky-logo {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -16182,17 +16175,6 @@ img[src*="mzlogo"] {
     flex-wrap: wrap !important;
     justify-content: center !important;
     gap: 12px !important;
-  }
-
-  /* Ensure hero logo stays centered */
-  #hero {
-    text-align: center !important;
-  }
-
-  #hero img[src*="mzlogo"] {
-    display: block !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
   }
 }
 
@@ -16235,12 +16217,12 @@ img[src*="logo"]:hover {
 }
 
 /* =========================================
-   COMPACT LUXURY GATEWAY (Black & Gold)
+   COMPACT LUXURY GATEWAY (White & Blue)
    ========================================= */
 
 .gateway-container {
   min-height: 100vh;
-  background: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #000000 100%);
+  background: radial-gradient(circle at 50% 0%, #eff6ff 0%, #ffffff 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -16278,19 +16260,19 @@ img[src*="logo"]:hover {
   font-size: 2rem;
   /* Reduced from 3rem */
   font-weight: 800;
-  color: white;
+  color: #111827;
   margin-bottom: 0.5rem;
   letter-spacing: -0.03em;
 }
 
 .gateway-h1 span {
-  background: linear-gradient(135deg, #d4af37, #fcefa1);
+  background: linear-gradient(135deg, #3B82F6, #60A5FA);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .gateway-subtitle {
-  color: #888;
+  color: #4b5563;
   font-size: 0.9rem;
   max-width: 400px;
   margin: 0 auto;
@@ -16313,9 +16295,9 @@ img[src*="logo"]:hover {
 
 /* Compact Cards */
 .choice-card {
-  background: rgba(20, 20, 20, 0.6);
+  background: #ffffff;
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #e2e8f0;
   border-radius: 20px;
   /* Smaller radius */
   padding: 1.5rem;
@@ -16327,13 +16309,14 @@ img[src*="logo"]:hover {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
 .choice-card:hover {
-  background: rgba(30, 30, 30, 0.8);
+  background: #f8fafc;
   transform: translateY(-4px);
-  border-color: rgba(212, 175, 55, 0.3);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
 }
 
 .choice-card-blue:hover {
@@ -16363,12 +16346,12 @@ img[src*="logo"]:hover {
   font-size: 1.25rem;
   /* Reduced from 1.75rem */
   font-weight: 700;
-  color: white;
+  color: #111827;
   margin-bottom: 0.5rem;
 }
 
 .choice-desc {
-  color: #999;
+  color: #4b5563;
   font-size: 0.85rem;
   line-height: 1.5;
   margin-bottom: 1.5rem;
@@ -16387,12 +16370,12 @@ img[src*="logo"]:hover {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #ccc;
+  color: #374151;
   font-size: 0.8rem;
   /* Smaller text */
   margin-bottom: 0.5rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .feature-item:last-child {
@@ -16428,13 +16411,13 @@ img[src*="logo"]:hover {
 
 .choice-btn-secondary {
   background: transparent;
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #111827;
+  border: 1px solid rgba(15, 23, 42, 0.15);
 }
 
 .choice-btn-secondary:hover {
-  border-color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  border-color: #111827;
+  background: rgba(15, 23, 42, 0.04);
 }
 
 /* Tiny Badge */
@@ -16454,13 +16437,13 @@ img[src*="logo"]:hover {
 /* Footer */
 .gateway-footer {
   margin-top: 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid #e2e8f0;
   padding-top: 1rem;
   text-align: center;
 }
 
 .gateway-disclaimer {
-  color: #555;
+  color: #6b7280;
   font-size: 0.65rem;
   line-height: 1.4;
 }
@@ -16495,6 +16478,631 @@ img[src*="logo"]:hover {
   color: inherit;
 }
 
+/* ==========================================
+   🇲🇦 /start GATEWAY PAGE - v2
+   Redesigned onto the same blue/white system as the Hero/Navbar/Mission
+   Control (#EFF6FF wash, #1E3A5F headings, #3B82F6 primary, rounded-full
+   pills, white/90 + backdrop-blur cards) - the old gateway/choice-card
+   rules above are left in place (harmless, unused) rather than hunted
+   down and deleted across this file.
+   ========================================== */
+
+.start-page {
+  min-height: 100vh;
+  width: 100%;
+  background: linear-gradient(180deg, #EFF6FF 0%, #ffffff 480px, #ffffff 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 16px 32px;
+  position: relative;
+  overflow: hidden;
+  direction: rtl;
+}
+
+/* Staggered entrance. Applied to wrapping containers, never directly to
+   an element that also has its own :hover transform (cards, buttons) -
+   an animation with animation-fill-mode:forwards permanently "wins" the
+   cascade for that property over a plain :hover transition, which would
+   make hover look broken/stuck once the entrance animation finishes. */
+@keyframes startFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.start-anim {
+  opacity: 0;
+  animation: startFadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.start-anim-1 { animation-delay: 0.05s; }
+.start-anim-2 { animation-delay: 0.15s; }
+.start-anim-3 { animation-delay: 0.25s; }
+.start-anim-4 { animation-delay: 0.35s; }
+.start-anim-5 { animation-delay: 0.45s; }
+.start-anim-6 { animation-delay: 0.55s; }
+.start-anim-7 { animation-delay: 0.65s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .start-anim {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+.start-glow {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  pointer-events: none;
+  animation: startGlowFloat 12s ease-in-out infinite;
+}
+
+.start-glow-top {
+  top: -80px;
+  left: -60px;
+  width: 260px;
+  height: 260px;
+  background: rgba(96, 165, 250, 0.3);
+}
+
+.start-glow-bottom {
+  bottom: -100px;
+  right: -60px;
+  width: 300px;
+  height: 300px;
+  background: rgba(59, 130, 246, 0.2);
+  animation-duration: 15s;
+  animation-delay: -4s;
+}
+
+@keyframes startGlowFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, 20px) scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start-glow {
+    animation: none;
+  }
+}
+
+.start-wrapper {
+  max-width: 720px;
+  width: 100%;
+  z-index: 10;
+  position: relative;
+}
+
+/* Header */
+.start-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.start-flag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: #3B82F6;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.start-flag-img {
+  border-radius: 3px;
+}
+
+.start-h1 {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #1E3A5F;
+  margin-bottom: 12px;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.start-h1-accent {
+  background: linear-gradient(135deg, #3B82F6, #60A5FA);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.start-subtitle {
+  color: #6B7280;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* Trust strip: real live session status (useSession, same hook the Hero
+   and Navbar use) + the FOMO activity counter that was already computed
+   client-side but never actually rendered anywhere on this page. */
+.start-trust-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.start-trust-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  color: #1E3A5F;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.05);
+}
+
+/* Small platform-trust chips (MT4/MT5/cTrader) - visualizes an already
+   truthful text claim from the feature list above as scannable badges,
+   not a new/unverified claim. */
+.start-platform-badges {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.start-platform-badge {
+  background: rgba(59, 130, 246, 0.06);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  color: #3B82F6;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+/* Segmented switch - replaces the old two-card grid (.start-grid/.start-
+   card, left in place unused below). Uses inset-inline-start (not left/
+   right) so the sliding indicator lands correctly under RTL's flex
+   ordering without hand-flipping signs per direction. */
+.start-switch {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: 9999px;
+  padding: 5px;
+  margin-bottom: 20px;
+}
+
+.start-switch-indicator {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  width: calc(50% - 7px);
+  background: #3B82F6;
+  border-radius: 9999px;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+  transition: inset-inline-start 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.start-switch-btn {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #1E3A5F;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 11px 8px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.start-switch-btn.active {
+  color: #ffffff;
+}
+
+.start-panel {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 28px;
+  padding: 28px 24px;
+  box-shadow: 0 24px 60px rgba(30, 58, 95, 0.12);
+  animation: startPanelIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes startPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.start-stat-row {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 20px;
+}
+
+.start-stat-chip {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.12);
+  border-radius: 14px;
+  padding: 10px 6px;
+  text-align: center;
+}
+
+.start-stat-emoji {
+  font-size: 1.1rem;
+}
+
+.start-stat-chip span:last-child {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1E3A5F;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start-panel {
+    animation: none;
+  }
+
+  .start-switch-indicator {
+    transition: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .start-h1 {
+    font-size: 2.4rem;
+  }
+
+  .start-subtitle {
+    font-size: 1.05rem;
+  }
+}
+
+/* Quick action buttons */
+.start-quick-actions {
+  display: flex;
+  gap: 12px;
+  margin: 0 0 28px;
+}
+
+.start-quick-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.start-quick-btn-primary {
+  background: #3B82F6;
+  color: #ffffff;
+  border: 1px solid #3B82F6;
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+}
+
+.start-quick-btn-primary:hover {
+  background: #2563EB;
+  border-color: #2563EB;
+  transform: translateY(-2px);
+}
+
+.start-quick-btn-secondary {
+  background: transparent;
+  color: #1E3A5F;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.start-quick-btn-secondary:hover {
+  background: rgba(59, 130, 246, 0.06);
+  border-color: #3B82F6;
+  transform: translateY(-2px);
+}
+
+/* Cards */
+.start-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+@media (min-width: 720px) {
+  .start-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.start-card-anim-wrap {
+  height: 100%;
+}
+
+.start-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  height: 100%;
+}
+
+.start-card {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: right;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 24px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 20px 50px rgba(30, 58, 95, 0.1);
+}
+
+.start-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 24px 60px rgba(59, 130, 246, 0.2);
+}
+
+.start-card-badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.start-card-badge-solid {
+  background: #3B82F6;
+  color: #ffffff;
+}
+
+.start-card-badge-outline {
+  background: rgba(59, 130, 246, 0.08);
+  color: #3B82F6;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.start-card-logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 18px;
+  direction: ltr;
+}
+
+.start-broker-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.start-mpi-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.start-mpi-wordmark {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1E3A5F;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.start-flag-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  background: rgba(59, 130, 246, 0.08);
+  padding: 4px;
+}
+
+.start-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.start-card-desc {
+  color: #6B7280;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.start-feature-list {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  width: 100%;
+}
+
+.start-feature-list li {
+  color: #1E3A5F;
+  font-size: 0.85rem;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.start-feature-list li:last-child {
+  border-bottom: none;
+}
+
+.start-card-btn {
+  margin-top: auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.start-card-btn-primary {
+  background: #3B82F6;
+  color: #ffffff;
+  border: 1px solid #3B82F6;
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+}
+
+.start-card-btn-primary:hover {
+  background: #2563EB;
+  border-color: #2563EB;
+}
+
+.start-card-btn-secondary {
+  background: transparent;
+  color: #1E3A5F;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.start-card-btn-secondary:hover {
+  background: rgba(59, 130, 246, 0.06);
+  border-color: #3B82F6;
+}
+
+/* Contact row - was position:fixed and permanently overlapped card
+   content while scrolling; now a normal-flow section like everything
+   else on the page. */
+.start-contact-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.start-contact-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  box-shadow: 0 4px 14px rgba(30, 58, 95, 0.06);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: right;
+}
+
+.start-contact-btn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+}
+
+.start-contact-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  background: #3B82F6;
+  flex-shrink: 0;
+}
+
+.start-contact-icon-telegram {
+  background: rgba(38, 165, 228, 0.1);
+}
+
+.start-contact-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.start-contact-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1E3A5F;
+}
+
+.start-contact-subtitle {
+  font-size: 0.72rem;
+  color: #6B7280;
+}
+
+/* Footer */
+.start-footer {
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  padding-top: 16px;
+  text-align: center;
+}
+
+.start-disclaimer {
+  color: #6B7280;
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+
+.start-disclaimer strong {
+  color: #1E3A5F;
+}
+
 /* 🚀 MOBILE VIEWPORT FIX */
 html,
 body {
@@ -16515,38 +17123,15 @@ svg {
   height: auto;
 }
 
-/* 🚀 FORCE FOOTER MOBILE STACKING */
-@media (max-width: 768px) {
-
-  /* 1. Force the grid to be vertical */
-  .footer-grid {
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
-    padding: 0 1rem !important;
-    /* Add breathing room */
-  }
-
-  /* 2. Make columns full width but centered */
-  .footer-column {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-bottom: 2rem !important;
-    text-align: center !important;
-  }
-
-  /* 3. Fix the Subscribe box width */
-  .footer-subscribe,
-  .subscribe-column {
-    width: 100% !important;
-    min-width: 0 !important;
-    /* Prevents flex item refusing to shrink */
-  }
-
-  /* 4. Ensure inputs shrink */
+/* Footer mobile fine-tuning below 640px (.footer-grid's own single-column
+   default already handles the stacking - this used to force
+   display:flex!important here too, which fought the redesigned CSS grid
+   layout and made the whole footer single-column all the way up to 768px
+   regardless of viewport). */
+@media (max-width: 639px) {
   .subscribe-input {
-    width: 100% !important;
-    box-sizing: border-box !important;
+    width: 100%;
+    box-sizing: border-box;
   }
 }
 
@@ -16556,6 +17141,11 @@ svg {
 .ai-chat-section {
   background: transparent;
   position: relative;
+  padding: var(--space-20, 80px) var(--space-6, 24px);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  min-height: 0;
+  color: #111827;
+  overflow: visible;
 }
 
 .ai-chat-container {
@@ -16565,15 +17155,22 @@ svg {
 }
 
 .ai-chat-title {
-  color: white;
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
+  font-size: var(--text-4xl, 36px);
+  font-weight: var(--weight-black, 900);
+  color: #111827;
+  letter-spacing: var(--tracking-tight, -0.02em);
+  margin-bottom: var(--space-3, 12px);
   text-align: center;
 }
 
+@media (min-width: 768px) {
+  .ai-chat-title {
+    font-size: var(--text-5xl, 42px);
+  }
+}
+
 .ai-chat-subtitle {
-  color: rgba(255, 255, 255, 0.8);
+  color: #6b7280;
   text-align: center;
   margin-bottom: 2rem;
   font-size: 1rem;
@@ -16612,10 +17209,9 @@ svg {
 
 /* The Buttons */
 .chat-action-btn {
-  background: rgba(30, 41, 59, 0.5);
-  /* Dark Slate */
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: #F8FAFC;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #111827;
   padding: 12px;
   border-radius: 8px;
   font-size: 13px;
@@ -16626,9 +17222,9 @@ svg {
 }
 
 .chat-action-btn:hover {
-  background: rgba(37, 99, 235, 0.2);
-  /* Blue tint */
+  background: rgba(59, 130, 246, 0.08);
   border-color: #3b82f6;
+  color: #2563EB;
   transform: translateY(-2px);
 }
 
@@ -20133,7 +20729,7 @@ body {
 .btn-gold,
 .btn-primary {
   background: var(--gold-primary) !important;
-  color: #000 !important;
+  color: #ffffff !important;
   font-weight: 900;
   text-transform: uppercase;
   font-size: 10px;
@@ -23575,24 +24171,28 @@ button.px-4.py-2:hover {
 }
 
 /* ==========================================
-   📱 MAIN PAGE MOBILE MENU - COMPLETE STYLE
+   📱 MOBILE HEADER (burger + logo)
+   .premium-mobile-nav and .sticky-logo are two separately fixed-position
+   elements (different React components, not siblings sharing a flex
+   parent) that need to read as one cohesive header bar. They're kept in
+   sync deliberately: same top offset, same 44px height, same vertical
+   centering math. The bar itself is transparent (no fill/blur/border) -
+   only the burger button carries its own small glass background, so it
+   stays legible without a heavy solid strip across the top of every page.
    ========================================== */
 .premium-mobile-nav {
-  background: transparent !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
   position: fixed;
-  top: 0.1px;
-  right: 10px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  background: transparent;
   z-index: 1000;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 1.5rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  justify-content: flex-start;
+  padding: 0 14px;
+  border-bottom: none;
+  box-shadow: none;
 }
 
 .premium-mobile-brand {
@@ -23609,38 +24209,54 @@ button.px-4.py-2:hover {
 }
 
 .premium-mobile-burger {
-  background: transparent;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  width: 37px;
-  height: 40px;
+  /* Rounded to a full circle (was 9px) to match the rounded-full pill
+     language used throughout the Hero (badge, CTAs, mission-control dot). */
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: 9999px;
+  width: 34px;
+  height: 34px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   cursor: pointer;
   transition: var(--transition-fast);
   padding: 0;
 }
 
 .premium-mobile-burger:hover {
-  border-color: #2563EB;
+  border-color: #3B82F6;
+  background: rgba(59, 130, 246, 0.08);
 }
 
 .premium-mobile-burger span {
-  width: 20px;
-  height: 1px;
-  background: #6b7280;
+  width: 15px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: #374151;
   transition: var(--transition-fast);
   display: block;
 }
 
 .premium-mobile-burger:hover span {
-  background: #2563EB;
+  background: #3B82F6;
+}
+
+.premium-mobile-burger.open {
+  border-color: #3B82F6;
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.premium-mobile-burger.open span {
+  background: #3B82F6;
 }
 
 .premium-mobile-burger.open span:nth-child(1) {
-  transform: rotate(45deg) translate(5px, 5px);
+  transform: rotate(45deg) translate(3.5px, 3.5px);
 }
 
 .premium-mobile-burger.open span:nth-child(2) {
@@ -23648,10 +24264,18 @@ button.px-4.py-2:hover {
 }
 
 .premium-mobile-burger.open span:nth-child(3) {
-  transform: rotate(-45deg) translate(5px, -5px);
+  transform: rotate(-45deg) translate(3.5px, -3.5px);
 }
 
-/* Mobile Menu (expanded) */
+/* Mobile Menu (expanded).
+   padding-top clears the 44px fixed header bar (which stays visible on
+   top, z-index 1000 > this panel's 999, so the burger remains usable to
+   close the menu). Redesigned from a flat, unstyled link list into
+   distinct rounded "cards" with icon chips and trailing chevrons, plus a
+   staggered fade/slide-in per item and a visually separated Login CTA
+   (previously a .premium-mobile-login class with no CSS behind it at
+   all, so it looked identical to every other row despite being the
+   primary action). */
 .premium-mobile-menu {
   display: none;
   position: fixed;
@@ -23659,11 +24283,14 @@ button.px-4.py-2:hover {
   left: 0;
   right: 0;
   bottom: 0;
-  background: #f8fafc;
+  /* Same #EFF6FF -> white wash as the Hero (was a flat #f8fafc gray),
+     so opening the menu feels like a continuation of the Hero rather
+     than switching to unrelated chrome. */
+  background: linear-gradient(180deg, #EFF6FF 0%, #ffffff 420px, #ffffff 100%);
   z-index: 999;
   animation: slideDown 0.3s ease;
   overflow-y: auto;
-  padding: 1rem;
+  padding: 52px 14px 6px;
 }
 
 .premium-mobile-menu.open {
@@ -23673,40 +24300,139 @@ button.px-4.py-2:hover {
 .premium-mobile-items {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 4px;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+@keyframes mobileItemIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .premium-mobile-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 10px;
   width: 100%;
-  padding: 0.9rem;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  color: #6b7280;
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-light);
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  border-radius: 12px;
+  color: #1E3A5F;
+  font-size: var(--text-sm, 13.5px);
+  font-weight: var(--font-weight-medium, 500);
+  text-align: left;
   cursor: pointer;
   transition: var(--transition-fast);
+  box-shadow: 0 1px 2px rgba(30, 58, 95, 0.04);
+  opacity: 0;
+  animation: mobileItemIn 0.35s ease forwards;
+}
+
+.premium-mobile-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .premium-mobile-item:hover {
-  color: #111827;
-  background: rgba(0, 0, 0, 0.03);
-  border-color: rgba(0, 0, 0, 0.1);
+  color: #1E3A5F;
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(30, 58, 95, 0.08);
+  transform: translateY(-1px);
+}
+
+.premium-mobile-item:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 
 .premium-mobile-item.active {
-  color: #3B82F6;
+  color: #2563EB;
+  background: rgba(59, 130, 246, 0.06);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.premium-mobile-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.04);
+  color: #6b7280;
+  transition: var(--transition-fast);
+}
+
+.premium-mobile-item:hover .premium-mobile-icon-wrap {
   background: rgba(59, 130, 246, 0.08);
-  border-left: 2px solid #3B82F6;
+  color: #3B82F6;
+}
+
+.premium-mobile-item.active .premium-mobile-icon-wrap {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563EB;
 }
 
 .premium-mobile-item .premium-nav-icon {
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
+}
+
+.premium-mobile-chevron {
+  width: 14px;
+  height: 14px;
+  margin-left: auto;
+  flex-shrink: 0;
+  color: #d1d5db;
+  transition: var(--transition-fast);
+}
+
+.premium-mobile-item:hover .premium-mobile-chevron,
+.premium-mobile-item.active .premium-mobile-chevron {
+  color: #3B82F6;
+}
+
+/* Login CTA - visually separated from the nav list so it reads as the
+   primary action rather than just another link. */
+.premium-mobile-footer {
+  max-width: 440px;
+  margin: 6px auto 0;
+  padding-top: 6px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.premium-mobile-login {
+  background: #3B82F6;
+  border-color: #3B82F6;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
+}
+
+.premium-mobile-login:hover {
+  background: #2563EB;
+  border-color: #2563EB;
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.3);
+}
+
+.premium-mobile-login .premium-mobile-icon-wrap {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.premium-mobile-login .premium-mobile-chevron {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .premium-mobile-badge {
@@ -25184,12 +25910,11 @@ button.px-4.py-2:hover {
   background: #ffffff;
   padding: var(--space-20, 80px) var(--space-6, 24px);
   border-top: 1px solid rgba(0, 0, 0, 0.08);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 /* Container */
 .learn-wrap {
-  max-width: var(--container-xl, 1280px);
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -25899,12 +26624,12 @@ button.px-4.py-2:hover {
   width: 100%;
   background: #ffffff;
   padding: var(--space-20, 80px) var(--space-6, 24px);
-  min-height: 100vh;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 /* Section Header */
 .section-header {
-  max-width: var(--container-xl, 1280px);
+  max-width: 1280px;
   margin: 0 auto var(--space-12, 48px) auto;
   text-align: center;
   position: relative;
@@ -25919,6 +26644,8 @@ button.px-4.py-2:hover {
 }
 
 .section-title {
+  display: block;
+  text-align: center;
   font-size: var(--text-4xl, 36px);
   font-weight: var(--weight-black, 900);
   color: #111827;
@@ -25958,7 +26685,7 @@ button.px-4.py-2:hover {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-6, 24px);
-  max-width: var(--container-xl, 1280px);
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -26044,7 +26771,10 @@ button.px-4.py-2:hover {
   color: #6b7280;
   font-size: var(--text-sm, 13px);
   line-height: var(--leading-normal, 1.6);
-  margin-bottom: var(--space-4, 16px);
+  margin: 0 0 var(--space-4, 16px) 0;
+  max-width: none;
+  width: 100%;
+  text-align: left;
   font-weight: var(--weight-light, 300);
 }
 
@@ -26396,6 +27126,14 @@ button.px-4.py-2:hover {
   }
 }
 
+/* MZ Calculator header had no styling at all (unstyled, left-aligned by
+   default) - centered here to match every other section title (Learning
+   Hub, Trader Assistant, AI Robots, etc). */
+.mzcalc-head {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
 /* ==========================================
    🤖 AI TRADER ASSISTANT - BLACK & GOLD EDITION
    ========================================== */
@@ -26405,12 +27143,13 @@ button.px-4.py-2:hover {
   width: 100%;
   background: #ffffff;
   padding: var(--space-20, 80px) var(--space-6, 24px);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
   position: relative;
 }
 
 /* Header */
 .ta-header {
-  max-width: var(--container-xl, 1280px);
+  max-width: 1280px;
   margin: 0 auto var(--space-12, 48px) auto;
   text-align: center;
 }
@@ -26440,7 +27179,7 @@ button.px-4.py-2:hover {
 
 /* Main Wrapper */
 .ta-wrap {
-  max-width: var(--container-xl, 1280px);
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -27417,227 +28156,190 @@ h1.text-4xl.md\:text-6xl.font-black.text-white.mb-6.leading-tight {
 }
 
 /* ==========================================
-   🦁 HERO SECTION - BLACK & GOLD EDITION
-   ========================================== */
+   🦁 HERO SECTION
+   Layout/animation lives in components/Hero.tsx and HeroMissionControl.tsx
+   via Tailwind + Framer Motion. The handful of classes below exist
+   only because Tailwind v4's JIT scanner in this project reliably
+   compiles *base* utilities for new files but not responsive (sm:/
+   lg:) variants - confirmed live (getComputedStyle stayed at the
+   base-utility value at 1280px viewport; compiled chunk rule count
+   was byte-identical before/after a `@source "./components";` fix +
+   full `.next` wipe, so it isn't a stale-cache issue either). Rather
+   than fight that further, the few properties that need to change
+   per breakpoint live here as plain media queries instead. */
 
-/* Hero Section */
-#hero {
-  width: 100%;
-  min-height: 90vh;
-  background: #ffffff;
+/* Fixed-distance fade (not Tailwind's proportional bg-gradient-to-b, which
+   stretches its color stops across the *whole* element height - on a tall
+   section that left the blue still visibly present right up against the
+   hard edge/divider of the next section). Resolves to solid white by 480px
+   from the top regardless of how tall the section ends up rendering, so it
+   reads as a smooth fade into the white section below rather than a seam. */
+.hero-fade-bg {
+  background: linear-gradient(to bottom, #EFF6FF 0%, #ffffff 480px, #ffffff 100%);
+}
+
+/* `section:not(:last-of-type) { border-bottom: 1px solid rgba(255,255,255,
+   0.05) }` (near the top of this file) applies to every section including
+   this one - normally invisible at 5% white opacity, but it was still
+   rendering as a faint hairline seam here against the fully-white bottom
+   of the fade above. `section.hero-fade-bg` matches that rule's own
+   specificity and comes later in the file, so it wins. */
+section.hero-fade-bg {
+  border-bottom: none;
+}
+
+/* #aiassistant is the first section after the Hero - drop the divider used
+   between every other section pair here specifically, so the fade above
+   flows straight into it with no visible line. #propfirm (the next section
+   after this one) keeps its own divider from the shared .ai-chat-section
+   rule, unaffected by this ID-specific override. */
+#aiassistant {
+  border-top: none;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4rem;
+}
+
+@media (min-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.hero-copy {
+  text-align: center;
+}
+
+@media (min-width: 1024px) {
+  .hero-copy {
+    text-align: left;
+  }
+}
+
+.hero-heading {
+  /* Tailwind's utilities compile inside `@layer utilities`, and per the CSS
+     cascade-layers spec, ANY un-layered rule beats a layered one regardless
+     of specificity - this file's un-layered base reset (`h1,h2,...{color:
+     #111827}` near the top) was silently winning over the Tailwind
+     `text-[#1E3A5F]` class here. Setting color directly on this already-
+     un-layered custom class sidesteps the issue the same way `#aitrading
+     h2`/`.learn-title`/etc. do elsewhere in this file. */
+  color: #1E3A5F;
+  font-size: 2.25rem;
+}
+
+@media (min-width: 640px) {
+  .hero-heading {
+    font-size: 3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-heading {
+    font-size: 3.75rem;
+  }
+}
+
+.hero-subtitle {
+  /* Same un-layered-beats-layered issue as .hero-heading above: this
+     file's bare `p { color: #4b5563; max-width: 800px; }` reset was
+     silently overriding the Tailwind text-[#6B7280]/max-w-xl classes. */
+  color: #6B7280;
+  max-width: 36rem;
+  font-size: 1.125rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 1024px) {
+  .hero-subtitle {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+.hero-cta-row {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: var(--space-8, 32px) var(--space-4, 16px);
-  position: relative;
+  gap: 1rem;
+}
+
+/* This file's bare `button { margin-top: 1rem }` reset (also un-layered,
+   same issue as above) was nudging the "Get Started" button 16px out of
+   alignment with the "Learn More" link next to it. */
+.hero-cta-row button {
+  margin-top: 0;
+}
+
+@media (min-width: 640px) {
+  .hero-cta-row {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-cta-row {
+    justify-content: flex-start;
+  }
+}
+
+/* HeroMissionControl: vertical marquee for the live signal feed (same
+   translate-loop technique as LiveMarketFeed's horizontal ticker) and the
+   scanning-bar sweep. Plain CSS, not JS-interval-driven, so the panel never
+   needs to re-render just to look "live". */
+.hero-mc-feed-viewport {
+  height: 132px;
   overflow: hidden;
 }
 
-
-
-#hero::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #3B82F6, transparent);
-  opacity: 0.3;
+.hero-mc-feed-track {
+  animation-name: heroMcFeedScroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
-/* Logo Image */
-#hero .w-40.md\:w-56 {
-  width: 160px;
-  height: auto;
-  margin-bottom: var(--space-8, 32px);
-  animation: fadeInDown 0.8s ease;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
-}
-
-@media (min-width: 768px) {
-  #hero .w-40.md\:w-56 {
-    width: 224px;
-  }
-}
-
-/* Main Headline */
-#hero h1 {
-  font-size: var(--text-4xl, 36px);
-  font-weight: var(--weight-black, 900);
-  line-height: 1.2;
-  margin-bottom: var(--space-6, 24px);
-  letter-spacing: var(--tracking-tight, -0.02em);
-  max-width: 900px;
-  animation: fadeInUp 0.8s ease 0.2s both;
-}
-
-@media (min-width: 768px) {
-  #hero h1 {
-    font-size: var(--text-6xl, 60px);
-  }
-}
-
-/* Black Text Span */
-.hero-black {
-  color: #000000;
-}
-
-/* Blue Text Span */
-.hero-blue {
-  color: #3B82F6;
-  position: relative;
-  display: inline-block;
-}
-
-.hero-blue::after {
-  content: '';
-  position: absolute;
-  bottom: -4px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #3B82F6, transparent);
-  animation: goldShine 2s infinite;
-}
-
-/* Subtitle */
-#hero p {
-  color: var(--text-dim, #888888);
-  font-size: var(--text-lg, 18px);
-  line-height: var(--leading-loose, 1.8);
-  max-width: 700px;
-  margin: 0 auto var(--space-6, 24px) auto;
-  font-weight: var(--weight-light, 300);
-  animation: fadeInUp 0.8s ease 0.4s both;
-}
-
-@media (min-width: 768px) {
-  #hero p {
-    font-size: var(--text-xl, 20px);
-  }
-}
-
-/* CTA Button - Overriding inline styles */
-#hero .btn-primary {
-  background: var(--gold-matte, #c5a028) !important;
-  color: var(--black-deep, #050505) !important;
-  border: 1px solid var(--gold-matte, #c5a028) !important;
-  max-width: 220px !important;
-  font-size: 1.1rem !important;
-  padding: 16px 32px !important;
-  margin-top: 1rem !important;
-  font-weight: var(--weight-medium, 500);
-  letter-spacing: var(--tracking-wider, 0.05em);
-  text-transform: uppercase;
-  border-radius: var(--radius-md, 4px);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  animation: fadeInUp 0.8s ease 0.6s both;
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.4));
-}
-
-#hero .btn-primary::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-#hero .btn-primary:hover {
-  background: var(--gold-soft, #8e793e) !important;
-  border-color: var(--gold-soft, #8e793e) !important;
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-gold-md, 0 4px 15px rgba(197, 160, 40, 0.3));
-}
-
-#hero .btn-primary:hover::before {
-  left: 100%;
-}
-
-#hero .btn-primary:active {
-  transform: translateY(0);
-}
-
-/* Animations */
-@keyframes fadeInDown {
+@keyframes heroMcFeedScroll {
   from {
-    opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(0);
   }
 
   to {
-    opacity: 1;
-    transform: translateY(0);
+    transform: translateY(-50%);
   }
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.hero-mc-scan-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.7), transparent);
+  animation: heroMcScan 2.2s ease-in-out infinite;
 }
 
-@keyframes goldShine {
+@keyframes heroMcScan {
   0% {
-    opacity: 0.3;
-    width: 0%;
-    left: 0;
-  }
-
-  50% {
-    opacity: 1;
-    width: 100%;
-    left: 0;
+    transform: translateX(-120%);
   }
 
   100% {
-    opacity: 0.3;
-    width: 0%;
-    left: 100%;
+    transform: translateX(320%);
   }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  #hero {
-    min-height: 80vh;
-    padding: var(--space-16, 64px) var(--space-4, 16px);
+@media (prefers-reduced-motion: reduce) {
+  .hero-mc-feed-track {
+    animation: none;
   }
 
-  #hero h1 {
-    font-size: var(--text-3xl, 30px);
-  }
-
-  #hero p {
-    font-size: var(--text-base, 14px);
-  }
-
-  #hero .btn-primary {
-    max-width: 200px !important;
-    font-size: 1rem !important;
-    padding: 14px 28px !important;
-  }
-}
-
-/* Dark mode enhancement */
-@media (prefers-color-scheme: dark) {
-  #hero {
-    background: #ffffff;
+  .hero-mc-scan-bar::after {
+    animation: none;
+    display: none;
   }
 }
 
@@ -27661,7 +28363,7 @@ h1.text-4xl.md\:text-6xl.font-black.text-white.mb-6.leading-tight {
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  max-width: var(--container-xl, 1280px);
+  max-width: 1280px;
   margin: 0 auto var(--space-10, 40px) auto;
   padding-bottom: var(--space-6, 24px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
@@ -27716,25 +28418,88 @@ h1.text-4xl.md\:text-6xl.font-black.text-white.mb-6.leading-tight {
   }
 }
 
+/* ==========================================
+   🦶 SITE FOOTER (redesigned - was cramped: a
+   120px logo, 6 payment badges and the copyright/
+   disclaimer text were all fighting for space in one
+   flex row, and .footer-grid's intended CSS grid
+   layout was being silently forced to display:flex
+   by an unrelated "prevent logo distortion" !important
+   rule further up this file. Rebuilt as two clearly
+   separated, breathable zones: a content grid, then a
+   slim bottom bar. )
+   ========================================== */
+
+.site-footer {
+  width: 100%;
+  background: #ffffff;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  font-family: var(--font-primary, 'Inter', sans-serif);
+}
+
+.footer-main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-16, 64px) var(--space-6, 24px) var(--space-12, 48px);
+}
+
 /* Footer Grid */
 .footer-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-8, 32px) var(--space-4, 16px);
-  max-width: var(--container-xl, 1280px);
-  margin: 0 auto;
+  grid-template-columns: 1fr;
+  gap: var(--space-10, 40px) var(--space-6, 24px);
 }
 
 @media (min-width: 640px) {
   .footer-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .footer-brand-column {
+    grid-column: span 2;
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 900px) {
+  .footer-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .footer-brand-column,
+  .subscribe-column {
+    grid-column: span 1;
+  }
+}
+
+@media (min-width: 1280px) {
   .footer-grid {
     grid-template-columns: repeat(6, 1fr);
+    gap: var(--space-8, 32px) var(--space-6, 24px);
   }
+}
+
+/* Brand Column */
+.footer-brand-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4, 16px);
+}
+
+.footer-brand-logo {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  object-fit: contain !important;
+}
+
+.footer-brand-tagline {
+  font-size: var(--text-sm, 13px);
+  line-height: var(--leading-relaxed, 1.6);
+  color: var(--text-very-dim, #6b7280);
+  max-width: 26ch;
+  margin: 0;
 }
 
 /* Footer Columns */
@@ -27750,8 +28515,6 @@ h1.text-4xl.md\:text-6xl.font-black.text-white.mb-6.leading-tight {
   text-transform: uppercase;
   letter-spacing: var(--tracking-wider, 0.05em);
   margin-bottom: var(--space-3, 12px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  padding-bottom: var(--space-2, 8px);
 }
 
 .footer-column ul {
@@ -27777,21 +28540,12 @@ h1.text-4xl.md\:text-6xl.font-black.text-white.mb-6.leading-tight {
   transform: translateX(4px);
 }
 
-/* Subscribe Column */
-.subscribe-column {
-  grid-column: span 2;
-}
-
-@media (min-width: 1024px) {
-  .subscribe-column {
-    grid-column: span 1;
-  }
-}
-
 .subscribe-column h4 {
-  font-size: var(--text-sm, 13px);
-  font-weight: var(--weight-semibold, 600);
-  color: var(--text-primary, #ffffff);
+  font-size: var(--text-xs, 12px);
+  font-weight: var(--weight-bold, 700);
+  color: #1f2937;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider, 0.05em);
   margin-bottom: var(--space-3, 12px);
 }
 
@@ -27937,29 +28691,40 @@ h1.text-4xl.md\:text-6xl.font-black.text-white.mb-6.leading-tight {
   gap: var(--space-2, 8px);
 }
 
-/* Elegant Social Button */
-.btn-elegant-social {
+/* Elegant Social Button - icon-only circle.
+   padding:0 is load-bearing: an earlier "Dark Mode" .btn-elegant-social
+   rule elsewhere in this file sets padding:10px 20px and was never
+   overridden, which (with box-sizing:border-box and this 32px width) left
+   zero content area for the icon - it rendered as an empty circle.
+   Selector is "a.btn-elegant-social" (not plain ".btn-elegant-social"):
+   this button lives inside .footer-column, and ".footer-column a" (class+
+   element = higher specificity than a single class) sets
+   display:inline-block, which silently beat this rule's display:inline-flex
+   and broke the icon centering regardless of source order. */
+a.btn-elegant-social {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2, 8px);
-  padding: var(--space-1, 4px) var(--space-3, 12px);
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   background: transparent;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: var(--radius-full, 9999px);
   color: var(--text-very-dim, #555555);
-  font-size: var(--text-xxs, 11px);
   text-decoration: none;
   transition: all 0.2s ease;
   cursor: pointer;
 }
 
 .btn-elegant-social svg {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   fill: currentColor;
+  flex-shrink: 0;
 }
 
-.btn-elegant-social:hover {
+a.btn-elegant-social:hover {
   border-color: #3B82F6;
   color: #3B82F6;
   background: rgba(59, 130, 246, 0.06);
@@ -27974,17 +28739,12 @@ h1.text-4xl.md\:text-6xl.font-black.text-white.mb-6.leading-tight {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .footer-one-line {
-    padding: var(--space-8, 32px) var(--space-4, 16px) var(--space-6, 24px);
-  }
-
-  .footer-logo-badges {
-    flex-direction: column;
-    gap: var(--space-3, 12px);
+  .footer-main {
+    padding: var(--space-10, 40px) var(--space-4, 16px) var(--space-8, 32px);
   }
 
   .footer-grid {
-    gap: var(--space-6, 24px);
+    gap: var(--space-8, 32px) var(--space-4, 16px);
   }
 
   .footer-column h4 {
@@ -28006,12 +28766,87 @@ h1.text-4xl.md\:text-6xl.font-black.text-white.mb-6.leading-tight {
   .social-buttons {
     justify-content: center;
   }
+
+  .footer-brand-column {
+    align-items: center;
+    text-align: center;
+  }
+
+  .footer-brand-tagline {
+    max-width: none;
+  }
+}
+
+/* Bottom Bar (copyright, payment badges, disclaimer) */
+.footer-bottom {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: #fafbfc;
+}
+
+.footer-bottom-row {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-6, 24px) var(--space-6, 24px) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4, 16px);
+}
+
+@media (min-width: 640px) {
+  .footer-bottom-row {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+.footer-copyright {
+  font-size: var(--text-xs, 12px);
+  color: var(--text-very-dim, #6b7280);
+  white-space: nowrap;
+}
+
+.payment-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-5, 20px);
+}
+
+.payment-badges img.trust-logo {
+  margin: 0 !important;
+}
+
+.disclaimer-text {
+  max-width: 860px;
+  margin: var(--space-5, 20px) auto 0;
+  padding: var(--space-5, 20px) var(--space-6, 24px);
+  font-size: var(--text-xxs, 11px);
+  line-height: var(--leading-relaxed, 1.6);
+  color: var(--text-very-dim, #9ca3af);
+  text-align: center;
+}
+
+.disclaimer-label {
+  color: #3B82F6;
+  font-weight: var(--weight-bold, 700);
+}
+
+@media (max-width: 640px) {
+  .footer-bottom-row {
+    padding: var(--space-6, 24px) var(--space-4, 16px) 0;
+  }
+
+  .disclaimer-text {
+    padding: var(--space-5, 20px) var(--space-4, 16px);
+  }
 }
 
 /* Dark mode enhancement */
 @media (prefers-color-scheme: dark) {
-  .footer-one-line {
-    background: var(--black-deep, #050505);
+  .site-footer {
+    background: #ffffff;
   }
 }
 
@@ -28126,7 +28961,7 @@ h1.text-4xl.md\:text-6xl.font-black.text-white.mb-6.leading-tight {
   justify-content: space-between;
   gap: var(--space-4, 16px);
   flex-wrap: wrap;
-  max-width: var(--container-xl, 1280px);
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -33797,28 +34632,32 @@ circle {
   justify-content: center;
   gap: var(--space-2, 8px);
   padding: var(--space-2, 8px) var(--space-4, 16px);
-  background: rgba(255, 255, 255, 0.85);
+  /* Echoes the Hero section's #EFF6FF -> white wash instead of a flat
+     white glass strip, so the fixed nav reads as part of the same visual
+     system rather than a generic bar sitting on top of it. */
+  background: linear-gradient(180deg, rgba(239, 246, 255, 0.85), rgba(255, 255, 255, 0.85));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(59, 130, 246, 0.15);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(30, 58, 95, 0.08);
 }
 
-/* Navbar Links */
+/* Navbar Links - navy to match Hero's heading color, rounded-full hover
+   chips to match Hero's pill-shaped badges/buttons rather than the old
+   sharp-cornered underline-nav look. */
 .navbar-desktop a {
-  color: #1f2937;
+  color: #1E3A5F;
   font-size: var(--text-xs, 12px);
   font-weight: var(--weight-medium, 500);
   letter-spacing: var(--tracking-wide, 0.02em);
   text-decoration: none;
   text-transform: uppercase;
   padding: var(--space-1, 4px) var(--space-2, 8px);
-  border-radius: var(--radius-sm, 2px);
+  border-radius: var(--radius-full, 9999px);
   transition: all 0.2s ease;
   position: relative;
 }
 
-/* Gold Hover Effect */
 .navbar-desktop a:hover {
   color: #3B82F6;
   background: rgba(59, 130, 246, 0.08);
@@ -33826,39 +34665,91 @@ circle {
 
 /* Active Link Indicator (optional - add className="active" to active link) */
 .navbar-desktop a.active {
-  color: #3B82F6;
-  border-bottom: 2px solid #3B82F6;
-}
-
-/* Special Styling for LIVE MARKETS link */
-.navbar-desktop a[href="/markets"] {
-  color: #f59e0b;
-  font-weight: var(--weight-bold, 700);
-  border: 1px solid rgba(245, 158, 11, 0.2);
-  background: rgba(245, 158, 11, 0.05);
-  padding: var(--space-1, 4px) var(--space-2, 8px);
-  border-radius: var(--radius-full, 20px);
-}
-
-.navbar-desktop a[href="/markets"]:hover {
-  background: rgba(245, 158, 11, 0.15);
-  border-color: #f59e0b;
-  color: #f59e0b;
-}
-
-/* Special Styling for LOGIN button */
-.navbar-desktop a[href="/client/login"] {
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  background: transparent;
-  padding: var(--space-1, 4px) var(--space-3, 12px);
-  border-radius: var(--radius-full, 20px);
-  margin-left: var(--space-1, 4px);
-}
-
-.navbar-desktop a[href="/client/login"]:hover {
+  color: #2563EB;
   background: rgba(59, 130, 246, 0.1);
+}
+
+/* Live Markets link: was an amber/gold pill (leftover from the pre-blue
+   brand) with a static 🔴 emoji - now a blue pill with the same animated
+   live-dot pattern used in the Hero mission-control panel and session
+   badge, so "live" reads consistently across the site. */
+.navbar-live-link {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  color: #3B82F6 !important;
+  font-weight: var(--weight-bold, 700);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.navbar-live-link:hover {
+  background: rgba(59, 130, 246, 0.14) !important;
   border-color: #3B82F6;
-  color: #3B82F6;
+  color: #2563EB !important;
+}
+
+.navbar-live-dot {
+  position: relative;
+  display: inline-flex;
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+}
+
+.navbar-live-dot-ping {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: #10B981;
+  opacity: 0.75;
+  animation: navbarLiveDotPing 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.navbar-live-dot-core {
+  position: relative;
+  display: inline-flex;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #10B981;
+}
+
+@keyframes navbarLiveDotPing {
+  0% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+
+  75%, 100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navbar-live-dot-ping {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Login: filled solid pill matching the Hero's primary "Get Started" CTA
+   treatment (was an outline pill) - it's the nav's one primary action. */
+.navbar-login-link {
+  color: #ffffff !important;
+  background: #3B82F6;
+  border: 1px solid #3B82F6;
+  padding: var(--space-1, 4px) var(--space-3, 12px);
+  margin-left: var(--space-1, 4px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.navbar-login-link:hover {
+  background: #2563EB !important;
+  border-color: #2563EB;
+  color: #ffffff !important;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 }
 
 /* Responsive - Hide on mobile (since you have mobile menu) */
@@ -33880,35 +34771,44 @@ circle {
   }
 }
 
-/* Scroll effect - optional (add className="scrolled" with JS) */
+/* Scroll effect: transparent glass (base state above) -> solid white
+   with a subtle shadow once the page has scrolled past the hero. Class
+   is toggled by Navbar.tsx's scroll listener. */
 .navbar-desktop.scrolled {
-  background: rgba(255, 255, 255, 0.95);
-  border-bottom-color: #3B82F6;
+  background: #ffffff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom-color: rgba(15, 23, 42, 0.06);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
   padding: var(--space-1, 4px) var(--space-4, 16px);
 }
 
-/* === Sticky Logo Positioning === */
+/* === Sticky Logo Positioning ===
+   Deliberately mirrors .premium-mobile-nav's box model (top:0, 44px tall)
+   so the logo sits centered in the same visual bar as the burger button,
+   even though they're separate fixed-position elements. Used to be
+   top:1rem with an 80px-tall image forced into a 40px box via a -10px
+   negative margin hack, which rendered oversized and misaligned. */
 .sticky-logo {
   position: fixed;
   z-index: 99999;
-  top: 1rem;
+  top: 0;
   left: 1rem;
+  height: 44px;
+  width: 34px;
   opacity: 1;
   transition: all 0.3s ease;
-  width: 40px;
-  /* Match burger menu width */
-  height: 40px;
-  /* Match burger menu height */
   display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Move to right corner on mobile */
+/* Move to right corner on mobile, aligned with the header bar */
 @media (max-width: 767px) {
   .sticky-logo {
     left: auto;
-    /* Reset left */
-    right: 0.4rem;
-    /* Position in right corner */
+    right: 14px;
+    width: 28px;
   }
 }
 
@@ -33927,8 +34827,7 @@ circle {
 
 .sticky-logo-img {
   width: 100%;
-  height: 80px;
-  margin-top: -10px;
+  height: auto;
   object-fit: contain;
 }
 
@@ -34333,85 +35232,157 @@ circle {
   }
 }
 
-/* --- MZ : Dual Feed Command Center --- */
+/* --- MZ : Dual Feed Command Center ---
+   Redesigned from a dense terminal strip (full monospace, hard
+   border-right divider lines between items, edges that clip content
+   mid-word) into softer rounded chips with breathing room, a real
+   compositor-driven CSS marquee instead of a per-frame scrollLeft
+   mutation, and a fade at both edges so items dissolve in/out instead of
+   being cut off. */
 
+/* margin-top clears the fixed header (mobile burger bar / desktop navbar,
+   both ~44px tall, position:fixed, z-index:1000). This used to rely on
+   body's own padding-top for that clearance, but a later, unrelated
+   `body { padding-top: 0 }` rule elsewhere in this file wins the cascade
+   and zeroes it out - so the session badge (the very first thing in the
+   page) was rendering 20+ px underneath the fixed header instead of
+   below it. Fixed locally here rather than touching body's padding-top
+   site-wide, since other sections already compensate for that themselves
+   and changing it globally risks pushing everything else down twice. */
 .terminal-feed-wrapper {
   background: #ffffff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  padding: 50px 0;
-  font-family: 'JetBrains Mono', monospace;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  margin-top: 52px;
+  padding: 10px 0 14px;
+  font-family: 'Inter', sans-serif;
 }
 
 .feed-header-tier {
   display: flex;
   justify-content: space-between;
-
   align-items: center;
-  padding: 0 20px 8px 20px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px 8px;
 }
 
+/* Session status badge - small and understated so it doesn't compete
+   with (or visually outweigh) the ticker rows right below it; was
+   rendering noticeably larger/bolder than the feed-slat chips it sits
+   above. Color follows market state. */
 .session-status-badge {
   display: flex;
   align-items: center;
-  justify-content: center;
-  /* Add this line */
-  gap: 8px;
-  background: rgba(16, 185, 129, 0.06);
-  padding: 4px 10px;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  border: none;
+}
 
-  border-radius: 4px;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+.session-status-badge.active {
+  background: #10B981;
+  box-shadow: 0 1px 4px rgba(16, 185, 129, 0.25);
+}
+
+.session-status-badge.closed {
+  background: #9ca3af;
+  box-shadow: 0 1px 4px rgba(107, 114, 128, 0.2);
 }
 
 .session-info {
-  font-size: 10px;
-  font-weight: 800;
-  color: #10B981;
-  letter-spacing: 1px;
+  font-size: 9.5px;
+  font-weight: var(--font-weight-semibold, 600);
+  color: #ffffff;
+  letter-spacing: 0.02em;
 }
 
 .feed-description {
-  font-size: 9px;
-  color: #6b7280;
+  font-size: 10px;
+  color: #9ca3af;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.1em;
+  font-weight: var(--font-weight-medium, 500);
 }
 
-.dual-feed-container {
+.livefeed-rows {
   display: flex;
   flex-direction: column;
-  gap: 0px;
+  gap: 10px;
 }
 
 .feed-scroll-row {
   width: 100%;
   overflow: hidden;
   white-space: nowrap;
-  cursor: grab;
+  /* Fade content out at both edges instead of a hard clip */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
 }
 
 .feed-scroll-content {
   display: flex;
+  align-items: center;
   width: max-content;
+  animation: marquee-left linear infinite;
 }
 
-/* Base Slat Style */
+.feed-scroll-content.reverse {
+  animation-name: marquee-right;
+}
+
+.feed-scroll-row:hover .feed-scroll-content,
+.feed-scroll-content.paused {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-left {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-right {
+  from {
+    transform: translateX(-50%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-scroll-content {
+    animation: none;
+  }
+}
+
+/* Base Slat Style - a soft rounded chip, spaced with margin instead of a
+   hard border line between items. Sized down further than the first pass
+   - was still reading as too large/prominent even on desktop. */
 .feed-slat {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 25px;
-  font-size: 12px;
-  background: transparent;
-  border: none;
+  gap: 8px;
+  padding: 5px 12px;
+  margin-right: 8px;
+  font-size: 11px;
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 9999px;
   color: #111827;
-  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
 }
 
 /* Signal Slat Specifics */
 .slat-label {
+  font-family: 'JetBrains Mono', monospace;
   color: #3B82F6;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .slat-value.buy {
@@ -34419,62 +35390,60 @@ circle {
 }
 
 .slat-value.sell {
-  color: #ff4d4d;
+  color: #ef4444;
 }
 
 .slat-conf {
+  font-family: 'JetBrains Mono', monospace;
   font-size: 9px;
-  color: #6b7280;
+  color: #9ca3af;
 }
 
 .slat-value.buy,
 .slat-value.sell {
-  font-size: 1.3rem;
-  /* Even larger arrow */
+  font-size: 0.95rem;
   line-height: 0.8;
-  /* Tighter spacing */
   font-weight: 800;
-  /* Maximum boldness */
   display: inline-block;
-  transform: translateY(-2px);
-  /* Fine-tune vertical alignment */
 }
 
-/* News Slat Specifics */
-.news-tag {
-  font-size: 8px;
-  background: #3B82F6;
-  color: #fff;
-  padding: 1px 4px;
-  font-weight: 900;
-  border-radius: 2px;
-}
-
-.news-symbol {
-  color: #3B82F6;
+.slat-tp {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
   font-weight: 700;
+  padding-left: 8px;
+  border-left: 1px solid rgba(15, 23, 42, 0.08);
 }
 
-.news-text {
-  color: #4b5563;
-  font-weight: 300;
+.slat-tp.buy {
+  color: #10B981;
 }
 
-/* Pulse Animation */
+.slat-tp.sell {
+  color: #ef4444;
+}
+
+.slat-tp-label {
+  color: #9ca3af;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* Pulse Animation - white dot on the now-solid-color badge background */
 .pulse-dot {
-  width: 6px;
-  height: 6px;
+  width: 4.5px;
+  height: 4.5px;
   border-radius: 50%;
+  background: #ffffff;
 }
 
 .pulse-dot.green {
-  background: #10B981;
-  box-shadow: 0 0 8px #10B981;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
   animation: feed-pulse 2s infinite;
 }
 
 .pulse-dot.red {
-  background: #9ca3af;
+  opacity: 0.8;
 }
 
 @keyframes feed-pulse {
@@ -34493,8 +35462,14 @@ circle {
 
 @media (max-width: 768px) {
   .feed-slat {
-    padding: 6px 15px;
-    font-size: 11px;
+    padding: 4px 10px;
+    font-size: 10px;
+    margin-right: 6px;
+  }
+
+  .slat-conf,
+  .slat-tp {
+    font-size: 8.5px;
   }
 
   .feed-description {
@@ -34502,16 +35477,18 @@ circle {
   }
 
   .feed-header-tier {
-    display: flex;
     justify-content: center;
-    align-items: center;
-    padding: 0 20px 8px 20px;
+    padding: 0 20px 6px;
   }
 
+  /* Tighter than desktop - the mobile header bar is only 44px and
+     transparent (vs. the desktop navbar's opaque ~43px), so less
+     clearance is needed and there's no reason to carry desktop's
+     spacing here too. */
   .terminal-feed-wrapper {
-    padding: 15px 0;
+    margin-top: 46px;
+    padding: 6px 0 10px;
   }
-
 }
 
 /* Session item styling for multiple sessions */
@@ -35344,10 +36321,15 @@ html {
 
 .insights-header h2 {
   font-size: 2.2rem;
-  font-weight: 200;
-  letter-spacing: -1px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   margin-top: 10px;
   color: #111827;
+}
+
+/* Contact section: consistent top divider with the rest of the homepage sections */
+#contacts {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .live-tag {
@@ -36712,7 +37694,7 @@ html {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
-  background: rgba(0, 0, 0, 0.3);
+  background: #F8FAFC;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
@@ -36788,11 +37770,11 @@ html {
 .chatbox-select,
 .chatbox-input {
   width: 100%;
-  background: #ffffff;
+  background: #ffffff !important;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   padding: 10px 14px;
-  color: #111827;
+  color: #111827 !important;
   font-size: 14px;
   transition: all 0.2s ease;
   outline: none;
@@ -36832,9 +37814,9 @@ html {
 }
 
 .btn-ghost-gold {
-  background: transparent;
-  color: #3B82F6;
-  border: 1px solid #3B82F6;
+  background: transparent !important;
+  color: #3B82F6 !important;
+  border: 1px solid #3B82F6 !important;
   border-radius: 12px;
   padding: 8px 16px;
   font-size: 11px;
@@ -36846,7 +37828,9 @@ html {
 }
 
 .btn-ghost-gold:hover {
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(59, 130, 246, 0.1) !important;
+  border-color: #2563EB !important;
+  color: #2563EB !important;
   transform: translateY(-2px);
 }
 
@@ -37892,9 +38876,9 @@ html {
   padding: 6px 14px;
   border-radius: 10px;
   cursor: pointer;
-  background: #1a1a1a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
   transition: all 0.2s ease;
   direction: rtl;
   position: relative;
@@ -37924,24 +38908,24 @@ html {
 @keyframes softPulse {
   0% {
     filter: brightness(1);
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: #e2e8f0;
   }
 
   50% {
-    filter: brightness(1.08);
-    border-color: rgba(212, 175, 55, 0.3);
+    filter: brightness(1.02);
+    border-color: rgba(59, 130, 246, 0.4);
   }
 
   100% {
     filter: brightness(1);
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: #e2e8f0;
   }
 }
 
 .contact-btn:hover {
-  background: #252525;
+  background: #f8fafc;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
   animation: softPulse 1.2s ease-in-out infinite;
 }
 
@@ -37972,7 +38956,7 @@ html {
 .contact-text {
   display: flex;
   flex-direction: column;
-  color: #ffffff;
+  color: #111827;
 }
 
 .contact-title {
@@ -37984,12 +38968,12 @@ html {
 .contact-subtitle {
   font-size: 8px;
   font-weight: 400;
-  color: #888;
+  color: #6b7280;
   margin-top: 1px;
 }
 
 .contact-btn:hover .contact-subtitle {
-  color: #D4AF37;
+  color: #3B82F6;
 }
 
 /* ==========================================
@@ -38025,8 +39009,8 @@ html {
 /* Glowing border animation */
 @keyframes softGlow {
   0% {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    border-color: #e2e8f0;
   }
 
   50% {
@@ -38035,13 +39019,13 @@ html {
   }
 
   100% {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    border-color: #e2e8f0;
   }
 }
 
 .contact-btn:hover {
-  background: #252525;
+  background: #f8fafc;
   transform: translateY(-2px);
   animation: softGlow 1.5s ease-in-out infinite;
 }
@@ -38057,8 +39041,8 @@ html {
 
 @keyframes telegramGlow {
   0% {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    border-color: #e2e8f0;
   }
 
   50% {
@@ -38067,8 +39051,8 @@ html {
   }
 
   100% {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    border-color: #e2e8f0;
   }
 }
 
@@ -38078,14 +39062,14 @@ html {
 
 /* Single Contact Button - Centralized Support Hub */
 .main-contact-btn {
-  border-right: 2px solid #D4AF37;
-  /* Champagne gold border for trust */
-  background: #1a1a1a;
+  border-right: 2px solid #3B82F6;
+  /* Blue border for trust */
+  background: #ffffff;
 }
 
 .main-contact-btn:hover .contact-icon svg {
-  stroke: #D4AF37;
-  /* Gold accent on hover */
+  stroke: #3B82F6;
+  /* Blue accent on hover */
 }
 
 .main-contact-btn .contact-title {
@@ -38093,8 +39077,8 @@ html {
 }
 
 .main-contact-btn .contact-subtitle {
-  color: #D4AF37;
-  /* Gold subtitle to indicate premium support */
+  color: #3B82F6;
+  /* Blue subtitle to indicate premium support */
 }
 
 /* ==========================================
@@ -38111,13 +39095,13 @@ html {
 }
 
 .popup-container-small {
-  background: linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%);
+  background: #ffffff;
   border-radius: 16px;
   padding: 16px 20px;
   width: 280px;
   text-align: center;
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
   position: relative;
 }
 
@@ -38127,14 +39111,14 @@ html {
   right: 12px;
   background: none;
   border: none;
-  color: #888;
+  color: #6b7280;
   font-size: 18px;
   cursor: pointer;
   font-weight: bold;
 }
 
 .popup-close-small:hover {
-  color: #D4AF37;
+  color: #3B82F6;
 }
 
 .popup-icon-small {
@@ -38144,28 +39128,28 @@ html {
 
 .popup-text-small {
   font-size: 13px;
-  color: #ddd;
+  color: #374151;
   line-height: 1.5;
   margin-bottom: 12px;
 }
 
 .popup-text-small strong {
-  color: #D4AF37;
+  color: #3B82F6;
 }
 
 .popup-fomo-small {
-  background: rgba(212, 175, 55, 0.12);
+  background: rgba(59, 130, 246, 0.1);
   border-radius: 20px;
   padding: 6px 12px;
   font-size: 11px;
-  color: #D4AF37;
+  color: #3B82F6;
   margin-bottom: 14px;
   display: inline-block;
 }
 
 .popup-btn-small {
-  background: linear-gradient(135deg, #D4AF37 0%, #b8941a 100%);
-  color: #0a0a0a;
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  color: #ffffff;
   border: none;
   border-radius: 40px;
   padding: 10px 16px;
@@ -38178,7 +39162,7 @@ html {
 
 .popup-btn-small:hover {
   transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 /* Desktop animation */
@@ -38309,13 +39293,13 @@ html {
 }
 
 .popup-container-small {
-  background: linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%);
+  background: #ffffff;
   border-radius: 16px;
   padding: 16px 20px;
   width: 280px;
   text-align: center;
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
   position: relative;
 }
 
@@ -38325,14 +39309,14 @@ html {
   right: 12px;
   background: none;
   border: none;
-  color: #888;
+  color: #6b7280;
   font-size: 18px;
   cursor: pointer;
   font-weight: bold;
 }
 
 .popup-close-small:hover {
-  color: #D4AF37;
+  color: #3B82F6;
 }
 
 .popup-icon-small {
@@ -38342,28 +39326,28 @@ html {
 
 .popup-text-small {
   font-size: 13px;
-  color: #ddd;
+  color: #374151;
   line-height: 1.5;
   margin-bottom: 12px;
 }
 
 .popup-text-small strong {
-  color: #D4AF37;
+  color: #3B82F6;
 }
 
 .popup-fomo-small {
-  background: rgba(212, 175, 55, 0.12);
+  background: rgba(59, 130, 246, 0.1);
   border-radius: 20px;
   padding: 6px 12px;
   font-size: 11px;
-  color: #D4AF37;
+  color: #3B82F6;
   margin-bottom: 14px;
   display: inline-block;
 }
 
 .popup-btn-small {
-  background: linear-gradient(135deg, #D4AF37 0%, #b8941a 100%);
-  color: #0a0a0a;
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  color: #ffffff;
   border: none;
   border-radius: 40px;
   padding: 10px 16px;
@@ -38376,7 +39360,7 @@ html {
 
 .popup-btn-small:hover {
   transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 @keyframes slideInRight {
@@ -38402,5 +39386,1200 @@ html {
 
   .quick-btn {
     padding: 12px 16px;
+  }
+}
+
+/* ==========================================
+   🧠 AI CHAT SECTION — MISSION CONTROL STYLE
+   Layout/animation lives in components/AiChatSection.tsx via Framer
+   Motion; these classes cover what that doesn't (grid layout, card
+   chrome, glow/scan decorations). Deliberately new `aichat-` prefix,
+   not reusing .symbol-launch-btn / .launch-terminal-card / .immersive-*
+   - all of those are shared with PropFirmChatSection, PropFirmChat,
+   InstantChart and HomeClientContainer's own separate modal, and each
+   already has multiple colliding legacy rule blocks elsewhere in this
+   file (dark/gold eras). New names sidestep that instead of fighting it.
+   ========================================== */
+
+.aichat-container,
+.propfirm-container {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.aichat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #3B82F6;
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 20px;
+}
+
+/* --- Symbol grid (also used by PropFirmChatSection's asset grid -
+   .propfirm-asset-* is the same card, just a different launch label) --- */
+.aichat-symbol-grid,
+.propfirm-asset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  max-width: 640px;
+  margin: 0 auto 20px;
+}
+
+@media (min-width: 640px) {
+  .aichat-symbol-grid,
+  .propfirm-asset-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.aichat-symbol-card,
+.propfirm-asset-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.aichat-symbol-card:hover,
+.propfirm-asset-card:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 12px 28px rgba(30, 58, 95, 0.1);
+}
+
+.aichat-symbol-top,
+.propfirm-asset-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.aichat-symbol-icon,
+.propfirm-asset-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(59, 130, 246, 0.1);
+  color: #3B82F6;
+}
+
+.aichat-live-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.aichat-live-chip.buy {
+  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.aichat-live-chip.sell {
+  color: #DC2626;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.aichat-symbol-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1E3A5F;
+  letter-spacing: -0.01em;
+}
+
+.aichat-symbol-status {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #3B82F6;
+}
+
+.aichat-symbol-price {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.aichat-symbol-price.buy {
+  color: #059669;
+}
+
+.aichat-symbol-price.sell {
+  color: #DC2626;
+}
+
+/* --- Terminal launch card --- */
+.aichat-terminal-card {
+  position: relative;
+  overflow: hidden;
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 28px 24px 24px;
+  border-radius: 24px;
+  background: linear-gradient(165deg, #F8FAFF 0%, #ffffff 55%);
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  box-shadow: 0 20px 45px rgba(30, 58, 95, 0.1);
+  cursor: pointer;
+  text-align: center;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.aichat-terminal-card:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 24px 55px rgba(30, 58, 95, 0.16);
+}
+
+.aichat-terminal-glow {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.16);
+  filter: blur(50px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.aichat-terminal-header,
+.aichat-terminal-icon,
+.aichat-terminal-btn,
+.aichat-terminal-footer,
+.aichat-scan-bar {
+  position: relative;
+  z-index: 1;
+}
+
+.aichat-terminal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.aichat-terminal-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #1E3A5F;
+}
+
+.aichat-terminal-session {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6B7280;
+}
+
+.aichat-terminal-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: linear-gradient(160deg, rgba(59, 130, 246, 0.14), rgba(59, 130, 246, 0.04));
+  color: #3B82F6;
+}
+
+.aichat-terminal-btn {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 24px;
+  background: linear-gradient(180deg, #3B82F6 0%, #2563EB 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(59, 130, 246, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.aichat-terminal-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(59, 130, 246, 0.4);
+  filter: brightness(1.04);
+}
+
+.aichat-terminal-footer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 11px;
+  color: #6B7280;
+}
+
+.aichat-scan-bar {
+  display: block;
+  margin-top: 18px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.12);
+  overflow: hidden;
+}
+
+.aichat-scan-bar-fill {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #3B82F6, transparent);
+  animation: aichatScan 2.2s ease-in-out infinite;
+}
+
+@keyframes aichatScan {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aichat-scan-bar-fill {
+    animation: none;
+  }
+}
+
+/* --- Modal chrome (standalone /AIChat page only - the homepage's
+   embedded copy of this same section is launched through
+   HomeClientContainer's own separate modal instead, via the onLaunch
+   prop, so it keeps using .immersive-* untouched) --- */
+.aichat-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.aichat-modal-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+}
+
+.aichat-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  height: 60px;
+  padding: 0 20px;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.aichat-modal-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #1E3A5F;
+}
+
+.aichat-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #F8FAFC;
+  color: #6B7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aichat-modal-close:hover {
+  background: #EFF6FF;
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #3B82F6;
+}
+
+.aichat-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: 32px 20px;
+  background: radial-gradient(circle at top, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+}
+
+.aichat-modal-content .chatbox-wrapper {
+  max-width: 800px;
+  width: 100%;
+  height: auto;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+@media (max-width: 640px) {
+  .aichat-symbol-card {
+    padding: 14px;
+  }
+
+  .aichat-terminal-card {
+    padding: 24px 18px 20px;
+  }
+
+  .aichat-modal-header {
+    height: 54px;
+    padding: 0 14px;
+  }
+
+  .aichat-modal-content {
+    padding: 16px 12px;
+  }
+}
+
+/* ==========================================
+   💬 CHAT CONVERSATION — LIGHT THEME FIX
+   .ai-bubble / .chatbox-input-group / .user-bubble are shared by
+   AiChatBox.tsx and PropFirmChat.tsx. Each already had 2-3 rule blocks
+   from earlier dark/gold eras but was NEVER given a proper final
+   white-theme override (unlike most other classes in this file, which
+   at least have a correct block somewhere - see the "generic class
+   name collisions" note earlier in this file). Confirmed live via
+   getComputedStyle: .ai-bubble was resolving to color: #f8fafc (var
+   --text-silk) on a transparent background - near-invisible text once
+   every surface that renders it became a white card/modal instead of
+   a dark panel. .chatbox-input-group had no light variant at all, so
+   its container stayed solid black (var(--obsidian)) even though the
+   <select>/<input> inside it already had a correct white block.
+   ========================================== */
+.ai-bubble {
+  background: #F8FAFC;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  color: #111827;
+}
+
+.user-bubble {
+  background: linear-gradient(135deg, #3B82F6, #2563EB);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+}
+
+.chatbox-input-group {
+  background: #ffffff;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Same story as .chatbox-input-group above - the "Start New Analysis"
+   footer bar (.chatbot-input, wraps .chatbox-reset) has 3 unscoped rule
+   blocks earlier in this file, all still #1a1a1a from the dark era; only
+   a .premium-tool-content-scoped variant was ever converted to light,
+   which doesn't apply to AiChatBox's own modal wrapper. */
+.chatbot-input {
+  background-color: #ffffff;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* ==========================================
+   🏆 PROP FIRM SECTION — firm-ruleset grid
+   The asset grid, terminal card, and modal chrome all reuse the
+   .aichat-* rules above (see PropFirmChatSection.tsx) since it's the
+   same visual system - only the "Strategic Rulesets" grid (firm name +
+   note, no live price) is unique to this section.
+   ========================================== */
+.propfirm-grid-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #6B7280;
+  max-width: 640px;
+  margin: 0 auto 10px;
+}
+
+.propfirm-firm-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  max-width: 640px;
+  margin: 0 auto 32px;
+}
+
+@media (min-width: 640px) {
+  .propfirm-firm-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.propfirm-firm-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  background: #F8FAFC;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.propfirm-firm-card:hover {
+  background: #ffffff;
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 12px 28px rgba(30, 58, 95, 0.1);
+}
+
+.propfirm-firm-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(59, 130, 246, 0.1);
+  color: #3B82F6;
+  margin-bottom: 6px;
+}
+
+.propfirm-firm-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1E3A5F;
+  letter-spacing: -0.01em;
+}
+
+.propfirm-firm-note {
+  font-size: 11px;
+  color: #6B7280;
+}
+
+.propfirm-firm-status {
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #3B82F6;
+}
+
+/* ==========================================
+   💬 AiChatBox — remaining gold-era leftovers
+   .quick-action-btn (the inline XAUUSD/BTCUSD/EURUSD/USDJPY quick-setup
+   row) and .strategy-inline-btn (Scalper/Day Trader chips) were still on
+   var(--gold-primary)/#D4AF37 - readable, but visually inconsistent with
+   every other control in the chat, which is blue. Both only used in
+   AiChatBox.tsx/PropFirmChat.tsx, safe to convert outright.
+   ========================================== */
+.quick-action-btn {
+  background: transparent;
+  border: 1px solid #3B82F6;
+  color: #3B82F6;
+}
+
+.quick-action-btn::before {
+  background: #3B82F6;
+}
+
+.quick-action-btn:hover {
+  color: #ffffff;
+}
+
+.strategy-inline-btn {
+  color: #9CA3AF;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.strategy-inline-btn:hover {
+  border-color: #3B82F6 !important;
+  color: #3B82F6 !important;
+  background: rgba(59, 130, 246, 0.06) !important;
+}
+
+.strategy-inline-btn:hover .btn-text {
+  color: #3B82F6 !important;
+}
+
+.strategy-inline-btn.active {
+  border-color: #3B82F6 !important;
+  color: #3B82F6 !important;
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+.strategy-inline-btn.active .btn-text,
+.strategy-inline-btn.active .btn-badge {
+  color: #3B82F6 !important;
+}
+
+.strategy-inline-btn .btn-badge {
+  background: rgba(0, 0, 0, 0.05);
+  color: #6B7280;
+}
+
+/* .chatbox-wrapper.section's shadow was a leftover heavy dark-panel
+   shadow (50% black) from before the section had a light background -
+   softened to match the rest of the light-theme card shadows. */
+.chatbox-wrapper.section {
+  box-shadow: 0 20px 50px rgba(30, 58, 95, 0.12) !important;
+}
+
+.chatbot-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 60px 20px;
+  color: #6B7280;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.aichat-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  border-top-color: #3B82F6;
+  animation: aichatSpin 0.7s linear infinite;
+}
+
+@keyframes aichatSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aichat-loading-spinner {
+    animation: none;
+  }
+}
+
+.aichat-typing-bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aichat-typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.aichat-typing-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #3B82F6;
+  animation: aichatTypingBounce 1.1s ease-in-out infinite;
+}
+
+.aichat-typing-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.aichat-typing-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes aichatTypingBounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aichat-typing-dots span {
+    animation: none;
+  }
+}
+
+/* ==========================================
+   🔍 SYMBOL PICKER — replaces the plain native <select> for choosing a
+   trading symbol in the step-by-step chat flow (components/AiChatBox.tsx).
+   ========================================== */
+.aichat-symbol-picker {
+  position: relative;
+  flex: 1;
+}
+
+.aichat-symbol-picker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.aichat-symbol-picker-trigger:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.aichat-symbol-picker-trigger:focus-visible {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.aichat-symbol-picker-trigger-icon {
+  display: inline-flex;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.aichat-symbol-picker-trigger-text {
+  flex: 1;
+  text-align: left;
+}
+
+.aichat-symbol-picker-chevron {
+  display: inline-flex;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.aichat-symbol-picker-panel {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 20px 45px rgba(30, 58, 95, 0.16);
+  overflow: hidden;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  max-height: 340px;
+}
+
+.aichat-symbol-picker-search {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #111827;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.aichat-symbol-picker-list {
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.aichat-symbol-picker-group-label {
+  padding: 8px 8px 4px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #9ca3af;
+}
+
+.aichat-symbol-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.aichat-symbol-picker-row:hover {
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.aichat-symbol-picker-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.aichat-symbol-picker-row-sym {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1E3A5F;
+}
+
+.aichat-symbol-picker-row-name {
+  font-size: 11px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aichat-symbol-picker-empty {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* ==========================================
+   💵 CAPITAL PRESET CHIPS — quick $-amount shortcuts above the manual
+   capital input in step 2.
+   ========================================== */
+.aichat-capital-step {
+  background: #ffffff;
+}
+
+.aichat-capital-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 20px 0;
+}
+
+.aichat-capital-chip {
+  background: #F8FAFC;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #374151;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aichat-capital-chip:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #3B82F6;
+}
+
+.aichat-capital-chip.active {
+  background: #3B82F6;
+  border-color: #3B82F6;
+  color: #ffffff;
+}
+
+@media (max-width: 480px) {
+  .aichat-symbol-picker-panel {
+    max-height: 280px;
+  }
+}
+
+/* ==========================================
+   📊 ANALYSIS DETAILS — collapsible "full breakdown" panel that replaces
+   6-7 stacked .ai-card messages with one toggle (components/AiChatBox.tsx).
+   ========================================== */
+.ai-details {
+  margin-top: 4px;
+}
+
+.ai-details-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+  color: #3B82F6;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ai-details-toggle:hover {
+  color: #2563EB;
+}
+
+.ai-details-body {
+  overflow: hidden;
+  padding-top: 8px;
+}
+
+.ai-details-body .ai-card {
+  margin-bottom: 10px;
+}
+
+.ai-details-body .ai-card:last-child {
+  margin-bottom: 0;
+}
+
+/* ==========================================
+   💬 UNIFIED MESSAGE SHAPE — .ai-bubble, .user-bubble and .ai-card were
+   each shaped a little differently (a chat-tail bubble vs. a plain
+   rounded card), which read as inconsistent surfaces in the same
+   conversation. Same radius, same padding rhythm, same soft shadow
+   everywhere now - only fill/text color changes between AI and user.
+   ========================================== */
+.ai-bubble,
+.user-bubble,
+.ai-card {
+  border-radius: 18px !important;
+  padding: 14px 18px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
+
+.ai-card {
+  padding: 16px 18px !important;
+}
+
+.ai-card-title {
+  margin-bottom: 0.75rem !important;
+  padding-bottom: 0.6rem !important;
+}
+
+/* Decision-colored accent on the verdict bubble only - a colored left
+   edge instead of recoloring the whole surface, so BUY/SELL/WAIT reads
+   at a glance without turning the message into a colored block. */
+.ai-bubble-buy {
+  border-left: 3px solid #10B981 !important;
+}
+
+.ai-bubble-sell {
+  border-left: 3px solid #EF4444 !important;
+}
+
+.ai-bubble-wait {
+  border-left: 3px solid #9CA3AF !important;
+}
+
+/* ==========================================
+   🔁 PERSISTENT SYMBOL PICKER — once a symbol is chosen the trigger
+   shows it (instead of the placeholder) and stays clickable to swap.
+   ========================================== */
+.aichat-symbol-row {
+  margin-top: 4px;
+}
+
+.aichat-symbol-picker-trigger.has-value {
+  border-color: rgba(59, 130, 246, 0.35);
+  color: #1E3A5F;
+}
+
+.aichat-symbol-picker-trigger-text strong {
+  color: #1E3A5F;
+  font-weight: 800;
+  margin-right: 6px;
+}
+
+.aichat-symbol-picker-trigger-change {
+  color: #3B82F6;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.aichat-symbol-picker-row.active {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.aichat-symbol-picker-row.active .aichat-symbol-picker-row-sym {
+  color: #3B82F6;
+}
+
+/* .ai-card:hover had a leftover dark-era rule (background: #202020) that
+   made any card the mouse happened to rest on go dark/illegible while
+   reading - confirmed live via getComputedStyle, reproducible by moving
+   the pointer over any detail card. */
+.ai-card:hover {
+  background: #ffffff !important;
+  border-color: rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Live Charts (components/LiveChartsTerminal.tsx, new product at /charts).
+   Reuses ai-card, license-header/license-option, chart-container,
+   position-sizing-grid, indicators-grid, and aichat-capital-chip, which
+   already exist in the white/blue system - only the strategy toggle,
+   decision/confluence badges, and per-factor score bars are new here. */
+.livechart-strategy-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.livechart-strategy-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #F8FAFC;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #374151;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.livechart-strategy-btn:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #3B82F6;
+}
+
+.livechart-strategy-btn.active {
+  background: #3B82F6;
+  border-color: #3B82F6;
+  color: #ffffff;
+}
+
+.livechart-strategy-badge {
+  font-size: 9px;
+  font-weight: 800;
+  opacity: 0.75;
+  text-transform: uppercase;
+}
+
+.livechart-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.livechart-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.livechart-badge.buy {
+  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.livechart-badge.sell {
+  color: #DC2626;
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.livechart-badge.neutral {
+  color: #4B5563;
+  background: rgba(107, 114, 128, 0.1);
+  border-color: rgba(107, 114, 128, 0.2);
+}
+
+.livechart-factor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.livechart-factor-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.livechart-factor-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.livechart-factor-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.livechart-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.livechart-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.livechart-tag.pos {
+  color: #059669;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.livechart-tag.neg {
+  color: #DC2626;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* .chatbox-body (built for AiChatBox's scrollable message list) is a flex
+   column with a fixed height - .chart-container has overflow:hidden, and
+   per the flexbox spec an item with non-visible overflow resolves
+   min-height:auto to 0, so it gets crushed to ~2px while sibling .ai-cards
+   (overflow:visible) keep their natural size and resist shrinking.
+   Confirmed live via getComputedStyle on /charts. flex-shrink:0 is a
+   no-op everywhere .chart-container isn't inside a shrinking flex column. */
+.chart-container {
+  flex-shrink: 0;
+}
+
+/* Live Charts' own chart wrapper - a dedicated class (not .chart-container,
+   which /chart's InstantChart.tsx also uses and stays untouched) so this
+   product's white background doesn't leak into that one. Same flex-shrink
+   fix applies here since it's inside the same .chatbox-body layout. */
+.livechart-canvas-wrap {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+/* Forecast zone (pivot -> TP) - a plain HTML/CSS overlay positioned with
+   the chart's own price/time->pixel coordinates (see LiveChartsTerminal.tsx),
+   not a canvas series. Nothing is drawn inside the chart for this anymore -
+   a breathing glow + floating price badge instead, which a canvas series
+   can't do cleanly and reads as a deliberate "target zone" rather than
+   chart clutter. Direction sets both the color and which edge the badge
+   floats from (below for an upside target, above for a downside one). */
+.livechart-zone {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 6px;
+  z-index: 5;
+  animation: livechart-zone-breathe 2.6s ease-in-out infinite;
+}
+
+.livechart-zone-up {
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.07), rgba(16, 185, 129, 0.32));
+  border: 1.5px solid rgba(16, 185, 129, 0.55);
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+}
+
+.livechart-zone-down {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.32), rgba(239, 68, 68, 0.07));
+  border: 1.5px solid rgba(239, 68, 68, 0.55);
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+}
+
+@keyframes livechart-zone-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  50% { box-shadow: 0 0 18px 3px rgba(16, 185, 129, 0.35); }
+}
+
+.livechart-zone-down {
+  animation-name: livechart-zone-breathe-down;
+}
+
+@keyframes livechart-zone-breathe-down {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  50% { box-shadow: 0 0 18px 3px rgba(239, 68, 68, 0.35); }
+}
+
+.livechart-zone-badge {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  animation: livechart-badge-float 2.6s ease-in-out infinite;
+}
+
+.livechart-zone-up .livechart-zone-badge {
+  bottom: -13px;
+  background: #10B981;
+}
+
+.livechart-zone-down .livechart-zone-badge {
+  top: -13px;
+  background: #EF4444;
+}
+
+@keyframes livechart-badge-float {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .livechart-zone,
+  .livechart-zone-badge {
+    animation: none;
   }
 }

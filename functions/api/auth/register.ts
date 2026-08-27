@@ -61,10 +61,16 @@ export async function onRequestPost(context: any) {
       console.log(`✅ [REG] New user, creating record...`);
       userId = crypto.randomUUID();
 
+      // Temporary dev-testing bump (2 -> 500 free setups on registration) so
+      // the paywall doesn't interrupt every other test run. Only active when
+      // NODE_ENV is explicitly "development" (unset/production stays at 2) -
+      // revert to a flat `2` when asked.
+      const freeSetupCount = env.NODE_ENV === "development" ? 500 : 2;
+
       // Insert new user WITH referral_code
       await env.DB.prepare(
-        "INSERT INTO users (id, email, display_name, referral_code, setup_count, created_at, updated_at) VALUES (?, ?, ?, ?, 2, ?, ?)"
-      ).bind(userId, cleanEmail, displayName || null, userReferralCode, now, now).run();
+        "INSERT INTO users (id, email, display_name, referral_code, setup_count, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      ).bind(userId, cleanEmail, displayName || null, userReferralCode, freeSetupCount, now, now).run();
 
       // Insert password
       await env.DB.prepare(

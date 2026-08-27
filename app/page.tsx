@@ -3,8 +3,6 @@ import { Suspense } from "react";
 import HomeClientContainer from '@/components/HomeClientContainer';
 import NotificationButton from '@/components/NotificationButton'; 
 import Hero from '@/components/Hero';
-import LiveMarketFeed from "@/components/LiveMarketFeed";
- 
 import TraderAssistantLite from '@/components/TraderAssistantLite';
 import LearningHub from '@/components/LearningHub';
 import AiToolsSection from '@/components/AiToolsSection';
@@ -15,8 +13,7 @@ import LatestInsights from '@/components/LatestInsights';
 export default function Home() {
   return (
     <>
-      <NotificationButton /> 
-      <LiveMarketFeed />
+      <NotificationButton />
       <Hero />
       
     

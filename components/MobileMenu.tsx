@@ -1,21 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { Trophy, Zap, Shield, TrendingUp, CreditCard, Star, LogOut } from 'lucide-react';
+import { Trophy, Zap, Shield, TrendingUp, Star, LogOut, ChevronRight, BarChart3 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const navItems = [
   { label: 'Home', href: '/', icon: <Trophy size={18} className="premium-nav-icon" /> },
   { label: 'AI Chat', href: '/AIChat', icon: <Zap size={18} className="premium-nav-icon" /> },
+  { label: 'Live Charts', href: '/charts', icon: <BarChart3 size={18} className="premium-nav-icon" /> },
   { label: 'News', href: '/news', icon: <TrendingUp size={18} className="premium-nav-icon" /> },
-  { label: '🔴 LIVE MARKETS', href: '/markets', icon: <Shield size={18} className="premium-nav-icon" /> },
+  { label: 'Live Markets', href: '/markets', icon: <Shield size={18} className="premium-nav-icon" />, live: true },
   { label: 'AI Funded', href: '/prop-firm', icon: <Shield size={18} className="premium-nav-icon" /> },
   { label: 'EA', href: '/ai-robot', icon: <Zap size={18} className="premium-nav-icon" /> },
   { label: 'AI Assistant', href: '/tools/ai-assistant', icon: <Zap size={18} className="premium-nav-icon" /> },
   { label: 'Contact', href: '/#contacts', icon: <Star size={18} className="premium-nav-icon" /> },
   { label: 'Blog', href: '/blog', icon: <Star size={18} className="premium-nav-icon" /> },
-  { label: 'LOGIN', href: '/client/login', icon: <LogOut size={18} className="premium-nav-icon" /> },
 ];
+
+const loginItem = { label: 'Login', href: '/client/login', icon: <LogOut size={18} className="premium-nav-icon" /> };
 
 export default function MobileMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,42 +47,41 @@ export default function MobileMenu() {
 
       {/* MOBILE MENU */}
       <div className={`premium-mobile-menu ${isOpen ? 'open' : ''}`}>
-        <div className="premium-mobile-items" style={{ paddingTop: '20px' }}>
-          {navItems.map((item) => (
+        <div className="premium-mobile-items">
+          {navItems.map((item, i) => (
             <button
               key={item.href}
               onClick={() => handleNavigation(item.href)}
-              className={`premium-mobile-item ${item.label === 'LOGIN' ? 'premium-mobile-login' : ''} ${activeItem === item.href ? 'active' : ''}`}
+              className={`premium-mobile-item ${activeItem === item.href ? 'active' : ''}`}
+              style={{ animationDelay: `${i * 30}ms` }}
             >
-              {item.icon}
-              <span>{item.label}</span>
+              <span className="premium-mobile-icon-wrap">{item.icon}</span>
+              <span className="premium-mobile-label">
+                {item.live && (
+                  <span className="navbar-live-dot">
+                    <span className="navbar-live-dot-ping" />
+                    <span className="navbar-live-dot-core" />
+                  </span>
+                )}
+                {item.label}
+              </span>
+              <ChevronRight size={16} className="premium-mobile-chevron" />
             </button>
           ))}
         </div>
-      </div>
 
-      <style jsx>{`
-        .premium-mobile-burger.open span:nth-child(1) {
-          transform: rotate(45deg) translate(5px, 5px) !important;
-          background: var(--gold-soft, #8e793e) !important;
-        }
-        .premium-mobile-burger.open span:nth-child(2) {
-          opacity: 0 !important;
-        }
-        .premium-mobile-burger.open span:nth-child(3) {
-          transform: rotate(-45deg) translate(5px, -5px) !important;
-          background: var(--gold-soft, #8e793e) !important;
-        }
-        .premium-mobile-burger span {
-          transition: all 0.2s ease !important;
-        }
-        .premium-mobile-burger:hover span {
-          background: var(--gold-soft, #8e793e) !important;
-        }
-        .premium-mobile-burger {
-          border-color: ${isOpen ? 'var(--gold-soft, #8e793e)' : 'var(--border-subtle, rgba(255,255,255,0.04))'} !important;
-        }
-      `}</style>
+        <div className="premium-mobile-footer">
+          <button
+            onClick={() => handleNavigation(loginItem.href)}
+            className={`premium-mobile-item premium-mobile-login ${activeItem === loginItem.href ? 'active' : ''}`}
+            style={{ animationDelay: `${navItems.length * 30}ms` }}
+          >
+            <span className="premium-mobile-icon-wrap">{loginItem.icon}</span>
+            <span>{loginItem.label}</span>
+            <ChevronRight size={16} className="premium-mobile-chevron" />
+          </button>
+        </div>
+      </div>
     </>
   );
 }

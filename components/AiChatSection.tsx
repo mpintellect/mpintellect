@@ -1,17 +1,33 @@
 'use client';
 import React, { useState } from 'react';
 import { createPortal } from "react-dom";
-import { Bot, Zap, X } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { Bot, Zap, X, TrendingUp, TrendingDown, Sparkles } from 'lucide-react';
 import AiChatBox from "@/components/AiChatBox";
+import { useMarketSignals } from "@/app/hooks/useMarketSignals";
+import { useSession } from "@/app/hooks/useSession";
+
+function priceDecimals(symbol: string) {
+  return symbol === "XAUUSD" || symbol === "BRENT" ? 2 : 4;
+}
+
+const fadeUp = (delay: number) => ({
+  initial: { opacity: 0, y: 20 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: "-80px" },
+  transition: { duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] as const },
+});
 
 const AiChatSection = ({ onLaunch }: { onLaunch?: (sym: string) => void }) => {
   // Internal state for modal
   const [showModal, setShowModal] = useState(false);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+  const prefersReducedMotion = useReducedMotion();
+  const signals = useMarketSignals();
+  const { sessionName, isWeekend } = useSession();
 
   // Internal modal handlers
   const openModal = (symbol: string | null = null) => {
-    console.log('🔵 Opening AI modal with symbol:', symbol);
     setSelectedSymbol(symbol);
     setShowModal(true);
     document.body.style.overflow = 'hidden';
@@ -27,7 +43,6 @@ const AiChatSection = ({ onLaunch }: { onLaunch?: (sym: string) => void }) => {
     if (onLaunch && typeof onLaunch === 'function') {
       onLaunch(symbol);
     } else {
-      console.log('Using internal AI modal logic for symbol:', symbol);
       openModal(symbol);
     }
   };
@@ -36,7 +51,6 @@ const AiChatSection = ({ onLaunch }: { onLaunch?: (sym: string) => void }) => {
     if (onLaunch && typeof onLaunch === 'function') {
       onLaunch(""); // Empty string for full terminal launch
     } else {
-      console.log('Using internal AI modal logic for full terminal');
       openModal(null);
     }
   };
@@ -46,35 +60,68 @@ const AiChatSection = ({ onLaunch }: { onLaunch?: (sym: string) => void }) => {
 
   return (
     <>
-      <section id="aiassistant" className="ai-chat-section">
-        <div className="ai-chat-container">
-          <h2 className="ai-chat-title">AI Intel Terminal</h2>
-          <p className="ai-chat-subtitle">
+      <section id="aiassistant" className="ai-chat-section aichat-section">
+        <div className="ai-chat-container aichat-container">
+          <motion.span
+            {...fadeUp(0)}
+            className="aichat-badge"
+          >
+            <Sparkles size={13} strokeWidth={2.2} />
+            AI-Powered Analysis
+          </motion.span>
+
+          <motion.h2 {...fadeUp(0.08)} className="ai-chat-title aichat-title">
+            AI Intel Terminal
+          </motion.h2>
+          <motion.p {...fadeUp(0.14)} className="ai-chat-subtitle aichat-subtitle">
             Direct access to institutional technical analysis. Select an asset to begin.
-          </p>
-          
+          </motion.p>
+
           {/* Quick Symbol Grid */}
-          <div className="symbol-launch-grid mb-6">
-            {quickSymbols.map(sym => (
-              <button 
-                key={sym} 
-                className="symbol-launch-btn ai-style" 
-                onClick={() => handleSymbolClick(sym)}
-                type="button"
-                aria-label={`Launch AI analysis for ${sym}`}
-              >
-                <div className="launch-pill-icon">
-                  <Zap size={20} strokeWidth={1.5} />
-                </div>
-                <span className="sym-name">{sym}</span>
-                <span className="sym-status">Analyze</span>
-              </button>
-            ))}
+          <div className="aichat-symbol-grid">
+            {quickSymbols.map((sym, i) => {
+              const live = signals.find((s) => s.symbol === sym);
+              const isBuy = live?.action === "BUY";
+              return (
+                <motion.button
+                  key={sym}
+                  {...fadeUp(0.18 + i * 0.06)}
+                  whileHover={prefersReducedMotion ? undefined : { y: -4 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="aichat-symbol-card"
+                  onClick={() => handleSymbolClick(sym)}
+                  type="button"
+                  aria-label={`Launch AI analysis for ${sym}`}
+                >
+                  <div className="aichat-symbol-top">
+                    <span className="aichat-symbol-icon">
+                      <Zap size={16} strokeWidth={2} />
+                    </span>
+                    {live && (
+                      <span className={`aichat-live-chip ${isBuy ? "buy" : "sell"}`}>
+                        {isBuy ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                        {live.confidence}%
+                      </span>
+                    )}
+                  </div>
+                  <span className="aichat-symbol-name">{sym}</span>
+                  {live ? (
+                    <span className={`aichat-symbol-price ${isBuy ? "buy" : "sell"}`}>
+                      {live.current_price.toFixed(priceDecimals(sym))}
+                    </span>
+                  ) : (
+                    <span className="aichat-symbol-status">Analyze</span>
+                  )}
+                </motion.button>
+              );
+            })}
           </div>
 
           {/* Terminal Launch Card */}
-          <div 
-            className="launch-terminal-card ai-accent" 
+          <motion.div
+            {...fadeUp(0.42)}
+            whileHover={prefersReducedMotion ? undefined : { y: -3 }}
+            className="aichat-terminal-card"
             onClick={handleTerminalLaunch}
             role="button"
             tabIndex={0}
@@ -86,15 +133,31 @@ const AiChatSection = ({ onLaunch }: { onLaunch?: (sym: string) => void }) => {
             }}
             aria-label="Launch full AI Intel Terminal"
           >
-            <div className="launch-header">
-              <div className="pulse-indicator ai"></div>
-              <span>System Status: Online</span>
+            <div className="aichat-terminal-glow" aria-hidden />
+
+            <div className="aichat-terminal-header">
+              <span className="aichat-terminal-status">
+                <span className="navbar-live-dot">
+                  {!prefersReducedMotion && <span className="navbar-live-dot-ping" />}
+                  <span className="navbar-live-dot-core" />
+                </span>
+                System Status: Online
+              </span>
+              <span className="aichat-terminal-session">
+                {isWeekend ? "Markets Closed" : `${sessionName} Session`}
+              </span>
             </div>
-            <div className="launch-icon-box">
-              <Bot size={48} />
-            </div>
-            <button 
-              className="launch-terminal-btn ai"
+
+            <motion.div
+              className="aichat-terminal-icon"
+              animate={prefersReducedMotion ? undefined : { y: [0, -6, 0] }}
+              transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Bot size={40} strokeWidth={1.6} />
+            </motion.div>
+
+            <button
+              className="aichat-terminal-btn"
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
@@ -103,37 +166,61 @@ const AiChatSection = ({ onLaunch }: { onLaunch?: (sym: string) => void }) => {
             >
               Launch AI Intel Terminal
             </button>
-            <div className="launch-footer-text">
+
+            <div className="aichat-terminal-footer">
               <Zap size={12} /> Instant technical analysis available
             </div>
-          </div>
+
+            <div className="aichat-scan-bar">
+              <div className="aichat-scan-bar-fill" />
+            </div>
+          </motion.div>
         </div>
       </section>
 
       {/* INTERNAL AI MODAL - Only shows when onLaunch is NOT provided */}
-      {showModal && !onLaunch && typeof document !== "undefined" && createPortal(
-        <div className="immersive-modal-overlay">
-          <div className="immersive-modal-container">
-            <div className="immersive-header">
-              <div className="tool-identity">
-                <span className="live-pulse"></span>
-                AI  Terminal
-              </div>
-              <button onClick={closeModal} className="immersive-close-btn">
-                <X size={24} /> <span>CLOSE</span>
-              </button>
-            </div>
+      {typeof document !== "undefined" && createPortal(
+        <AnimatePresence>
+          {showModal && !onLaunch && (
+            <motion.div
+              className="aichat-modal-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <motion.div
+                className="aichat-modal-container"
+                initial={{ opacity: 0, y: 24, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 16, scale: 0.98 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div className="aichat-modal-header">
+                  <div className="aichat-modal-identity">
+                    <span className="navbar-live-dot">
+                      {!prefersReducedMotion && <span className="navbar-live-dot-ping" />}
+                      <span className="navbar-live-dot-core" />
+                    </span>
+                    AI Intel Terminal
+                  </div>
+                  <button onClick={closeModal} className="aichat-modal-close" aria-label="Close AI Terminal">
+                    <X size={18} />
+                  </button>
+                </div>
 
-            <div className="immersive-content">
-              <AiChatBox 
-                mode="section" 
-                onClose={closeModal} 
-                autoStart={true}
-                preselectedSymbol={selectedSymbol}
-              />
-            </div>
-          </div>
-        </div>,
+                <div className="aichat-modal-content">
+                  <AiChatBox
+                    mode="section"
+                    onClose={closeModal}
+                    autoStart={true}
+                    preselectedSymbol={selectedSymbol}
+                  />
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
         document.body
       )}
     </>

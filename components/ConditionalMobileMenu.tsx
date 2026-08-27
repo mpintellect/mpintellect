@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import MobileMenu from "@/components/MobileMenu";
-import StickyLogo from "@/components/StickyLogo";
 
 export default function ConditionalNavigation() {
   const pathname = usePathname();
@@ -12,10 +11,9 @@ export default function ConditionalNavigation() {
     return null;
   }
 
-  return (
-    <>
-      <StickyLogo />
-      <MobileMenu />
-    </>
-  );
+  // The logo is rendered once by ConditionalStickyLogo (see
+  // ClientLayoutWrapper) - this used to also render StickyLogo here,
+  // mounting a second identical fixed-position logo stacked exactly on
+  // top of the first one.
+  return <MobileMenu />;
 }

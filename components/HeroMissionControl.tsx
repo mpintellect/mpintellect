@@ -4,13 +4,10 @@ import { useMemo, useRef } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { useMarketSignals, type MarketSignal } from "@/app/hooks/useMarketSignals";
 import { useSession } from "@/app/hooks/useSession";
+import { getDecimals } from "@/app/lib/fetchData";
 
 function formatSymbol(symbol: string) {
   return symbol.length === 6 ? `${symbol.slice(0, 3)}/${symbol.slice(3)}` : symbol;
-}
-
-function priceDecimals(symbol: string) {
-  return symbol === "XAUUSD" || symbol === "BRENT" ? 2 : 4;
 }
 
 const SPARK_W = 100;
@@ -53,7 +50,7 @@ function FeedRow({ signal }: { signal: MarketSignal }) {
         {isBuy ? "▲ BUY" : "▼ SELL"}
       </span>
       <span className="flex-1 text-right text-xs font-medium text-[#1E3A5F]">
-        {signal.current_price.toFixed(priceDecimals(signal.symbol))}
+        {signal.current_price.toFixed(getDecimals(signal.symbol))}
       </span>
       <span className="w-12 shrink-0 text-right text-[11px] text-[#6B7280]">
         {signal.confidence}%

@@ -9,7 +9,7 @@ interface Props {
   data: {
     symbol: string;
     action: string;
-    entry: string;
+    watchLevel: string | null;
     sl: string;
     tp: string;
     lot: string;
@@ -31,7 +31,7 @@ export default function SignalTicket({ data, onClose }: Props) {
   }, []);
 
   const handleShare = async (platform: string) => {
-    const text = `🚀 MPIntellect Intell Setup: ${data.symbol} ${data.action}\nEntry: ${data.entry}\nSL: ${data.sl} (Risk: -$${data.slDistanceUSD.toFixed(2)})\nTP: ${data.tp} (Profit: $${data.tpDistanceUSD.toFixed(2)})\nLot Size: ${data.lot} Lots\n\nGet more AI Analysis at: https://mpintellect.com/`;
+    const text = `🚀 MPIntellect Intell Setup: ${data.symbol} ${data.action}\n${data.watchLevel ? `Watch (Pivot): ${data.watchLevel}\n` : ""}SL: ${data.sl} (Risk: -$${data.slDistanceUSD.toFixed(2)})\nTP: ${data.tp} (Profit: $${data.tpDistanceUSD.toFixed(2)})\nLot Size: ${data.lot} Lots\n\nGet more AI Analysis at: https://mpintellect.com/`;
     const url = encodeURIComponent(window.location.href);
     
     if (platform === 'copy') {
@@ -104,10 +104,12 @@ export default function SignalTicket({ data, onClose }: Props) {
           <div className="ticket-badge">{data.action}</div>
 
           <div className="ticket-grid">
-            <div className="ticket-item entry">
-              <span className="label">Entry</span>
-              <span className="value">{data.entry}</span>
-            </div>
+            {data.watchLevel && (
+              <div className="ticket-item entry">
+                <span className="label">Watch (Pivot)</span>
+                <span className="value">{data.watchLevel}</span>
+              </div>
+            )}
             <div className="ticket-item stop">
               <span className="label">Stop (SL)</span>
               <span className="value">{data.sl}</span>

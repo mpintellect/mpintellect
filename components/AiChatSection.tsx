@@ -6,10 +6,7 @@ import { Bot, Zap, X, TrendingUp, TrendingDown, Sparkles } from 'lucide-react';
 import AiChatBox from "@/components/AiChatBox";
 import { useMarketSignals } from "@/app/hooks/useMarketSignals";
 import { useSession } from "@/app/hooks/useSession";
-
-function priceDecimals(symbol: string) {
-  return symbol === "XAUUSD" || symbol === "BRENT" ? 2 : 4;
-}
+import { getDecimals } from "@/app/lib/fetchData";
 
 const fadeUp = (delay: number) => ({
   initial: { opacity: 0, y: 20 },
@@ -107,7 +104,7 @@ const AiChatSection = ({ onLaunch }: { onLaunch?: (sym: string) => void }) => {
                   <span className="aichat-symbol-name">{sym}</span>
                   {live ? (
                     <span className={`aichat-symbol-price ${isBuy ? "buy" : "sell"}`}>
-                      {live.current_price.toFixed(priceDecimals(sym))}
+                      {live.current_price.toFixed(getDecimals(sym))}
                     </span>
                   ) : (
                     <span className="aichat-symbol-status">Analyze</span>

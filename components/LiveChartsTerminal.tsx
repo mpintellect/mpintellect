@@ -343,6 +343,94 @@ function Tags({ items, kind }: { items: string[]; kind: "pos" | "neg" }) {
 }
 
 // ==========================================
+// FULL AI SUMMARY — the backend returns one long plain-text block (see
+// functions/api/setup.ts's upstream) that mixes markdown-style **bold**
+// (day trader) and literal HTML <strong> tags (scalper) for the same kind
+// of emphasis - previously dumped verbatim into a single pre-wrap <div>,
+// which for scalper meant the raw "<strong>" tag characters were visible
+// on screen (React escapes them as text, it doesn't parse them). Parsed
+// here into per-section cards instead of one monospace-feeling blob, and
+// the raw entry price the backend embeds in this text ("Entry Level: X" /
+// "Entry Price: X") is swapped for the pivot level - framed as the level
+// to watch, not an instruction to enter there - or dropped entirely on
+// Scalper, which has no pivot in its payload at all.
+// ==========================================
+function renderBoldText(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**")
+      ? <strong key={i}>{part.slice(2, -2)}</strong>
+      : <span key={i}>{part}</span>
+  );
+}
+
+function parseSummary(raw: string, watchLevel: string | null) {
+  // Normalize the scalper payload's literal <strong> tags to the same
+  // **bold** markup the day-trader payload already uses, so one parser
+  // handles both instead of two separate code paths.
+  const normalized = raw.replace(/<strong>([\s\S]*?)<\/strong>/gi, "**$1**");
+  return normalized
+    .split(/\n\s*\n/)
+    .map((b) => b.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+      const headerMatch = lines[0]?.match(/^([^\sA-Za-z0-9]*)\s*\*\*(.+?)\*\*\s*$/);
+      const icon = headerMatch?.[1] || "";
+      const title = headerMatch ? headerMatch[2] : lines[0]?.replace(/\*\*/g, "") || "";
+      const rows = (headerMatch ? lines.slice(1) : lines.slice(1))
+        .map((line) => {
+          // The label itself is wrapped in **bold** in the raw text (e.g.
+          // "• **Entry Level**: **4629.60000**"), so there's a "**" between
+          // "Level"/"Price" and the colon - matching on the label alone
+          // (not requiring it to be immediately followed by ":") catches
+          // that instead of silently failing to strip the line.
+          if (/Entry (Level|Price)/i.test(line)) {
+            return watchLevel ? `• **Watch Level (Pivot)**: **${watchLevel}**` : null;
+          }
+          return line;
+        })
+        .filter((l): l is string => l !== null);
+      return { icon, title, rows };
+    })
+    .filter((sec) => sec.title);
+}
+
+function SummarySections({ text, watchLevel, decision }: { text: string; watchLevel: string | null; decision?: string }) {
+  const sections = parseSummary(text, watchLevel);
+  // A colored left edge on the sections that actually carry the trade
+  // decision or the closing recommendation - makes those two easy to spot
+  // while skimming instead of every card looking the same.
+  const accentFor = (title: string) => {
+    if (/RECOMMENDATION/i.test(title)) return "final";
+    if (/ACTION|DECISION/i.test(title)) return decision === "BUY" ? "buy" : decision === "SELL" ? "sell" : "";
+    return "";
+  };
+  return (
+    <div className="livechart-summary-sections">
+      {sections.map((sec, i) => (
+        <motion.div
+          key={i}
+          className={`livechart-summary-card ${accentFor(sec.title)}`}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, delay: i * 0.035 }}
+        >
+          <div className="livechart-summary-card-title">
+            {sec.icon && <span className="livechart-summary-card-icon">{sec.icon}</span>}
+            <span>{sec.title}</span>
+          </div>
+          <div className="livechart-summary-card-body">
+            {sec.rows.map((row, j) => (
+              <div key={j} className="livechart-summary-row">{renderBoldText(row)}</div>
+            ))}
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+// ==========================================
 // MAIN COMPONENT
 // ==========================================
 export default function LiveChartsTerminal() {
@@ -484,19 +572,41 @@ export default function LiveChartsTerminal() {
       crosshair: { mode: 0 },
       rightPriceScale: { borderColor: "#E5E7EB" },
       timeScale: { borderColor: "#E5E7EB", timeVisible: true, rightOffset: RIGHT_OFFSET_BARS, barSpacing },
-      // Pan/zoom disabled - the forecast-zone overlay below is positioned
-      // with computed pixel coordinates that only get recalculated on
-      // resize, not on pan/scroll/pinch, so it would drift out of place
-      // under free interaction. This chart is a fixed analytical snapshot
-      // (refreshed via the button), not meant to be dragged around.
-      handleScroll: false,
-      handleScale: false,
+      // Pan/zoom/scroll enabled - the forecast-zone overlay below used to be
+      // positioned with computed pixel coordinates that only got
+      // recalculated on window resize, so any interaction would desync it
+      // from the candles. It's now kept in sync continuously (see the
+      // subscribeVisibleLogicalRangeChange + pointer-driven rAF loop below),
+      // so free interaction no longer breaks it.
+      handleScroll: true,
+      handleScale: true,
     });
 
     const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: "#10B981", downColor: "#EF4444", borderVisible: false, wickUpColor: "#10B981", wickDownColor: "#EF4444",
     });
     candleSeries.setData(candles);
+
+    // The price axis auto-scales to fit only the visible CANDLES by default -
+    // the pivot/target price lines don't factor in at all, so a target far
+    // outside the candles' own high/low range would draw the forecast zone
+    // partly or fully above/below the visible chart area. Extending the
+    // autoscale range to also cover pivot/target guarantees the whole zone
+    // is always inside the visible price range, at the cost of the candles
+    // themselves looking more compressed when the target is far away (an
+    // inherent trade-off of "always show the zone in full").
+    const tpForZone = order?.tp_price;
+    const pivotLevel = data.pivot?.level;
+    candleSeries.applyOptions({
+      autoscaleInfoProvider: (original: () => any) => {
+        const res = original();
+        if (!res || !res.priceRange) return res;
+        let { minValue, maxValue } = res.priceRange;
+        if (typeof pivotLevel === "number") { minValue = Math.min(minValue, pivotLevel); maxValue = Math.max(maxValue, pivotLevel); }
+        if (typeof tpForZone === "number") { minValue = Math.min(minValue, tpForZone); maxValue = Math.max(maxValue, tpForZone); }
+        return { ...res, priceRange: { minValue, maxValue } };
+      },
+    });
 
     const lastTime = candles[candles.length - 1].time as number;
 
@@ -510,13 +620,9 @@ export default function LiveChartsTerminal() {
     };
 
     level(data.pivot?.level, "#D4AF37", "PIVOT", 2, 2);
-    level(data.pivot?.resistance_1, "#EF4444", "R1", 1, 2);
-    level(data.pivot?.support_1, "#10B981", "S1", 1, 2);
     level(data.chart?.zones?.poc, "#8B5CF6", "POC", 1, 3);
     level(data.chart?.current_price, "#3B82F6", "PRICE", 1, 2);
-    if (order?.entry_price) level(order.entry_price, "#3B82F6", "ENTRY", 2, 0);
-    if (order?.sl_price) level(order.sl_price, "#EF4444", "SL", 2, 0);
-    if (order?.tp_price) level(order.tp_price, "#10B981", "TP", 2, 0);
+    if (order?.tp_price) level(order.tp_price, "#10B981", "TARGET", 2, 0);
 
     const stepSeconds = (data.candles.interval_minutes || 60) * 60;
     chartRef.current = chart;
@@ -532,8 +638,7 @@ export default function LiveChartsTerminal() {
     // conversion, animated with a breathing glow + a floating price badge -
     // effects no canvas series can do, and it can't visually collide with
     // anything drawn on the chart since it's a separate layer on top.
-    const tpForZone = order?.tp_price;
-    const pivotLevel = data.pivot?.level;
+    // (tpForZone/pivotLevel declared above, next to the autoscale provider)
     const lastBarIndex = candles.length - 1;
 
     // logicalToCoordinate (not timeToCoordinate) is required here -
@@ -550,7 +655,23 @@ export default function LiveChartsTerminal() {
       try {
         const yPivot = candleSeries.priceToCoordinate(pivotLevel);
         const yTp = candleSeries.priceToCoordinate(tpForZone);
-        const xStart = chart.timeScale().logicalToCoordinate((lastBarIndex + 1) as any);
+        // xStart anchors to the last REAL candle's own logical index (never
+        // garbage - only fractional/integer indices past the last real bar
+        // are unreliable, see the logicalToCoordinate note above) plus half
+        // a bar's on-screen pixel width, landing exactly on that candle's
+        // right edge instead of a full bar-spacing further out at the next
+        // (empty) slot's center. The half-width is measured directly off
+        // the chart (distance between the last two real bars' own
+        // coordinates) rather than trusting the `barSpacing` value we asked
+        // the library for at creation time - the two aren't guaranteed to
+        // stay identical (e.g. the axis label width, which the library
+        // reserves independently, changes the usable plot width), and a
+        // stale JS-side value was the reason the zone previously drifted
+        // away from the candle instead of sitting flush against it.
+        const lastBarX = chart.timeScale().logicalToCoordinate(lastBarIndex as any);
+        const prevBarX = chart.timeScale().logicalToCoordinate((lastBarIndex - 1) as any);
+        const measuredSpacing = lastBarX != null && prevBarX != null ? lastBarX - prevBarX : barSpacing;
+        const xStart = lastBarX == null ? null : lastBarX + measuredSpacing / 2;
         const xEnd = chart.timeScale().logicalToCoordinate((lastBarIndex + (RIGHT_OFFSET_BARS - 2)) as any);
         if (yPivot == null || yTp == null || xStart == null || xEnd == null || xEnd <= xStart) {
           if (attempt < 20) setTimeout(() => computeZoneRect(attempt + 1), 50);
@@ -571,6 +692,51 @@ export default function LiveChartsTerminal() {
     };
     computeZoneRect();
 
+    // The zone's pixel position was previously computed once (plus on
+    // window resize) and then frozen in React state. That's provably not
+    // enough: empirically, the chart's own visible logical range can shift
+    // on its own after mount (confirmed via chart.timeScale().getVisibleLogicalRange()
+    // changing between two reads with identical width/barSpacing/rightOffset -
+    // e.g. after the page (not the chart) is scrolled with the cursor over
+    // the chart area) even with handleScroll/handleScale both false, and
+    // nothing recomputed the zone when that happened, so it visibly drifted
+    // away from the last candle. Subscribing to the chart's own
+    // "visible range changed" event and recomputing on every firing makes
+    // the zone self-correcting instead of a one-time snapshot - it can't
+    // desync from wherever the chart actually is, regardless of why the
+    // chart moved.
+    const onVisibleRangeChange = () => computeZoneRect();
+    chart.timeScale().subscribeVisibleLogicalRangeChange(onVisibleRangeChange);
+
+    // subscribeVisibleLogicalRangeChange only fires for horizontal (time
+    // axis) changes - dragging the price axis itself to manually rescale
+    // vertically doesn't touch the logical range at all, and lightweight-
+    // charts has no "price range changed" event to subscribe to. Instead,
+    // run a cheap rAF loop for the duration of any pointer interaction on
+    // the chart (mousedown/touchstart through mouseup/touchend, wherever the
+    // release happens) so a vertical-only drag also keeps the zone synced -
+    // bounded to interaction time only, not a permanent per-frame cost.
+    let rafId: number | null = null;
+    let wheelStopTimer: ReturnType<typeof setTimeout> | null = null;
+    const rafTick = () => { computeZoneRect(); rafId = requestAnimationFrame(rafTick); };
+    const startSyncLoop = () => { if (rafId == null) rafId = requestAnimationFrame(rafTick); };
+    const stopSyncLoop = () => { if (rafId != null) { cancelAnimationFrame(rafId); rafId = null; } };
+    // Wheel-driven zoom has no natural "end" event like mouseup/touchend -
+    // it's a burst of discrete events during the library's own zoom
+    // animation, so keep the loop running through a short trailing window
+    // after the last wheel tick instead.
+    const onWheel = () => {
+      startSyncLoop();
+      if (wheelStopTimer) clearTimeout(wheelStopTimer);
+      wheelStopTimer = setTimeout(stopSyncLoop, 300);
+    };
+    const container = chartContainerRef.current;
+    container?.addEventListener("mousedown", startSyncLoop);
+    container?.addEventListener("touchstart", startSyncLoop, { passive: true });
+    container?.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("mouseup", stopSyncLoop);
+    window.addEventListener("touchend", stopSyncLoop);
+
     const onResize = () => {
       if (chartContainerRef.current && chartRef.current) {
         try { chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth }); } catch {}
@@ -580,6 +746,14 @@ export default function LiveChartsTerminal() {
     window.addEventListener("resize", onResize);
     return () => {
       window.removeEventListener("resize", onResize);
+      try { chart.timeScale().unsubscribeVisibleLogicalRangeChange(onVisibleRangeChange); } catch {}
+      stopSyncLoop();
+      if (wheelStopTimer) clearTimeout(wheelStopTimer);
+      container?.removeEventListener("mousedown", startSyncLoop);
+      container?.removeEventListener("touchstart", startSyncLoop);
+      container?.removeEventListener("wheel", onWheel);
+      window.removeEventListener("mouseup", stopSyncLoop);
+      window.removeEventListener("touchend", stopSyncLoop);
       if (chartRef.current) { try { chartRef.current.remove(); } catch {} chartRef.current = null; }
       setZoneRect(null);
     };
@@ -760,7 +934,13 @@ export default function LiveChartsTerminal() {
                   {order.type} <span style={{ color: decisionColor(decision), fontWeight: 700 }}>· {order.rationale}</span>
                 </div>
                 <div className="ai-card-content" style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-                  <div>🎯 Entry <strong>{fmt(order.entry_price, priceDecimals(symbol))}</strong></div>
+                  {/* No entry price shown to the client - the pivot is the
+                      level to watch when considering entering, not an
+                      instruction to enter there. Scalper has no pivot in
+                      its payload, so this row just doesn't render for it. */}
+                  {typeof data.pivot?.level === "number" && (
+                    <div>👀 Watch (Pivot) <strong>{fmt(data.pivot.level, priceDecimals(symbol))}</strong></div>
+                  )}
                   <div style={{ color: "#EF4444" }}>🛑 Stop <strong>{fmt(order.sl_price, priceDecimals(symbol))}</strong></div>
                   <div style={{ color: "#10B981" }}>🏁 Target <strong>{fmt(order.tp_price, priceDecimals(symbol))}</strong></div>
                   <div>⚖️ R:R <strong>{order.rr_ratio?.toFixed(2)}:1</strong></div>
@@ -799,17 +979,42 @@ export default function LiveChartsTerminal() {
               </div>
             )}
 
-            {/* Full AI summary — collapsed by default */}
+            {/* Full AI summary — collapsed by default, parsed into
+                per-section cards (see SummarySections) instead of one
+                pre-wrap text dump. */}
             {data.summary && (
               <div className="ai-details">
-                <button type="button" className="ai-details-toggle" onClick={() => setShowSummary((o) => !o)} aria-expanded={showSummary}>
-                  <span>📄 {showSummary ? "Hide" : "Show"} full AI summary</span>
-                  <motion.span animate={{ rotate: showSummary ? 180 : 0 }} transition={{ duration: 0.2 }}><ChevronDown size={15} /></motion.span>
-                </button>
+                <motion.button
+                  type="button"
+                  className="livechart-summary-toggle"
+                  onClick={() => setShowSummary((o) => !o)}
+                  aria-expanded={showSummary}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <span className="livechart-summary-toggle-icon">🧠</span>
+                  <span>{showSummary ? "Hide" : "Show"} full AI breakdown</span>
+                  <motion.span
+                    className="livechart-summary-toggle-chevron"
+                    animate={{ rotate: showSummary ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronDown size={15} />
+                  </motion.span>
+                </motion.button>
                 <AnimatePresence initial={false}>
                   {showSummary && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="ai-details-body">
-                      <div className="ai-card" style={{ whiteSpace: "pre-wrap", fontSize: 12, lineHeight: 1.6 }}>{data.summary}</div>
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.28, ease: "easeInOut" }}
+                      className="ai-details-body"
+                    >
+                      <SummarySections
+                        text={data.summary}
+                        watchLevel={typeof data.pivot?.level === "number" ? fmt(data.pivot.level, priceDecimals(symbol)) : null}
+                        decision={decision}
+                      />
                     </motion.div>
                   )}
                 </AnimatePresence>

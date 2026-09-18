@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession } from "../app/hooks/useSession"; // Added for session context
 import { useMarketSignals } from "../app/hooks/useMarketSignals";
+import { getDecimals } from "../app/lib/fetchData";
 
 /* Pure-CSS marquee (transform: translateX, compositor-driven) instead of
    the previous rAF loop that mutated scrollLeft every frame - that was
@@ -60,10 +61,10 @@ export default function LiveMarketFeed() {
               <span className={`slat-value ${item.action.toLowerCase()}`}>
                 {item.action === "BUY" ? "↑" : "↓"}
               </span>
-              <span className="slat-price">{item.current_price.toFixed(2)}</span>
+              <span className="slat-price">{item.current_price.toFixed(getDecimals(item.symbol))}</span>
               {typeof item.tp === "number" && (
                 <span className={`slat-tp ${item.action.toLowerCase()}`}>
-                  <span className="slat-tp-label">Target</span> {item.tp.toFixed(2)}
+                  <span className="slat-tp-label">Target</span> {item.tp.toFixed(getDecimals(item.symbol))}
                 </span>
               )}
               <span className="slat-conf">{item.confidence}% acc</span>

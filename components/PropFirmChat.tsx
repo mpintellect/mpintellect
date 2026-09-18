@@ -435,7 +435,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
   const [ticketData, setTicketData] = useState<{
     symbol: string;
     action: string;
-    entry: string;
+    watchLevel: string | null;
     sl: string;
     tp: string;
     lot: string;
@@ -467,7 +467,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
       setSymbol(sym as SymbolKey);
       setMessages([{
         sender: "ai",
-        text: `🚀 **Prop Firm Analysis: ${sym}**\n\nTo calculate your compliant lot size, please select your Prop Firm:`,
+        text: `🚀 <strong>Prop Firm Analysis: ${sym}</strong>\n\nTo calculate your compliant lot size, please select your Prop Firm:`,
         actions: PROP_COMPANIES.map(c => ({ label: c.name, value: c.id }))
       }]);
       setStep(0);
@@ -620,7 +620,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
       { sender: "user", text: firmName || firmId },
       { 
         sender: "ai", 
-        text: `🏢 Targeting **${firmName}** rules.\n\nWhich stage are you currently in?`,
+        text: `🏢 Targeting <strong>${firmName}</strong> rules.\n\nWhich stage are you currently in?`,
         actions: PROP_STAGES.map(s => ({ label: s.name, value: s.id }))
       }
     ]);
@@ -640,7 +640,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
       { sender: "user", text: selected.name },
       { 
         sender: "ai", 
-        text: `✅ **${selectedFirm.toUpperCase()}: ${selected.name} Rules Loaded**\n\n🎯 Profit Target: ${selected.target > 0 ? `${(selected.target * 100).toFixed(0)}%` : 'No target (Consistency Focus)'}\n⚠️ Max Daily Loss: ${(selected.dailyLoss * 100).toFixed(1)}%\n⛔ Max Overall Loss: ${(selected.maxLoss * 100).toFixed(1)}%\n\n${selected.description}\n\n💰 **What is your account balance?**`
+        text: `✅ <strong>${selectedFirm.toUpperCase()}: ${selected.name} Rules Loaded</strong>\n\n🎯 Profit Target: ${selected.target > 0 ? `${(selected.target * 100).toFixed(0)}%` : 'No target (Consistency Focus)'}\n⚠️ Max Daily Loss: ${(selected.dailyLoss * 100).toFixed(1)}%\n⛔ Max Overall Loss: ${(selected.maxLoss * 100).toFixed(1)}%\n\n${selected.description}\n\n💰 <strong>What is your account balance?</strong>`
       }
     ]);
     setStep(2);
@@ -666,7 +666,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
       { sender: "user", text: `$${balance.toLocaleString()}` },
       { 
         sender: "ai", 
-        text: `📊 Account: $${balance.toLocaleString()}\n🏢 Firm: ${selectedFirm.toUpperCase()}\n💵 Daily Loss Limit: **$${(balance * (stage?.dailyLoss || 0.05)).toLocaleString()}**\n\n🎯 **Select Your Trading Style:**`
+        text: `📊 Account: $${balance.toLocaleString()}\n🏢 Firm: ${selectedFirm.toUpperCase()}\n💵 Daily Loss Limit: <strong>$${(balance * (stage?.dailyLoss || 0.05)).toLocaleString()}</strong>\n\n🎯 <strong>Select Your Trading Style:</strong>`
       },
       { 
         sender: "ai", 
@@ -685,7 +685,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
       },
       { 
         sender: "ai", 
-        text: `📊 **Selected:** ${strategy === 'scalper' ? '⚡ Scalper (5min candles)' : '🏛️ Day Trader (H1 candles)'}\n\nSelect an asset to analyze:`,
+        text: `📊 <strong>Selected:</strong> ${strategy === 'scalper' ? '⚡ Scalper (5min candles)' : '🏛️ Day Trader (H1 candles)'}\n\nSelect an asset to analyze:`,
         actions: QUICK_SYMBOLS.map(s => ({ label: s, value: s }))
       }
     ]);
@@ -846,10 +846,15 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
       const stars = "⭐".repeat(starRating) + "☆".repeat(5 - starRating);
       const signalStrength = confidenceScore < 60 ? "WEAK" : confidenceScore < 80 ? "MODERATE" : "STRONG";
       const signalWarning = confidenceScore < 60
-        ? "⚠️ **LOW CONFIDENCE** – Consider waiting for better setup to protect your challenge."
-        : "✅ **PROP-FRIENDLY SETUP** – Trade aligns with challenge rules.";
+        ? "⚠️ <strong>LOW CONFIDENCE</strong> – Consider waiting for better setup to protect your challenge."
+        : "✅ <strong>PROP-FRIENDLY SETUP</strong> – Trade aligns with challenge rules.";
 
       const decision = setup.final_decision || "WAIT";
+      // SignalTicket.tsx is shared with AiChatBox.tsx, which no longer
+      // shows an entry price (see that file) - its `data` prop now expects
+      // watchLevel instead of entry, so this needs the same pivot lookup
+      // just to keep passing that component a value it actually accepts.
+      const pivotLevel: number | undefined = (setup as any).pivot?.level;
       const trendDirection = setup.trend?.trend || "neutral";
       const trendStrength = setup.trend?.trend_strength || "weak";
       const momentumBias = setup.momentum?.momentum_bias || "neutral";
@@ -934,7 +939,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
       setTicketData({
         symbol: targetSymbol,
         action: decision,
-        entry: entryPrice.toFixed(decimalPlaces),
+        watchLevel: pivotLevel != null ? pivotLevel.toFixed(decimalPlaces) : null,
         sl: slPrice.toFixed(decimalPlaces),
         tp: tpPrice.toFixed(decimalPlaces),
         lot: lotSize.toFixed(2),
@@ -955,9 +960,9 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
         {
           title: "🎯 EXECUTIVE ACTION",
           content:
-            `• **Target**: <strong>${targetSymbol} (${SYMBOL_NAMES[targetSymbol as keyof typeof SYMBOL_NAMES] || targetSymbol})</strong>\n` +
-            `• **Selected Strategy**: ${strategy === 'scalper' ? '⚡ Scalper (5min)' : '🏛️ Day Trader (H1)'}\n` +
-            `• **Decision**: ${
+            `• <strong>Target</strong>: <strong>${targetSymbol} (${SYMBOL_NAMES[targetSymbol as keyof typeof SYMBOL_NAMES] || targetSymbol})</strong>\n` +
+            `• <strong>Selected Strategy</strong>: ${strategy === 'scalper' ? '⚡ Scalper (5min)' : '🏛️ Day Trader (H1)'}\n` +
+            `• <strong>Decision</strong>: ${
               decision === "BUY"
                 ? '<span class="buy"><strong>BUY 📈</strong></span>'
                 : decision === "SELL"
@@ -1132,7 +1137,7 @@ export default function PropFirmChat({ onClose, preselectedSymbol }: PropFirmCha
       setTimeout(() => {
         const welcomeMsg: ChatMessage = {
           sender: "ai",
-          text: "🏆 **Prop Firm AI Assistant**\n\nI'm calibrated for FTMO, FundedNext, MyForexFunds & The5%ers rules.\n\nPlease select your Prop Firm:",
+          text: "🏆 <strong>Prop Firm AI Assistant</strong>\n\nI'm calibrated for FTMO, FundedNext, MyForexFunds & The5%ers rules.\n\nPlease select your Prop Firm:",
           actions: PROP_COMPANIES.map(c => ({ label: c.name, value: c.id }))
         };
 

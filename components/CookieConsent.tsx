@@ -19,6 +19,14 @@ export default function CookieConsent() {
     }
   }, []);
 
+  useEffect(() => {
+    // The floating notification button shares this bottom-right corner of
+    // the screen - flag it via a body class so it can lift itself clear of
+    // this bar instead of sitting on top of it while both are visible.
+    document.body.classList.toggle('cookie-banner-open', isVisible);
+    return () => document.body.classList.remove('cookie-banner-open');
+  }, [isVisible]);
+
   const applyConsentMode = (granted: boolean) => {
     const consentState = granted ? 'granted' : 'denied';
     if (typeof window !== 'undefined') {

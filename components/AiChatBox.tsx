@@ -465,10 +465,6 @@ function PricingPlansModal({
 // control. Keeps the same contract as the old <select>: calling
 // onSelect(sym) is exactly equivalent to the old onChange(selected).
 // ==========================================
-function priceDecimals(symbol: string) {
-  return symbol === "XAUUSD" || symbol === "XAUEUR" || symbol === "BRENT" ? 2 : 4;
-}
-
 function SymbolPicker({
   onSelect,
   signals,
@@ -603,39 +599,62 @@ function SymbolPicker({
 // context, etc.) collapsed by default so a result reads as one natural
 // reply instead of 6-7 stacked report cards.
 // ==========================================
-function AnalysisDetails({ blocks }: { blocks: { title: string; content: string }[] }) {
+function AnalysisDetails({ blocks, tone }: { blocks: { title: string; content: string }[]; tone?: "buy" | "sell" | "wait" }) {
   const [open, setOpen] = useState(false);
+  // A colored left edge on the cards that carry the actual verdict/caution
+  // (title keywords, checked case-insensitively) so those stand out while
+  // skimming instead of every card in the breakdown looking identical -
+  // same pattern used for LiveChartsTerminal's summary cards.
+  const accentFor = (title: string) => {
+    if (/VERDICT|CAUTION/i.test(title)) return tone === "buy" ? "buy" : tone === "sell" ? "sell" : "wait";
+    if (/RISK/i.test(title)) return "risk";
+    return "";
+  };
   return (
     <div className="ai-details">
-      <button
+      <motion.button
         type="button"
-        className="ai-details-toggle"
+        className="aichat-details-toggle"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
+        whileTap={{ scale: 0.97 }}
       >
-        <span>📊 {open ? "Hide" : "Show"} full breakdown</span>
-        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
+        <span className="aichat-details-toggle-icon">📊</span>
+        <span>{open ? "Hide" : "Show"} full breakdown</span>
+        <motion.span
+          className="aichat-details-toggle-chevron"
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
           <ChevronDown size={15} />
         </motion.span>
-      </button>
+      </motion.button>
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             className="ai-details-body"
           >
-            {blocks.map((block, i) => (
-              <div className="ai-card" key={i}>
-                <div className="ai-card-title">{block.title}</div>
-                <div
-                  className="ai-card-content"
-                  dangerouslySetInnerHTML={{ __html: block.content.replace(/\n/g, "<br/>") }}
-                />
-              </div>
-            ))}
+            <div className="aichat-details-sections">
+              {blocks.map((block, i) => (
+                <motion.div
+                  className={`aichat-details-card ${accentFor(block.title)}`}
+                  key={i}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.22, delay: i * 0.035 }}
+                >
+                  <div className="aichat-details-card-title">{block.title}</div>
+                  <div
+                    className="aichat-details-card-body"
+                    dangerouslySetInnerHTML={{ __html: block.content.replace(/\n/g, "<br/>") }}
+                  />
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -692,7 +711,7 @@ export default function AiChatBox({
     const [ticketData, setTicketData] = useState<{
     symbol: string;
     action: string;
-    entry: string;
+    watchLevel: string | null;
     sl: string;
     tp: string;
     lot: string;
@@ -753,9 +772,11 @@ export default function AiChatBox({
       return;
     }
 
+    const priceDecimals = SYMBOL_SPECS[selectedSymbol]?.decimals ?? 5;
+
     setMessages((prev) => [
       ...prev,
-      { sender: "ai", text: `📊 ${SYMBOL_NAMES[selectedSymbol] || selectedSymbol}\nLive Price: ${price}` },
+      { sender: "ai", text: `📊 ${SYMBOL_NAMES[selectedSymbol] || selectedSymbol}\nLive Price: ${price.toFixed(priceDecimals)}` },
       { sender: "ai", text: "💰 What's your trading capital in USD?" },
     ]);
 
@@ -900,11 +921,19 @@ export default function AiChatBox({
       const starRating = Math.min(5, Math.max(1, Math.floor(confidenceScore / 20)));
       const stars = "⭐".repeat(starRating) + "☆".repeat(5 - starRating);
       const signalStrength = confidenceScore < 60 ? "WEAK" : confidenceScore < 80 ? "MODERATE" : "STRONG";
+      // <strong>, not **markdown** - this string is injected via
+      // dangerouslySetInnerHTML (see the EXECUTIVE VERDICT/STRATEGIC
+      // CAUTION detail block below), which only understands real HTML tags;
+      // ** has no meaning there and rendered as literal asterisks on screen.
       const signalWarning = confidenceScore < 60
-        ? "⚠️ **LOW CONFIDENCE** – Consider waiting for better setup."
-        : "✅ **CONFIRMED SETUP** – Trade looks promising.";
+        ? "⚠️ <strong>LOW CONFIDENCE</strong> – Consider waiting for better setup."
+        : "✅ <strong>CONFIRMED SETUP</strong> – Trade looks promising.";
 
       const decision = setup.final_decision || "WAIT";
+      // No entry price shown to the client - the pivot (day trader only;
+      // the scalper payload has no pivot at all) is the level to watch when
+      // considering entering, not an instruction to enter there.
+      const pivotLevel: number | undefined = (setup as any).pivot?.level;
 
       const volumeData = (setup.volume || {}) as {
         position_vs_poc?: string;
@@ -984,7 +1013,7 @@ export default function AiChatBox({
       setTicketData({
         symbol: targetSymbol,
         action: decision,
-        entry: entryPrice.toFixed(decimalPlaces),
+        watchLevel: pivotLevel != null ? pivotLevel.toFixed(decimalPlaces) : null,
         sl: slPrice.toFixed(decimalPlaces),
         tp: tpPrice.toFixed(decimalPlaces),
         lot: lotSize.toFixed(2),
@@ -1001,7 +1030,7 @@ export default function AiChatBox({
       const verdictText = decision === 'WAIT'
         ? `${pickOpener(WAIT_OPENERS, targetSymbol)} Confidence's only <strong>${confidenceScore}%</strong> ${stars} - not enough edge right now.\n${setup.risk_score?.recommendation || 'Worth checking back later for a cleaner setup.'}`
         : `${pickOpener(decision === 'BUY' ? BUY_OPENERS : SELL_OPENERS, targetSymbol)} <strong>${confidenceScore}%</strong> confidence ${stars} - based on ${orderRationale.toLowerCase()}.\n\n` +
-          `🎯 Entry: <strong>${entryPrice.toFixed(decimalPlaces)}</strong>\n` +
+          (pivotLevel != null ? `👀 Watch (Pivot): <strong>${pivotLevel.toFixed(decimalPlaces)}</strong>\n` : "") +
           `🛑 Stop: <strong>${slPrice.toFixed(decimalPlaces)}</strong> <span style="color:red;">(-$${slDistanceUSD.toFixed(2)})</span>\n` +
           `🏁 Target: <strong>${tpPrice.toFixed(decimalPlaces)}</strong> <span style="color:green;">(+$${tpDistanceUSD.toFixed(2)})</span>\n` +
           `⚖️ Reward: <strong>${rrRatio.toFixed(2)}:1</strong>\n` +
@@ -1069,7 +1098,7 @@ export default function AiChatBox({
       setMessages((prev) => [
         ...prev,
         { sender: "ai", text: verdictText, tone: verdictTone },
-        { sender: "ai", text: detailBlocks.map((b) => ({ title: b.title, content: b.content })) },
+        { sender: "ai", text: detailBlocks.map((b) => ({ title: b.title, content: b.content })), tone: verdictTone },
       ]);
 
       if (!user && trialCount >= 1) {
@@ -1507,7 +1536,7 @@ export default function AiChatBox({
           >
             {Array.isArray(msg.text) ? (
               msg.text.length > 1 ? (
-                <AnalysisDetails blocks={msg.text} />
+                <AnalysisDetails blocks={msg.text} tone={msg.tone} />
               ) : (
                 msg.text.map((block: any, i: number) => (
                   <div className="ai-card" key={i}>

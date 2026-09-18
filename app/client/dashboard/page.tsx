@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/app/hooks/useUser";
 import { Globe, ArrowRight, Trophy, X, BarChart3, CreditCard, LogOut, Menu, Star, Zap, Shield, TrendingUp, LineChart } from 'lucide-react';
 import { createPortal } from "react-dom";
-import InstantChart from "@/components/InstantChart";
+import LiveChartsTerminal from "@/components/LiveChartsTerminal";
 import AiChatBox from "@/components/AiChatBox";
 import PropFirmChat from "@/components/PropFirmChat";
 import UserAnalytics from "./components/AnalyticsSection";
@@ -23,14 +23,7 @@ function DashboardContent() {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [isNavExpanded, setIsNavExpanded] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  // Chart state
-  const [chartData, setChartData] = useState<any>(null);
-  const [selectedSymbol, setSelectedSymbol] = useState<string>("XAUUSD");
-  const [chartCapital, setChartCapital] = useState<number>(10000);
-  const [chartRiskPercent, setChartRiskPercent] = useState<number>(2);
-  const [chartStrategy, setChartStrategy] = useState<"scalper" | "daytrader">("daytrader");
-  const [chartLoading, setChartLoading] = useState(false);
-  
+
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -72,23 +65,6 @@ function DashboardContent() {
       console.error("Logout error:", error);
       logoutFromHook();
       router.push("/client/login");
-    }
-  };
-  // Fetch chart data when opening chart tool
-  const fetchChartData = async (symbol: string, strategy: "scalper" | "daytrader") => {
-    setChartLoading(true);
-    try {
-      const response = await fetch(`/api/setup?symbol=${symbol}&strategy=${strategy}`);
-      if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
-      const data = await response.json();
-      setChartData(data);
-      return data;
-    } catch (err) {
-      console.error("Error fetching chart data:", err);
-      toast.error("Failed to load chart data");
-      return null;
-    } finally {
-      setChartLoading(false);
     }
   };
   const openTool = (tool: 'ai' | 'prop' | 'chart') => {
@@ -448,8 +424,8 @@ function DashboardContent() {
               </div>
 
               <div className="premium-action-card">
-                <h3>INSTANT CHART</h3>
-                <p>Institutional-grade technical charts with precise lot sizing and risk management.</p>
+                <h3>LIVE CHARTS</h3>
+                <p>Live annotated candlestick charts with a forecast zone, pivots, and precise lot sizing.</p>
                 <div className="premium-action-footer">
                   <span className="premium-action-cost">1 credit/use</span>
                   <button 
@@ -636,7 +612,7 @@ function DashboardContent() {
             <div className="premium-tool-header">
               <div className="premium-tool-identity">
                 <span className="premium-tool-pulse"></span>
-                {activeTool === 'ai' ? 'AI Intel Terminal' : 'Prop Firm Security Mode'}
+                {activeTool === 'ai' ? 'AI Intel Terminal' : activeTool === 'chart' ? 'Live Charts Terminal' : 'Prop Firm Security Mode'}
               </div>
               <button onClick={closeTool} className="premium-tool-close">
                 <X size={20} /> CLOSE TERMINAL
@@ -644,7 +620,7 @@ function DashboardContent() {
             </div>
             <div className="premium-tool-content">
                             {activeTool === 'chart' ? (
-  <InstantChart onClose={closeTool} />
+  <LiveChartsTerminal />
 ) : activeTool === 'ai' ? (
   <AiChatBox mode="section" onClose={closeTool} autoStart={true} />
 ) : (

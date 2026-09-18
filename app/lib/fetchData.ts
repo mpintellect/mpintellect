@@ -46,15 +46,19 @@ const SYMBOL_SPECS: Record<string, { pip: number; contract: number; decimals: nu
 // ==========================================
 // 2. HELPER: PRICE NORMALIZATION
 // ==========================================
-function normalizePrice(symbol: string, value: number): number {
-  if (value === undefined || value === null) return 0;
-  
-  // Clean symbol string (e.g. BTC-USD -> BTCUSD)
-  const cleanSym = symbol.replace(/[-_/]/g, '').toUpperCase();
-  const spec = SYMBOL_SPECS[cleanSym];
 
-  // If we have a spec, use exact decimals. Otherwise, keep raw or default to 2.
-  const decimals = spec ? spec.decimals : 2;
+// The canonical per-symbol decimal precision - exported so any other
+// display surface (feed tickers, etc.) formats prices the same way
+// instead of guessing at a decimal count per symbol.
+export function getDecimals(symbol: string): number {
+  const cleanSym = symbol.replace(/[-_/]/g, '').toUpperCase();
+  return SYMBOL_SPECS[cleanSym]?.decimals ?? 2;
+}
+
+export function normalizePrice(symbol: string, value: number): number {
+  if (value === undefined || value === null) return 0;
+
+  const decimals = getDecimals(symbol);
 
   // Convert to fixed string to handle floats, then back to number
   return parseFloat(value.toFixed(decimals));

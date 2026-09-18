@@ -19534,38 +19534,22 @@ input[type="number"] {
 }
 
 
-/* --- 4. IMMERSIVE MODAL OVERLAY (BLUR) --- */
-.immersive-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(25px);
-  /* HEAVY BLUR */
-  z-index: 10000;
-}
-
-.immersive-header {
-  height: 60px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  background: #000;
-  border-bottom: 1px solid var(--gold-border);
-}
-
 /* ==========================================
-   🌑 IMMERSIVE TERMINAL PORTAL
+   🖥️ IMMERSIVE TERMINAL PORTAL
+   Shared by HomeClientContainer's homepage modal (both the AI Chat and
+   Prop Firm "onLaunch" entry points) plus PropFirmChat/InstantChart -
+   converted from the old dark/gold portal to match the white/blue theme
+   used everywhere else (mirrors .aichat-modal-* on the standalone
+   /AIChat page, which is the same modal content in different chrome).
    ========================================== */
 
 /* 1. THE FULL VIEWPORT OVERLAY */
 .immersive-modal-overlay {
   position: fixed !important;
   inset: 0;
-  background: rgba(0, 0, 0, 0.95);
-  /* Luxury Frosted Glass */
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 9999999;
   /* Above everything */
   display: flex;
@@ -19592,21 +19576,20 @@ input[type="number"] {
   height: 100dvh;
   /* Dynamic height handles mobile keyboards better */
   width: 100%;
+  background: #ffffff;
   position: relative;
 }
 
-/* 3. EXECUTIVE HEADER BAR */
+/* 3. HEADER BAR */
 .immersive-header {
   height: 64px;
-  background: rgba(10, 10, 10, 0.8);
-  border-bottom: 1px solid rgba(59, 130, 246, 0.25);
-  /* Blue hairline */
+  background: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 24px;
   flex-shrink: 0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 /* Tool Title & Identity */
@@ -19614,8 +19597,7 @@ input[type="number"] {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #fff;
-  font-family: 'JetBrains Mono', monospace;
+  color: #1E3A5F;
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
@@ -19651,9 +19633,9 @@ input[type="number"] {
 
 /* 4. THE CLOSE BUTTON */
 .immersive-close-btn {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  background: #F8FAFC;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #6B7280;
   padding: 8px 16px;
   border-radius: 8px;
   display: flex;
@@ -19670,10 +19652,9 @@ input[type="number"] {
 }
 
 .immersive-close-btn:hover {
-  background: #ef4444;
-  color: #fff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  background: #EFF6FF;
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #3B82F6;
 }
 
 /* 5. CONTENT AREA */
@@ -20895,34 +20876,6 @@ body {
   .cabinet-main {
     padding-top: 80px;
   }
-}
-
-/* --- 8. IMMERSIVE PORTAL BLUR --- */
-.immersive-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
-  z-index: 10000;
-}
-
-.immersive-header {
-  height: 60px;
-  background: #000;
-  border-bottom: 1px solid rgba(59, 130, 246, 0.25);
-  padding: 0 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.tool-identity {
-  color: #3B82F6;
-  font-weight: 900;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
 }
 
 /* Spin Animation */
@@ -39690,7 +39643,8 @@ html {
 /* --- Modal chrome (standalone /AIChat page only - the homepage's
    embedded copy of this same section is launched through
    HomeClientContainer's own separate modal instead, via the onLaunch
-   prop, so it keeps using .immersive-* untouched) --- */
+   prop, so it uses .immersive-* rather than these classes; both are kept
+   in sync on the white/blue theme, just with different class names) --- */
 .aichat-modal-overlay {
   position: fixed;
   inset: 0;

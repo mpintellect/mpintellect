@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/mezganimez/Downloads/mzprimer/MPIntellect/mpintellect-v1\\\\ /**)",
+      "Bash(where gh *)",
+      "Bash(lsof -ti:3000,3001,8788)",
+      "Bash(xargs kill -9)",
+      "Bash(python3 *)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"EXIT CODE: $?\")",
+      "Bash(/opt/homebrew/bin/python3 *)",
+      "Bash(awk -F: -v start=25464 '$1 > start')",
+      "Bash(grep -n \"^/\\\\* ==========================================$\" app/globals.css)",
+      "Bash(awk -F: '$1 >= 25460 && $1 <= 25850')",
+      "Bash(pwd -P)",
+      "Bash(diskutil info *)",
+      "Bash(mount)",
+      "Bash(brctl status *)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(echo \"TSC EXIT: $?\")",
+      "Bash(grep -n \"^/\\\\* ==========================================\\\\$\" app/globals.css)",
+      "Bash(awk -F: '$1 >= 37260 && $1 <= 37600')",
+      "Bash(grep -nE \"#[0-9a-fA-F]{3,6}\")"
+    ]
+  }
+}

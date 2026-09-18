@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
+import Reveal from '@/components/Reveal';
+import CountUp from '@/components/CountUp';
 import { 
   Cpu, 
   Cloud, 
@@ -34,10 +36,6 @@ import {
 } from 'lucide-react';
 
 export default function IntelLanding() {
-  const [isIntelOnlyDomain, setIsIntelOnlyDomain] = useState(false);
-
-  
-
   // --- FORM STATE ---
   const [formData, setFormData] = useState({
     companyName: '',
@@ -184,13 +182,12 @@ export default function IntelLanding() {
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#D4AF37] selection:text-black overflow-x-hidden">
       {/* Floating Background Elements */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-[#D4AF37]/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#10B981]/5 rounded-full blur-3xl animate-pulse animation-delay-2000" />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-[#D4AF37]/5 rounded-full blur-3xl animate-[orb-float_14s_ease-in-out_infinite]" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#10B981]/5 rounded-full blur-3xl animate-[orb-float_18s_ease-in-out_infinite_reverse]" />
       </div>
 
       {/* 1. */}
-      {!isIntelOnlyDomain && (
-        <nav className="border-b border-white/5 py-6 px-6 md:py-8 md:px-12 flex justify-between items-center backdrop-blur-xl sticky top-0 z-50 bg-[#050505]/80">
+      <nav className="border-b border-white/5 py-6 px-6 md:py-8 md:px-12 flex justify-between items-center backdrop-blur-xl sticky top-0 z-50 bg-[#050505]/80">
           <div className="flex items-center gap-3 group">
             <div className="w-10 h-10 bg-white flex items-center justify-center rounded-sm transform transition-transform group-hover:scale-110 group-hover:rotate-3">
               <span className="text-black font-black text-sm">MP</span>
@@ -201,65 +198,63 @@ export default function IntelLanding() {
             </div>
           </div>
           <div className="hidden md:flex gap-10">
-            <Link href="#solutions" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
-              Solutions
-            </Link>
-            <Link href="#software" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
-              Development
-            </Link>
-            <Link href="#it-services" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
-              Infrastructure
-            </Link>
-            <Link href="#contact" className="text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-all hover:tracking-[4px]">
-              Contact
-            </Link>
+            {[
+              { href: '#solutions', label: 'Solutions' },
+              { href: '#software', label: 'Development' },
+              { href: '#it-services', label: 'Infrastructure' },
+              { href: '#contact', label: 'Contact' },
+            ].map((link) => (
+              <Link key={link.href} href={link.href} className="group relative text-xs tracking-[3px] uppercase text-[#94a3b8] hover:text-white transition-colors">
+                {link.label}
+                <span className="absolute -bottom-1 left-0 h-px w-full bg-[#D4AF37] scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100" />
+              </Link>
+            ))}
           </div>
           <div className="md:hidden flex gap-4">
             <Link href="#solutions" className="text-[10px] tracking-[3px] uppercase text-[#94a3b8]">Solutions</Link>
             <Link href="#contact" className="text-[10px] tracking-[3px] uppercase text-[#94a3b8]">Contact</Link>
           </div>
         </nav>
-      )}
 
       {/* 2. HERO SECTION */}
       <section className="pt-20 md:pt-32 pb-16 md:pb-20 px-6 md:px-12 max-w-7xl mx-auto relative">
         <div className="absolute top-40 right-0 text-[200px] font-black text-white/5 select-none hidden lg:block">
           IT SOLUTIONS
         </div>
-        <h1 className="text-5xl md:text-7xl lg:text-9xl font-black tracking-tighter leading-[0.85] mb-8 md:mb-12 animate-fade-in">
-          COMPLETE <br /> 
+        <Reveal as="h1" y={32} className="text-5xl md:text-7xl lg:text-9xl font-black tracking-tighter leading-[0.85] mb-8 md:mb-12">
+          COMPLETE <br />
           <span className="text-[#D4AF37] relative inline-block">
             TECHNOLOGY
             <span className="absolute -bottom-2 left-0 w-full h-[2px] bg-[#D4AF37]/30"></span>
-          </span> 
+          </span>
           <br />
           SOLUTIONS.
-        </h1>
-        <p className="max-w-2xl text-lg md:text-xl text-[#94a3b8] font-light leading-relaxed mb-8 md:mb-12 animate-fade-in-up animation-delay-300">
-          From software development to hardware implementation. Complete IT solutions for businesses 
+        </Reveal>
+        <Reveal as="p" delay={150} className="max-w-2xl text-lg md:text-xl text-[#94a3b8] font-light leading-relaxed mb-8 md:mb-12">
+          From software development to hardware implementation. Complete IT solutions for businesses
           and individuals, including installation, configuration, and maintenance services.
-        </p>
-        
-        <div className="flex flex-wrap gap-4 mt-12 md:mt-16">
-          <div className="px-4 py-2 bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full">
+        </Reveal>
+
+        <Reveal delay={300} className="flex flex-wrap gap-4 mt-12 md:mt-16">
+          <div className="px-4 py-2 bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full transition-transform hover:scale-105">
             <span className="text-[10px] font-mono text-[#D4AF37]">SOFTWARE</span>
           </div>
-          <div className="px-4 py-2 bg-[#10B981]/10 border border-[#10B981]/20 rounded-full">
+          <div className="px-4 py-2 bg-[#10B981]/10 border border-[#10B981]/20 rounded-full transition-transform hover:scale-105">
             <span className="text-[10px] font-mono text-[#10B981]">HARDWARE</span>
           </div>
-          <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-full">
+          <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-full transition-transform hover:scale-105">
             <span className="text-[10px] font-mono text-white/60">INTEGRATION</span>
           </div>
-          <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-full">
+          <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-full transition-transform hover:scale-105">
             <span className="text-[10px] font-mono text-white/60">MAINTENANCE</span>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* 3. AI BUSINESS AUTOMATION - CORE SERVICES */}
       <section className="py-24 md:py-32 px-6 md:px-12 bg-[#080808]">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <Reveal className="text-center mb-16">
             <h2 className="text-xs font-bold tracking-[10px] uppercase text-[#D4AF37] mb-4">
               CORE COMPETENCY • AI BUSINESS AUTOMATION
             </h2>
@@ -267,48 +262,52 @@ export default function IntelLanding() {
               Transform Your Business with <span className="font-bold text-[#D4AF37]">Intelligent Automation</span>
             </h3>
             <p className="text-[#94a3b8] max-w-2xl mx-auto">
-              We help enterprises automate processes, enhance quality, and drive efficiency through 
+              We help enterprises automate processes, enhance quality, and drive efficiency through
               advanced AI integration. Our core mission is to future-proof your operations.
             </p>
-          </div>
+          </Reveal>
 
           {/* Core Value Proposition */}
-          <div className="grid md:grid-cols-2 gap-12 mb-16 p-8 md:p-12 bg-[#050505] border border-white/5">
+          <Reveal delay={100} className="grid md:grid-cols-2 gap-12 mb-16 p-8 md:p-12 bg-[#050505] border border-white/5">
             <div>
               <div className="text-xs font-bold tracking-[8px] uppercase text-[#D4AF37] mb-4">Why Choose Us</div>
               <h3 className="text-2xl md:text-3xl font-light mb-6">
                 We Don't Just Implement IT — <span className="font-bold text-[#D4AF37]">We Automate Intelligence</span>
               </h3>
               <p className="text-[#94a3b8] leading-relaxed mb-8">
-                At MP Intel Systems, our primary focus is helping businesses leverage AI to 
-                automate complex processes, reduce operational costs, and elevate quality standards. 
-                From manufacturing to finance, we deploy intelligent systems that learn, adapt, and 
+                At MP Intel Systems, our primary focus is helping businesses leverage AI to
+                automate complex processes, reduce operational costs, and elevate quality standards.
+                From manufacturing to finance, we deploy intelligent systems that learn, adapt, and
                 optimize your operations in real-time.
               </p>
               <div className="flex gap-8">
-                <div className="text-center">
-                  <div className="text-2xl font-black text-[#D4AF37] mb-1">87%</div>
-                  <div className="text-[10px] tracking-wider text-[#94a3b8]">EFFICIENCY GAIN</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-black text-[#D4AF37] mb-1">99.9%</div>
-                  <div className="text-[10px] tracking-wider text-[#94a3b8]">QUALITY IMPROVEMENT</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-black text-[#D4AF37] mb-1">24/7</div>
-                  <div className="text-[10px] tracking-wider text-[#94a3b8]">AI OPERATIONS</div>
-                </div>
+                {[
+                  { value: 87, decimals: 0, suffix: '%', label: 'EFFICIENCY GAIN' },
+                  { value: 99.9, decimals: 1, suffix: '%', label: 'QUALITY IMPROVEMENT' },
+                  { value: null, static: '24/7', label: 'AI OPERATIONS' },
+                ].map((stat, i) => (
+                  <Reveal key={stat.label} delay={200 + i * 120} scale y={12} className="text-center">
+                    <div className="text-2xl font-black text-[#D4AF37] mb-1">
+                      {stat.value !== null ? (
+                        <CountUp value={stat.value} decimals={stat.decimals} suffix={stat.suffix} />
+                      ) : (
+                        stat.static
+                      )}
+                    </div>
+                    <div className="text-[10px] tracking-wider text-[#94a3b8]">{stat.label}</div>
+                  </Reveal>
+                ))}
               </div>
             </div>
             <div className="bg-[#0a0a0a] border border-white/5 flex items-center justify-center">
               <div className="grid grid-cols-3 gap-6 p-8">
                 {[...Array(9)].map((_, i) => (
-                  <div key={i} className="w-3 h-3 bg-[#D4AF37] rounded-full animate-pulse" 
+                  <div key={i} className="w-3 h-3 bg-[#D4AF37] rounded-full animate-pulse"
                        style={{ animationDelay: `${i * 0.2}s` }}></div>
                 ))}
               </div>
             </div>
-          </div>
+          </Reveal>
 
           {/* AI Services Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -352,25 +351,27 @@ export default function IntelLanding() {
             ].map((service, index) => {
               const Icon = service.icon;
               return (
-                <div key={index} 
-                     className="group p-8 border border-white/5 hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all duration-500">
-                  <div className="p-3 bg-[#D4AF37]/10 rounded-lg inline-block mb-4 group-hover:scale-110 transition-transform">
-                    <Icon className="w-6 h-6 text-[#D4AF37]" />
+                <Reveal key={index} delay={(index % 3) * 100}>
+                  <div className="group p-8 border border-white/5 hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 hover:-translate-y-1 transition-all duration-500">
+                    <div className="p-3 bg-[#D4AF37]/10 rounded-lg inline-block mb-4 group-hover:scale-110 transition-transform">
+                      <Icon className="w-6 h-6 text-[#D4AF37]" />
+                    </div>
+                    <h3 className="text-lg font-bold mb-3 group-hover:text-[#D4AF37] transition-colors">
+                      {service.title}
+                    </h3>
+                    <p className="text-sm text-[#94a3b8] leading-relaxed mb-4">
+                      {service.desc}
+                    </p>
+                    <ul className="space-y-1">
+                      {service.features.map((feature, i) => (
+                        <Reveal key={i} as="li" delay={i * 90} y={8} className="group/item flex items-center gap-2 text-xs text-[#D4AF37]">
+                          <span className="transition-transform duration-300 group-hover/item:translate-x-1">→</span>
+                          {feature}
+                        </Reveal>
+                      ))}
+                    </ul>
                   </div>
-                  <h3 className="text-lg font-bold mb-3 group-hover:text-[#D4AF37] transition-colors">
-                    {service.title}
-                  </h3>
-                  <p className="text-sm text-[#94a3b8] leading-relaxed mb-4">
-                    {service.desc}
-                  </p>
-                  <ul className="space-y-1">
-                    {service.features.map((feature, i) => (
-                      <li key={i} className="text-xs text-[#D4AF37] pl-4 relative before:content-['→'] before:absolute before:left-0">
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                </Reveal>
               );
             })}
           </div>
@@ -380,7 +381,7 @@ export default function IntelLanding() {
       {/* 4. COMPREHENSIVE SOLUTIONS SECTION */}
       <section id="solutions" className="py-24 md:py-32 px-6 md:px-12 bg-[#080808]">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <Reveal className="text-center mb-16">
             <h2 className="text-xs font-bold tracking-[10px] uppercase text-[#D4AF37] mb-4">
               COMPLETE IT ECOSYSTEM
             </h2>
@@ -388,26 +389,27 @@ export default function IntelLanding() {
             <p className="text-[#94a3b8] max-w-2xl mx-auto">
               Development, supply and adaptation of IT solutions for both individuals and enterprises
             </p>
-          </div>
+          </Reveal>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {frenchServicesEnglish.map((service, index) => {
               const Icon = service.icon;
               return (
-                <div key={index} 
-                     className="group p-6 border border-white/5 hover:border-[#D4AF37]/30 hover:bg-gradient-to-br hover:from-[#D4AF37]/5 hover:to-transparent transition-all duration-500">
-                  <div className="mb-4">
-                    <div className="p-3 bg-[#D4AF37]/10 rounded-lg inline-block group-hover:scale-110 transition-transform">
-                      <Icon className="w-6 h-6 text-[#D4AF37]" />
+                <Reveal key={index} delay={(index % 4) * 90}>
+                  <div className="group p-6 border border-white/5 hover:border-[#D4AF37]/30 hover:bg-gradient-to-br hover:from-[#D4AF37]/5 hover:to-transparent hover:-translate-y-1 transition-all duration-500">
+                    <div className="mb-4">
+                      <div className="p-3 bg-[#D4AF37]/10 rounded-lg inline-block group-hover:scale-110 transition-transform">
+                        <Icon className="w-6 h-6 text-[#D4AF37]" />
+                      </div>
                     </div>
+                    <h4 className="text-lg font-bold mb-3 group-hover:text-[#D4AF37] transition-colors">
+                      {service.name}
+                    </h4>
+                    <p className="text-sm text-[#94a3b8] leading-relaxed">
+                      {service.desc}
+                    </p>
                   </div>
-                  <h4 className="text-lg font-bold mb-3 group-hover:text-[#D4AF37] transition-colors">
-                    {service.name}
-                  </h4>
-                  <p className="text-sm text-[#94a3b8] leading-relaxed">
-                    {service.desc}
-                  </p>
-                </div>
+                </Reveal>
               );
             })}
           </div>
@@ -417,7 +419,7 @@ export default function IntelLanding() {
       {/* 5. SOFTWARE DEVELOPMENT SERVICES - SIC 62012 */}
       <section id="software" className="py-24 md:py-32 px-6 md:px-12">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <Reveal className="text-center mb-16">
             <h2 className="text-xs font-bold tracking-[10px] uppercase text-[#D4AF37] mb-4">
               SIC 62012 • SOFTWARE DEVELOPMENT
             </h2>
@@ -425,28 +427,29 @@ export default function IntelLanding() {
             <p className="text-[#94a3b8] max-w-2xl mx-auto">
               Complete software engineering services for business and domestic applications
             </p>
-          </div>
+          </Reveal>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {softwareDevServices.map((service, index) => {
               const Icon = service.icon;
               return (
-                <div key={index} 
-                     className="group p-8 border border-white/5 hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all duration-500">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-[#D4AF37]/10 rounded-lg group-hover:scale-110 transition-transform">
-                      <Icon className="w-6 h-6 text-[#D4AF37]" />
-                    </div>
-                    <div>
-                      <h4 className="text-lg font-bold mb-2 group-hover:text-[#D4AF37] transition-colors">
-                        {service.name}
-                      </h4>
-                      <p className="text-sm text-[#94a3b8] leading-relaxed">
-                        {service.desc}
-                      </p>
+                <Reveal key={index} delay={(index % 3) * 100}>
+                  <div className="group p-8 border border-white/5 hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 hover:-translate-y-1 transition-all duration-500">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-[#D4AF37]/10 rounded-lg group-hover:scale-110 transition-transform">
+                        <Icon className="w-6 h-6 text-[#D4AF37]" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-bold mb-2 group-hover:text-[#D4AF37] transition-colors">
+                          {service.name}
+                        </h4>
+                        <p className="text-sm text-[#94a3b8] leading-relaxed">
+                          {service.desc}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Reveal>
               );
             })}
           </div>
@@ -456,7 +459,7 @@ export default function IntelLanding() {
       {/* 6. IT SERVICE ACTIVITIES - SIC 62090 */}
       <section id="it-services" className="py-24 md:py-32 px-6 md:px-12 bg-[#080808]">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <Reveal className="text-center mb-16">
             <h2 className="text-xs font-bold tracking-[10px] uppercase text-[#10B981] mb-4">
               SIC 62090 • IT INFRASTRUCTURE
             </h2>
@@ -464,28 +467,29 @@ export default function IntelLanding() {
             <p className="text-[#94a3b8] max-w-2xl mx-auto">
               Comprehensive technology infrastructure, hardware procurement, and support services
             </p>
-          </div>
+          </Reveal>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {itServiceActivities.map((service, index) => {
               const Icon = service.icon;
               return (
-                <div key={index} 
-                     className="group p-8 border border-white/5 hover:border-[#10B981]/30 hover:bg-[#10B981]/5 transition-all duration-500">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-[#10B981]/10 rounded-lg group-hover:scale-110 transition-transform">
-                      <Icon className="w-6 h-6 text-[#10B981]" />
-                    </div>
-                    <div>
-                      <h4 className="text-lg font-bold mb-2 group-hover:text-[#10B981] transition-colors">
-                        {service.name}
-                      </h4>
-                      <p className="text-sm text-[#94a3b8] leading-relaxed">
-                        {service.desc}
-                      </p>
+                <Reveal key={index} delay={(index % 3) * 100}>
+                  <div className="group p-8 border border-white/5 hover:border-[#10B981]/30 hover:bg-[#10B981]/5 hover:-translate-y-1 transition-all duration-500">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-[#10B981]/10 rounded-lg group-hover:scale-110 transition-transform">
+                        <Icon className="w-6 h-6 text-[#10B981]" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-bold mb-2 group-hover:text-[#10B981] transition-colors">
+                          {service.name}
+                        </h4>
+                        <p className="text-sm text-[#94a3b8] leading-relaxed">
+                          {service.desc}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Reveal>
               );
             })}
           </div>
@@ -496,26 +500,18 @@ export default function IntelLanding() {
       <section className="py-16 px-6 md:px-12 border-y border-white/5">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-2xl font-black text-[#D4AF37] mb-2">01</div>
-              <div className="text-xs font-bold tracking-wider mb-1">DEVELOPMENT</div>
-              <div className="text-[9px] text-white/40">Custom Software & Apps</div>
-            </div>
-            <div>
-              <div className="text-2xl font-black text-[#10B981] mb-2">02</div>
-              <div className="text-xs font-bold tracking-wider mb-1">HARDWARE</div>
-              <div className="text-[9px] text-white/40">Procurement & Configuration</div>
-            </div>
-            <div>
-              <div className="text-2xl font-black text-[#D4AF37] mb-2">03</div>
-              <div className="text-xs font-bold tracking-wider mb-1">INTEGRATION</div>
-              <div className="text-[9px] text-white/40">Systems & Peripherals</div>
-            </div>
-            <div>
-              <div className="text-2xl font-black text-[#10B981] mb-2">04</div>
-              <div className="text-xs font-bold tracking-wider mb-1">MAINTENANCE</div>
-              <div className="text-[9px] text-white/40">Support & Optimization</div>
-            </div>
+            {[
+              { n: '01', color: '#D4AF37', title: 'DEVELOPMENT', desc: 'Custom Software & Apps' },
+              { n: '02', color: '#10B981', title: 'HARDWARE', desc: 'Procurement & Configuration' },
+              { n: '03', color: '#D4AF37', title: 'INTEGRATION', desc: 'Systems & Peripherals' },
+              { n: '04', color: '#10B981', title: 'MAINTENANCE', desc: 'Support & Optimization' },
+            ].map((item, i) => (
+              <Reveal key={item.n} delay={i * 100} scale y={16}>
+                <div className="text-2xl font-black mb-2" style={{ color: item.color }}>{item.n}</div>
+                <div className="text-xs font-bold tracking-wider mb-1">{item.title}</div>
+                <div className="text-[9px] text-white/40">{item.desc}</div>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>
@@ -524,7 +520,7 @@ export default function IntelLanding() {
       <section id="contact" className="py-24 md:py-32 px-6 md:px-12 bg-[#080808]">
         <div className="max-w-7xl mx-auto">
           {/* Section Header */}
-          <div className="text-center mb-16">
+          <Reveal className="text-center mb-16">
             <h2 className="text-xs font-bold tracking-[10px] uppercase text-[#D4AF37] mb-4">
               BUSINESS INQUIRIES
             </h2>
@@ -532,11 +528,11 @@ export default function IntelLanding() {
             <p className="text-[#94a3b8] max-w-2xl mx-auto">
               Submit your corporate requirements and a dedicated account manager will respond within 24 hours.
             </p>
-          </div>
+          </Reveal>
 
           <div className="grid lg:grid-cols-2 gap-16 items-start">
             {/* B2B Inquiry Form */}
-            <div className="bg-[#050505] p-8 md:p-10 border border-white/5 lg:col-span-2 max-w-3xl mx-auto w-full">
+            <Reveal delay={150} className="bg-[#050505] p-8 md:p-10 border border-white/5 lg:col-span-2 max-w-3xl mx-auto w-full">
               <h4 className="text-2xl font-bold mb-6 text-white text-center">Request a Proposal</h4>
               
               <form className="space-y-6" onSubmit={onSubmit}>
@@ -628,16 +624,22 @@ export default function IntelLanding() {
                 <div className="flex items-start gap-3">
                   <input type="checkbox" id="compliance" required className="mt-1 accent-[#D4AF37]" />
                   <label htmlFor="compliance" className="text-sm text-[#94a3b8]">
-                    I confirm that I represent a registered business and agree to the terms of Service and Privacy Policy.
+                    I confirm that I represent a registered business and agree to the{' '}
+                    <Link href="/terms" className="text-[#D4AF37] hover:underline">Terms of Service</Link>
+                    {' '}and{' '}
+                    <Link href="/privacy" className="text-[#D4AF37] hover:underline">Privacy Policy</Link>.
                   </label>
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={sending}
-                  className="w-full py-4 bg-[#D4AF37] text-black font-bold tracking-widest hover:bg-white hover:text-black transition-all duration-300 disabled:opacity-50"
+                  className="group relative w-full py-4 overflow-hidden bg-[#D4AF37] text-black font-bold tracking-widest hover:bg-white hover:text-black transition-all duration-300 disabled:opacity-50"
                 >
-                  {sending ? 'TRANSMITTING...' : 'SUBMIT INQUIRY'}
+                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+                  <span className="relative">
+                    {sending ? 'TRANSMITTING...' : 'SUBMIT INQUIRY'}
+                  </span>
                 </button>
 
                 {result && result.ok && (
@@ -656,25 +658,31 @@ export default function IntelLanding() {
                   All inquiries are handled by our B2B team. Your information will be processed according to GDPR.
                 </p>
               </form>
-            </div>
+            </Reveal>
           </div>
         </div>
       </section>
 
       {/* 9.  */}
-      {!isIntelOnlyDomain && (
-        <footer className="py-12 md:py-16 px-6 md:px-12 border-t border-white/5">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 text-center md:text-left">
-              MP INTEL SYSTEMS • COMPLETE IT SOLUTIONS FOR INDIVIDUALS AND ENTREPRISES
-            </div>
-            
-            <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600">
-              © 2026 MZ PRIMER Intel
-            </div>
+      <footer className="py-12 md:py-16 px-6 md:px-12 border-t border-white/5">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 text-center md:text-left">
+            MP INTEL SYSTEMS • COMPLETE IT SOLUTIONS FOR INDIVIDUALS AND ENTERPRISES
           </div>
-        </footer>
-      )}
+
+          <div className="flex items-center gap-6">
+            <Link href="/terms" className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 hover:text-[#D4AF37] transition-colors">
+              Terms of Service
+            </Link>
+            <Link href="/privacy" className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600 hover:text-[#D4AF37] transition-colors">
+              Privacy Policy
+            </Link>
+            <span className="text-[8px] md:text-[10px] tracking-[3px] uppercase text-zinc-600">
+              © 2026 MP Intel Systems
+            </span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

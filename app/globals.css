@@ -1,7 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-  
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
 /* === Reset & Base === */
 * {
   margin: 0;
@@ -13,6 +12,19 @@ html {
   height: 100%;
   width: 100%;
   overflow-x: hidden; /* Keep this on HTML */
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@keyframes orb-float {
+  0%, 100% { transform: translate(0, 0); opacity: 0.5; }
+  50% { transform: translate(28px, -22px); opacity: 0.9; }
 }
 
 body {
@@ -143,33 +155,6 @@ p {
     font-size: 0.95rem;
   }
 }
-/* === Navbar Styles === */
-nav {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 100%;
-  background-color: #000;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  z-index: 50;
-  gap: 1.5rem;
-}
-
-nav a {
-  color: #fff;
-  font-weight: 500;
-  font-size: 0.875rem;
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-
-nav a:hover {
-  color: #d4af37;
-}
-
 /* === Shared Card Responsiveness Fix (AI Tools + Learning) === */
 
 .robot-card {

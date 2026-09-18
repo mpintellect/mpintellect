@@ -26,12 +26,12 @@ export async function onRequestPost(context: any) {
       return new Response(JSON.stringify({ ok: false, error: "Required fields missing" }), { status: 400, headers: HEADERS });
     }
 
-    // Target email for MZ Primer Intel
+    // Target email for MP Intel Systems
     const MY_INBOX = "info@mzpintel.com";
 
     // Create text version for email clients
     const textVersion = `
-MZ Primer Intel - CONTACT FORM SUBMISSION
+MP Intel Systems - CONTACT FORM SUBMISSION
 ================================================
 Client Name: ${name}
 Client Email: ${email}
@@ -52,7 +52,7 @@ This is an automated notification from your contact form.
       html: `
         <div style="background:#000; color:#fff; padding:40px; font-family:sans-serif; border:1px solid #D4AF37;">
           <div style="border-bottom:1px solid #1a1a1a; padding-bottom:20px; margin-bottom:20px;">
-            <p style="color:#D4AF37; font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:3px;">MZ Primer Intel</p>
+            <p style="color:#D4AF37; font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:3px;">MP Intel Systems</p>
             <h1 style="margin:0; font-size:24px;">New Contact Form Submission</h1>
           </div>
           
@@ -66,7 +66,7 @@ This is an automated notification from your contact form.
           </div>
 
           <p style="margin-top:30px; font-size:10px; color:#333; text-align:center; text-transform:uppercase; letter-spacing:2px;">
-            MZ Primer Intel • Secure Transmission
+            MP Intel Systems • Secure Transmission
           </p>
         </div>
       `,
@@ -77,7 +77,7 @@ This is an automated notification from your contact form.
     const clientTextVersion = `
 Dear ${name},
 
-Thank you for reaching out to MZ Primer Intel.
+Thank you for reaching out to MP Intel Systems.
 
 We have received your inquiry and our team will review it shortly. 
 You can expect a response within 24 hours during business days.
@@ -88,12 +88,12 @@ Your message:
 For urgent matters, please contact us directly at info@mzpintel.com.
 
 Best regards,
-The MZ Primer Intel Team
+The MP Intel Systems Team
     `;
 
     await sendEmail({
       to: email,
-      subject: "We've Received Your Inquiry - MZ Primer Intel",
+      subject: "We've Received Your Inquiry - MP Intel Systems",
       html: `
         <!DOCTYPE html>
         <html>
@@ -120,7 +120,7 @@ The MZ Primer Intel Team
                 </div>
                 
                 <h1 style="margin: 0 0 16px; font-size: 32px; font-weight: 700; color: #ffffff;">
-                  Thank You for Contacting MZ Primer Intel
+                  Thank You for Contacting MP Intel Systems
                 </h1>
                 
                 <p style="margin: 0 0 8px; font-size: 16px; color: #e5e7eb;">
@@ -151,7 +151,7 @@ The MZ Primer Intel Team
               
               <div style="padding: 24px 32px; background: #050505; border-top: 1px solid #1a1a1a; border-radius: 0 0 24px 24px; text-align: center;">
                 <p style="margin: 0; color: #4b5563; font-size: 12px;">
-                  © ${new Date().getFullYear()} MZ Primer Intel
+                  © ${new Date().getFullYear()} MP Intel Systems
                 </p>
               </div>
             </div>

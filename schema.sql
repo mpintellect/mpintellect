@@ -303,6 +303,34 @@ CREATE TABLE IF NOT EXISTS broker_local_expenses (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Investizo's Users list (invest-panel.com/users/index), deliberately
+-- NOT kept in sync the way broker_deposits/broker_withdrawals are - a full
+-- backfill would be ~86 list-page requests plus one profile-page request
+-- PER USER (4,293 of them) for email/phone, a far bigger footprint than
+-- anything else this app does against Investizo. Instead:
+--   - name/country/verification_status/reg_date/last_visit/partner/manager
+--     come for free off the list page (see backend-lib/investizo-scraper.ts),
+--     seeded once from just its first two pages (~100 most recent users,
+--     2 requests), not the full history.
+--   - email/phone are fetched lazily, one request each, only when the admin
+--     actually opens that specific user in app/admin/users - cached here
+--     permanently afterward, never re-fetched. detail_fetched_at is null
+--     until that happens.
+CREATE TABLE IF NOT EXISTS broker_users (
+  investizo_id TEXT PRIMARY KEY,
+  name TEXT,
+  country TEXT,
+  verification_status TEXT, -- 'verified' | 'unverified'
+  reg_date TEXT,
+  last_visit TEXT,
+  partner TEXT,
+  manager TEXT,
+  email TEXT,
+  phone TEXT,
+  detail_fetched_at DATETIME,
+  synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Single shared TOTP (Google Authenticator-compatible, RFC 6238) secret for
 -- the /admin password gate (app/admin/AdminGate.tsx,
 -- functions/api/admin/validate.ts) - one shared admin account, matching

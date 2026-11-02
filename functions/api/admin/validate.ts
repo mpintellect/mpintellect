@@ -72,6 +72,16 @@ export async function onRequestPost(context: any) {
       );
     }
 
+    // Dev-only escape hatch: ADMIN_SKIP_TOTP is set in .dev.vars, which
+    // `wrangler pages dev --local` loads but `wrangler pages deploy` never
+    // ships - this can't end up live in production. Skips the QR/2FA flow
+    // entirely on localhost, since re-doing TOTP setup every time local D1
+    // gets reset (schema changes, fresh clone) is pure friction with no
+    // security benefit on a machine only the admin has access to.
+    if (env.ADMIN_SKIP_TOTP === 'true') {
+      return new Response(JSON.stringify({ valid: true }), { status: 200, headers: CORS_HEADERS });
+    }
+
     const totpRow = await env.DB.prepare(
       'SELECT secret, enabled, failed_attempts, locked_until FROM admin_totp WHERE id = 1'
     ).first();

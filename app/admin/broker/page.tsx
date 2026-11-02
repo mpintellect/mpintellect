@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { RefreshCw, ArrowLeft, AlertTriangle, Sheet } from 'lucide-react';
 import { ADMIN_SESSION_KEY } from '../useAdminKey';
+import UsersSection from './UsersSection';
 
 // ----------------------------------------------------------------------------
 // Broker (Investizo / invest-panel.com) dashboard. Pure read of what's
@@ -277,6 +278,7 @@ function TxTable({ rows, emptyMessage }: { rows: TxRow[]; emptyMessage: string }
 }
 
 export default function BrokerAdmin() {
+  const [section, setSection] = useState<'users' | 'finance'>('finance');
   const [data, setData] = useState<BrokerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -431,14 +433,40 @@ export default function BrokerAdmin() {
   return (
     <div className="min-h-screen bg-white text-slate-800 p-8">
       <div className="max-w-6xl mx-auto">
+        <div className="mb-6">
+          <Link href="/admin" className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 mb-2">
+            <ArrowLeft size={14} /> Admin
+          </Link>
+          <h1 className="text-2xl font-bold">Broker (II)</h1>
+        </div>
+
+        <div className="flex border-b border-slate-200 mb-6">
+          <button
+            onClick={() => setSection('users')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+              section === 'users' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Users
+          </button>
+          <button
+            onClick={() => setSection('finance')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+              section === 'finance' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Finance
+          </button>
+        </div>
+
+        {section === 'users' && <UsersSection />}
+
+        {section === 'finance' && (
+        <>
         <div className="flex items-center justify-between mb-6">
           <div>
-            <Link href="/admin" className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 mb-2">
-              <ArrowLeft size={14} /> Admin
-            </Link>
-            <h1 className="text-2xl font-bold">Broker (II)</h1>
             {data?.lastSync && (
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-400">
                 Last sync: {new Date(data.lastSync.created_at).toLocaleString()} via {data.lastSync.source} —{' '}
                 {data.lastSync.status === 'success' ? (
                   <span className="text-emerald-600">{data.lastSync.message}</span>
@@ -727,6 +755,8 @@ export default function BrokerAdmin() {
               />
             </div>
           </>
+        )}
+        </>
         )}
       </div>
     </div>

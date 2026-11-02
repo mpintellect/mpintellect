@@ -368,3 +368,290 @@ export async function syncInvestizoData(env: InvestizoEnv, source: 'cron' | 'man
     return result;
   }
 }
+
+// Cloudflare's standard email-obfuscation decode: first hex byte is an XOR
+// key, every subsequent byte pair is one character XORed with it. See
+// fetchAndCacheUserDetail() below for where this is needed.
+function decodeCfEmail(hex: string): string {
+  const key = parseInt(hex.slice(0, 2), 16);
+  let email = '';
+  for (let i = 2; i < hex.length; i += 2) {
+    email += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16) ^ key);
+  }
+  return email;
+}
+
+// ---------------------------------------------------------------------------
+// Users list (invest-panel.com/users/index) - see schema.sql's broker_users
+// comment for why this is deliberately NOT kept in sync the way deposits/
+// withdrawals are: a full backfill would be ~86 list-page requests plus one
+// profile-page request PER USER (4,293 of them) for email/phone, a far
+// bigger footprint than anything else this app does against Investizo.
+// Instead: name/country/verification come free off the list page, seeded
+// from just its first two pages (~100 most recent users); email/phone are
+// fetched lazily, one request each, only when the admin opens that specific
+// user in app/admin/users.
+// ---------------------------------------------------------------------------
+
+export interface UserListRow {
+  id: string;
+  name: string;
+  country: string;
+  verification: string; // 'verified' | 'unverified' | ''
+  regDate: string;
+  lastVisit: string;
+  partner: string;
+  manager: string;
+}
+
+// Each row: <tr data-key="<id>"><td><i title="Verified|Unverified">
+// <img title="<Country>"><a>Name</a></td><td>RegDate</td><td>LastVisit</td>
+// <td><i ...><img ...><a>Partner</a></td><td>Manager</td><td></td></tr> -
+// the partner cell reuses the exact same icon+flag+link shape as the user
+// cell (column 0), so the same per-column handlers cover both by tracking
+// which <td> is currently open.
+async function parseUsersListTable(res: Response): Promise<UserListRow[]> {
+  const rows: UserListRow[] = [];
+  let id = '';
+  let colIndex = -1;
+  let cellText = '';
+  let name = '';
+  let country = '';
+  let verification = '';
+  let regDate = '';
+  let lastVisit = '';
+  let partner = '';
+  let manager = '';
+
+  const rewriter = new HTMLRewriter()
+    .on('table tbody tr', {
+      element(el) {
+        id = el.getAttribute('data-key') || '';
+        colIndex = -1;
+        name = '';
+        country = '';
+        verification = '';
+        regDate = '';
+        lastVisit = '';
+        partner = '';
+        manager = '';
+        el.onEndTag(() => {
+          if (id) {
+            rows.push({
+              id,
+              name: name.trim(),
+              country,
+              verification,
+              regDate,
+              lastVisit,
+              partner: partner.trim(),
+              manager,
+            });
+          }
+        });
+      },
+    })
+    .on('table tbody tr td', {
+      element(el) {
+        colIndex++;
+        cellText = '';
+        el.onEndTag(() => {
+          const text = cellText.replace(/\s+/g, ' ').trim();
+          if (colIndex === 1) regDate = text;
+          else if (colIndex === 2) lastVisit = text;
+          else if (colIndex === 4) manager = text;
+        });
+      },
+      text(chunk) {
+        cellText += chunk.text;
+      },
+    })
+    .on('table tbody tr td i', {
+      element(el) {
+        if (colIndex === 0) verification = (el.getAttribute('title') || '').toLowerCase();
+      },
+    })
+    .on('table tbody tr td img', {
+      element(el) {
+        if (colIndex === 0) country = el.getAttribute('title') || '';
+      },
+    })
+    .on('table tbody tr td a', {
+      text(chunk) {
+        if (colIndex === 0) name += chunk.text;
+        else if (colIndex === 3) partner += chunk.text;
+      },
+    });
+
+  await rewriter.transform(res).text();
+  return rows;
+}
+
+async function upsertUsersList(db: D1Database, rows: UserListRow[]): Promise<number> {
+  if (rows.length === 0) return 0;
+  // Deliberately NOT touching email/phone/detail_fetched_at - those are
+  // filled in separately by fetchAndCacheUserDetail() and must survive a
+  // re-seed untouched.
+  const stmt = db.prepare(
+    `INSERT INTO broker_users
+      (investizo_id, name, country, verification_status, reg_date, last_visit, partner, manager, synced_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+     ON CONFLICT(investizo_id) DO UPDATE SET
+       name=excluded.name, country=excluded.country, verification_status=excluded.verification_status,
+       reg_date=excluded.reg_date, last_visit=excluded.last_visit, partner=excluded.partner,
+       manager=excluded.manager, synced_at=CURRENT_TIMESTAMP`
+  );
+  const batch = rows.map((r) =>
+    stmt.bind(r.id, r.name, r.country, r.verification, r.regDate, r.lastVisit, r.partner, r.manager)
+  );
+  await db.batch(batch);
+  return rows.length;
+}
+
+// "02.11.2026 20:44" -> "20261102 20:44", sortable/comparable as plain text.
+// Same re-slice trick as the CHRONO_KEY expressions in functions/api/admin/
+// broker/data.ts and .../users/data.ts, just computed in JS here.
+function chronoKey(regDate: string): string {
+  const [d, t] = (regDate || '').split(' ');
+  const [dd, mm, yyyy] = (d || '').split('.');
+  return `${yyyy || ''}${mm || ''}${dd || ''} ${t || ''}`;
+}
+
+// Shared by syncNewUsers() and fetchAndCacheUserDetail() - the Email field
+// isn't plain text, Investizo runs it through Cloudflare's email-obfuscation
+// feature (<a class="__cf_email__" data-cfemail="HEX">), so the visible text
+// is just a "[email protected]" placeholder; decode the hex directly rather
+// than trusting parseSummaryStats for this one field. Phone is plain text,
+// read the normal way. Reuses parseSummaryStats() since /users/view?id=X
+// uses the exact same <tr><th>Label</th><td>Value</td></tr> shape as
+// /statistics/summary.
+async function fetchUserEmailPhone(
+  jar: Map<string, string>,
+  userId: string
+): Promise<{ email: string | null; phone: string | null }> {
+  const res = await authedGet(jar, `/users/view?id=${encodeURIComponent(userId)}`);
+  const rawHtml = await res.text();
+  const cfEmailMatch = rawHtml.match(/data-cfemail="([a-f0-9]+)"/);
+  const email = cfEmailMatch ? decodeCfEmail(cfEmailMatch[1]) : null;
+
+  const stats = await parseSummaryStats(new Response(rawHtml));
+  // "Phone +212701276510 (SMS)" - strip the trailing delivery-method note.
+  const phone = (stats['Phone'] || '').replace(/\s*\([^)]*\)\s*$/, '').trim() || null;
+
+  return { email, phone };
+}
+
+// How many never-before-seen users a single "Seed users" click will fetch
+// email/phone for before stopping and warning instead of continuing - a
+// normal day is 1-2 new signups, so hitting this means something unusual
+// happened (long gap since last sync, or a signup burst) worth a human
+// look rather than quietly doing a much bigger pull than intended.
+const MAX_NEW_USERS_PER_SYNC = 10;
+// Defensive backstop on how many list pages to walk looking for the
+// watermark, independent of the count cap above - guards against an
+// infinite walk if the watermark comparison itself is ever wrong.
+const MAX_USER_LIST_PAGES = 10;
+
+// "Seed users" button: walks the Users list (newest-first) only as far as
+// the most recent reg_date already in broker_users, so a normal click only
+// ever touches brand-new registrations - typically just page 1. Each new
+// user found also gets its email/phone fetched immediately (not lazily),
+// since in steady state this is 1-2 people, not a bulk operation. See
+// schema.sql's broker_users comment and MAX_NEW_USERS_PER_SYNC above for
+// why this still caps out rather than ever silently doing a big pull.
+export async function syncNewUsers(
+  env: InvestizoEnv
+): Promise<{ ok: boolean; message: string; added: number; capped: boolean }> {
+  try {
+    const watermarkRow = await env.DB.prepare(
+      `SELECT reg_date FROM broker_users
+       ORDER BY (substr(reg_date,7,4) || substr(reg_date,4,2) || substr(reg_date,1,2) || substr(reg_date,12,5)) DESC
+       LIMIT 1`
+    ).first();
+    const watermark = watermarkRow ? chronoKey(String(watermarkRow.reg_date)) : '';
+
+    const jar = await login(env);
+    const newRows: UserListRow[] = [];
+    let capped = false;
+
+    pageLoop: for (let page = 1; page <= MAX_USER_LIST_PAGES; page++) {
+      const path = page === 1 ? '/users/index' : `/users/index?page=${page}`;
+      const res = await authedGet(jar, path);
+      const rows = await parseUsersListTable(res);
+      if (rows.length === 0) break;
+
+      for (const row of rows) {
+        if (watermark && chronoKey(row.regDate) <= watermark) {
+          break pageLoop; // reached already-known territory - everything after is older
+        }
+        newRows.push(row);
+        if (newRows.length > MAX_NEW_USERS_PER_SYNC) {
+          capped = true;
+          break pageLoop;
+        }
+      }
+    }
+
+    const kept = newRows.slice(0, MAX_NEW_USERS_PER_SYNC);
+    await upsertUsersList(env.DB, kept);
+
+    for (const row of kept) {
+      const { email, phone } = await fetchUserEmailPhone(jar, row.id);
+      await env.DB.prepare(
+        `UPDATE broker_users SET email = ?, phone = ?, detail_fetched_at = CURRENT_TIMESTAMP WHERE investizo_id = ?`
+      )
+        .bind(email, phone, row.id)
+        .run();
+    }
+
+    const message = capped
+      ? `Found more than ${MAX_NEW_USERS_PER_SYNC} new registrations since last sync - stopped at ${MAX_NEW_USERS_PER_SYNC} to avoid a large pull. Run again to continue.`
+      : kept.length === 0
+      ? 'No new registrations since last sync.'
+      : `Added ${kept.length} new user(s), email/phone included.`;
+
+    return { ok: true, message, added: kept.length, capped };
+  } catch (err: any) {
+    return { ok: false, message: err?.message || String(err), added: 0, capped: false };
+  }
+}
+
+// Lazy per-user detail fetch for email/phone - for users already in
+// broker_users that syncNewUsers() didn't auto-fetch (the initial 2-page
+// seed, or anyone fetched before this field existed). Only called when the
+// admin opens a specific user in app/admin/users, and skips hitting
+// Investizo entirely if already cached (detail_fetched_at set).
+export async function fetchAndCacheUserDetail(
+  env: InvestizoEnv,
+  userId: string
+): Promise<{ ok: boolean; email: string | null; phone: string | null; cached: boolean; message?: string }> {
+  const existing = await env.DB.prepare(
+    'SELECT email, phone, detail_fetched_at FROM broker_users WHERE investizo_id = ?'
+  )
+    .bind(userId)
+    .first();
+
+  if (existing && existing.detail_fetched_at) {
+    return {
+      ok: true,
+      email: (existing.email as string | null) ?? null,
+      phone: (existing.phone as string | null) ?? null,
+      cached: true,
+    };
+  }
+
+  try {
+    const jar = await login(env);
+    const { email, phone } = await fetchUserEmailPhone(jar, userId);
+
+    await env.DB.prepare(
+      `UPDATE broker_users SET email = ?, phone = ?, detail_fetched_at = CURRENT_TIMESTAMP WHERE investizo_id = ?`
+    )
+      .bind(email, phone, userId)
+      .run();
+
+    return { ok: true, email, phone, cached: false };
+  } catch (err: any) {
+    return { ok: false, email: null, phone: null, cached: false, message: err?.message || String(err) };
+  }
+}

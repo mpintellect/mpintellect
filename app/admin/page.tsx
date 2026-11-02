@@ -36,7 +36,7 @@ const ADMIN_SECTIONS: AdminSection[] = [
   {
     href: '/admin/broker',
     title: 'Broker (II)',
-    description: 'Deposits, withdrawals, and partner totals synced from invest-panel.com.',
+    description: 'Users and Finance (deposits, withdrawals, partner totals) synced from invest-panel.com.',
     icon: Wallet,
   },
   {

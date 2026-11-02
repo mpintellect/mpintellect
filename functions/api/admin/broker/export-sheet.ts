@@ -8,7 +8,7 @@
 // dedupe by (date, name, account, amount MAD, amount USD), so re-clicking
 // is safe.
 //
-// Columns written: Date | Status | Name | Account | Amount MAD | Amount USD
+// Columns written: Date | Status | Name | Account | Amount USD | Amount MAD
 // Withdrawals and expenses get a negative amount; withdrawals get a
 // light-red row background, expenses a light-amber one, so all three read
 // distinctly in an otherwise single chronological list. Deposit rows are
@@ -147,8 +147,8 @@ export async function onRequestPost(context: any) {
             date: String(r[0] || ''),
             name: String(r[2] || ''),
             account: String(r[3] || ''),
-            amountMad: parseFloat(String(r[4]).replace(/[^\d.-]/g, '')) || 0,
-            amountUsd: parseFloat(String(r[5]).replace(/[^\d.-]/g, '')) || 0,
+            amountUsd: parseFloat(String(r[4]).replace(/[^\d.-]/g, '')) || 0,
+            amountMad: parseFloat(String(r[5]).replace(/[^\d.-]/g, '')) || 0,
           })
         )
     );
@@ -195,7 +195,7 @@ export async function onRequestPost(context: any) {
       });
     }
 
-    const values = newRows.map((r) => [r.date, r.status, r.name, r.account, r.amountMad, r.amountUsd]);
+    const values = newRows.map((r) => [r.date, r.status, r.name, r.account, r.amountUsd, r.amountMad]);
     const { startRowIndex } = await appendSheetValues(sheetId, `${tab}!A:F`, values, accessToken);
 
     const rowIndexesOf = (type: RowType) =>

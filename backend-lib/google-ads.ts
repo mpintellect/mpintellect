@@ -4,13 +4,11 @@
 // here. Mirrors backend-lib/facebook.ts's structure and conventions;
 // shared period/date-range math and color scoring live in ad-shared.ts.
 //
-// NOTE: unlike the Facebook build, this was NOT verified against a live
-// account - GOOGLE_DEVELOPER_TOKEN is currently rejected by Google as
-// DEVELOPER_TOKEN_INVALID (the refresh token itself works fine). Field
-// names and GAQL shapes follow Google's documented API behavior, but the
-// reach/frequency and quality-score queries in particular are best-effort
-// (see comments below) and should be checked against a real account once
-// the developer token is fixed.
+// NOTE: the developer token issue this comment used to describe
+// (DEVELOPER_TOKEN_INVALID) is fixed and this has been verified live - see
+// fetchAccountCurrency() below. Field names and GAQL shapes follow Google's
+// documented API behavior; the reach/frequency and quality-score queries in
+// particular are still best-effort (see comments below).
 
 import {
   type Period,
@@ -26,11 +24,8 @@ interface GoogleEnv {
   GOOGLE_REFRESH_TOKEN?: string;
   GOOGLE_REDIRECT_URI?: string;
   GOOGLE_DEVELOPER_TOKEN?: string;
-  DEVELOPER_TOKEN?: string; // fallback - already present in this project's .dev.vars
   GOOGLE_CUSTOMER_ID?: string;
-  CUSTOMER_ID?: string; // fallback
   GOOGLE_LOGIN_CUSTOMER_ID?: string;
-  LOGIN_CUSTOMER_ID?: string; // fallback
   GOOGLE_ADS_API_VERSION?: string;
   GOOGLE_DAILY_BUDGET_CAP?: string;
   GOOGLE_WEEKLY_BUDGET_CAP?: string;
@@ -61,17 +56,15 @@ export class GoogleAdsApiError extends Error {
 }
 
 function developerToken(env: GoogleEnv): string | undefined {
-  return env.GOOGLE_DEVELOPER_TOKEN || env.DEVELOPER_TOKEN;
+  return env.GOOGLE_DEVELOPER_TOKEN;
 }
 
 function customerId(env: GoogleEnv): string | undefined {
-  const raw = env.GOOGLE_CUSTOMER_ID || env.CUSTOMER_ID;
-  return raw ? raw.replace(/-/g, '') : undefined;
+  return env.GOOGLE_CUSTOMER_ID ? env.GOOGLE_CUSTOMER_ID.replace(/-/g, '') : undefined;
 }
 
 function loginCustomerId(env: GoogleEnv): string | undefined {
-  const raw = env.GOOGLE_LOGIN_CUSTOMER_ID || env.LOGIN_CUSTOMER_ID;
-  return raw ? raw.replace(/-/g, '') : undefined;
+  return env.GOOGLE_LOGIN_CUSTOMER_ID ? env.GOOGLE_LOGIN_CUSTOMER_ID.replace(/-/g, '') : undefined;
 }
 
 function apiVersion(env: GoogleEnv): string {
@@ -112,7 +105,12 @@ async function getAccessToken(env: GoogleEnv): Promise<string> {
 
   const json: any = await res.json().catch(() => ({}));
   if (!res.ok || !json.access_token) {
-    const msg = json?.error_description || json?.error || 'Failed to refresh Google OAuth access token';
+    // json.error is the actual OAuth error code (e.g. "invalid_grant" when the
+    // refresh token itself is dead/revoked) - Google's error_description on
+    // this endpoint is sometimes just the unhelpful literal string "Bad
+    // Request", so surface both rather than letting that mask the real code.
+    const msg = [json?.error, json?.error_description].filter(Boolean).join(': ')
+      || 'Failed to refresh Google OAuth access token';
     throw new GoogleAdsApiError(msg, res.status || 502);
   }
 

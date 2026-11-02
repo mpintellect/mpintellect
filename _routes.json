@@ -2,8 +2,7 @@
   "version": 1,
   "include": [
     "/api/*",
-    "/client/api/*",
-    "/admin-console-x9z/api/*"
+    "/client/api/*"
   ],
   "exclude": [
     "/*",

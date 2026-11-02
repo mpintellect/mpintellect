@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, Zap, Globe, BarChart2, Activity } from 'lucide-react';
+import { LiveMarketBadge } from '@/components/LiveMarketBadge';
 
 export const metadata = {
   title: 'Global Markets | Real-Time AI Analysis',
@@ -42,17 +43,21 @@ const SYMBOL_NAMES: Record<string, string> = {
   "USTEC": "NASDAQ 100 Index (US)",
   "US30": "Dow Jones 30 Index",
   "HK50": "Hong Kong 50 Index",
-  "FRANCE40": "CAC 40 Index (France)",
+  "CAC": "CAC 40 Index (France)",
   "CHINA50": "FTSE China A50 Index",
   "UK100": "FTSE 100 Index (UK)",
 };
 
-// Organize them into Categories for display
+// Organize them into Categories for display. Every symbol here must match
+// app/lib/symbols.ts's STATIC_SYMBOLS exactly (case-insensitive) - this is a
+// static export with dynamicParams: false, so any symbol not in that list
+// 404s. Keep this list in sync with SYMBOL_NAMES above; every SYMBOL_NAMES
+// key should appear in exactly one category.
 const CATEGORIES = {
-  CRYPTO: ['BTCUSD', 'ETHUSD', 'XRPUSD', 'SOLUSD', 'DOGEUSD', 'LTCUSD'],
-  FOREX_MAJORS: ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCAD', 'AUDUSD', 'USDCHF'],
-  CROSSES_METALS: ['EURJPY', 'GBPJPY', 'XAUUSD', 'XAUEUR', 'BRENT', 'PLATINUM'],
-  INDICES: ['US30', 'US500', 'USTEC', 'CHINA50', 'UK100', 'HK50']
+  CRYPTO: ['BTCUSD', 'ETHUSD', 'XRPUSD', 'DOGEUSD', 'LTCUSD'],
+  FOREX_MAJORS: ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCAD', 'AUDUSD', 'NZDUSD', 'USDCHF'],
+  CROSSES_METALS: ['EURJPY', 'EURGBP', 'GBPJPY', 'GBPCHF', 'XAUUSD', 'XAUEUR', 'XAGUSD', 'BRENT', 'PLATINUM'],
+  INDICES: ['US30', 'US500', 'USTEC', 'CHINA50', 'UK100', 'HK50', 'CAC']
 };
 
 export default function MarketsHub() {
@@ -61,11 +66,11 @@ export default function MarketsHub() {
       
       {/* 1. HERO TITLE */}
       <div className="max-w-4xl mx-auto text-center mb-20">
-        <span className="text-yellow-500 font-bold uppercase tracking-[0.2em] text-xs mb-4 block">Institutional </span>
+        <span className="text-blue-600 font-bold uppercase tracking-[0.2em] text-xs mb-4 block">Institutional </span>
         <h1 className="text-4xl md:text-6xl font-black text-gray-900 mb-6 leading-tight">
-          Live Market <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">Command Center</span>
+          Live Market <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-blue-700">Command Center</span>
         </h1>
-        <p className="text-zinc-400 text-lg">
+        <p className="text-slate-500 text-lg">
           Select an asset below to initialize AI-Trend algorithms and view live trade setups.
         </p>
       </div>
@@ -130,12 +135,15 @@ function AssetButton({ ticker, name }: { ticker: string, name?: string }) {
     if(!name) return null; // Safety if sym not in list
     
     return (
-        <Link href={`/analysis/${ticker.toLowerCase()}`} className="market-asset-card group">
+        <Link href={`/en/analysis/${ticker.toLowerCase()}/`} className="market-asset-card group">
             <div>
-                <span className="asset-ticker group-hover:text-gray-900 transition-colors">{ticker}</span>
+                <div className="flex items-center gap-2">
+                  <span className="asset-ticker group-hover:text-gray-900 transition-colors">{ticker}</span>
+                  <LiveMarketBadge symbol={ticker} />
+                </div>
                 <span className="asset-name">{name}</span>
             </div>
-            <ArrowRight size={16} className="text-zinc-600 group-hover:text-yellow-500 transform group-hover:translate-x-1 transition-all" />
+            <ArrowRight size={16} className="text-zinc-600 group-hover:text-blue-600 transform group-hover:translate-x-1 transition-all" />
         </Link>
     )
 }

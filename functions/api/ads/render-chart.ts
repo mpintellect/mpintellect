@@ -305,8 +305,8 @@ function generatePureChartHTML(chartData: any, symbol: string): string {
       const boxTop = Math.min(startY, endY);
       const boxBottom = Math.max(startY, endY);
       const boxHeight = boxBottom - boxTop;
-      const boxColor = '#10B981';
       const isUp = endPrice > startPrice;
+      const boxColor = isUp ? '#10B981' : '#EF4444'; // green for bullish/BUY targets, red for bearish/SELL - was hardcoded green regardless of direction
       const arrowSymbol = isUp ? '▲' : '▼';
       
       const lastCandleIndex = visibleCandles.length - 1;

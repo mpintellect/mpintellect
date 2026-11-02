@@ -1,5 +1,7 @@
 // functions/api/telegram/publish.ts
 
+import { generateCaptionFromData, buildSignalButtons } from '../../../backend-lib/telegram-post';
+
 export async function onRequestPost(context: any) {
   const { request, env } = context;
   
@@ -16,9 +18,12 @@ export async function onRequestPost(context: any) {
   try {
     // Authentication
     const authHeader = request.headers.get('Authorization');
-    const expectedSecret = env.ADMIN_SECRET || 'mp2026';
-    
-    if (authHeader !== `Bearer ${expectedSecret}`) {
+    // Same shared admin secret (and same fail-closed convention) as every
+    // other /admin/* surface - see backend-lib/ad-shared.ts:verifyAdminAuth
+    // and functions/api/admin/validate.ts.
+    const expectedSecret = env.ADMIN_PASSWORD || env.ADMIN_KEY;
+
+    if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 401,
         headers: { 'Content-Type': 'application/json' }
@@ -54,16 +59,7 @@ export async function onRequestPost(context: any) {
     console.log(`📝 Caption generated`);
     
     // Prepare inline keyboard buttons
-    const buttons = {
-      inline_keyboard: [
-        [
-          { text: "✅ افتح حسابك من هنا", url: `https://my.litefinance.org/registration/?uid=967798214&utm_source=telegram&utm_medium=signal&utm_campaign=${symbol.toLowerCase()}` }
-        ],
-        [
-          { text: "📊 عرض التحليل الكامل", url: `https://mpintellect.com/start` }
-        ]
-      ]
-    };
+    const buttons = buildSignalButtons(symbol);
     
     // Send to Telegram with buttons
     const sendSuccess = await sendPhotoWithButtonsToTelegram(
@@ -153,45 +149,4 @@ async function sendMessageToTelegram(
   
   const result = await response.json();
   return result.ok;
-}
-
-function generateCaptionFromData(data: any, symbol: string): string {
-  const price = data.trend?.current_price || 0;
-  const entry = data.tp_sl?.entry_price || data.pending_orders?.primary_order?.entry_price || 0;
-  const tp = data.tp_sl?.tp_level || data.pending_orders?.primary_order?.tp_price || 0;
-  const confidence = data.risk_score?.confidence_score || 0;
-  const trend = data.trend?.trend || 'neutral';
-  const rsi = data.momentum?.rsi_latest || 50;
-  
-  // Get UTC timestamp from data file
-  const timestamp = data.generated_at || data.trend?.timestamp || new Date().toISOString();
-  const date = new Date(timestamp);
-  
-  // Format as UTC: DD/MM/YYYY HH:MM UTC
-  const formattedTime = `${date.getUTCDate().toString().padStart(2, '0')}/${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCFullYear()} ${date.getUTCHours().toString().padStart(2, '0')}:${date.getUTCMinutes().toString().padStart(2, '0')} UTC`;
-  
-  // Get session from data
-  const session = data.sessions?.session_name || 'Market Hours';
-  
-  const trendIcon = trend.includes('bullish') ? '🟢' : trend.includes('bearish') ? '🔴' : '⚪';
-  const trendText = trend.replace(/_/g, ' ').toUpperCase();
-  
-  // RSI zone text
-  let rsiZone = 'Neutral';
-  if (rsi > 70) rsiZone = 'Overbought';
-  else if (rsi < 30) rsiZone = 'Oversold';
-  
-  return `
-🤖 *MPIntellect - AI Analysis*
-
-📅 ${formattedTime}
-⏰ Session: ${session}
-
-📊 *${symbol}*
-💰 Price: ${price.toLocaleString()}
-🎯 Target Zone: *${entry.toLocaleString()}* → *${tp.toLocaleString()}*
-📈 Trend: ${trendIcon} *${trendText}*
-📉 RSI: ${rsi.toFixed(1)} (${rsiZone})
-⚡ Confidence: *${confidence}%*
-  `.trim();
 }

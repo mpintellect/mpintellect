@@ -5,19 +5,22 @@
   "scripts": {
     "build": "next build --webpack",
     "build:intel": "NEXT_PUBLIC_BUILD_TARGET=intel node scripts/build-intel.mjs",
-    "build:main": "NEXT_PUBLIC_BUILD_TARGET=main next build --webpack",
+    "build:main": "NEXT_PUBLIC_BUILD_TARGET=main node scripts/build-main.mjs",
+    "build:admin": "NEXT_PUBLIC_BUILD_TARGET=admin node scripts/build-admin.mjs",
     "prebuild": "rm -rf .next out",
     "deploy": "wrangler pages deploy out",
     "build:all": "next build --webpack",
-    
-    
-    
+
+
+
     "deploy:intel": "npm run build:intel && wrangler pages deploy out --project-name=mzprimer",
     "deploy:main": "npm run build:main && wrangler pages deploy out --project-name=mpintellect",
-    
+    "deploy:admin": "npm run build:admin && wrangler pages deploy out --project-name=mpintellect-admin",
+
     "preview:intel": "npm run build:intel && npx wrangler pages dev out --compatibility-flags=nodejs_compat --d1 DB=mpintellect-db",
     "preview:main": "npm run build:main && npx wrangler pages dev out --compatibility-flags=nodejs_compat --d1 DB=mpintellect-db",
-    
+    "preview:admin": "npm run build:admin && npx wrangler pages dev out --compatibility-flags=nodejs_compat --d1 DB=mpintellect-db",
+
     "dev": "next dev",
     "dev:d1": "bash ./dev-with-d1.sh",
     "dev:ads": "tsx scripts/dev-ads-server.ts",

@@ -16,15 +16,23 @@ const inter = Inter({ subsets: ['latin'] });
 
 // 🔥 Build-time environment variable
 const isIntelOnlyBuild = process.env.NEXT_PUBLIC_BUILD_TARGET === 'intel';
+const isAdminOnlyBuild = process.env.NEXT_PUBLIC_BUILD_TARGET === 'admin';
 
 // Conditional metadata based on build target
 export const metadata = {
-  title: isIntelOnlyBuild 
+  title: isAdminOnlyBuild
+    ? 'MPIntellect Admin'
+    : isIntelOnlyBuild
     ? 'MZ Primer – Intel Systems'
     : 'MPIntellect – Your Gateway to Smart Trading',
-  description: isIntelOnlyBuild
+  description: isAdminOnlyBuild
+    ? 'Internal admin tools.'
+    : isIntelOnlyBuild
     ? 'Complete IT solutions for businesses and individuals. Development, hardware, integration, and support.'
     : 'MPIntellect is a premium platform built to help traders get started with speed, confidence, and security. Access exclusive insights, AI tools, and global markets.',
+  // admin.mpintellect.com is internal tooling only - never indexed (belt and
+  // suspenders alongside build-admin.mjs's robots.txt override).
+  ...(isAdminOnlyBuild ? { robots: { index: false, follow: false } } : {}),
   manifest: '/manifest.json',
 };
 
@@ -43,28 +51,33 @@ export default function Layout({ children }: { children: ReactNode }) {
         className={`${inter.className} bg-white text-gray-900 relative`}
         suppressHydrationWarning 
       >      
-        <AnimatedBackground />
+        {/* Decorative/marketing-only - admin.mpintellect.com is internal
+            tooling, not a page a client sees. */}
+        {!isAdminOnlyBuild && <AnimatedBackground />}
 
-        <Script id="consent-mode-defaults" strategy="beforeInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            
-            gtag('consent', 'default', {
-              'ad_storage': 'denied',
-              'ad_user_data': 'denied',
-              'ad_personalization': 'denied',
-              'analytics_storage': 'denied'
-            });
-          `}
-        </Script>
+        {!isAdminOnlyBuild && (
+          <Script id="consent-mode-defaults" strategy="beforeInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
 
-        <ClientLayoutWrapper isIntelOnlyBuild={isIntelOnlyBuild}>
+              gtag('consent', 'default', {
+                'ad_storage': 'denied',
+                'ad_user_data': 'denied',
+                'ad_personalization': 'denied',
+                'analytics_storage': 'denied'
+              });
+            `}
+          </Script>
+        )}
+
+        <ClientLayoutWrapper isIntelOnlyBuild={isIntelOnlyBuild} isAdminOnlyBuild={isAdminOnlyBuild}>
           {children}
         </ClientLayoutWrapper>
 
-        {/* Analytics & Tracking - Only load on main build */}
-        {!isIntelOnlyBuild && (
+        {/* Analytics & Tracking - Only load on main build, never on intel or
+            admin (no ads/marketing tracking belongs on internal tooling) */}
+        {!isIntelOnlyBuild && !isAdminOnlyBuild && (
           <>
             <Suspense fallback={null}>
               <FacebookPixel />
@@ -108,8 +121,8 @@ export default function Layout({ children }: { children: ReactNode }) {
           </>
         )}
 
-        <CookieConsent />
-        
+        {!isAdminOnlyBuild && <CookieConsent />}
+
         <Suspense fallback={null} />
 
       </body>

@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export const runtime = 'experimental-edge';
-
 const VALID_TOOLS = [
   'analysis',
   'trade',

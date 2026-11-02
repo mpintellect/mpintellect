@@ -12,9 +12,12 @@ export async function onRequestPost(context: any) {
   
   try {
     const authHeader = request.headers.get('Authorization');
-    const expectedSecret = env.ADMIN_SECRET || 'mp2026';
-    
-    if (authHeader !== `Bearer ${expectedSecret}`) {
+    // Same shared admin secret (and same fail-closed convention) as every
+    // other /admin/* surface - see backend-lib/ad-shared.ts:verifyAdminAuth
+    // and functions/api/admin/validate.ts.
+    const expectedSecret = env.ADMIN_PASSWORD || env.ADMIN_KEY;
+
+    if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 401,
         headers: { 'Content-Type': 'application/json' }

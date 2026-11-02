@@ -222,6 +222,126 @@ CREATE TABLE IF NOT EXISTS seo_logs (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 13. Broker (Investizo / invest-panel.com) Sync
+-- Scraped via backend-lib/investizo-scraper.ts - no public API exists on
+-- their side (plain Yii2 server-rendered CRM), so this mirrors what the
+-- partner dashboard shows. Written by both workers/broker-sync (cron) and
+-- functions/api/admin/broker/sync.ts (manual "Refresh" button), read by
+-- functions/api/admin/broker/data.ts for app/admin/broker/page.tsx.
+CREATE TABLE IF NOT EXISTS broker_stats_snapshots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  registrations INTEGER,
+  deposits_total REAL,
+  deposits_commission REAL,
+  withdrawals_done REAL,
+  withdrawals_pending REAL,
+  affiliate_rebate REAL,
+  affiliate_pending REAL,
+  pamm_current REAL,
+  equity REAL,
+  balance REAL,
+  raw_json TEXT,
+  synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Row id is Investizo's own "#" transaction id, so re-syncs upsert in place
+-- instead of duplicating.
+CREATE TABLE IF NOT EXISTS broker_deposits (
+  id TEXT PRIMARY KEY,
+  tx_date TEXT,
+  user_name TEXT,
+  method TEXT,
+  purse_transaction TEXT,
+  account TEXT,
+  account_amount REAL,
+  payment_amount REAL,
+  payment_currency TEXT,
+  status TEXT,
+  synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS broker_withdrawals (
+  id TEXT PRIMARY KEY,
+  tx_date TEXT,
+  user_name TEXT,
+  method TEXT,
+  purse_transaction TEXT,
+  account TEXT,
+  account_amount REAL,
+  payment_amount REAL,
+  payment_currency TEXT,
+  status TEXT,
+  synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS broker_sync_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source TEXT, -- 'cron' | 'manual'
+  status TEXT, -- 'success' | 'error'
+  message TEXT,
+  deposits_synced INTEGER DEFAULT 0,
+  withdrawals_synced INTEGER DEFAULT 0,
+  duration_ms INTEGER,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Manually-entered outflows from the local (Morocco) cash balance - office
+-- expenses, transfers, marketing spend, etc. - that never show up in
+-- Investizo's own deposit/withdrawal lists. Subtracted from the local
+-- balance shown on app/admin/broker/page.tsx and exported to the Google
+-- Sheet ledger alongside deposits/withdrawals (functions/api/admin/broker/
+-- export-sheet.ts). expense_date is admin-entered ISO text ("YYYY-MM-DD
+-- HH:MM"), not scraped, so it sorts correctly as plain text unlike
+-- Investizo's own "DD.MM.YYYY" format.
+CREATE TABLE IF NOT EXISTS broker_local_expenses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  expense_date TEXT NOT NULL,
+  description TEXT NOT NULL,
+  category TEXT,
+  amount_mad REAL,
+  amount_usd REAL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Single shared TOTP (Google Authenticator-compatible, RFC 6238) secret for
+-- the /admin password gate (app/admin/AdminGate.tsx,
+-- functions/api/admin/validate.ts) - one shared admin account, matching
+-- ADMIN_PASSWORD's own single-secret model, not a multi-user system. id is
+-- pinned to 1 so there is ever only one row. enabled=0 means setup has
+-- started (secret generated, QR shown) but not yet confirmed with a code;
+-- validate.ts flips it to 1 on the first successful code.
+-- failed_attempts/locked_until throttle code brute-forcing: once someone
+-- already has the password, a 6-digit TOTP code is the only thing left
+-- guarding /admin, so repeated wrong codes lock further attempts out for a
+-- cooldown window rather than allowing unlimited guesses.
+CREATE TABLE IF NOT EXISTS admin_totp (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  secret TEXT NOT NULL,
+  enabled INTEGER NOT NULL DEFAULT 0,
+  failed_attempts INTEGER NOT NULL DEFAULT 0,
+  locked_until DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Logs every successful /admin login (password + TOTP both verified) so the
+-- admin can see which devices/IPs have accessed the panel and when, with a
+-- manual "Disconnect" action (app/admin/security/page.tsx,
+-- functions/api/admin/sessions.ts). This is visibility plus a soft kick for
+-- the /admin UI (AdminGateProvider checks its own session on each page
+-- load/heartbeat and logs out if revoked) - it does NOT gate the
+-- underlying API endpoints (broker, telegram, etc.), which still trust
+-- ADMIN_PASSWORD as a bearer token the way they always have, so revoking a
+-- session here is not a hard security boundary by itself.
+CREATE TABLE IF NOT EXISTS admin_sessions (
+  id TEXT PRIMARY KEY,
+  ip TEXT,
+  user_agent TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  revoked INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_last_seen ON admin_sessions(last_seen_at);
+
 -- ==========================================================
 -- Performance Indexes
 -- ==========================================================
@@ -243,3 +363,8 @@ CREATE INDEX IF NOT EXISTS idx_referrals_referrer_id ON referrals(referrer_id);
 CREATE INDEX IF NOT EXISTS idx_referrals_referred_id ON referrals(referred_id);
 CREATE INDEX IF NOT EXISTS idx_stripe_user_id ON stripe_purchases(user_id);
 CREATE INDEX IF NOT EXISTS idx_stripe_session_id ON stripe_purchases(stripe_session_id);
+
+CREATE INDEX IF NOT EXISTS idx_broker_deposits_date ON broker_deposits(tx_date);
+CREATE INDEX IF NOT EXISTS idx_broker_withdrawals_date ON broker_withdrawals(tx_date);
+CREATE INDEX IF NOT EXISTS idx_broker_sync_log_created ON broker_sync_log(created_at);
+CREATE INDEX IF NOT EXISTS idx_broker_local_expenses_date ON broker_local_expenses(expense_date);

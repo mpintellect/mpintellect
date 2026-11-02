@@ -1,5 +1,12 @@
 // functions/api/push/send.ts
 // Note: This assumes you have pushClient and sendToTelegram logic in backend-lib
+//
+// Had no auth check at all until this comment - anyone who found the URL
+// could POST sendToAll:true and trigger a real post to the Telegram channel
+// (push delivery itself is still a stub, see the broadcast case below, but
+// Telegram delivery is live). Admin-gated the same way as the rest of
+// /api/admin/* (Bearer <ADMIN_PASSWORD|ADMIN_KEY>, fails closed) now that
+// its only caller, app/admin/broadcast/page.tsx, lives behind that gate.
 
 import { sendToTelegram } from "../../../app/lib/telegram"; // Ensure this is lightweight
 
@@ -7,6 +14,12 @@ const HEADERS = { "Content-Type": "application/json", "Access-Control-Allow-Orig
 
 export async function onRequestPost(context: any) {
   const { request, env } = context;
+
+  const authHeader = request.headers.get('Authorization');
+  const expectedSecret = env.ADMIN_PASSWORD || env.ADMIN_KEY;
+  if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: HEADERS });
+  }
 
   try {
     const body = await request.json();

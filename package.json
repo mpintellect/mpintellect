@@ -13,7 +13,7 @@
 
 
 
-    "deploy:intel": "npm run build:intel && wrangler pages deploy out --project-name=mzprimer",
+    "deploy:intel": "npm run build:intel && wrangler pages deploy out --project-name=mzprimerintel",
     "deploy:main": "npm run build:main && wrangler pages deploy out --project-name=mpintellect",
     "deploy:admin": "npm run build:admin && wrangler pages deploy out --project-name=mpintellect-admin",
 

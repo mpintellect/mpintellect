@@ -165,6 +165,30 @@ export async function appendSheetValues(
   return { startRowIndex: startRow1 - 1, endRowIndex: endRow1 };
 }
 
+// Overwrites specific cell ranges in place (e.g. updating one existing
+// row's Date column without touching the rest of the row) - unlike
+// appendSheetValues, this never creates new rows. Each entry's `range`
+// should be a specific A1 range (e.g. "Sheet1!A5:B5"), not a whole column.
+export async function batchUpdateValues(
+  sheetId: string,
+  updates: { range: string; values: (string | number)[][] }[],
+  accessToken: string
+): Promise<void> {
+  if (updates.length === 0) return;
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      valueInputOption: 'USER_ENTERED',
+      data: updates.map((u) => ({ range: u.range, values: u.values })),
+    }),
+  });
+  if (!res.ok) {
+    const json: any = await res.json();
+    throw new Error(`Failed to batch-update sheet values: ${JSON.stringify(json)}`);
+  }
+}
+
 export async function colorRows(
   sheetId: string,
   gid: number,

@@ -35,8 +35,8 @@ const ADMIN_SECTIONS: AdminSection[] = [
   },
   {
     href: '/admin/broker',
-    title: 'Broker (II)',
-    description: 'Users and Finance (deposits, withdrawals, partner totals) synced from invest-panel.com.',
+    title: 'Broker',
+    description: 'Users and Finance for both brokers - Investizo (auto-synced) and LiteFinance (manual Tampermonkey sync).',
     icon: Wallet,
   },
   {

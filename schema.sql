@@ -285,6 +285,113 @@ CREATE TABLE IF NOT EXISTS broker_sync_log (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Second broker (LiteFinance, admin.litefinance.com), separate from the
+-- broker_* tables above (Investizo). Unlike Investizo, admin.litefinance.com
+-- is VPN-gated with 2FA-per-new-device and only one device connected at a
+-- time, so there is no Worker-based login/scrape - rows are pushed in here
+-- by a Tampermonkey userscript running inside the admin's own already-
+-- authenticated browser tab (see tampermonkey/litefinance-sync.user.js and
+-- functions/api/admin/broker-lite/sync.ts), not pulled by us. id is
+-- LiteFinance's own "#" transaction id. tx_date is "DD.MM.YYYY HH:MM" same
+-- as Investizo's, so the CHRONO_KEY re-slice trick in
+-- functions/api/admin/broker/data.ts applies unchanged.
+CREATE TABLE IF NOT EXISTS litefinance_deposits (
+  id TEXT PRIMARY KEY,
+  tx_date TEXT,
+  user_name TEXT,
+  country TEXT,
+  verification_status TEXT, -- 'verified' | 'unverified' | ''
+  account TEXT,
+  method TEXT,
+  deposit_amount REAL,
+  deposit_currency TEXT,
+  pay_amount REAL,
+  pay_currency TEXT,
+  usd_amount REAL,
+  status TEXT, -- 'Deposited' | 'Created' | 'Declined' | ...
+  synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS litefinance_withdrawals (
+  id TEXT PRIMARY KEY,
+  tx_date TEXT,
+  user_name TEXT,
+  country TEXT,
+  verification_status TEXT,
+  account TEXT,
+  method TEXT,
+  usd_amount REAL,
+  pay_amount REAL,
+  pay_currency TEXT,
+  total_amount REAL,
+  total_currency TEXT,
+  status TEXT, -- 'Done' | 'Done auto' | 'Wait' | 'Hold' | 'Unconfirmed' | 'Return' | 'Error' | ...
+  auto_test TEXT, -- 'Y' | 'N'
+  synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS litefinance_sync_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT, -- 'deposits' | 'withdrawals' | 'users'
+  page INTEGER,
+  rows_synced INTEGER DEFAULT 0,
+  status TEXT, -- 'success' | 'error'
+  message TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- The /users/index list's "User" column shows the profile's Name if one is
+-- set, and only falls back to the email when no name exists - so it's
+-- ambiguous, never trust it as "the email". Both name and email are
+-- captured reliably from the profile page (/users/view?id=<view_id> - a
+-- DIFFERENT internal id than client_uid, captured separately) instead,
+-- fetched alongside phone and the verification-status fields for every
+-- newly-found user in the same sync click (not lazy/per-row like
+-- Investizo's broker_users) - acceptable since the watermark walk in
+-- tampermonkey/litefinance-sync.user.js only ever touches genuinely new
+-- registrations since the last sync, not a full backfill.
+-- `id` is NULL for rows bulk-imported from the admin's own Excel account
+-- exports (/Users/mezganimez/Downloads/litefinance/accounts/data) rather
+-- than scraped from a live /users/view profile - those don't have
+-- LiteFinance's internal profile id, only an MT5 account number (`account`,
+-- comma-joined when a client has several). SQLite allows multiple NULLs in
+-- a TEXT PRIMARY KEY column (NULL != NULL for uniqueness purposes), so this
+-- doesn't violate the constraint, but it does mean upserts keyed on `id`
+-- (upsertUsers() in functions/api/admin/broker-lite/sync.ts) never match
+-- these rows - if the live scraper later captures the same person for
+-- real, it creates a second row rather than updating this one. Accepted
+-- tradeoff, not yet reconciled.
+CREATE TABLE IF NOT EXISTS litefinance_users (
+  id TEXT PRIMARY KEY, -- the /users/view?id= value, not client_uid; NULL for Excel-imported rows
+  client_uid TEXT,
+  name TEXT,
+  email TEXT,
+  country TEXT,
+  account TEXT, -- MT5 account number(s), comma-joined if several - only populated for Excel-imported rows
+  reg_date TEXT,
+  phone TEXT,
+  email_status TEXT,
+  phone_status TEXT,
+  client_status TEXT,
+  detail_fetched_at DATETIME,
+  synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Second factor for the LiteFinance push, on top of the long-lived
+-- LITEFINANCE_INGEST_TOKEN: functions/api/admin/broker-lite/start-session.ts
+-- mints a row here only after verifying a live TOTP code against the same
+-- admin_totp secret used for /admin login (not a separate secret) - so
+-- even a leaked ingest token can't push data without a fresh 6-digit code
+-- from the admin's own authenticator app. tampermonkey/litefinance-sync.user.js
+-- asks for the code once per sync click (never cached) and sends the
+-- resulting token on every page push for that run; sync.ts rejects any push
+-- whose token is missing, unknown, or past expires_at.
+CREATE TABLE IF NOT EXISTS litefinance_sync_sessions (
+  token TEXT PRIMARY KEY,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Manually-entered outflows from the local (Morocco) cash balance - office
 -- expenses, transfers, marketing spend, etc. - that never show up in
 -- Investizo's own deposit/withdrawal lists. Subtracted from the local
@@ -395,4 +502,9 @@ CREATE INDEX IF NOT EXISTS idx_stripe_session_id ON stripe_purchases(stripe_sess
 CREATE INDEX IF NOT EXISTS idx_broker_deposits_date ON broker_deposits(tx_date);
 CREATE INDEX IF NOT EXISTS idx_broker_withdrawals_date ON broker_withdrawals(tx_date);
 CREATE INDEX IF NOT EXISTS idx_broker_sync_log_created ON broker_sync_log(created_at);
+CREATE INDEX IF NOT EXISTS idx_litefinance_deposits_date ON litefinance_deposits(tx_date);
+CREATE INDEX IF NOT EXISTS idx_litefinance_withdrawals_date ON litefinance_withdrawals(tx_date);
+CREATE INDEX IF NOT EXISTS idx_litefinance_sync_log_created ON litefinance_sync_log(created_at);
+CREATE INDEX IF NOT EXISTS idx_litefinance_sync_sessions_expires ON litefinance_sync_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_litefinance_users_reg_date ON litefinance_users(reg_date);
 CREATE INDEX IF NOT EXISTS idx_broker_local_expenses_date ON broker_local_expenses(expense_date);

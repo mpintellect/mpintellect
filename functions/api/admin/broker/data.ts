@@ -45,8 +45,25 @@ export async function onRequestGet(context: any) {
   // case. Same expression as export-sheet.ts - keep in sync.
   const MAD_AMOUNT_EXPR = `(CASE WHEN LOWER(payment_currency) = 'mad' THEN payment_amount ELSE account_amount * 10 END)`;
 
+  // "YYYY-MM" for the calendar month tx_date falls in - same substr
+  // positions as CHRONO_KEY, just stopping after the month.
+  const MONTH_KEY = (col: string) => `(substr(${col},7,4) || '-' || substr(${col},4,2))`;
+  const now = new Date();
+  const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+
   try {
-    const [latestStats, deposits, withdrawals, lastSync, totals, localBalance, expenses] = await Promise.all([
+    const [
+      latestStats,
+      deposits,
+      withdrawals,
+      lastSync,
+      totals,
+      localBalance,
+      expenses,
+      monthlyDeposits,
+      monthlyWithdrawals,
+      monthlyRegistrations,
+    ] = await Promise.all([
       env.DB.prepare('SELECT * FROM broker_stats_snapshots ORDER BY synced_at DESC LIMIT 1').first(),
       env.DB.prepare(`SELECT * FROM broker_deposits ORDER BY ${CHRONO_KEY} DESC LIMIT ?`).bind(limit).all(),
       env.DB.prepare(`SELECT * FROM broker_withdrawals ORDER BY ${CHRONO_KEY} DESC LIMIT ?`).bind(limit).all(),
@@ -67,8 +84,12 @@ export async function onRequestGet(context: any) {
             SELECT user_name FROM broker_deposits WHERE user_name IS NOT NULL AND user_name != ''
             UNION
             SELECT user_name FROM broker_withdrawals WHERE user_name IS NOT NULL AND user_name != ''
-          )) AS unique_users`
-      ).first(),
+          )) AS unique_users,
+          (SELECT COALESCE(SUM(account_amount),0) FROM broker_deposits WHERE LOWER(status) IN ${SUCCESS_STATUSES} AND ${MONTH_KEY('tx_date')} = ?) AS deposits_this_month_amount,
+          (SELECT COALESCE(SUM(account_amount),0) FROM broker_withdrawals WHERE LOWER(status) IN ${SUCCESS_STATUSES} AND ${MONTH_KEY('tx_date')} = ?) AS withdrawals_this_month_amount`
+      )
+        .bind(currentMonth, currentMonth)
+        .first(),
       // Local (Morocco) balance: deposited - withdrawn - manual expenses,
       // in both MAD and USD. Separate from `totals` above, which covers
       // every method, not just local.
@@ -82,7 +103,36 @@ export async function onRequestGet(context: any) {
           (SELECT COALESCE(SUM(amount_usd),0) FROM broker_local_expenses) AS expenses_usd`
       ).first(),
       env.DB.prepare('SELECT * FROM broker_local_expenses ORDER BY expense_date DESC').all(),
+      env.DB.prepare(
+        `SELECT ${MONTH_KEY('tx_date')} AS month, COALESCE(SUM(account_amount),0) AS total
+         FROM broker_deposits WHERE LOWER(status) IN ${SUCCESS_STATUSES}
+         GROUP BY month ORDER BY month DESC LIMIT 12`
+      ).all(),
+      env.DB.prepare(
+        `SELECT ${MONTH_KEY('tx_date')} AS month, COALESCE(SUM(account_amount),0) AS total
+         FROM broker_withdrawals WHERE LOWER(status) IN ${SUCCESS_STATUSES}
+         GROUP BY month ORDER BY month DESC LIMIT 12`
+      ).all(),
+      env.DB.prepare(
+        `SELECT ${MONTH_KEY('reg_date')} AS month, COUNT(*) AS count
+         FROM broker_users WHERE reg_date IS NOT NULL AND reg_date != ''
+         GROUP BY month ORDER BY month DESC LIMIT 12`
+      ).all(),
     ]);
+
+    const monthlyMap = new Map<string, { month: string; deposits: number; withdrawals: number }>();
+    for (const r of (monthlyDeposits?.results || []) as any[]) {
+      monthlyMap.set(r.month, { month: r.month, deposits: r.total, withdrawals: 0 });
+    }
+    for (const r of (monthlyWithdrawals?.results || []) as any[]) {
+      const existing = monthlyMap.get(r.month);
+      if (existing) existing.withdrawals = r.total;
+      else monthlyMap.set(r.month, { month: r.month, deposits: 0, withdrawals: r.total });
+    }
+    const monthlyStats = Array.from(monthlyMap.values()).sort((a, b) => a.month.localeCompare(b.month));
+    const monthlyRegistrationStats = ((monthlyRegistrations?.results || []) as any[])
+      .map((r) => ({ month: r.month, count: r.count }))
+      .sort((a, b) => a.month.localeCompare(b.month));
 
     return new Response(
       JSON.stringify({
@@ -91,6 +141,8 @@ export async function onRequestGet(context: any) {
         withdrawals: withdrawals?.results || [],
         lastSync: lastSync || null,
         totals: totals || null,
+        monthlyStats,
+        monthlyRegistrations: monthlyRegistrationStats,
         localBalance: localBalance || null,
         expenses: expenses?.results || [],
       }),

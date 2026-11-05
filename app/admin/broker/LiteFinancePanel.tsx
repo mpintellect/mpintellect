@@ -76,12 +76,50 @@ interface Totals {
   withdrawals_this_month_amount: number;
 }
 
+// LocalOpsTotals is already from the CLIENT's point of view (the swap from
+// LiteFinance's own raw_type happens once, in data.ts) - "deposits" here
+// means a client depositing cash locally, "withdrawals" means a client
+// cashing out locally. See schema.sql's litefinance_local_ops comment.
+interface LocalOpsTotals {
+  deposits_total_amount: number;
+  deposits_count: number;
+  withdrawals_total_amount: number;
+  withdrawals_count: number;
+  deposits_this_month_amount: number;
+  withdrawals_this_month_amount: number;
+}
+
+interface LocalOpRow {
+  id: string;
+  tx_date: string;
+  raw_type: 'Deposit' | 'Withdrawal';
+  counterparty_account: string | null;
+  op_ref: string | null;
+  amount: number | null;
+}
+
+// A client is "active" if they have at least one deposit or withdrawal row
+// (matched by LOWER(TRIM(name)) against user_name - there's no user id link
+// between litefinance_users and litefinance_deposits/withdrawals). $ totals
+// only sum successful rows; deposit_count/withdrawal_count count any status.
+interface ActiveUserRow extends UserRow {
+  deposit_count: number;
+  total_deposited: number;
+  withdrawal_count: number;
+  total_withdrawn: number;
+}
+
 interface BrokerLiteData {
   deposits: TxRow[];
   withdrawals: TxRow[];
   users: UserRow[];
+  localOps: LocalOpRow[];
+  activeUsers: ActiveUserRow[];
+  activeUsersCount: number;
+  totalMoroccoUsersCount: number;
   lastSync: SyncLog | null;
   totals: Totals | null;
+  localOpsTotals: LocalOpsTotals | null;
   monthlyStats: MonthlyStat[];
   monthlyRegistrations: MonthlyCount[];
 }
@@ -123,6 +161,20 @@ function StatCard({ label, value, sub, thisMonth }: { label: string; value: stri
       <div className="mt-1 text-xl font-bold text-slate-800">{value}</div>
       {sub && <div className="mt-0.5 text-xs text-slate-400">{sub}</div>}
       {thisMonth && <div className="mt-0.5 text-xs text-[#3B82F6] font-medium">{thisMonth}</div>}
+    </div>
+  );
+}
+
+// Distinct purple accent (vs. the plain white StatCard) so this stands out
+// as a cross-reference between the Finance tab's Morocco deposits total and
+// the Local Service tab's own "Local Balance Deposit" figure, rather than
+// reading as just another deposits number.
+function PercentageCard({ label, pct, sub }: { label: string; pct: number; sub?: string }) {
+  return (
+    <div className="rounded-xl border border-purple-200 bg-purple-50 p-4 shadow-sm">
+      <div className="text-xs uppercase tracking-wide text-purple-400 font-semibold">{label}</div>
+      <div className="mt-1 text-xl font-bold text-purple-700">{pct.toFixed(1)}%</div>
+      {sub && <div className="mt-0.5 text-xs text-purple-400">{sub}</div>}
     </div>
   );
 }
@@ -327,8 +379,76 @@ function UsersTable({ rows, emptyMessage }: { rows: UserRow[]; emptyMessage: str
   );
 }
 
+function ActiveUsersTable({ rows, emptyMessage }: { rows: ActiveUserRow[]; emptyMessage: string }) {
+  if (rows.length === 0) {
+    return <div className="p-6 text-center text-sm text-slate-400">{emptyMessage}</div>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-200">
+            <th className="py-2 px-3">Reg Date</th>
+            <th className="py-2 px-3">Name</th>
+            <th className="py-2 px-3">Email</th>
+            <th className="py-2 px-3">Client Status</th>
+            <th className="py-2 px-3">Deposits</th>
+            <th className="py-2 px-3">Withdrawals</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, idx) => (
+            <tr key={`${r.id || 'noid'}-${r.email || idx}`} className="border-b border-slate-100 hover:bg-slate-50">
+              <td className="py-2 px-3 whitespace-nowrap text-slate-500">{r.reg_date}</td>
+              <td className="py-2 px-3 font-medium text-slate-700">{r.name || <span className="text-slate-300">—</span>}</td>
+              <td className="py-2 px-3 text-slate-700">{r.email || <span className="text-slate-300">—</span>}</td>
+              <td className="py-2 px-3 text-slate-500">{r.client_status || '—'}</td>
+              <td className="py-2 px-3 text-slate-700">
+                {money(r.total_deposited, '$')} <span className="text-slate-400">({r.deposit_count})</span>
+              </td>
+              <td className="py-2 px-3 text-slate-700">
+                {money(r.total_withdrawn, '$')} <span className="text-slate-400">({r.withdrawal_count})</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function LocalOpsTable({ rows, emptyMessage }: { rows: LocalOpRow[]; emptyMessage: string }) {
+  if (rows.length === 0) {
+    return <div className="p-6 text-center text-sm text-slate-400">{emptyMessage}</div>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-200">
+            <th className="py-2 px-3">Date</th>
+            <th className="py-2 px-3">Account</th>
+            <th className="py-2 px-3">Amount</th>
+            <th className="py-2 px-3">Ref</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50">
+              <td className="py-2 px-3 whitespace-nowrap text-slate-500">{r.tx_date}</td>
+              <td className="py-2 px-3 text-slate-500">{r.counterparty_account || '—'}</td>
+              <td className="py-2 px-3 text-slate-700">{money(r.amount, '$')}</td>
+              <td className="py-2 px-3 text-slate-400">{r.op_ref || '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function LiteFinancePanel() {
-  const [section, setSection] = useState<'finance' | 'users' | 'statistics'>('finance');
+  const [section, setSection] = useState<'finance' | 'users' | 'statistics' | 'local' | 'active'>('finance');
   const [data, setData] = useState<BrokerLiteData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -349,6 +469,20 @@ export default function LiteFinancePanel() {
   const [userRegDateFrom, setUserRegDateFrom] = useState('');
   const [userRegDateTo, setUserRegDateTo] = useState('');
   const [userPage, setUserPage] = useState(1);
+
+  // Defaults to the start of the current month, per the admin's request -
+  // "this month starting from 01.11.2026 00:00" - editable via the same
+  // DateRangeFilter used elsewhere.
+  const firstOfThisMonthISO = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  };
+  const [localOpsDateFrom, setLocalOpsDateFrom] = useState(firstOfThisMonthISO());
+  const [localOpsDateTo, setLocalOpsDateTo] = useState('');
+  const [localOpsTab, setLocalOpsTab] = useState<'in' | 'out'>('in');
+
+  const [activeSearch, setActiveSearch] = useState('');
+  const [activePage, setActivePage] = useState(1);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -401,10 +535,11 @@ export default function LiteFinancePanel() {
     setUserRegDateTo('');
   };
 
-  const switchSection = (next: 'finance' | 'users' | 'statistics') => {
+  const switchSection = (next: 'finance' | 'users' | 'statistics' | 'local' | 'active') => {
     setSection(next);
     clearTxFilters();
     clearUserFilters();
+    setActiveSearch('');
   };
 
   const switchTab = (next: 'deposits' | 'withdrawals') => {
@@ -420,9 +555,51 @@ export default function LiteFinancePanel() {
     setUserPage(1);
   }, [countryFilters, statusFilters, userSearch, userRegDateFrom, userRegDateTo]);
 
+  useEffect(() => {
+    setActivePage(1);
+  }, [activeSearch]);
+
   const totals = data?.totals;
+  const localOpsTotals = data?.localOpsTotals;
+
+  // What share of this month's Morocco deposit total (Finance tab) came in
+  // through the LocalService cash agent's own "Local Balance Deposit" flow
+  // (localOpsTotals.withdrawals_this_month_amount - see schema.sql's
+  // litefinance_local_ops comment for why that field name is a client
+  // withdrawal from LocalService's own point of view).
+  const localBalanceDepositPct =
+    totals?.deposits_this_month_amount
+      ? ((localOpsTotals?.withdrawals_this_month_amount ?? 0) / totals.deposits_this_month_amount) * 100
+      : 0;
+
   const rawRows: TxRow[] = tab === 'deposits' ? data?.deposits ?? [] : data?.withdrawals ?? [];
   const userRows: UserRow[] = data?.users ?? [];
+
+  // raw_type='Withdrawal' (money leaves LocalService to a client) is the
+  // client's own deposit; raw_type='Deposit' is the client's own
+  // withdrawal - see schema.sql's litefinance_local_ops comment.
+  const localOpsInRange = (data?.localOps ?? []).filter((r) => {
+    if (!localOpsDateFrom && !localOpsDateTo) return true;
+    const iso = toISODate(r.tx_date);
+    if (!iso) return false;
+    if (localOpsDateFrom && iso < localOpsDateFrom) return false;
+    if (localOpsDateTo && iso > localOpsDateTo) return false;
+    return true;
+  });
+  const localDepositRows = localOpsInRange.filter((r) => r.raw_type === 'Withdrawal');
+  const localWithdrawalRows = localOpsInRange.filter((r) => r.raw_type === 'Deposit');
+
+  const activeUserRows: ActiveUserRow[] = data?.activeUsers ?? [];
+  const activeSearchLower = activeSearch.trim().toLowerCase();
+  const filteredActiveUsers = activeUserRows.filter((r) => {
+    if (!activeSearchLower) return true;
+    const haystack = `${r.name || ''} ${r.email || ''}`.toLowerCase();
+    return haystack.includes(activeSearchLower);
+  });
+  const activeTotalPages = Math.max(1, Math.ceil(filteredActiveUsers.length / PAGE_SIZE));
+  const activePageClamped = Math.min(activePage, activeTotalPages);
+  const pagedActiveUsers = filteredActiveUsers.slice((activePageClamped - 1) * PAGE_SIZE, activePageClamped * PAGE_SIZE);
+  const activePct = data?.totalMoroccoUsersCount ? ((data.activeUsersCount ?? 0) / data.totalMoroccoUsersCount) * 100 : 0;
 
   const countryOptions = Array.from(new Set(rawRows.map((r) => r.country).filter(Boolean))).sort();
   const statusOptions = Array.from(new Set(rawRows.map((r) => r.status).filter(Boolean))).sort();
@@ -517,6 +694,22 @@ export default function LiteFinancePanel() {
         >
           Statistics
         </button>
+        <button
+          onClick={() => switchSection('local')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+            section === 'local' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Local Service
+        </button>
+        <button
+          onClick={() => switchSection('active')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+            section === 'active' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Active Users
+        </button>
       </div>
 
       {data?.lastSync && (
@@ -542,13 +735,18 @@ export default function LiteFinancePanel() {
         <div className="py-20 text-center text-slate-400">Loading…</div>
       ) : section === 'finance' ? (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-2">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-2">
             <StatCard label="Unique Users (Morocco)" value={(totals?.unique_users ?? 0).toLocaleString()} />
             <StatCard
               label="Deposits (Morocco)"
               value={money(totals?.deposits_total_amount ?? 0, '$')}
               sub={`${(totals?.deposits_success_count ?? 0).toLocaleString()} successful`}
               thisMonth={`This month: ${money(totals?.deposits_this_month_amount ?? 0, '$')}`}
+            />
+            <PercentageCard
+              label="Local Balance Deposit %"
+              pct={localBalanceDepositPct}
+              sub="of Morocco deposits this month"
             />
             <StatCard label="Declined (Morocco)" value={(totals?.deposits_declined_count ?? 0).toLocaleString()} />
             <StatCard
@@ -676,6 +874,112 @@ export default function LiteFinancePanel() {
             <MonthlyCountChart data={data?.monthlyRegistrations ?? []} />
           </div>
         </div>
+      ) : section === 'local' ? (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-3 mb-2">
+            <StatCard
+              label="Local Deposit (IN)"
+              value={money(localOpsTotals?.deposits_total_amount ?? 0, '$')}
+              sub={`${(localOpsTotals?.deposits_count ?? 0).toLocaleString()} total`}
+              thisMonth={`This month: ${money(localOpsTotals?.deposits_this_month_amount ?? 0, '$')}`}
+            />
+            <StatCard
+              label="Local Balance Deposit"
+              value={money(localOpsTotals?.withdrawals_total_amount ?? 0, '$')}
+              sub={`${(localOpsTotals?.withdrawals_count ?? 0).toLocaleString()} total`}
+              thisMonth={`This month: ${money(localOpsTotals?.withdrawals_this_month_amount ?? 0, '$')}`}
+            />
+          </div>
+          <p className="text-xs text-slate-400 mb-6">
+            From the LocalService cash-agent account's own operations ledger (MT5-CLS-905151) - "IN" is a client
+            depositing cash locally (balance injected into their account); "Local Balance Deposit" is a client
+            cashing out locally, which replenishes the LocalService account's own cash balance.
+          </p>
+
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex border-b border-slate-200">
+              <button
+                onClick={() => setLocalOpsTab('in')}
+                className={`px-4 py-3 text-sm font-medium ${localOpsTab === 'in' ? 'text-[#3B82F6] border-b-2 border-[#3B82F6]' : 'text-slate-400'}`}
+              >
+                Local Deposit IN ({localDepositRows.length})
+              </button>
+              <button
+                onClick={() => setLocalOpsTab('out')}
+                className={`px-4 py-3 text-sm font-medium ${localOpsTab === 'out' ? 'text-[#3B82F6] border-b-2 border-[#3B82F6]' : 'text-slate-400'}`}
+              >
+                Local Balance Deposit ({localWithdrawalRows.length})
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
+              <DateRangeFilter from={localOpsDateFrom} to={localOpsDateTo} onFrom={setLocalOpsDateFrom} onTo={setLocalOpsDateTo} />
+              {(localOpsDateFrom || localOpsDateTo) && (
+                <button
+                  onClick={() => {
+                    setLocalOpsDateFrom('');
+                    setLocalOpsDateTo('');
+                  }}
+                  className="text-sm text-slate-400 hover:text-slate-600"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+
+            {localOpsTab === 'in' ? (
+              <LocalOpsTable rows={localDepositRows} emptyMessage="No local deposits in range — run the Tampermonkey sync." />
+            ) : (
+              <LocalOpsTable rows={localWithdrawalRows} emptyMessage="No local withdrawals in range — run the Tampermonkey sync." />
+            )}
+          </div>
+        </>
+      ) : section === 'active' ? (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-2">
+            <StatCard label="Active Clients" value={(data?.activeUsersCount ?? 0).toLocaleString()} sub="made a deposit or withdrawal" />
+            <StatCard
+              label="Total Clients (Morocco)"
+              value={(data?.totalMoroccoUsersCount ?? 0).toLocaleString()}
+            />
+            <PercentageCard label="Active %" pct={activePct} sub="of Morocco clients" />
+          </div>
+          <p className="text-xs text-slate-400 mb-6">
+            Matched by name against the Deposits/Withdrawals lists (no user id link exists between them) - a client
+            counts as active with any deposit or withdrawal row, of any status. $ totals below sum successful rows only.
+          </p>
+
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
+              <input
+                type="text"
+                placeholder="Search name or email…"
+                value={activeSearch}
+                onChange={(e) => setActiveSearch(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 min-w-[200px]"
+              />
+              {activeSearch && (
+                <button onClick={() => setActiveSearch('')} className="text-sm text-slate-400 hover:text-slate-600">
+                  Clear filters
+                </button>
+              )}
+            </div>
+            <div className="px-4 py-2.5 border-b border-slate-200 text-sm text-slate-600">
+              {filteredActiveUsers.length.toLocaleString()} active client{filteredActiveUsers.length === 1 ? '' : 's'}
+              {activeUserRows.length !== filteredActiveUsers.length && ` of ${activeUserRows.length.toLocaleString()} total`}
+            </div>
+            <ActiveUsersTable
+              rows={pagedActiveUsers}
+              emptyMessage={activeUserRows.length === 0 ? 'No active clients found yet.' : 'No rows match this search.'}
+            />
+            <Pagination
+              page={activePageClamped}
+              totalPages={activeTotalPages}
+              onPrev={() => setActivePage((p) => Math.max(1, p - 1))}
+              onNext={() => setActivePage((p) => Math.min(activeTotalPages, p + 1))}
+            />
+          </div>
+        </>
       ) : (
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">

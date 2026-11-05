@@ -47,11 +47,89 @@ export async function onRequestGet(context: any) {
   const now = new Date();
   const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 
+  // There's no foreign key between litefinance_users and
+  // litefinance_deposits/withdrawals - the deposits/withdrawals lists only
+  // ever captured a free-text user_name, not a user id - so "active" is
+  // matched by LOWER(TRIM(name)) across both tables, the best link this
+  // data model has. Matches on ANY row regardless of status ("any activity
+  // either one" per the admin - even a declined attempt counts as
+  // activity), but the $ totals shown only sum successful rows so they stay
+  // meaningful. Morocco-only throughout, same as every other stat here.
+  const ACTIVE_USERS_CTE = `
+    WITH dep_any AS (
+      SELECT DISTINCT LOWER(TRIM(user_name)) AS uname FROM litefinance_deposits
+      WHERE user_name IS NOT NULL AND user_name != '' AND ${MOROCCO_FILTER}
+    ),
+    wd_any AS (
+      SELECT DISTINCT LOWER(TRIM(user_name)) AS uname FROM litefinance_withdrawals
+      WHERE user_name IS NOT NULL AND user_name != '' AND ${MOROCCO_FILTER}
+    ),
+    dep_agg AS (
+      SELECT LOWER(TRIM(user_name)) AS uname, COUNT(*) AS deposit_count, COALESCE(SUM(usd_amount),0) AS total_deposited
+      FROM litefinance_deposits
+      WHERE user_name IS NOT NULL AND user_name != '' AND LOWER(status) IN ${SUCCESS_DEPOSIT_STATUSES} AND ${MOROCCO_FILTER}
+      GROUP BY uname
+    ),
+    wd_agg AS (
+      SELECT LOWER(TRIM(user_name)) AS uname, COUNT(*) AS withdrawal_count, COALESCE(SUM(usd_amount),0) AS total_withdrawn
+      FROM litefinance_withdrawals
+      WHERE user_name IS NOT NULL AND user_name != '' AND LOWER(status) IN ${DONE_WITHDRAWAL_STATUSES} AND ${MOROCCO_FILTER}
+      GROUP BY uname
+    )
+  `;
+  const ACTIVE_USERS_MATCH = `
+    LOWER(u.country) = 'morocco'
+    AND u.name IS NOT NULL AND u.name != ''
+    AND (
+      EXISTS (SELECT 1 FROM dep_any WHERE dep_any.uname = LOWER(TRIM(u.name)))
+      OR EXISTS (SELECT 1 FROM wd_any WHERE wd_any.uname = LOWER(TRIM(u.name)))
+    )
+  `;
+
   try {
-    const [deposits, withdrawals, users, lastSync, totals, monthlyDeposits, monthlyWithdrawals, monthlyRegistrations] = await Promise.all([
+    const [
+      deposits,
+      withdrawals,
+      users,
+      localOps,
+      activeUsers,
+      activeUsersCount,
+      totalMoroccoUsersCount,
+      lastSync,
+      totals,
+      localOpsTotals,
+      monthlyDeposits,
+      monthlyWithdrawals,
+      monthlyRegistrations,
+    ] = await Promise.all([
       env.DB.prepare(`SELECT * FROM litefinance_deposits ORDER BY ${CHRONO_KEY} DESC LIMIT ?`).bind(limit).all(),
       env.DB.prepare(`SELECT * FROM litefinance_withdrawals ORDER BY ${CHRONO_KEY} DESC LIMIT ?`).bind(limit).all(),
       env.DB.prepare(`SELECT * FROM litefinance_users ORDER BY ${USER_CHRONO_KEY} DESC LIMIT ?`).bind(usersLimit).all(),
+      // tx_date here is "DD.MM.YYYY HH:MM:SS" - same format and re-slice
+      // trick as CHRONO_KEY above (defined against the same column name).
+      env.DB.prepare(`SELECT * FROM litefinance_local_ops ORDER BY ${CHRONO_KEY} DESC LIMIT 5000`).all(),
+      env.DB.prepare(
+        `${ACTIVE_USERS_CTE}
+         SELECT u.id, u.client_uid, u.name, u.email, u.country, u.account, u.reg_date, u.phone,
+           u.email_status, u.phone_status, u.client_status,
+           COALESCE(dep_agg.deposit_count,0) AS deposit_count,
+           COALESCE(dep_agg.total_deposited,0) AS total_deposited,
+           COALESCE(wd_agg.withdrawal_count,0) AS withdrawal_count,
+           COALESCE(wd_agg.total_withdrawn,0) AS total_withdrawn
+         FROM litefinance_users u
+         LEFT JOIN dep_agg ON dep_agg.uname = LOWER(TRIM(u.name))
+         LEFT JOIN wd_agg ON wd_agg.uname = LOWER(TRIM(u.name))
+         WHERE ${ACTIVE_USERS_MATCH}
+         ORDER BY (COALESCE(dep_agg.total_deposited,0) + COALESCE(wd_agg.total_withdrawn,0)) DESC
+         LIMIT 5000`
+      ).all(),
+      // Exact count, separate from the LIMIT 5000 row fetch above, so the
+      // stat card is never silently wrong if active clients ever exceed that.
+      env.DB.prepare(
+        `${ACTIVE_USERS_CTE}
+         SELECT COUNT(*) AS count FROM litefinance_users u WHERE ${ACTIVE_USERS_MATCH}`
+      ).first(),
+      env.DB.prepare(`SELECT COUNT(*) AS count FROM litefinance_users WHERE ${MOROCCO_FILTER}`).first(),
       env.DB.prepare('SELECT * FROM litefinance_sync_log ORDER BY created_at DESC LIMIT 1').first(),
       env.DB.prepare(
         `SELECT
@@ -72,6 +150,23 @@ export async function onRequestGet(context: any) {
       )
         .bind(currentMonth, currentMonth)
         .first(),
+      // litefinance_local_ops' raw_type is from the LocalService account's
+      // own point of view, which is the OPPOSITE of the client's - see
+      // schema.sql's litefinance_local_ops comment. The swap happens right
+      // here: raw_type='Withdrawal' (balance leaves LocalService to a
+      // client) is a client DEPOSIT; raw_type='Deposit' (balance arrives
+      // from a client) is a client WITHDRAWAL. Never swapped anywhere else.
+      env.DB.prepare(
+        `SELECT
+          (SELECT COALESCE(SUM(amount),0) FROM litefinance_local_ops WHERE raw_type = 'Withdrawal') AS deposits_total_amount,
+          (SELECT COUNT(*) FROM litefinance_local_ops WHERE raw_type = 'Withdrawal') AS deposits_count,
+          (SELECT COALESCE(SUM(amount),0) FROM litefinance_local_ops WHERE raw_type = 'Deposit') AS withdrawals_total_amount,
+          (SELECT COUNT(*) FROM litefinance_local_ops WHERE raw_type = 'Deposit') AS withdrawals_count,
+          (SELECT COALESCE(SUM(amount),0) FROM litefinance_local_ops WHERE raw_type = 'Withdrawal' AND ${MONTH_KEY('tx_date')} = ?) AS deposits_this_month_amount,
+          (SELECT COALESCE(SUM(amount),0) FROM litefinance_local_ops WHERE raw_type = 'Deposit' AND ${MONTH_KEY('tx_date')} = ?) AS withdrawals_this_month_amount`
+      )
+        .bind(currentMonth, currentMonth)
+        .first(),
       env.DB.prepare(
         `SELECT ${MONTH_KEY('tx_date')} AS month, COALESCE(SUM(usd_amount),0) AS total
          FROM litefinance_deposits WHERE LOWER(status) IN ${SUCCESS_DEPOSIT_STATUSES} AND ${MOROCCO_FILTER}
@@ -82,6 +177,11 @@ export async function onRequestGet(context: any) {
          FROM litefinance_withdrawals WHERE LOWER(status) IN ${DONE_WITHDRAWAL_STATUSES} AND ${MOROCCO_FILTER}
          GROUP BY month ORDER BY month DESC LIMIT 12`
       ).all(),
+      // Morocco-only, same as every other stat on this dashboard - per the
+      // admin, registration/deposit/etc. figures here are always scoped to
+      // Morocco, never other countries. Counts every litefinance_users row
+      // with a reg_date (the full D1 client base for that country), not a
+      // `limit`-capped subset.
       env.DB.prepare(
         `SELECT ${MONTH_KEY('reg_date')} AS month, COUNT(*) AS count
          FROM litefinance_users WHERE reg_date IS NOT NULL AND reg_date != '' AND ${MOROCCO_FILTER}
@@ -108,8 +208,13 @@ export async function onRequestGet(context: any) {
         deposits: deposits?.results || [],
         withdrawals: withdrawals?.results || [],
         users: users?.results || [],
+        localOps: localOps?.results || [],
+        activeUsers: activeUsers?.results || [],
+        activeUsersCount: Number(activeUsersCount?.count || 0),
+        totalMoroccoUsersCount: Number(totalMoroccoUsersCount?.count || 0),
         lastSync: lastSync || null,
         totals: totals || null,
+        localOpsTotals: localOpsTotals || null,
         monthlyRegistrations: monthlyRegistrationStats,
         monthlyStats,
       }),

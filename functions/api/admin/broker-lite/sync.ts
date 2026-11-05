@@ -60,6 +60,17 @@ interface UserRow {
   clientStatus: string | null;
 }
 
+// From the LocalService cash-agent account's own "All operations" tab - see
+// schema.sql's litefinance_local_ops comment for the raw_type swap.
+interface LocalOpRow {
+  id: string;
+  txDate: string;
+  rawType: string;
+  counterpartyAccount: string;
+  opRef: string;
+  amount: number | null;
+}
+
 async function upsertDeposits(db: any, rows: DepositRow[]): Promise<number> {
   if (rows.length === 0) return 0;
   const stmt = db.prepare(
@@ -134,6 +145,23 @@ async function upsertUsers(db: any, rows: UserRow[]): Promise<number> {
   return rows.length;
 }
 
+async function upsertLocalOps(db: any, rows: LocalOpRow[]): Promise<number> {
+  if (rows.length === 0) return 0;
+  const stmt = db.prepare(
+    `INSERT INTO litefinance_local_ops
+      (id, tx_date, raw_type, counterparty_account, op_ref, amount, synced_at)
+     VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+     ON CONFLICT(id) DO UPDATE SET
+       tx_date=excluded.tx_date, raw_type=excluded.raw_type, counterparty_account=excluded.counterparty_account,
+       op_ref=excluded.op_ref, amount=excluded.amount, synced_at=CURRENT_TIMESTAMP`
+  );
+  const batch = rows.map((r) =>
+    stmt.bind(r.id, r.txDate ?? null, r.rawType ?? null, r.counterpartyAccount ?? null, r.opRef ?? null, r.amount)
+  );
+  await db.batch(batch);
+  return rows.length;
+}
+
 export async function onRequestPost(context: any) {
   const { request, env } = context;
 
@@ -177,8 +205,8 @@ export async function onRequestPost(context: any) {
   }
 
   const { kind, page, rows } = body;
-  if (kind !== 'deposits' && kind !== 'withdrawals' && kind !== 'users') {
-    return new Response(JSON.stringify({ error: 'kind must be "deposits", "withdrawals", or "users"' }), {
+  if (kind !== 'deposits' && kind !== 'withdrawals' && kind !== 'users' && kind !== 'local_ops') {
+    return new Response(JSON.stringify({ error: 'kind must be "deposits", "withdrawals", "users", or "local_ops"' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -196,7 +224,9 @@ export async function onRequestPost(context: any) {
         ? await upsertDeposits(env.DB, rows as DepositRow[])
         : kind === 'withdrawals'
         ? await upsertWithdrawals(env.DB, rows as WithdrawalRow[])
-        : await upsertUsers(env.DB, rows as UserRow[]);
+        : kind === 'users'
+        ? await upsertUsers(env.DB, rows as UserRow[])
+        : await upsertLocalOps(env.DB, rows as LocalOpRow[]);
 
     await env.DB.prepare(
       `INSERT INTO litefinance_sync_log (kind, page, rows_synced, status, message) VALUES (?, ?, ?, 'success', ?)`

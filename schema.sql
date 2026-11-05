@@ -392,6 +392,35 @@ CREATE TABLE IF NOT EXISTS litefinance_sync_sessions (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Internal transfer ledger of LiteFinance's "LocalService" cash-agent
+-- account (MT5-CLS-905151, admin.litefinance.com/accounts/view?server=20&
+-- login=905151) - the single account the Morocco cash agent uses to
+-- manually move balance in/out of each client's own trading account for a
+-- local (cash) deposit/withdrawal. NOT the same data as
+-- litefinance_deposits/withdrawals above (the brokerage-wide lists filtered
+-- by "local" method) - this is that one account's own "All operations" tab,
+-- scraped via tampermonkey/litefinance-sync.user.js clicking its in-page
+-- "Load more" button (no URL pagination exists for it, unlike
+-- /deposits/index - confirmed by probing offset/page/start params, all
+-- 403). raw_type is LiteFinance's own label from the LocalService account's
+-- point of view, which is the OPPOSITE of the client's:
+--   raw_type='Withdrawal' (balance leaves LocalService, credited to a
+--     client's own MT5 account) = the CLIENT making a local deposit
+--   raw_type='Deposit' (balance arrives into LocalService from a client's
+--     own MT5 account) = the CLIENT making a local withdrawal
+-- The swap to the client's point of view happens at query time
+-- (functions/api/admin/broker-lite/data.ts), never in storage, so raw_type
+-- here always matches exactly what LiteFinance itself shows.
+CREATE TABLE IF NOT EXISTS litefinance_local_ops (
+  id TEXT PRIMARY KEY, -- LiteFinance's own "Deal" id
+  tx_date TEXT, -- "DD.MM.YYYY HH:MM:SS"
+  raw_type TEXT, -- 'Deposit' | 'Withdrawal' - LocalService account's own label, see above
+  counterparty_account TEXT, -- e.g. "MT5-ECN-7392273" - the client account on the other side of the transfer
+  op_ref TEXT, -- e.g. "WDRW-AR-6221015" / "DPST-IT-6218054"
+  amount REAL, -- absolute USD amount
+  synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Manually-entered outflows from the local (Morocco) cash balance - office
 -- expenses, transfers, marketing spend, etc. - that never show up in
 -- Investizo's own deposit/withdrawal lists. Subtracted from the local
@@ -507,4 +536,5 @@ CREATE INDEX IF NOT EXISTS idx_litefinance_withdrawals_date ON litefinance_withd
 CREATE INDEX IF NOT EXISTS idx_litefinance_sync_log_created ON litefinance_sync_log(created_at);
 CREATE INDEX IF NOT EXISTS idx_litefinance_sync_sessions_expires ON litefinance_sync_sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_litefinance_users_reg_date ON litefinance_users(reg_date);
+CREATE INDEX IF NOT EXISTS idx_litefinance_local_ops_date ON litefinance_local_ops(tx_date);
 CREATE INDEX IF NOT EXISTS idx_broker_local_expenses_date ON broker_local_expenses(expense_date);

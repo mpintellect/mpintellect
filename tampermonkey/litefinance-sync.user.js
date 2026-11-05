@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         MPIntellect - LiteFinance Broker Sync
 // @namespace    https://mpintellect.com
-// @version      1.0
-// @description  Pull this month's LiteFinance deposits/withdrawals/users and push them to the MPIntellect admin dashboard.
+// @version      1.1
+// @description  Pull this month's LiteFinance deposits/withdrawals/users/local-ops and push them to the MPIntellect admin dashboard.
 // @match        https://admin.litefinance.com/deposits/index*
 // @match        https://admin.litefinance.com/withdrawals/index*
 // @match        https://admin.litefinance.com/users/index*
+// @match        https://admin.litefinance.com/accounts/view*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -27,6 +28,10 @@
     deposits: ['deposited', 'declined'],
     withdrawals: ['done', 'done auto'],
   };
+  // The one LocalService cash-agent account (admin.litefinance.com/accounts/
+  // view?server=20&login=905151) - see schema.sql's litefinance_local_ops
+  // comment for what its operations mean from the client's side.
+  const LOCAL_OPS_LOGIN = '905151';
 
   function getToken() {
     let token = GM_getValue(TOKEN_KEY, '');
@@ -220,6 +225,96 @@
     };
   }
 
+  // The LocalService account's "All operations" table - rows look like:
+  //   Withdrawal: "WDRW-AR-6221015: USD 1916.00                   To: MT5-ECN-7392273"  (11 cells, Profit last)
+  //   Deposit:    "DPST-IT-6218054: USD 20000.00                  From: MT4-R2-489576"   (5 cells, Profit last)
+  // cellCount differs by type, so always read the amount from the LAST
+  // cell rather than a fixed index.
+  function parseLocalOpRow(tr) {
+    const tds = tr.querySelectorAll('td');
+    if (tds.length < 4) return null;
+    const id = cellText(tds[0]);
+    if (!id) return null;
+    const txDate = cellText(tds[1]);
+    const rawType = cellText(tds[2]);
+    const positionText = cellText(tds[3]);
+    const refMatch = positionText.match(/^([A-Z]+-[A-Z]+-\d+)/);
+    const counterpartyMatch = positionText.match(/(?:To|From):\s*([\w-]+)/i);
+    const amount = parseMoney(cellText(tds[tds.length - 1])).amount;
+    return {
+      id,
+      txDate,
+      rawType,
+      opRef: refMatch ? refMatch[1] : '',
+      counterpartyAccount: counterpartyMatch ? counterpartyMatch[1] : '',
+      amount: amount !== null ? Math.abs(amount) : null,
+    };
+  }
+
+  function findLocalOpsTable() {
+    const tables = Array.from(document.querySelectorAll('table'));
+    return tables.find((t) => {
+      const head = t.querySelector('thead')?.textContent || '';
+      return /Deal/.test(head) && /Direction/.test(head);
+    });
+  }
+
+  // Unlike deposits/withdrawals/users (URL-paginated via ?page=N - probed
+  // offset/start/per-page too, all 403), this page has no URL pagination at
+  // all - it's a same-page "Load more" button that appends 50 more rows to
+  // the existing table each click. So the walk clicks the real button and
+  // re-reads the table's growing row count, instead of fetching page URLs.
+  async function walkAndSyncLocalOps(token, sessionToken, watermark, onStatus) {
+    const watermarkKey = watermark ? chronoKey(watermark) : null;
+    const monthCutoffKey = `${firstOfMonthISO().replace(/-/g, '')} 00:00:00`;
+    const stopKey = watermarkKey && watermarkKey > monthCutoffKey ? watermarkKey : monthCutoffKey;
+
+    const opsTabLink = Array.from(document.querySelectorAll('a.js_ajax_load')).find(
+      (a) => a.textContent.trim() === 'All operations'
+    );
+    if (opsTabLink) {
+      opsTabLink.click();
+      await sleep(800);
+    }
+
+    const table = findLocalOpsTable();
+    if (!table) {
+      onStatus('Local ops table not found - LiteFinance markup may have changed.', true);
+      return 0;
+    }
+
+    let seen = 0;
+    const collected = [];
+    let reachedCutoff = false;
+    for (let guard = 0; guard < 40; guard++) {
+      const rows = Array.from(table.querySelectorAll('tbody tr'));
+      for (; seen < rows.length; seen++) {
+        const parsed = parseLocalOpRow(rows[seen]);
+        if (!parsed) continue;
+        if (chronoKey(parsed.txDate) <= stopKey) {
+          reachedCutoff = true;
+          break;
+        }
+        collected.push(parsed);
+      }
+      if (reachedCutoff) break;
+      onStatus(`Fetching local ops… (${collected.length} new so far)`);
+      const loadMoreBtn = document.querySelector('.js_ajax_pagination_button');
+      if (!loadMoreBtn) break;
+      loadMoreBtn.click();
+      await sleep(900 + Math.random() * 400);
+    }
+
+    let total = 0;
+    for (let i = 0; i < collected.length; i += PAGE_SIZE) {
+      const chunk = collected.slice(i, i + PAGE_SIZE);
+      onStatus(`Pushing ${chunk.length} local ops…`);
+      await pushPage('local_ops', Math.floor(i / PAGE_SIZE) + 1, chunk, token, sessionToken);
+      total += chunk.length;
+    }
+    return total;
+  }
+
   async function pushPage(kind, page, rows, token, sessionToken) {
     const resp = await gmRequest({
       method: 'POST',
@@ -367,15 +462,36 @@
   }
 
   function injectUI() {
+    const onListPage = /\/(deposits|withdrawals|users)\/index/.test(location.pathname);
+    const onLocalOpsPage =
+      /\/accounts\/view/.test(location.pathname) && new URLSearchParams(location.search).get('login') === LOCAL_OPS_LOGIN;
+    if (!onListPage && !onLocalOpsPage) return;
+
     const box = document.createElement('div');
     box.style.cssText =
       'position:fixed;bottom:20px;right:20px;z-index:999999;background:#fff;border:1px solid #d1d5db;' +
       'border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.15);padding:12px 14px;font:13px system-ui,sans-serif;' +
       'color:#1e293b;min-width:240px;';
 
-    const financeButton = makeButton('Sync Deposits/Withdrawals');
-    financeButton.style.marginTop = '0';
-    const usersButton = makeButton('Sync Clients');
+    const buttons = [];
+    let financeButton = null;
+    let usersButton = null;
+    let localOpsButton = null;
+
+    if (onListPage) {
+      financeButton = makeButton('Sync Deposits/Withdrawals');
+      financeButton.style.marginTop = '0';
+      usersButton = makeButton('Sync Clients');
+      box.appendChild(financeButton);
+      box.appendChild(usersButton);
+      buttons.push(financeButton, usersButton);
+    }
+    if (onLocalOpsPage) {
+      localOpsButton = makeButton('Sync Local Service');
+      if (buttons.length === 0) localOpsButton.style.marginTop = '0';
+      box.appendChild(localOpsButton);
+      buttons.push(localOpsButton);
+    }
 
     const status = document.createElement('div');
     status.style.cssText = 'margin-top:8px;font-size:12px;color:#64748b;line-height:1.4;';
@@ -389,8 +505,6 @@
       resetToken();
     });
 
-    box.appendChild(financeButton);
-    box.appendChild(usersButton);
     box.appendChild(status);
     box.appendChild(changeTokenLink);
     document.body.appendChild(box);
@@ -427,22 +541,35 @@
       }
     }
 
-    financeButton.addEventListener('click', () =>
-      run([financeButton, usersButton], async (token, sessionToken, watermark) => {
-        const deposits = await walkAndSync('deposits', token, sessionToken, watermark.deposits, setStatus);
-        const withdrawals = await walkAndSync('withdrawals', token, sessionToken, watermark.withdrawals, setStatus);
-        setStatus(`Done - synced ${deposits} deposits, ${withdrawals} withdrawals.`);
-      })
-    );
+    if (financeButton) {
+      financeButton.addEventListener('click', () =>
+        run(buttons, async (token, sessionToken, watermark) => {
+          const deposits = await walkAndSync('deposits', token, sessionToken, watermark.deposits, setStatus);
+          const withdrawals = await walkAndSync('withdrawals', token, sessionToken, watermark.withdrawals, setStatus);
+          setStatus(`Done - synced ${deposits} deposits, ${withdrawals} withdrawals.`);
+        })
+      );
+    }
 
-    usersButton.addEventListener('click', () =>
-      run([financeButton, usersButton], async (token, sessionToken, watermark) => {
-        const users = await walkAndSyncUsers(token, sessionToken, watermark.users, setStatus);
-        setStatus('Checking for gaps in existing clients…');
-        const gapsFixed = await fillUserGaps(token, sessionToken, setStatus);
-        setStatus(`Done - synced ${users} clients` + (gapsFixed > 0 ? `, fixed ${gapsFixed} gap(s).` : '.'));
-      })
-    );
+    if (usersButton) {
+      usersButton.addEventListener('click', () =>
+        run(buttons, async (token, sessionToken, watermark) => {
+          const users = await walkAndSyncUsers(token, sessionToken, watermark.users, setStatus);
+          setStatus('Checking for gaps in existing clients…');
+          const gapsFixed = await fillUserGaps(token, sessionToken, setStatus);
+          setStatus(`Done - synced ${users} clients` + (gapsFixed > 0 ? `, fixed ${gapsFixed} gap(s).` : '.'));
+        })
+      );
+    }
+
+    if (localOpsButton) {
+      localOpsButton.addEventListener('click', () =>
+        run(buttons, async (token, sessionToken, watermark) => {
+          const count = await walkAndSyncLocalOps(token, sessionToken, watermark.localOps, setStatus);
+          setStatus(`Done - synced ${count} local operations.`);
+        })
+      );
+    }
   }
 
   injectUI();

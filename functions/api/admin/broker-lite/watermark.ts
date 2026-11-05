@@ -1,7 +1,8 @@
 // functions/api/admin/broker-lite/watermark.ts
 // Tells tampermonkey/litefinance-sync.user.js the newest tx_date already in
-// D1 for deposits and withdrawals, so a sync only walks pages back to that
-// point instead of re-walking the whole month every click - same idea as
+// D1 for deposits, withdrawals, and the LocalService account's own
+// operations ledger, so a sync only walks pages back to that point instead
+// of re-walking the whole month every click - same idea as
 // syncNewUsers()'s watermark in backend-lib/investizo-scraper.ts. Gated by
 // the same LITEFINANCE_INGEST_TOKEN as sync.ts (not the main admin
 // password) - the script never needs broader read access than this one
@@ -25,10 +26,11 @@ export async function onRequestGet(context: any) {
     `(substr(${col},7,4) || substr(${col},4,2) || substr(${col},1,2) || substr(${col},12,5))`;
 
   try {
-    const [deposit, withdrawal, user] = await Promise.all([
+    const [deposit, withdrawal, user, localOp] = await Promise.all([
       env.DB.prepare(`SELECT tx_date FROM litefinance_deposits ORDER BY ${CHRONO_KEY('tx_date')} DESC LIMIT 1`).first(),
       env.DB.prepare(`SELECT tx_date FROM litefinance_withdrawals ORDER BY ${CHRONO_KEY('tx_date')} DESC LIMIT 1`).first(),
       env.DB.prepare(`SELECT reg_date FROM litefinance_users ORDER BY ${CHRONO_KEY('reg_date')} DESC LIMIT 1`).first(),
+      env.DB.prepare(`SELECT tx_date FROM litefinance_local_ops ORDER BY ${CHRONO_KEY('tx_date')} DESC LIMIT 1`).first(),
     ]);
 
     return new Response(
@@ -36,6 +38,7 @@ export async function onRequestGet(context: any) {
         deposits: deposit ? String(deposit.tx_date) : null,
         withdrawals: withdrawal ? String(withdrawal.tx_date) : null,
         users: user ? String(user.reg_date) : null,
+        localOps: localOp ? String(localOp.tx_date) : null,
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );

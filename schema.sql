@@ -421,6 +421,44 @@ CREATE TABLE IF NOT EXISTS litefinance_local_ops (
   synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Call center log, scraped from admin.litefinance.com/calls/index
+-- ("Commpeak Calls" - Commpeak is the VoIP/call-center platform LiteFinance
+-- uses). Scoped to agent_code IN ('2033','2034') only - the two managers
+-- actually tracked here, per explicit admin request; everything else (IVR/
+-- system calls, other agents) is filtered out in the userscript and never
+-- reaches this table. Full history, not bounded to "this month" like every
+-- other litefinance_* sync - also per explicit request.
+-- Unlike every other table above, call_start here is already
+-- "YYYY-MM-DD HH:MM:SS" (LiteFinance's own format on this page, not the
+-- "DD.MM.YYYY" used everywhere else), so it sorts/compares correctly as
+-- plain text with no re-slice trick needed. user_id is the SAME id
+-- litefinance_users.id uses (/users/view?id=) - captured directly from the
+-- Destination cell's email link when the admin panel can resolve the
+-- caller to a known client, giving a real foreign key between a call and a
+-- client (unlike deposits/withdrawals, which only ever captured a free-text
+-- user_name). client_email is the raw text of that same cell (null when
+-- LiteFinance shows "Unknown user" instead of an email) - kept as its own
+-- column, separate from user_id, so data.ts can ALSO resolve a call to a
+-- client by matching client_email against litefinance_users.email when
+-- user_id itself is null (LiteFinance didn't resolve the caller) but the
+-- email text still matches a known client - see data.ts's calls_resolved
+-- CTE. There is no "successful" column on this table - the admin panel's
+-- own Successful filter was found live to not actually filter results (and
+-- one filter combination 500'd), so "successful" is treated purely as
+-- hangup_cause = 'ANSWERED' at query time, never stored as its own flag.
+CREATE TABLE IF NOT EXISTS litefinance_calls (
+  id TEXT PRIMARY KEY, -- LiteFinance's own call id
+  agent_code TEXT, -- "2033" | "2034"
+  agent_name TEXT, -- e.g. "Karima Hamouch"
+  destination TEXT, -- client's phone number dialed
+  client_email TEXT, -- raw email text from the Destination cell, null if LiteFinance shows "Unknown user"
+  user_id TEXT, -- litefinance_users.id, when the call resolved to a known client
+  call_start TEXT, -- "YYYY-MM-DD HH:MM:SS"
+  duration_sec INTEGER,
+  hangup_cause TEXT, -- 'ANSWERED' | 'ORIGINATOR_CANCEL' | 'NORMAL_CIRCUIT_CONGESTION' | 'NORMAL_TEMPORARY_FAILURE' | ...
+  synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Manually-entered outflows from the local (Morocco) cash balance - office
 -- expenses, transfers, marketing spend, etc. - that never show up in
 -- Investizo's own deposit/withdrawal lists. Subtracted from the local
@@ -537,4 +575,7 @@ CREATE INDEX IF NOT EXISTS idx_litefinance_sync_log_created ON litefinance_sync_
 CREATE INDEX IF NOT EXISTS idx_litefinance_sync_sessions_expires ON litefinance_sync_sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_litefinance_users_reg_date ON litefinance_users(reg_date);
 CREATE INDEX IF NOT EXISTS idx_litefinance_local_ops_date ON litefinance_local_ops(tx_date);
+CREATE INDEX IF NOT EXISTS idx_litefinance_calls_date ON litefinance_calls(call_start);
+CREATE INDEX IF NOT EXISTS idx_litefinance_calls_agent ON litefinance_calls(agent_code);
+CREATE INDEX IF NOT EXISTS idx_litefinance_calls_user_id ON litefinance_calls(user_id);
 CREATE INDEX IF NOT EXISTS idx_broker_local_expenses_date ON broker_local_expenses(expense_date);

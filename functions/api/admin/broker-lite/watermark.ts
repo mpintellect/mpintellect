@@ -26,11 +26,15 @@ export async function onRequestGet(context: any) {
     `(substr(${col},7,4) || substr(${col},4,2) || substr(${col},1,2) || substr(${col},12,5))`;
 
   try {
-    const [deposit, withdrawal, user, localOp] = await Promise.all([
+    const [deposit, withdrawal, user, localOp, call] = await Promise.all([
       env.DB.prepare(`SELECT tx_date FROM litefinance_deposits ORDER BY ${CHRONO_KEY('tx_date')} DESC LIMIT 1`).first(),
       env.DB.prepare(`SELECT tx_date FROM litefinance_withdrawals ORDER BY ${CHRONO_KEY('tx_date')} DESC LIMIT 1`).first(),
       env.DB.prepare(`SELECT reg_date FROM litefinance_users ORDER BY ${CHRONO_KEY('reg_date')} DESC LIMIT 1`).first(),
       env.DB.prepare(`SELECT tx_date FROM litefinance_local_ops ORDER BY ${CHRONO_KEY('tx_date')} DESC LIMIT 1`).first(),
+      // call_start is already "YYYY-MM-DD HH:MM:SS" (see schema.sql's
+      // litefinance_calls comment) - a plain string ORDER BY is already
+      // chronological, no CHRONO_KEY re-slice needed.
+      env.DB.prepare(`SELECT call_start FROM litefinance_calls ORDER BY call_start DESC LIMIT 1`).first(),
     ]);
 
     return new Response(
@@ -39,6 +43,7 @@ export async function onRequestGet(context: any) {
         withdrawals: withdrawal ? String(withdrawal.tx_date) : null,
         users: user ? String(user.reg_date) : null,
         localOps: localOp ? String(localOp.tx_date) : null,
+        calls: call ? String(call.call_start) : null,
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );

@@ -17,6 +17,7 @@ export default function MonthlyStatsTable({ data }: { data: MonthlyStat[] }) {
     return <div className="p-6 text-center text-sm text-slate-400">No monthly data yet.</div>;
   }
   const sorted = [...data].sort((a, b) => b.month.localeCompare(a.month));
+  const hasLocalBalanceDeposit = data.some((d) => d.localBalanceDeposit !== undefined);
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -25,6 +26,7 @@ export default function MonthlyStatsTable({ data }: { data: MonthlyStat[] }) {
             <th className="py-2 px-3">Month</th>
             <th className="py-2 px-3">Deposits</th>
             <th className="py-2 px-3">Withdrawals</th>
+            {hasLocalBalanceDeposit && <th className="py-2 px-3">Local Balance Deposit</th>}
             <th className="py-2 px-3">Net</th>
           </tr>
         </thead>
@@ -34,6 +36,7 @@ export default function MonthlyStatsTable({ data }: { data: MonthlyStat[] }) {
               <td className="py-2 px-3 font-medium text-slate-700">{monthLabel(r.month)}</td>
               <td className="py-2 px-3 text-slate-700">{money(r.deposits)}</td>
               <td className="py-2 px-3 text-slate-700">{money(r.withdrawals)}</td>
+              {hasLocalBalanceDeposit && <td className="py-2 px-3 text-slate-700">{money(r.localBalanceDeposit ?? 0)}</td>}
               <td className={`py-2 px-3 font-medium ${r.deposits - r.withdrawals < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                 {money(r.deposits - r.withdrawals)}
               </td>

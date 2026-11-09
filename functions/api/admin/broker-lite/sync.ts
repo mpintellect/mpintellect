@@ -71,6 +71,23 @@ interface LocalOpRow {
   amount: number | null;
 }
 
+// From /calls/index ("Commpeak Calls") - see schema.sql's litefinance_calls
+// comment. userId is litefinance_users.id when the call resolved to a known
+// client, null otherwise ("Unknown user"). clientEmail is the raw email text
+// from the same cell (also null for "Unknown user") - kept separately so
+// data.ts can fall back to matching by email when userId itself is null.
+interface CallRow {
+  id: string;
+  agentCode: string | null;
+  agentName: string | null;
+  destination: string | null;
+  clientEmail: string | null;
+  userId: string | null;
+  callStart: string;
+  durationSec: number | null;
+  hangupCause: string | null;
+}
+
 async function upsertDeposits(db: any, rows: DepositRow[]): Promise<number> {
   if (rows.length === 0) return 0;
   const stmt = db.prepare(
@@ -162,6 +179,27 @@ async function upsertLocalOps(db: any, rows: LocalOpRow[]): Promise<number> {
   return rows.length;
 }
 
+async function upsertCalls(db: any, rows: CallRow[]): Promise<number> {
+  if (rows.length === 0) return 0;
+  const stmt = db.prepare(
+    `INSERT INTO litefinance_calls
+      (id, agent_code, agent_name, destination, client_email, user_id, call_start, duration_sec, hangup_cause, synced_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+     ON CONFLICT(id) DO UPDATE SET
+       agent_code=excluded.agent_code, agent_name=excluded.agent_name, destination=excluded.destination,
+       client_email=excluded.client_email, user_id=excluded.user_id, call_start=excluded.call_start,
+       duration_sec=excluded.duration_sec, hangup_cause=excluded.hangup_cause, synced_at=CURRENT_TIMESTAMP`
+  );
+  const batch = rows.map((r) =>
+    stmt.bind(
+      r.id, r.agentCode ?? null, r.agentName ?? null, r.destination ?? null, r.clientEmail ?? null, r.userId ?? null,
+      r.callStart ?? null, r.durationSec, r.hangupCause ?? null
+    )
+  );
+  await db.batch(batch);
+  return rows.length;
+}
+
 export async function onRequestPost(context: any) {
   const { request, env } = context;
 
@@ -205,11 +243,11 @@ export async function onRequestPost(context: any) {
   }
 
   const { kind, page, rows } = body;
-  if (kind !== 'deposits' && kind !== 'withdrawals' && kind !== 'users' && kind !== 'local_ops') {
-    return new Response(JSON.stringify({ error: 'kind must be "deposits", "withdrawals", "users", or "local_ops"' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  if (kind !== 'deposits' && kind !== 'withdrawals' && kind !== 'users' && kind !== 'local_ops' && kind !== 'calls') {
+    return new Response(
+      JSON.stringify({ error: 'kind must be "deposits", "withdrawals", "users", "local_ops", or "calls"' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
   }
   if (!Array.isArray(rows)) {
     return new Response(JSON.stringify({ error: 'rows must be an array' }), {
@@ -226,7 +264,9 @@ export async function onRequestPost(context: any) {
         ? await upsertWithdrawals(env.DB, rows as WithdrawalRow[])
         : kind === 'users'
         ? await upsertUsers(env.DB, rows as UserRow[])
-        : await upsertLocalOps(env.DB, rows as LocalOpRow[]);
+        : kind === 'local_ops'
+        ? await upsertLocalOps(env.DB, rows as LocalOpRow[])
+        : await upsertCalls(env.DB, rows as CallRow[]);
 
     await env.DB.prepare(
       `INSERT INTO litefinance_sync_log (kind, page, rows_synced, status, message) VALUES (?, ?, ?, 'success', ?)`

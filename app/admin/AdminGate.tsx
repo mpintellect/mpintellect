@@ -77,8 +77,13 @@ export function AdminGate({ onUnlock }: { onUnlock: (key: string, sessionToken?:
       } else if (data.reason === 'locked') {
         setStep('code');
         setError(lockMessage(data.lockedUntil));
-      } else {
+      } else if (data.reason === 'password') {
         setError('Incorrect password');
+      } else {
+        // No recognized `reason` means validate.ts's try/catch caught an
+        // unexpected error (e.g. a D1 outage) rather than actually checking
+        // the password - showing "Incorrect password" here would be a lie.
+        setError(data.error || 'Could not verify the password right now - try again in a moment');
       }
     } catch (e: any) {
       setError(e.message || 'Could not reach the server');
@@ -107,8 +112,14 @@ export function AdminGate({ onUnlock }: { onUnlock: (key: string, sessionToken?:
       } else if (data.reason === 'locked') {
         setError(lockMessage(data.lockedUntil));
         setCode('');
-      } else {
+      } else if (data.reason === 'bad_code') {
         setError('Incorrect code - check your authenticator app and try again');
+        setCode('');
+      } else {
+        // Same reasoning as submitPassword above: an unrecognized `reason`
+        // means the server hit an unexpected error (e.g. a D1 outage), not
+        // that the code was actually checked and found wrong.
+        setError(data.error || 'Could not verify the code right now - try again in a moment');
         setCode('');
       }
     } catch (e: any) {

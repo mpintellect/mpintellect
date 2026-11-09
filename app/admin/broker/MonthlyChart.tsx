@@ -3,21 +3,27 @@
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 // ----------------------------------------------------------------------------
-// Shared monthly Deposits-vs-Withdrawals bar chart for both broker panels'
-// Statistics tab. One shared y-axis (both series are USD amounts, so a
-// dual-axis chart would be misleading here) - see the dataviz skill's
-// "one axis" rule. Colors are the validated default categorical palette's
-// slot 1 (blue) and slot 2 (orange), fixed order, never cycled.
+// Shared monthly Deposits-vs-Withdrawals(-vs-Local Balance Deposit) bar chart
+// for both broker panels' Statistics tab. One shared y-axis (all series are
+// USD amounts, so a dual-axis chart would be misleading here) - see the
+// dataviz skill's "one axis" rule. Colors are the validated default
+// categorical palette's slot 1 (blue), slot 2 (orange), slot 3 (aqua), fixed
+// order, never cycled.
 // ----------------------------------------------------------------------------
 
 export interface MonthlyStat {
   month: string; // "YYYY-MM"
   deposits: number;
   withdrawals: number;
+  // LiteFinance only (Local Service's "Local Balance Deposit" side, not
+  // "Local Deposit IN") - absent entirely on Investizo's monthlyStats, so
+  // the chart only draws this series when at least one row has it.
+  localBalanceDeposit?: number;
 }
 
 const DEPOSITS_COLOR = '#2a78d6';
 const WITHDRAWALS_COLOR = '#eb6834';
+const LOCAL_BALANCE_DEPOSIT_COLOR = '#1baf7a';
 
 function monthLabel(key: string): string {
   const [year, month] = key.split('-').map(Number);
@@ -48,6 +54,7 @@ export default function MonthlyChart({ data }: { data: MonthlyStat[] }) {
   if (data.length === 0) {
     return <div className="p-10 text-center text-sm text-slate-400">No monthly data yet.</div>;
   }
+  const hasLocalBalanceDeposit = data.some((d) => d.localBalanceDeposit !== undefined);
   return (
     <div className="h-80 w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -74,6 +81,15 @@ export default function MonthlyChart({ data }: { data: MonthlyStat[] }) {
           />
           <Bar dataKey="deposits" name="Deposits" fill={DEPOSITS_COLOR} radius={[4, 4, 0, 0]} maxBarSize={24} />
           <Bar dataKey="withdrawals" name="Withdrawals" fill={WITHDRAWALS_COLOR} radius={[4, 4, 0, 0]} maxBarSize={24} />
+          {hasLocalBalanceDeposit && (
+            <Bar
+              dataKey="localBalanceDeposit"
+              name="Local Balance Deposit"
+              fill={LOCAL_BALANCE_DEPOSIT_COLOR}
+              radius={[4, 4, 0, 0]}
+              maxBarSize={24}
+            />
+          )}
         </BarChart>
       </ResponsiveContainer>
     </div>

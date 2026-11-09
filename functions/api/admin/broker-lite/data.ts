@@ -47,6 +47,14 @@ export async function onRequestGet(context: any) {
   const now = new Date();
   const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 
+  // litefinance_calls.call_start is already "YYYY-MM-DD HH:MM:SS" (see
+  // schema.sql) - a plain substr(1,7), no re-slice needed like MONTH_KEY
+  // above. "Successful" is defined here as hangup_cause = 'ANSWERED' - the
+  // admin panel's own "Successful" filter was found live to not actually
+  // filter results, so it's never trusted as a source field.
+  const CALL_MONTH_KEY = `substr(call_start,1,7)`;
+  const CALL_ANSWERED = `hangup_cause = 'ANSWERED'`;
+
   // There's no foreign key between litefinance_users and
   // litefinance_deposits/withdrawals - the deposits/withdrawals lists only
   // ever captured a free-text user_name, not a user id - so "active" is
@@ -92,6 +100,7 @@ export async function onRequestGet(context: any) {
       withdrawals,
       users,
       localOps,
+      calls,
       activeUsers,
       activeUsersCount,
       totalMoroccoUsersCount,
@@ -100,14 +109,40 @@ export async function onRequestGet(context: any) {
       localOpsTotals,
       monthlyDeposits,
       monthlyWithdrawals,
+      monthlyLocalBalanceDeposit,
       monthlyRegistrations,
+      callsManagerStats,
     ] = await Promise.all([
       env.DB.prepare(`SELECT * FROM litefinance_deposits ORDER BY ${CHRONO_KEY} DESC LIMIT ?`).bind(limit).all(),
       env.DB.prepare(`SELECT * FROM litefinance_withdrawals ORDER BY ${CHRONO_KEY} DESC LIMIT ?`).bind(limit).all(),
-      env.DB.prepare(`SELECT * FROM litefinance_users ORDER BY ${USER_CHRONO_KEY} DESC LIMIT ?`).bind(usersLimit).all(),
+      // latest_call: the newest litefinance_calls row per client, matched
+      // only via c.user_id - the direct link LiteFinance itself sets when it
+      // resolves the caller (same id space as litefinance_users.id, so this
+      // is a plain primary-key join, no search/index of our own needed). No
+      // email/phone fallback - a call LiteFinance shows as "Unknown user"
+      // (user_id null) just won't appear in that client's history. A fallback
+      // match against email, then phone, was tried and dropped: it was never
+      // actually needed (0 of 518 calls lacked user_id) and the first version
+      // of it caused a D1 read-quota incident. call_agent_name/call_hangup_cause/
+      // call_last_at are null for a client never reached by any call - the
+      // frontend renders that as "Not called yet".
+      env.DB.prepare(
+        `WITH latest_call AS (
+           SELECT c.user_id, c.agent_name, c.hangup_cause, c.call_start,
+             ROW_NUMBER() OVER (PARTITION BY c.user_id ORDER BY c.call_start DESC) AS rn
+           FROM litefinance_calls c WHERE c.user_id IS NOT NULL
+         )
+         SELECT u.*, lc.agent_name AS call_agent_name, lc.hangup_cause AS call_hangup_cause, lc.call_start AS call_last_at
+         FROM litefinance_users u
+         LEFT JOIN latest_call lc ON lc.user_id = u.id AND lc.rn = 1
+         ORDER BY ${USER_CHRONO_KEY} DESC LIMIT ?`
+      )
+        .bind(usersLimit)
+        .all(),
       // tx_date here is "DD.MM.YYYY HH:MM:SS" - same format and re-slice
       // trick as CHRONO_KEY above (defined against the same column name).
       env.DB.prepare(`SELECT * FROM litefinance_local_ops ORDER BY ${CHRONO_KEY} DESC LIMIT 5000`).all(),
+      env.DB.prepare(`SELECT * FROM litefinance_calls ORDER BY call_start DESC LIMIT 5000`).all(),
       env.DB.prepare(
         `${ACTIVE_USERS_CTE}
          SELECT u.id, u.client_uid, u.name, u.email, u.country, u.account, u.reg_date, u.phone,
@@ -177,6 +212,15 @@ export async function onRequestGet(context: any) {
          FROM litefinance_withdrawals WHERE LOWER(status) IN ${DONE_WITHDRAWAL_STATUSES} AND ${MOROCCO_FILTER}
          GROUP BY month ORDER BY month DESC LIMIT 12`
       ).all(),
+      // raw_type='Deposit' here is the client's own local withdrawal (money
+      // arrives into LocalService from a client) - displayed as "Local
+      // Balance Deposit" everywhere else on this panel. Not Morocco-scoped,
+      // same as localOpsTotals above - this ledger has no country column.
+      env.DB.prepare(
+        `SELECT ${MONTH_KEY('tx_date')} AS month, COALESCE(SUM(amount),0) AS total
+         FROM litefinance_local_ops WHERE raw_type = 'Deposit'
+         GROUP BY month ORDER BY month DESC LIMIT 12`
+      ).all(),
       // Morocco-only, same as every other stat on this dashboard - per the
       // admin, registration/deposit/etc. figures here are always scoped to
       // Morocco, never other countries. Counts every litefinance_users row
@@ -187,21 +231,49 @@ export async function onRequestGet(context: any) {
          FROM litefinance_users WHERE reg_date IS NOT NULL AND reg_date != '' AND ${MOROCCO_FILTER}
          GROUP BY month ORDER BY month DESC LIMIT 12`
       ).all(),
+      // Per-manager monthly call stats for the Calls tab's "Monthly Stats"
+      // view - total calls, successful (ANSWERED) calls, and total talk
+      // time per agent per month. Not Morocco-scoped (calls have no country
+      // column of their own).
+      env.DB.prepare(
+        `SELECT ${CALL_MONTH_KEY} AS month, agent_code, agent_name,
+           COUNT(*) AS total_calls,
+           SUM(CASE WHEN ${CALL_ANSWERED} THEN 1 ELSE 0 END) AS successful_calls,
+           COALESCE(SUM(duration_sec),0) AS total_duration_sec
+         FROM litefinance_calls
+         GROUP BY month, agent_code, agent_name
+         ORDER BY month DESC, total_calls DESC
+         LIMIT 500`
+      ).all(),
     ]);
 
-    const monthlyMap = new Map<string, { month: string; deposits: number; withdrawals: number }>();
+    const monthlyMap = new Map<string, { month: string; deposits: number; withdrawals: number; localBalanceDeposit: number }>();
     for (const r of (monthlyDeposits?.results || []) as any[]) {
-      monthlyMap.set(r.month, { month: r.month, deposits: r.total, withdrawals: 0 });
+      monthlyMap.set(r.month, { month: r.month, deposits: r.total, withdrawals: 0, localBalanceDeposit: 0 });
     }
     for (const r of (monthlyWithdrawals?.results || []) as any[]) {
       const existing = monthlyMap.get(r.month);
       if (existing) existing.withdrawals = r.total;
-      else monthlyMap.set(r.month, { month: r.month, deposits: 0, withdrawals: r.total });
+      else monthlyMap.set(r.month, { month: r.month, deposits: 0, withdrawals: r.total, localBalanceDeposit: 0 });
+    }
+    for (const r of (monthlyLocalBalanceDeposit?.results || []) as any[]) {
+      const existing = monthlyMap.get(r.month);
+      if (existing) existing.localBalanceDeposit = r.total;
+      else monthlyMap.set(r.month, { month: r.month, deposits: 0, withdrawals: 0, localBalanceDeposit: r.total });
     }
     const monthlyStats = Array.from(monthlyMap.values()).sort((a, b) => a.month.localeCompare(b.month));
     const monthlyRegistrationStats = ((monthlyRegistrations?.results || []) as any[])
       .map((r) => ({ month: r.month, count: r.count }))
       .sort((a, b) => a.month.localeCompare(b.month));
+
+    const callsManagerStatsList = ((callsManagerStats?.results || []) as any[]).map((r) => ({
+      month: r.month,
+      agentCode: r.agent_code,
+      agentName: r.agent_name,
+      totalCalls: Number(r.total_calls || 0),
+      successfulCalls: Number(r.successful_calls || 0),
+      totalDurationSec: Number(r.total_duration_sec || 0),
+    }));
 
     return new Response(
       JSON.stringify({
@@ -209,6 +281,8 @@ export async function onRequestGet(context: any) {
         withdrawals: withdrawals?.results || [],
         users: users?.results || [],
         localOps: localOps?.results || [],
+        calls: calls?.results || [],
+        callsManagerStats: callsManagerStatsList,
         activeUsers: activeUsers?.results || [],
         activeUsersCount: Number(activeUsersCount?.count || 0),
         totalMoroccoUsersCount: Number(totalMoroccoUsersCount?.count || 0),

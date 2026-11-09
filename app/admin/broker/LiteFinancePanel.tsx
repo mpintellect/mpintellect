@@ -52,6 +52,12 @@ interface UserRow {
   email_status: string | null;
   phone_status: string | null;
   client_status: string | null;
+  // From litefinance_calls, joined by the real user_id FK (data.ts's
+  // latest_call CTE) - the most recent linked call, if any. null/null/null
+  // means this client has never been reached by a linked call.
+  call_agent_name: string | null;
+  call_hangup_cause: string | null;
+  call_last_at: string | null;
 }
 
 interface SyncLog {
@@ -98,6 +104,32 @@ interface LocalOpRow {
   amount: number | null;
 }
 
+// From admin.litefinance.com/calls/index ("Commpeak Calls"). user_id is the
+// SAME id litefinance_users.id uses, captured directly from the Destination
+// cell's email link - a real FK, unlike deposits/withdrawals' free-text
+// user_name. "Successful" has no column of its own; it's decided purely by
+// hangup_cause = 'ANSWERED', both here and on the backend.
+interface CallRow {
+  id: string;
+  agent_code: string | null;
+  agent_name: string | null;
+  destination: string | null;
+  client_email: string | null; // null when LiteFinance shows "Unknown user"
+  user_id: string | null;
+  call_start: string; // "YYYY-MM-DD HH:MM:SS" - already chronologically sortable as text
+  duration_sec: number | null;
+  hangup_cause: string | null;
+}
+
+interface CallsManagerStat {
+  month: string; // "YYYY-MM"
+  agentCode: string | null;
+  agentName: string | null;
+  totalCalls: number;
+  successfulCalls: number;
+  totalDurationSec: number;
+}
+
 // A client is "active" if they have at least one deposit or withdrawal row
 // (matched by LOWER(TRIM(name)) against user_name - there's no user id link
 // between litefinance_users and litefinance_deposits/withdrawals). $ totals
@@ -114,6 +146,8 @@ interface BrokerLiteData {
   withdrawals: TxRow[];
   users: UserRow[];
   localOps: LocalOpRow[];
+  calls: CallRow[];
+  callsManagerStats: CallsManagerStat[];
   activeUsers: ActiveUserRow[];
   activeUsersCount: number;
   totalMoroccoUsersCount: number;
@@ -141,6 +175,13 @@ function toISODate(dateStr: string): string {
   const [dd, mm, yyyy] = (datePart || '').split('.');
   if (!dd || !mm || !yyyy) return '';
   return `${yyyy}-${mm}-${dd}`;
+}
+
+// "2026-11" -> "November 2026" - same monthlyStats month key as MonthlyChart/MonthlyStatsTable.
+function monthLabel(key: string): string {
+  const [year, month] = key.split('-').map(Number);
+  if (!year || !month) return key;
+  return new Date(year, month - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -345,6 +386,24 @@ function TxTable({ rows, emptyMessage }: { rows: TxRow[]; emptyMessage: string }
   );
 }
 
+// Derived purely from the latest_call join in data.ts, never stored - see
+// UserRow's call_agent_name/call_hangup_cause comment.
+function CallStatusBadge({ row }: { row: UserRow }) {
+  if (!row.call_agent_name) {
+    return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-500">Not called yet</span>;
+  }
+  const answered = row.call_hangup_cause === 'ANSWERED';
+  return (
+    <span
+      className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+        answered ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+      }`}
+    >
+      {answered ? `Called via ${row.call_agent_name}` : `Failed via ${row.call_agent_name}`}
+    </span>
+  );
+}
+
 function UsersTable({ rows, emptyMessage }: { rows: UserRow[]; emptyMessage: string }) {
   if (rows.length === 0) {
     return <div className="p-6 text-center text-sm text-slate-400">{emptyMessage}</div>;
@@ -360,6 +419,7 @@ function UsersTable({ rows, emptyMessage }: { rows: UserRow[]; emptyMessage: str
             <th className="py-2 px-3">Phone</th>
             <th className="py-2 px-3">Country</th>
             <th className="py-2 px-3">Client Status</th>
+            <th className="py-2 px-3">Call Status</th>
           </tr>
         </thead>
         <tbody>
@@ -371,6 +431,9 @@ function UsersTable({ rows, emptyMessage }: { rows: UserRow[]; emptyMessage: str
               <td className="py-2 px-3 text-slate-700">{r.phone || <span className="text-slate-300">—</span>}</td>
               <td className="py-2 px-3 text-slate-500">{r.country || '—'}</td>
               <td className="py-2 px-3 text-slate-500">{r.client_status || '—'}</td>
+              <td className="py-2 px-3">
+                <CallStatusBadge row={r} />
+              </td>
             </tr>
           ))}
         </tbody>
@@ -417,6 +480,151 @@ function ActiveUsersTable({ rows, emptyMessage }: { rows: ActiveUserRow[]; empty
   );
 }
 
+function durationLabel(sec: number | null): string {
+  if (sec === null || sec === undefined) return '—';
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+function HangupCauseBadge({ cause }: { cause: string | null }) {
+  const answered = cause === 'ANSWERED';
+  return (
+    <span
+      className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+        answered ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
+      }`}
+    >
+      {cause || '—'}
+    </span>
+  );
+}
+
+function CallsTable({ rows, emptyMessage }: { rows: CallRow[]; emptyMessage: string }) {
+  if (rows.length === 0) {
+    return <div className="p-6 text-center text-sm text-slate-400">{emptyMessage}</div>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-200">
+            <th className="py-2 px-3">Call Start</th>
+            <th className="py-2 px-3">Manager</th>
+            <th className="py-2 px-3">Client Phone</th>
+            <th className="py-2 px-3">Client Email</th>
+            <th className="py-2 px-3">Duration</th>
+            <th className="py-2 px-3">Hangup Cause</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50">
+              <td className="py-2 px-3 whitespace-nowrap text-slate-500">{r.call_start}</td>
+              <td className="py-2 px-3 text-slate-700">
+                {r.agent_name || <span className="text-slate-300">—</span>}
+                {r.agent_code && <span className="text-slate-400"> ({r.agent_code})</span>}
+              </td>
+              <td className="py-2 px-3 text-slate-500">{r.destination || '—'}</td>
+              <td className="py-2 px-3 text-slate-500">
+                {r.client_email || <span className="text-slate-300">Unknown client</span>}
+              </td>
+              <td className="py-2 px-3 text-slate-700">{durationLabel(r.duration_sec)}</td>
+              <td className="py-2 px-3">
+                <HangupCauseBadge cause={r.hangup_cause} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// One column per manager (per explicit request - "each manager have
+// column") rather than one row per manager. Only ever has 2-3 columns in
+// practice (WANTED_AGENT_CODES in the userscript caps sync to agents
+// 2033/2034), so a transposed layout reads cleanly; a "Total" column sums
+// across whichever managers are present.
+function CallsManagerStatsTable({ rows }: { rows: CallsManagerStat[] }) {
+  if (rows.length === 0) {
+    return <div className="p-6 text-center text-sm text-slate-400">No calls synced for this month yet.</div>;
+  }
+  const sorted = [...rows].sort((a, b) => (a.agentCode || '').localeCompare(b.agentCode || ''));
+  const totals = sorted.reduce(
+    (acc, r) => ({
+      totalCalls: acc.totalCalls + r.totalCalls,
+      successfulCalls: acc.successfulCalls + r.successfulCalls,
+      totalDurationSec: acc.totalDurationSec + r.totalDurationSec,
+    }),
+    { totalCalls: 0, successfulCalls: 0, totalDurationSec: 0 }
+  );
+  const successRate = (successful: number, total: number) => (total > 0 ? `${((successful / total) * 100).toFixed(1)}%` : '—');
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-200">
+            <th className="py-2 px-3">Metric</th>
+            {sorted.map((r) => (
+              <th key={r.agentCode} className="py-2 px-3">
+                {r.agentName || <span className="text-slate-300">—</span>}
+                {r.agentCode && <span className="text-slate-400"> ({r.agentCode})</span>}
+              </th>
+            ))}
+            {sorted.length > 1 && <th className="py-2 px-3">Total</th>}
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-slate-100">
+            <td className="py-2 px-3 font-medium text-slate-700">Total Calls</td>
+            {sorted.map((r) => (
+              <td key={r.agentCode} className="py-2 px-3 text-slate-700">
+                {r.totalCalls.toLocaleString()}
+              </td>
+            ))}
+            {sorted.length > 1 && <td className="py-2 px-3 font-semibold text-slate-700">{totals.totalCalls.toLocaleString()}</td>}
+          </tr>
+          <tr className="border-b border-slate-100">
+            <td className="py-2 px-3 font-medium text-slate-700">Successful (Answered)</td>
+            {sorted.map((r) => (
+              <td key={r.agentCode} className="py-2 px-3 text-slate-700">
+                {r.successfulCalls.toLocaleString()}
+              </td>
+            ))}
+            {sorted.length > 1 && (
+              <td className="py-2 px-3 font-semibold text-slate-700">{totals.successfulCalls.toLocaleString()}</td>
+            )}
+          </tr>
+          <tr className="border-b border-slate-100">
+            <td className="py-2 px-3 font-medium text-slate-700">Success Rate</td>
+            {sorted.map((r) => (
+              <td key={r.agentCode} className="py-2 px-3 text-slate-700">
+                {successRate(r.successfulCalls, r.totalCalls)}
+              </td>
+            ))}
+            {sorted.length > 1 && (
+              <td className="py-2 px-3 font-semibold text-slate-700">{successRate(totals.successfulCalls, totals.totalCalls)}</td>
+            )}
+          </tr>
+          <tr>
+            <td className="py-2 px-3 font-medium text-slate-700">Total Minutes</td>
+            {sorted.map((r) => (
+              <td key={r.agentCode} className="py-2 px-3 text-slate-700">
+                {(r.totalDurationSec / 60).toFixed(1)}
+              </td>
+            ))}
+            {sorted.length > 1 && (
+              <td className="py-2 px-3 font-semibold text-slate-700">{(totals.totalDurationSec / 60).toFixed(1)}</td>
+            )}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function LocalOpsTable({ rows, emptyMessage }: { rows: LocalOpRow[]; emptyMessage: string }) {
   if (rows.length === 0) {
     return <div className="p-6 text-center text-sm text-slate-400">{emptyMessage}</div>;
@@ -448,7 +656,7 @@ function LocalOpsTable({ rows, emptyMessage }: { rows: LocalOpRow[]; emptyMessag
 }
 
 export default function LiteFinancePanel() {
-  const [section, setSection] = useState<'finance' | 'users' | 'statistics' | 'local' | 'active'>('finance');
+  const [section, setSection] = useState<'finance' | 'users' | 'statistics' | 'local' | 'active' | 'calls' | 'managers'>('finance');
   const [data, setData] = useState<BrokerLiteData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -483,6 +691,13 @@ export default function LiteFinancePanel() {
 
   const [activeSearch, setActiveSearch] = useState('');
   const [activePage, setActivePage] = useState(1);
+
+  const [callsView, setCallsView] = useState<'log' | 'stats'>('log');
+  const [callsManagerFilters, setCallsManagerFilters] = useState<string[]>([]);
+  const [callsStatusFilters, setCallsStatusFilters] = useState<string[]>([]);
+  const [callsDateFrom, setCallsDateFrom] = useState(firstOfThisMonthISO());
+  const [callsDateTo, setCallsDateTo] = useState('');
+  const [callsPage, setCallsPage] = useState(1);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -535,10 +750,18 @@ export default function LiteFinancePanel() {
     setUserRegDateTo('');
   };
 
-  const switchSection = (next: 'finance' | 'users' | 'statistics' | 'local' | 'active') => {
+  const clearCallsFilters = () => {
+    setCallsManagerFilters([]);
+    setCallsStatusFilters([]);
+    setCallsDateFrom(firstOfThisMonthISO());
+    setCallsDateTo('');
+  };
+
+  const switchSection = (next: 'finance' | 'users' | 'statistics' | 'local' | 'active' | 'calls' | 'managers') => {
     setSection(next);
     clearTxFilters();
     clearUserFilters();
+    clearCallsFilters();
     setActiveSearch('');
   };
 
@@ -558,6 +781,10 @@ export default function LiteFinancePanel() {
   useEffect(() => {
     setActivePage(1);
   }, [activeSearch]);
+
+  useEffect(() => {
+    setCallsPage(1);
+  }, [callsManagerFilters, callsStatusFilters, callsDateFrom, callsDateTo]);
 
   const totals = data?.totals;
   const localOpsTotals = data?.localOpsTotals;
@@ -588,6 +815,44 @@ export default function LiteFinancePanel() {
   });
   const localDepositRows = localOpsInRange.filter((r) => r.raw_type === 'Withdrawal');
   const localWithdrawalRows = localOpsInRange.filter((r) => r.raw_type === 'Deposit');
+
+  // Per-month "Local Balance Deposit" totals + 5% - same monthlyStats feed
+  // as the Statistics tab's chart/table, just read back here next to the
+  // stat card instead of scoped to whatever date range the table below is
+  // filtered to.
+  const localBalanceDepositByMonth = (data?.monthlyStats ?? [])
+    .filter((m) => m.localBalanceDeposit !== undefined)
+    .map((m) => ({ month: m.month, total: m.localBalanceDeposit ?? 0 }))
+    .sort((a, b) => b.month.localeCompare(a.month));
+
+  const currentMonthKey = firstOfThisMonthISO().slice(0, 7); // "YYYY-MM"
+  const daysElapsedThisMonth = new Date().getDate(); // for month-to-date daily averages on the Managers tab
+  const callRows: CallRow[] = data?.calls ?? [];
+  const callsManagerOptions = Array.from(
+    new Set(callRows.map((r) => r.agent_name).filter((v): v is string => !!v))
+  ).sort();
+  const callsStatusOptions = Array.from(
+    new Set(callRows.map((r) => r.hangup_cause).filter((v): v is string => !!v))
+  ).sort();
+  const filteredCallRows = callRows.filter((r) => {
+    if (callsManagerFilters.length > 0 && !(r.agent_name && callsManagerFilters.includes(r.agent_name))) return false;
+    if (callsStatusFilters.length > 0 && !(r.hangup_cause && callsStatusFilters.includes(r.hangup_cause))) return false;
+    if (callsDateFrom || callsDateTo) {
+      const iso = r.call_start.slice(0, 10); // already "YYYY-MM-DD..." - no toISODate() needed
+      if (callsDateFrom && iso < callsDateFrom) return false;
+      if (callsDateTo && iso > callsDateTo) return false;
+    }
+    return true;
+  });
+  const callsFiltersActive =
+    callsManagerFilters.length > 0 || callsStatusFilters.length > 0 || !!callsDateFrom || !!callsDateTo;
+  const callsTotalPages = Math.max(1, Math.ceil(filteredCallRows.length / PAGE_SIZE));
+  const callsPageClamped = Math.min(callsPage, callsTotalPages);
+  const pagedCallRows = filteredCallRows.slice((callsPageClamped - 1) * PAGE_SIZE, callsPageClamped * PAGE_SIZE);
+
+  // "Full month stats" view - defaults to the current month, same window
+  // the sync itself is bounded to on a first run.
+  const callsManagerStatsThisMonth = (data?.callsManagerStats ?? []).filter((m) => m.month === currentMonthKey);
 
   const activeUserRows: ActiveUserRow[] = data?.activeUsers ?? [];
   const activeSearchLower = activeSearch.trim().toLowerCase();
@@ -709,6 +974,22 @@ export default function LiteFinancePanel() {
           }`}
         >
           Active Users
+        </button>
+        <button
+          onClick={() => switchSection('calls')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+            section === 'calls' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Calls
+        </button>
+        <button
+          onClick={() => switchSection('managers')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+            section === 'managers' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Managers
         </button>
       </div>
 
@@ -890,6 +1171,33 @@ export default function LiteFinancePanel() {
               thisMonth={`This month: ${money(localOpsTotals?.withdrawals_this_month_amount ?? 0, '$')}`}
             />
           </div>
+
+          {localBalanceDepositByMonth.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm mb-6">
+              <h2 className="text-sm font-semibold text-slate-700 px-4 pt-4 pb-2">Local Balance Deposit — Monthly 5%</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-200">
+                      <th className="py-2 px-4">Month</th>
+                      <th className="py-2 px-4">Total</th>
+                      <th className="py-2 px-4">5%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {localBalanceDepositByMonth.map((m) => (
+                      <tr key={m.month} className="border-b border-slate-100 hover:bg-slate-50 last:border-b-0">
+                        <td className="py-2 px-4 font-medium text-slate-700">{monthLabel(m.month)}</td>
+                        <td className="py-2 px-4 text-slate-700">{money(m.total, '$')}</td>
+                        <td className="py-2 px-4 font-medium text-[#1baf7a]">{money(m.total * 0.05, '$')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <p className="text-xs text-slate-400 mb-6">
             From the LocalService cash-agent account's own operations ledger (MT5-CLS-905151) - "IN" is a client
             depositing cash locally (balance injected into their account); "Local Balance Deposit" is a client
@@ -930,7 +1238,9 @@ export default function LiteFinancePanel() {
             {localOpsTab === 'in' ? (
               <LocalOpsTable rows={localDepositRows} emptyMessage="No local deposits in range — run the Tampermonkey sync." />
             ) : (
-              <LocalOpsTable rows={localWithdrawalRows} emptyMessage="No local withdrawals in range — run the Tampermonkey sync." />
+              <>
+                <LocalOpsTable rows={localWithdrawalRows} emptyMessage="No local withdrawals in range — run the Tampermonkey sync." />
+              </>
             )}
           </div>
         </>
@@ -978,6 +1288,113 @@ export default function LiteFinancePanel() {
               onPrev={() => setActivePage((p) => Math.max(1, p - 1))}
               onNext={() => setActivePage((p) => Math.min(activeTotalPages, p + 1))}
             />
+          </div>
+        </>
+      ) : section === 'calls' ? (
+        <>
+          <p className="text-xs text-slate-400 mb-4">
+            From admin.litefinance.com/calls/index (Commpeak). "Successful" has no field of its own in LiteFinance's
+            panel - a call counts as successful here when Hangup Cause is ANSWERED.
+          </p>
+
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex border-b border-slate-200">
+              <button
+                onClick={() => setCallsView('log')}
+                className={`px-4 py-3 text-sm font-medium ${callsView === 'log' ? 'text-[#3B82F6] border-b-2 border-[#3B82F6]' : 'text-slate-400'}`}
+              >
+                Call Log
+              </button>
+              <button
+                onClick={() => setCallsView('stats')}
+                className={`px-4 py-3 text-sm font-medium ${callsView === 'stats' ? 'text-[#3B82F6] border-b-2 border-[#3B82F6]' : 'text-slate-400'}`}
+              >
+                Monthly Stats
+              </button>
+            </div>
+
+            {callsView === 'log' ? (
+              <>
+                <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
+                  <DateRangeFilter from={callsDateFrom} to={callsDateTo} onFrom={setCallsDateFrom} onTo={setCallsDateTo} />
+                  <MultiSelectFilter
+                    placeholder="All managers"
+                    options={callsManagerOptions}
+                    selected={callsManagerFilters}
+                    onToggle={(m) => toggleInArray(setCallsManagerFilters, m)}
+                    onClear={() => setCallsManagerFilters([])}
+                  />
+                  <MultiSelectFilter
+                    placeholder="All statuses"
+                    options={callsStatusOptions}
+                    selected={callsStatusFilters}
+                    onToggle={(s) => toggleInArray(setCallsStatusFilters, s)}
+                    onClear={() => setCallsStatusFilters([])}
+                  />
+                  {callsFiltersActive && (
+                    <button onClick={clearCallsFilters} className="text-sm text-slate-400 hover:text-slate-600">
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+                <div className="px-4 py-2.5 border-b border-slate-200 text-sm text-slate-600">
+                  {filteredCallRows.length.toLocaleString()} call{filteredCallRows.length === 1 ? '' : 's'}
+                  {callRows.length !== filteredCallRows.length && ` of ${callRows.length.toLocaleString()} total`}
+                </div>
+                <CallsTable
+                  rows={pagedCallRows}
+                  emptyMessage={callRows.length === 0 ? 'No calls synced yet — run the Tampermonkey sync.' : 'No rows match these filters.'}
+                />
+                <Pagination
+                  page={callsPageClamped}
+                  totalPages={callsTotalPages}
+                  onPrev={() => setCallsPage((p) => Math.max(1, p - 1))}
+                  onNext={() => setCallsPage((p) => Math.min(callsTotalPages, p + 1))}
+                />
+              </>
+            ) : (
+              <>
+                <div className="px-4 py-2.5 border-b border-slate-200 text-sm text-slate-600">
+                  {monthLabel(currentMonthKey)} — per-manager totals
+                </div>
+                <CallsManagerStatsTable rows={callsManagerStatsThisMonth} />
+              </>
+            )}
+          </div>
+        </>
+      ) : section === 'managers' ? (
+        <>
+          <p className="text-xs text-slate-400 mb-6">
+            {monthLabel(currentMonthKey)} to date ({daysElapsedThisMonth} day{daysElapsedThisMonth === 1 ? '' : 's'} so far) -
+            daily averages divide this month's totals by days elapsed, not a full 30/31-day month.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {callsManagerStatsThisMonth.length === 0 ? (
+              <div className="col-span-2 rounded-xl border border-slate-200 bg-white shadow-sm p-6 text-center text-sm text-slate-400">
+                No calls synced for this month yet.
+              </div>
+            ) : (
+              callsManagerStatsThisMonth.map((m) => {
+                const minutes = m.totalDurationSec / 60;
+                const pct = m.totalCalls > 0 ? (m.successfulCalls / m.totalCalls) * 100 : 0;
+                return (
+                  <div key={m.agentCode} className="rounded-xl border border-slate-200 bg-white shadow-sm p-4">
+                    <h2 className="text-sm font-semibold text-slate-700 mb-3">
+                      {m.agentName || m.agentCode}
+                      {m.agentCode && <span className="text-slate-400 font-normal"> ({m.agentCode})</span>}
+                    </h2>
+                    <div className="grid grid-cols-2 gap-3">
+                      <StatCard label="Total Calls" value={m.totalCalls.toLocaleString()} />
+                      <StatCard label="Successful" value={m.successfulCalls.toLocaleString()} />
+                      <PercentageCard label="Success Rate" pct={pct} />
+                      <StatCard label="Total Minutes" value={minutes.toFixed(1)} />
+                      <StatCard label="Avg Calls/Day" value={(m.totalCalls / daysElapsedThisMonth).toFixed(1)} />
+                      <StatCard label="Avg Minutes/Day" value={(minutes / daysElapsedThisMonth).toFixed(1)} />
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </>
       ) : (

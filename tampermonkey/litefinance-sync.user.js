@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         MPIntellect - LiteFinance Broker Sync
 // @namespace    https://mpintellect.com
-// @version      1.1
-// @description  Pull this month's LiteFinance deposits/withdrawals/users/local-ops and push them to the MPIntellect admin dashboard.
+// @version      1.6
+// @description  Pull this month's LiteFinance deposits/withdrawals/users/local-ops/calls (calls limited to agents 2033/2034) and push them to the MPIntellect admin dashboard.
 // @match        https://admin.litefinance.com/deposits/index*
 // @match        https://admin.litefinance.com/withdrawals/index*
 // @match        https://admin.litefinance.com/users/index*
 // @match        https://admin.litefinance.com/accounts/view*
+// @match        https://admin.litefinance.com/calls/index*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -28,6 +29,10 @@
     deposits: ['deposited', 'declined'],
     withdrawals: ['done', 'done auto'],
   };
+  // Call center managers currently tracked, per explicit admin request -
+  // everything else (IVR/system calls, any other agent code) is skipped at
+  // sync time and never stored.
+  const WANTED_AGENT_CODES = ['2033', '2034'];
   // The one LocalService cash-agent account (admin.litefinance.com/accounts/
   // view?server=20&login=905151) - see schema.sql's litefinance_local_ops
   // comment for what its operations mean from the client's side.
@@ -118,6 +123,28 @@
 
   function cellText(td) {
     return (td.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+
+  // Like cellText but keeps line breaks - the Calls table's Agent/Destination
+  // cells each pack two distinct values (code+name, phone+email) separated
+  // by a literal <br> in the markup (confirmed live via innerHTML - not a
+  // block-element/newline split). Splits on raw innerHTML rather than
+  // innerText: walkAndSyncCalls parses pages fetched via fetch() + DOMParser
+  // into a DETACHED document, where innerText has no layout to work from and
+  // silently returns the whole cell as one run-on string (e.g.
+  // "2033Karima Hamouch" instead of "2033"/"Karima Hamouch") - found live by
+  // diffing this function's output against the page's real innerHTML; the
+  // bug would have made WANTED_AGENT_CODES never match anything, so every
+  // sync click would silently push 0 rows.
+  function splitLines(td) {
+    return td.innerHTML
+      .split(/<br\s*\/?>/i)
+      .map((part) => {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = part;
+        return (tmp.textContent || '').trim();
+      })
+      .filter(Boolean);
   }
 
   function extractUser(td) {
@@ -248,6 +275,42 @@
       opRef: refMatch ? refMatch[1] : '',
       counterpartyAccount: counterpartyMatch ? counterpartyMatch[1] : '',
       amount: amount !== null ? Math.abs(amount) : null,
+    };
+  }
+
+  // /calls/index ("Commpeak Calls"). call_start here comes back already as
+  // "YYYY-MM-DD HH:MM:SS" (confirmed live) - unlike every other list on this
+  // panel, it needs no chronoKey() re-slice, it's already lexicographically
+  // sortable. Destination's email, when present, links to
+  // /users/view?id=<X> - the SAME id litefinance_users.id uses, giving a
+  // real foreign key between a call and a known client (deposits/
+  // withdrawals only ever capture a free-text name).
+  function parseCallRow(tr) {
+    const tds = tr.querySelectorAll('td');
+    if (tds.length < 7) return null;
+    const id = cellText(tds[0]);
+    if (!id) return null;
+    const agentLines = splitLines(tds[1]);
+    const destLines = splitLines(tds[2]);
+    const link = tds[2].querySelector('a');
+    const idMatch = (link?.getAttribute('href') || '').match(/id=(\d+)/);
+    // Second Destination line is the client's email when LiteFinance
+    // resolved the caller, or the literal placeholder "Unknown user" when it
+    // didn't - only keep it when it actually looks like an email, so
+    // data.ts's email-fallback match never gets fed that placeholder text.
+    const rawSecondLine = destLines[1] || '';
+    const clientEmail = /@/.test(rawSecondLine) ? rawSecondLine : null;
+    const durMatch = (splitLines(tds[5])[0] || '').match(/(\d+)\s*sec/i);
+    return {
+      id,
+      agentCode: agentLines[0] || null,
+      agentName: agentLines[1] || null,
+      destination: destLines[0] || null,
+      clientEmail,
+      userId: idMatch ? idMatch[1] : null,
+      callStart: cellText(tds[3]),
+      durationSec: durMatch ? parseInt(durMatch[1], 10) : null,
+      hangupCause: cellText(tds[6]),
     };
   }
 
@@ -425,6 +488,61 @@
     return total;
   }
 
+  // Simpler than walkAndSync(deposits/withdrawals): /calls/index paginates
+  // on a plain ?page=N with no "action=filter"/dateFrom requirement
+  // (confirmed live - the bare index page already renders data). No status
+  // filtering either - every call is pushed; "successful" is decided at
+  // query time server-side (hangup_cause = 'ANSWERED'), never filtered here.
+  //
+  // Bounded to the current calendar month on a first run (no watermark yet)
+  // - per explicit admin request ("only from 01.11.2026 00:00") - same
+  // bounded-backfill approach as every other sync here. A full-history walk
+  // was tried and explicitly reverted; don't remove this bound again without
+  // being asked.
+  async function walkAndSyncCalls(token, sessionToken, watermark, onStatus) {
+    const monthCutoffKey = `${firstOfMonthISO()} 00:00:00`;
+    const stopKey = watermark && watermark > monthCutoffKey ? watermark : monthCutoffKey;
+
+    let page = 1;
+    let total = 0;
+    for (;;) {
+      onStatus(`Fetching calls page ${page}…`);
+      const res = await fetch(`/calls/index?page=${page}`);
+      if (!res.ok) throw new Error(`calls page ${page} request failed (${res.status})`);
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const table = doc.querySelector('table');
+      if (!table) {
+        if (page === 1) {
+          onStatus(`No calls table found - LiteFinance's page markup may have changed.`, true);
+        }
+        break;
+      }
+      const trs = Array.from(table.querySelectorAll('tbody tr'));
+      if (trs.length === 0) break;
+
+      const rows = trs.map(parseCallRow).filter(Boolean);
+      // Cutoff is computed against the FULL unfiltered page (every agent) so
+      // the chronological walk/watermark stays correct regardless of which
+      // agents are wanted - only what gets pushed is narrowed afterward.
+      const cutoffIndex = rows.findIndex((r) => r.callStart <= stopKey);
+      const newRows = cutoffIndex === -1 ? rows : rows.slice(0, cutoffIndex);
+      const wantedRows = newRows.filter((r) => WANTED_AGENT_CODES.includes(r.agentCode));
+
+      if (wantedRows.length > 0) {
+        onStatus(`Pushing ${wantedRows.length} calls (page ${page})…`);
+        await pushPage('calls', page, wantedRows, token, sessionToken);
+        total += wantedRows.length;
+      }
+
+      if (cutoffIndex !== -1) break; // reached already-synced rows
+      if (trs.length < PAGE_SIZE) break; // last page
+      page++;
+      await sleep(400 + Math.random() * 400);
+    }
+    return total;
+  }
+
   async function fillUserGaps(token, sessionToken, onStatus) {
     const resp = await gmRequest({
       method: 'GET',
@@ -463,9 +581,10 @@
 
   function injectUI() {
     const onListPage = /\/(deposits|withdrawals|users)\/index/.test(location.pathname);
+    const onCallsPage = /\/calls\/index/.test(location.pathname);
     const onLocalOpsPage =
       /\/accounts\/view/.test(location.pathname) && new URLSearchParams(location.search).get('login') === LOCAL_OPS_LOGIN;
-    if (!onListPage && !onLocalOpsPage) return;
+    if (!onListPage && !onCallsPage && !onLocalOpsPage) return;
 
     const box = document.createElement('div');
     box.style.cssText =
@@ -477,6 +596,7 @@
     let financeButton = null;
     let usersButton = null;
     let localOpsButton = null;
+    let callsButton = null;
 
     if (onListPage) {
       financeButton = makeButton('Sync Deposits/Withdrawals');
@@ -491,6 +611,12 @@
       if (buttons.length === 0) localOpsButton.style.marginTop = '0';
       box.appendChild(localOpsButton);
       buttons.push(localOpsButton);
+    }
+    if (onCallsPage) {
+      callsButton = makeButton('Sync Calls');
+      if (buttons.length === 0) callsButton.style.marginTop = '0';
+      box.appendChild(callsButton);
+      buttons.push(callsButton);
     }
 
     const status = document.createElement('div');
@@ -567,6 +693,15 @@
         run(buttons, async (token, sessionToken, watermark) => {
           const count = await walkAndSyncLocalOps(token, sessionToken, watermark.localOps, setStatus);
           setStatus(`Done - synced ${count} local operations.`);
+        })
+      );
+    }
+
+    if (callsButton) {
+      callsButton.addEventListener('click', () =>
+        run(buttons, async (token, sessionToken, watermark) => {
+          const count = await walkAndSyncCalls(token, sessionToken, watermark.calls, setStatus);
+          setStatus(`Done - synced ${count} calls.`);
         })
       );
     }

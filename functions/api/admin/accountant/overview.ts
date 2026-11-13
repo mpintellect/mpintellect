@@ -1,11 +1,15 @@
 // functions/api/admin/accountant/overview.ts
 //
-// Revenue (paid invoices) vs. expenses, by month and currency, plus
-// outstanding (sent/overdue, not yet paid) invoice totals - for
-// app/accountant/overview/page.tsx. Currencies are never mixed/converted
-// (no exchange-rate data source here), so every total is reported per
-// currency separately. Same admin gate as the rest of /api/admin/* (Bearer
-// <ADMIN_PASSWORD|ADMIN_KEY>).
+// Revenue/expenses/bank fees from the bank ledger (accountant_expenses),
+// broken out per accounting fiscal year (1 Sep - 31 Aug) plus an all-time
+// total, for app/accountant/overview/page.tsx's year tabs. Also reports
+// outstanding (sent/overdue, not yet paid) invoice totals separately -
+// formally-invoiced revenue is NOT folded into the ledger totals below,
+// since accountant_invoices and accountant_expenses are two independent
+// sources and summing them would double-count a client payment recorded in
+// both. Currencies are never mixed/converted (no exchange-rate data source
+// here), so every total is reported per currency separately. Same admin
+// gate as the rest of /api/admin/* (Bearer <ADMIN_PASSWORD|ADMIN_KEY>).
 
 function checkAuth(request: Request, env: any): boolean {
   const authHeader = request.headers.get('Authorization');
@@ -33,21 +37,7 @@ export async function onRequestGet(context: any) {
   if (!checkAuth(request, env)) return unauthorized();
 
   try {
-    const [revenueRows, expenseRows, outstandingRows, clientCount, invoiceCount, ledgerTotals] = await Promise.all([
-      env.DB.prepare(
-        `SELECT substr(i.paid_at, 1, 7) AS month, i.currency, SUM(${INVOICE_TOTAL_EXPR}) AS total, COUNT(*) AS count
-         FROM accountant_invoices i
-         WHERE i.status = 'paid' AND i.paid_at IS NOT NULL
-         GROUP BY month, i.currency
-         ORDER BY month`
-      ).all(),
-      env.DB.prepare(
-        `SELECT substr(expense_date, 1, 7) AS month, currency, SUM(amount) AS total
-         FROM accountant_expenses
-         WHERE type = 'expense'
-         GROUP BY month, currency
-         ORDER BY month`
-      ).all(),
+    const [outstandingRows, clientCount, invoiceCount, fiscalYearRows, allTimeRows] = await Promise.all([
       env.DB.prepare(
         `SELECT i.currency, SUM(${INVOICE_TOTAL_EXPR}) AS total, COUNT(*) AS count
          FROM accountant_invoices i
@@ -56,59 +46,68 @@ export async function onRequestGet(context: any) {
       ).all(),
       env.DB.prepare('SELECT COUNT(*) AS count FROM accountant_clients').first(),
       env.DB.prepare('SELECT COUNT(*) AS count FROM accountant_invoices').first(),
-      // Bank-ledger totals (the full accountant_expenses import: revenue/expense/bank_fee) -
-      // reported separately from the invoice-based revenue above since they're two different
-      // sources (formal invoicing vs. the raw bank statement) and summing them together would
-      // double-count any client payment that is represented in both.
+      // Fiscal year = 1 Sep - 31 Aug, labeled by its ending year (e.g. Sep
+      // 2025 - Aug 2026 is fiscal year "2026"). A month >= 09 rolls into
+      // the NEXT calendar year's fiscal label.
       env.DB.prepare(
-        `SELECT type, currency, SUM(amount) AS total, COUNT(*) AS count
+        `SELECT
+           (CAST(substr(expense_date, 1, 4) AS INTEGER)
+             + CASE WHEN CAST(substr(expense_date, 6, 2) AS INTEGER) >= 9 THEN 1 ELSE 0 END) AS fiscalYearEnd,
+           type, currency, SUM(amount) AS total
+         FROM accountant_expenses
+         GROUP BY fiscalYearEnd, type, currency
+         ORDER BY fiscalYearEnd`
+      ).all(),
+      env.DB.prepare(
+        `SELECT type, currency, SUM(amount) AS total
          FROM accountant_expenses
          GROUP BY type, currency`
       ).all(),
     ]);
 
-    // Merge revenue + expenses into one row per (month, currency) so the
-    // frontend can render a single grouped-bar chart/table, same convention
-    // as app/admin/broker/MonthlyChart.tsx's {month, deposits, withdrawals}.
-    const monthlyMap = new Map<string, { month: string; currency: string; revenue: number; expenses: number }>();
-    const keyOf = (month: string, currency: string) => `${month}|${currency}`;
-    for (const r of (revenueRows?.results || []) as any[]) {
-      if (!r.month) continue;
-      monthlyMap.set(keyOf(r.month, r.currency), { month: r.month, currency: r.currency, revenue: r.total, expenses: 0 });
-    }
-    for (const r of (expenseRows?.results || []) as any[]) {
-      if (!r.month) continue;
-      const key = keyOf(r.month, r.currency);
-      const existing = monthlyMap.get(key);
-      if (existing) existing.expenses = r.total;
-      else monthlyMap.set(key, { month: r.month, currency: r.currency, revenue: 0, expenses: r.total });
-    }
-    const monthly = Array.from(monthlyMap.values()).sort(
-      (a, b) => a.month.localeCompare(b.month) || a.currency.localeCompare(b.currency)
-    );
-
-    // { currency: { revenue, expense, bank_fee } } - net = revenue - expense - bank_fee per currency.
-    const ledgerByCurrency = new Map<string, { revenue: number; expense: number; bank_fee: number }>();
-    for (const r of (ledgerTotals?.results || []) as any[]) {
-      const bucket = ledgerByCurrency.get(r.currency) || { revenue: 0, expense: 0, bank_fee: 0 };
-      bucket[r.type as 'revenue' | 'expense' | 'bank_fee'] = r.total;
-      ledgerByCurrency.set(r.currency, bucket);
-    }
-    const bankLedger = Array.from(ledgerByCurrency.entries()).map(([currency, t]) => ({
+    // { key: { revenue, expense, bank_fee } } -> net = revenue - expense - bank_fee.
+    type Bucket = { revenue: number; expense: number; bank_fee: number };
+    const emptyBucket = (): Bucket => ({ revenue: 0, expense: 0, bank_fee: 0 });
+    const toRow = (currency: string, t: Bucket, extra: Record<string, unknown> = {}) => ({
+      ...extra,
       currency,
       revenue: t.revenue,
       expense: t.expense,
       bankFees: t.bank_fee,
       net: t.revenue - t.expense - t.bank_fee,
-    }));
+    });
+
+    const byFiscalYear = new Map<number, Map<string, Bucket>>();
+    for (const r of (fiscalYearRows?.results || []) as any[]) {
+      const byCurrency = byFiscalYear.get(r.fiscalYearEnd) || new Map<string, Bucket>();
+      const bucket = byCurrency.get(r.currency) || emptyBucket();
+      bucket[r.type as keyof Bucket] = r.total;
+      byCurrency.set(r.currency, bucket);
+      byFiscalYear.set(r.fiscalYearEnd, byCurrency);
+    }
+    const fiscalYears = Array.from(byFiscalYear.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([fiscalYearEnd, byCurrency]) => ({
+        fiscalYearEnd,
+        label: `${fiscalYearEnd - 1}–${fiscalYearEnd}`,
+        rows: Array.from(byCurrency.entries()).map(([currency, t]) => toRow(currency, t)),
+      }));
+
+    const allTimeByCurrency = new Map<string, Bucket>();
+    for (const r of (allTimeRows?.results || []) as any[]) {
+      const bucket = allTimeByCurrency.get(r.currency) || emptyBucket();
+      bucket[r.type as keyof Bucket] = r.total;
+      allTimeByCurrency.set(r.currency, bucket);
+    }
+    const allTime = Array.from(allTimeByCurrency.entries()).map(([currency, t]) => toRow(currency, t));
 
     return new Response(
       JSON.stringify({
-        monthly,
+        fiscalYears,
+        allTime,
         outstanding: outstandingRows?.results || [],
         clientCount: Number(clientCount?.count || 0),
         invoiceCount: Number(invoiceCount?.count || 0),
-        bankLedger,
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );

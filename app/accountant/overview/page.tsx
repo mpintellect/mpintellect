@@ -5,20 +5,13 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { ADMIN_SESSION_KEY } from '../../admin/useAdminKey';
 
-interface MonthlyRow {
-  month: string;
-  currency: string;
-  revenue: number;
-  expenses: number;
-}
-
 interface OutstandingRow {
   currency: string;
   total: number;
   count: number;
 }
 
-interface BankLedgerRow {
+interface LedgerRow {
   currency: string;
   revenue: number;
   expense: number;
@@ -26,12 +19,18 @@ interface BankLedgerRow {
   net: number;
 }
 
+interface FiscalYear {
+  fiscalYearEnd: number;
+  label: string;
+  rows: LedgerRow[];
+}
+
 interface Overview {
-  monthly: MonthlyRow[];
+  fiscalYears: FiscalYear[];
+  allTime: LedgerRow[];
   outstanding: OutstandingRow[];
   clientCount: number;
   invoiceCount: number;
-  bankLedger: BankLedgerRow[];
 }
 
 function authHeaders() {
@@ -40,12 +39,6 @@ function authHeaders() {
 
 function money(n: number, currency: string) {
   return `${n.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currency}`;
-}
-
-function monthLabel(key: string): string {
-  const [year, month] = key.split('-').map(Number);
-  if (!year || !month) return key;
-  return new Date(year, month - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
 }
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
@@ -58,10 +51,43 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
   );
 }
 
+function LedgerTable({ rows }: { rows: LedgerRow[] }) {
+  if (rows.length === 0) {
+    return (
+      <div className="p-6 text-center text-sm text-slate-400">No transactions in this period.</div>
+    );
+  }
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-200">
+          <th className="py-2 px-4">Currency</th>
+          <th className="py-2 px-4 text-right">Revenue</th>
+          <th className="py-2 px-4 text-right">Expenses</th>
+          <th className="py-2 px-4 text-right">Bank Fees</th>
+          <th className="py-2 px-4 text-right">Net</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.currency} className="border-t border-slate-100">
+            <td className="py-2 px-4 text-slate-600">{r.currency}</td>
+            <td className="py-2 px-4 text-right text-emerald-600">{money(r.revenue, r.currency)}</td>
+            <td className="py-2 px-4 text-right text-red-600">{money(r.expense, r.currency)}</td>
+            <td className="py-2 px-4 text-right text-red-600">{money(r.bankFees, r.currency)}</td>
+            <td className="py-2 px-4 text-right font-medium text-slate-800">{money(r.net, r.currency)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 export default function AccountantOverviewPage() {
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState<string>('all-time');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -81,15 +107,10 @@ export default function AccountantOverviewPage() {
     load();
   }, [load]);
 
-  // Group monthly rows by currency so each currency gets its own table -
-  // revenue/expenses are never summed across currencies (no exchange-rate
-  // source here).
-  const byCurrency = new Map<string, MonthlyRow[]>();
-  for (const r of data?.monthly ?? []) {
-    const list = byCurrency.get(r.currency) || [];
-    list.push(r);
-    byCurrency.set(r.currency, list);
-  }
+  const activeRows =
+    activeTab === 'all-time'
+      ? data?.allTime ?? []
+      : data?.fiscalYears.find((fy) => String(fy.fiscalYearEnd) === activeTab)?.rows ?? [];
 
   return (
     <div className="min-h-screen bg-white text-slate-800 p-8">
@@ -122,72 +143,40 @@ export default function AccountantOverviewPage() {
               ))}
             </div>
 
-            {data.bankLedger.length > 0 && (
-              <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-                <h2 className="text-sm font-semibold text-slate-700 px-4 pt-4 pb-2">
-                  Bank Account (imported from bank statement)
-                </h2>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-200">
-                      <th className="py-2 px-4">Currency</th>
-                      <th className="py-2 px-4 text-right">Revenue</th>
-                      <th className="py-2 px-4 text-right">Expenses</th>
-                      <th className="py-2 px-4 text-right">Bank Fees</th>
-                      <th className="py-2 px-4 text-right">Net</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.bankLedger.map((r) => (
-                      <tr key={r.currency} className="border-t border-slate-100">
-                        <td className="py-2 px-4 text-slate-600">{r.currency}</td>
-                        <td className="py-2 px-4 text-right text-emerald-600">{money(r.revenue, r.currency)}</td>
-                        <td className="py-2 px-4 text-right text-red-600">{money(r.expense, r.currency)}</td>
-                        <td className="py-2 px-4 text-right text-red-600">{money(r.bankFees, r.currency)}</td>
-                        <td className="py-2 px-4 text-right font-medium text-slate-800">{money(r.net, r.currency)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="px-4 pb-4 pt-2 text-xs text-slate-400">
-                  From the raw bank ledger (<Link href="/accountant/expenses" className="underline hover:text-slate-600">Expenses</Link> page) - separate from the invoice-based Revenue vs. Expenses table below, which only counts formally invoiced/paid amounts.
-                </p>
-              </div>
-            )}
-
-            {byCurrency.size === 0 ? (
-              <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6 text-center text-sm text-slate-400">
-                No paid invoices or expenses yet.
-              </div>
-            ) : (
-              Array.from(byCurrency.entries()).map(([currency, rows]) => (
-                <div key={currency} className="rounded-xl border border-slate-200 bg-white shadow-sm">
-                  <h2 className="text-sm font-semibold text-slate-700 px-4 pt-4 pb-2">Revenue vs. Expenses ({currency})</h2>
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-200">
-                        <th className="py-2 px-4">Month</th>
-                        <th className="py-2 px-4 text-right">Revenue</th>
-                        <th className="py-2 px-4 text-right">Expenses</th>
-                        <th className="py-2 px-4 text-right">Net</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((r) => (
-                        <tr key={r.month} className="border-t border-slate-100">
-                          <td className="py-2 px-4 text-slate-600">{monthLabel(r.month)}</td>
-                          <td className="py-2 px-4 text-right text-emerald-600">{money(r.revenue, currency)}</td>
-                          <td className="py-2 px-4 text-right text-red-600">{money(r.expenses, currency)}</td>
-                          <td className="py-2 px-4 text-right font-medium text-slate-800">
-                            {money(r.revenue - r.expenses, currency)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="px-4 pt-4 flex items-center justify-between flex-wrap gap-2">
+                <h2 className="text-sm font-semibold text-slate-700">Revenue vs. Expenses</h2>
+                <div className="flex gap-1 flex-wrap">
+                  <button
+                    onClick={() => setActiveTab('all-time')}
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      activeTab === 'all-time' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    All Time
+                  </button>
+                  {data.fiscalYears.map((fy) => (
+                    <button
+                      key={fy.fiscalYearEnd}
+                      onClick={() => setActiveTab(String(fy.fiscalYearEnd))}
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        activeTab === String(fy.fiscalYearEnd)
+                          ? 'bg-slate-800 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      FY {fy.label}
+                    </button>
+                  ))}
                 </div>
-              ))
-            )}
+              </div>
+              <div className="mt-2">
+                <LedgerTable rows={activeRows} />
+              </div>
+              <p className="px-4 pb-4 pt-2 text-xs text-slate-400">
+                From the bank ledger (<Link href="/accountant/expenses" className="underline hover:text-slate-600">Expenses</Link> page). Fiscal year runs 1 Sep – 31 Aug, labeled by its start–end calendar years. Formally invoiced/paid amounts (see Outstanding above) are tracked separately and not included here.
+              </p>
+            </div>
           </div>
         )}
       </div>

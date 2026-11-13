@@ -110,8 +110,14 @@ export async function onRequestGet(context: any) {
       monthlyDeposits,
       monthlyWithdrawals,
       monthlyLocalBalanceDeposit,
+      monthlyStatsHistory,
       monthlyRegistrations,
       callsManagerStats,
+      localServiceClients,
+      supportTeamMonthly,
+      supportTeamByCountryTotal,
+      moroccoByManagerTotal,
+      moroccoSummaryMonthly,
     ] = await Promise.all([
       env.DB.prepare(`SELECT * FROM litefinance_deposits ORDER BY ${CHRONO_KEY} DESC LIMIT ?`).bind(limit).all(),
       env.DB.prepare(`SELECT * FROM litefinance_withdrawals ORDER BY ${CHRONO_KEY} DESC LIMIT ?`).bind(limit).all(),
@@ -126,13 +132,23 @@ export async function onRequestGet(context: any) {
       // of it caused a D1 read-quota incident. call_agent_name/call_hangup_cause/
       // call_last_at are null for a client never reached by any call - the
       // frontend renders that as "Not called yet".
+      // is_active reuses the exact same dep_any/wd_any EXISTS match as
+      // ACTIVE_USERS_MATCH below (live-measured at ~9k rows read for the
+      // whole Morocco user base - cheap), just folded into this one query
+      // instead of a separate request, so every row in the general Users
+      // list can show a status dot without adding another full query.
       env.DB.prepare(
-        `WITH latest_call AS (
+        `${ACTIVE_USERS_CTE},
+         latest_call AS (
            SELECT c.user_id, c.agent_name, c.hangup_cause, c.call_start,
              ROW_NUMBER() OVER (PARTITION BY c.user_id ORDER BY c.call_start DESC) AS rn
            FROM litefinance_calls c WHERE c.user_id IS NOT NULL
          )
-         SELECT u.*, lc.agent_name AS call_agent_name, lc.hangup_cause AS call_hangup_cause, lc.call_start AS call_last_at
+         SELECT u.*, lc.agent_name AS call_agent_name, lc.hangup_cause AS call_hangup_cause, lc.call_start AS call_last_at,
+           CASE WHEN (
+             EXISTS (SELECT 1 FROM dep_any WHERE dep_any.uname = LOWER(TRIM(u.name)))
+             OR EXISTS (SELECT 1 FROM wd_any WHERE wd_any.uname = LOWER(TRIM(u.name)))
+           ) THEN 1 ELSE 0 END AS is_active
          FROM litefinance_users u
          LEFT JOIN latest_call lc ON lc.user_id = u.id AND lc.rn = 1
          ORDER BY ${USER_CHRONO_KEY} DESC LIMIT ?`
@@ -142,7 +158,19 @@ export async function onRequestGet(context: any) {
       // tx_date here is "DD.MM.YYYY HH:MM:SS" - same format and re-slice
       // trick as CHRONO_KEY above (defined against the same column name).
       env.DB.prepare(`SELECT * FROM litefinance_local_ops ORDER BY ${CHRONO_KEY} DESC LIMIT 5000`).all(),
-      env.DB.prepare(`SELECT * FROM litefinance_calls ORDER BY call_start DESC LIMIT 5000`).all(),
+      // Morocco-only per the admin's request. Tried joining c.user_id to
+      // litefinance_users.id and filtering on country first, but live-
+      // verified that join only resolves 38 of 666 calls to any user row at
+      // all (litefinance_users sync coverage gap, unrelated to this filter)
+      // - it made the whole tab go empty. destination is Morocco's +212
+      // dialing code with no "+" or formatting (confirmed live, "212..." on
+      // 666/666 calls synced so far) and is always present, unlike user_id
+      // resolution, so it's used instead - no join needed.
+      env.DB.prepare(
+        `SELECT * FROM litefinance_calls
+         WHERE destination LIKE '212%'
+         ORDER BY call_start DESC LIMIT 5000`
+      ).all(),
       env.DB.prepare(
         `${ACTIVE_USERS_CTE}
          SELECT u.id, u.client_uid, u.name, u.email, u.country, u.account, u.reg_date, u.phone,
@@ -202,15 +230,20 @@ export async function onRequestGet(context: any) {
       )
         .bind(currentMonth, currentMonth)
         .first(),
+      // LIMIT 120 (10 years headroom), not 12 - unlike the other dashboard
+      // stats this one is merged with litefinance_monthly_stats_history
+      // below into a multi-year chart, so truncating to the last 12 months
+      // would silently cut off recent live-synced months once there are
+      // more than a year's worth.
       env.DB.prepare(
         `SELECT ${MONTH_KEY('tx_date')} AS month, COALESCE(SUM(usd_amount),0) AS total
          FROM litefinance_deposits WHERE LOWER(status) IN ${SUCCESS_DEPOSIT_STATUSES} AND ${MOROCCO_FILTER}
-         GROUP BY month ORDER BY month DESC LIMIT 12`
+         GROUP BY month ORDER BY month DESC LIMIT 120`
       ).all(),
       env.DB.prepare(
         `SELECT ${MONTH_KEY('tx_date')} AS month, COALESCE(SUM(usd_amount),0) AS total
          FROM litefinance_withdrawals WHERE LOWER(status) IN ${DONE_WITHDRAWAL_STATUSES} AND ${MOROCCO_FILTER}
-         GROUP BY month ORDER BY month DESC LIMIT 12`
+         GROUP BY month ORDER BY month DESC LIMIT 120`
       ).all(),
       // raw_type='Deposit' here is the client's own local withdrawal (money
       // arrives into LocalService from a client) - displayed as "Local
@@ -219,8 +252,13 @@ export async function onRequestGet(context: any) {
       env.DB.prepare(
         `SELECT ${MONTH_KEY('tx_date')} AS month, COALESCE(SUM(amount),0) AS total
          FROM litefinance_local_ops WHERE raw_type = 'Deposit'
-         GROUP BY month ORDER BY month DESC LIMIT 12`
+         GROUP BY month ORDER BY month DESC LIMIT 120`
       ).all(),
+      // Hand-entered pre-sync history (March 2022 onward) - see schema.sql's
+      // litefinance_monthly_stats_history comment. Merged below with the
+      // live-computed totals above; in practice the two never overlap
+      // (litefinance_deposits/withdrawals only ever hold the current month).
+      env.DB.prepare(`SELECT month, deposits, withdrawals FROM litefinance_monthly_stats_history ORDER BY month`).all(),
       // Morocco-only, same as every other stat on this dashboard - per the
       // admin, registration/deposit/etc. figures here are always scoped to
       // Morocco, never other countries. Counts every litefinance_users row
@@ -233,23 +271,70 @@ export async function onRequestGet(context: any) {
       ).all(),
       // Per-manager monthly call stats for the Calls tab's "Monthly Stats"
       // view - total calls, successful (ANSWERED) calls, and total talk
-      // time per agent per month. Not Morocco-scoped (calls have no country
-      // column of their own).
+      // time per agent per month. Morocco-only via the destination +212
+      // prefix, same reasoning as the calls query above.
       env.DB.prepare(
         `SELECT ${CALL_MONTH_KEY} AS month, agent_code, agent_name,
            COUNT(*) AS total_calls,
            SUM(CASE WHEN ${CALL_ANSWERED} THEN 1 ELSE 0 END) AS successful_calls,
            COALESCE(SUM(duration_sec),0) AS total_duration_sec
          FROM litefinance_calls
+         WHERE destination LIKE '212%'
          GROUP BY month, agent_code, agent_name
          ORDER BY month DESC, total_calls DESC
          LIMIT 500`
       ).all(),
+      // Referred clients of the LocalService affiliate account - see
+      // schema.sql's litefinance_local_service_clients comment. active DESC
+      // first so the Clients view can show active ones before the (usually
+      // much larger) inactive pile without the frontend re-sorting 400+ rows.
+      env.DB.prepare(
+        `SELECT * FROM litefinance_local_service_clients ORDER BY active DESC, total_profit DESC LIMIT 5000`
+      ).all(),
+      // Chat support stats (admin.litefinance.com/chat/statistics-support,
+      // the live-chat widget - a different channel from litefinance_calls'
+      // Commpeak phone calls) - see schema.sql's litefinance_chat_support_
+      // stats comment. manager_filter != '' identifies the two tracked
+      // support-team managers' own rows regardless of which exact ids were
+      // requested; country_filter = 'MA' identifies the Morocco-scoped rows.
+      env.DB.prepare(
+        `SELECT substr(date_from,1,7) AS month, bucket_key AS name, sessions, users, rating
+         FROM litefinance_chat_support_stats
+         WHERE bucket_type = 'manager' AND manager_filter != ''
+         ORDER BY date_from, bucket_key`
+      ).all(),
+      env.DB.prepare(
+        `SELECT bucket_key AS name, COALESCE(SUM(sessions),0) AS sessions, COALESCE(SUM(users),0) AS users
+         FROM litefinance_chat_support_stats
+         WHERE bucket_type = 'country' AND manager_filter != ''
+         GROUP BY bucket_key ORDER BY sessions DESC`
+      ).all(),
+      env.DB.prepare(
+        `SELECT bucket_key AS name, COALESCE(SUM(sessions),0) AS sessions, COALESCE(SUM(users),0) AS users
+         FROM litefinance_chat_support_stats
+         WHERE bucket_type = 'manager' AND country_filter = 'MA'
+         GROUP BY bucket_key ORDER BY sessions DESC`
+      ).all(),
+      env.DB.prepare(
+        `SELECT substr(date_from,1,7) AS month, sessions, users
+         FROM litefinance_chat_support_stats
+         WHERE bucket_type = 'summary' AND country_filter = 'MA'
+         ORDER BY date_from`
+      ).all(),
     ]);
 
     const monthlyMap = new Map<string, { month: string; deposits: number; withdrawals: number; localBalanceDeposit: number }>();
+    // Historical rows go in first so the live-computed totals below always
+    // win for any month both happen to cover (never actually happens today
+    // - see litefinance_monthly_stats_history's comment - but keeps the
+    // live sync authoritative if that ever changes).
+    for (const r of (monthlyStatsHistory?.results || []) as any[]) {
+      monthlyMap.set(r.month, { month: r.month, deposits: r.deposits, withdrawals: r.withdrawals, localBalanceDeposit: 0 });
+    }
     for (const r of (monthlyDeposits?.results || []) as any[]) {
-      monthlyMap.set(r.month, { month: r.month, deposits: r.total, withdrawals: 0, localBalanceDeposit: 0 });
+      const existing = monthlyMap.get(r.month);
+      if (existing) existing.deposits = r.total;
+      else monthlyMap.set(r.month, { month: r.month, deposits: r.total, withdrawals: 0, localBalanceDeposit: 0 });
     }
     for (const r of (monthlyWithdrawals?.results || []) as any[]) {
       const existing = monthlyMap.get(r.month);
@@ -283,6 +368,7 @@ export async function onRequestGet(context: any) {
         localOps: localOps?.results || [],
         calls: calls?.results || [],
         callsManagerStats: callsManagerStatsList,
+        localServiceClients: localServiceClients?.results || [],
         activeUsers: activeUsers?.results || [],
         activeUsersCount: Number(activeUsersCount?.count || 0),
         totalMoroccoUsersCount: Number(totalMoroccoUsersCount?.count || 0),
@@ -291,6 +377,12 @@ export async function onRequestGet(context: any) {
         localOpsTotals: localOpsTotals || null,
         monthlyRegistrations: monthlyRegistrationStats,
         monthlyStats,
+        chatSupportStats: {
+          supportTeamMonthly: supportTeamMonthly?.results || [],
+          supportTeamByCountryTotal: supportTeamByCountryTotal?.results || [],
+          moroccoByManagerTotal: moroccoByManagerTotal?.results || [],
+          moroccoSummaryMonthly: moroccoSummaryMonthly?.results || [],
+        },
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );

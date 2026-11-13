@@ -215,6 +215,43 @@ export async function colorRows(
   }
 }
 
+// Bold white-on-color header row, for a freshly-created tab that has no
+// header formatting yet. Only ever applied to row 0 (the header), and only
+// once (callers check the header text is already there before calling this
+// again) - never touches data rows.
+export async function formatHeaderRow(
+  sheetId: string,
+  gid: number,
+  columnCount: number,
+  rgb: { red: number; green: number; blue: number },
+  accessToken: string
+): Promise<void> {
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      requests: [
+        {
+          repeatCell: {
+            range: { sheetId: gid, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: columnCount },
+            cell: {
+              userEnteredFormat: {
+                backgroundColor: rgb,
+                textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } },
+              },
+            },
+            fields: 'userEnteredFormat.backgroundColor,userEnteredFormat.textFormat',
+          },
+        },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    const json: any = await res.json();
+    throw new Error(`Failed to format header row: ${JSON.stringify(json)}`);
+  }
+}
+
 // USER_ENTERED parses a recognizable date string like "14/10/2026 14:58"
 // into Sheets' internal date serial, but doesn't reliably auto-apply a
 // date-time display format to the cell - without one it shows the raw

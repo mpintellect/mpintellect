@@ -97,6 +97,21 @@ interface ExpenseRow {
   created_at: string;
 }
 
+// A user is "active" if they have any deposit or withdrawal row, matched by
+// user_name - see functions/api/admin/broker/data.ts's ACTIVE_USERS_CTE for
+// why this doesn't require (and isn't limited by) broker_users coverage.
+interface ActiveUserRow {
+  user_name: string;
+  country: string | null;
+  verification_status: string | null;
+  email: string | null;
+  phone: string | null;
+  deposit_count: number;
+  total_deposited: number;
+  withdrawal_count: number;
+  total_withdrawn: number;
+}
+
 interface BrokerData {
   stats: StatsSnapshot | null;
   deposits: TxRow[];
@@ -107,6 +122,8 @@ interface BrokerData {
   expenses: ExpenseRow[];
   monthlyStats: MonthlyStat[];
   monthlyRegistrations: MonthlyCount[];
+  activeUsers: ActiveUserRow[];
+  activeUsersCount: number;
 }
 
 function authHeaders() {
@@ -151,13 +168,19 @@ function monthLabel(key: string): string {
   return new Date(year, month - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
 }
 
-function StatCard({ label, value, sub, thisMonth }: { label: string; value: string; sub?: string; thisMonth?: string }) {
+// `value` is the card's headline figure (black bold, large). `totalNote`,
+// when given, is the all-time total - shown small/blue below, per explicit
+// admin request to flip which figure gets visual priority: current-month
+// amount is now the headline, all-time total is the secondary line (was the
+// reverse - `value` used to be the all-time total and the blue line read
+// "This month: $X").
+function StatCard({ label, value, sub, totalNote }: { label: string; value: string; sub?: string; totalNote?: string }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold">{label}</div>
       <div className="mt-1 text-xl font-bold text-slate-800">{value}</div>
       {sub && <div className="mt-0.5 text-xs text-slate-400">{sub}</div>}
-      {thisMonth && <div className="mt-0.5 text-xs text-[#3B82F6] font-medium">{thisMonth}</div>}
+      {totalNote && <div className="mt-0.5 text-xs text-[#3B82F6] font-medium">{totalNote}</div>}
     </div>
   );
 }
@@ -466,7 +489,9 @@ export default function InvestizoPanel() {
         </button>
       </div>
 
-      {section === 'users' && <UsersSection />}
+      {section === 'users' && (
+        <UsersSection activeUsers={data?.activeUsers ?? []} activeUsersCount={data?.activeUsersCount ?? 0} />
+      )}
 
       {section === 'statistics' && (
         <div className="space-y-8">
@@ -541,16 +566,16 @@ export default function InvestizoPanel() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
             <StatCard label="Unique Users" value={(totals?.unique_users ?? 0).toLocaleString()} />
             <StatCard
-              label="Deposits"
-              value={money(totals?.deposits_total_amount ?? 0, '$')}
+              label="Deposits (This Month)"
+              value={money(totals?.deposits_this_month_amount ?? 0, '$')}
               sub={`${(totals?.deposits_success_count ?? 0).toLocaleString()} successful`}
-              thisMonth={`This month: ${money(totals?.deposits_this_month_amount ?? 0, '$')}`}
+              totalNote={`Total: ${money(totals?.deposits_total_amount ?? 0, '$')}`}
             />
             <StatCard
-              label="Withdrawals Done"
-              value={money(totals?.withdrawals_total_amount ?? 0, '$')}
+              label="Withdrawals Done (This Month)"
+              value={money(totals?.withdrawals_this_month_amount ?? 0, '$')}
               sub={`${(totals?.withdrawals_completed_count ?? 0).toLocaleString()} completed`}
-              thisMonth={`This month: ${money(totals?.withdrawals_this_month_amount ?? 0, '$')}`}
+              totalNote={`Total: ${money(totals?.withdrawals_total_amount ?? 0, '$')}`}
             />
             <StatCard
               label="Withdrawals Pending"

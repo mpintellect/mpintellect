@@ -1,11 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, Sheet } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Sheet } from 'lucide-react';
 import { ADMIN_SESSION_KEY } from '../useAdminKey';
-import MonthlyChart, { type MonthlyStat } from './MonthlyChart';
+import { type MonthlyStat } from './MonthlyChart';
+import LiteFinanceMonthlyChart from './LiteFinanceMonthlyChart';
 import MonthlyCountChart, { type MonthlyCount } from './MonthlyCountChart';
 import MonthlyStatsTable from './MonthlyStatsTable';
+import DailyCallsChart, { type DailyCallStat } from './DailyCallsChart';
 
 // ----------------------------------------------------------------------------
 // Broker (LiteFinance / admin.litefinance.com) panel. Pure read of what's
@@ -58,6 +60,11 @@ interface UserRow {
   call_agent_name: string | null;
   call_hangup_cause: string | null;
   call_last_at: string | null;
+  // Same dep_any/wd_any EXISTS match ActiveUserRow's own "active" definition
+  // uses (at least one deposit or withdrawal row, matched by name) - folded
+  // into this same query in data.ts rather than a separate request, so
+  // every row here can show a status dot too.
+  is_active: number; // 1 = active, 0 = inactive
 }
 
 interface SyncLog {
@@ -130,6 +137,25 @@ interface CallsManagerStat {
   totalDurationSec: number;
 }
 
+// Referred clients of the LocalService affiliate account (nouhaila laarj),
+// synced from admin.litefinance.com/affiliate/referrals?id=3827279 - see
+// schema.sql's litefinance_local_service_clients comment. active is read
+// directly from that page's own "active"/"inactive" row class, not derived
+// here.
+interface LocalServiceClientRow {
+  id: string;
+  uid: string | null;
+  name: string | null;
+  reg_date: string | null;
+  active: number; // 1 = active, 0 = inactive
+  total_dpst: number;
+  total_wdrw: number;
+  total_commission: number;
+  total_trades: number;
+  total_volume: number;
+  total_profit: number;
+}
+
 // A client is "active" if they have at least one deposit or withdrawal row
 // (matched by LOWER(TRIM(name)) against user_name - there's no user id link
 // between litefinance_users and litefinance_deposits/withdrawals). $ totals
@@ -141,6 +167,25 @@ interface ActiveUserRow extends UserRow {
   total_withdrawn: number;
 }
 
+// From admin.litefinance.com/chat/statistics-support (the live-chat widget -
+// a different channel from CallsManagerStat's Commpeak phone calls). See
+// schema.sql's litefinance_chat_support_stats comment and functions/api/
+// admin/broker-lite/data.ts for how each of these four is derived.
+interface ChatSupportStatRow {
+  month?: string; // "YYYY-MM" - present on the monthly-trend rows, absent on the all-time totals
+  name: string; // manager display name or country name
+  sessions: number;
+  users: number;
+  rating?: number | null; // null on the all-time-total rows (not meaningfully summable)
+}
+
+interface ChatSupportStats {
+  supportTeamMonthly: ChatSupportStatRow[];
+  supportTeamByCountryTotal: ChatSupportStatRow[];
+  moroccoByManagerTotal: ChatSupportStatRow[];
+  moroccoSummaryMonthly: ChatSupportStatRow[];
+}
+
 interface BrokerLiteData {
   deposits: TxRow[];
   withdrawals: TxRow[];
@@ -148,6 +193,7 @@ interface BrokerLiteData {
   localOps: LocalOpRow[];
   calls: CallRow[];
   callsManagerStats: CallsManagerStat[];
+  localServiceClients: LocalServiceClientRow[];
   activeUsers: ActiveUserRow[];
   activeUsersCount: number;
   totalMoroccoUsersCount: number;
@@ -156,6 +202,7 @@ interface BrokerLiteData {
   localOpsTotals: LocalOpsTotals | null;
   monthlyStats: MonthlyStat[];
   monthlyRegistrations: MonthlyCount[];
+  chatSupportStats: ChatSupportStats;
 }
 
 const PAGE_SIZE = 50;
@@ -418,6 +465,7 @@ function UsersTable({ rows, emptyMessage }: { rows: UserRow[]; emptyMessage: str
             <th className="py-2 px-3">Email</th>
             <th className="py-2 px-3">Phone</th>
             <th className="py-2 px-3">Country</th>
+            <th className="py-2 px-3">Status</th>
             <th className="py-2 px-3">Client Status</th>
             <th className="py-2 px-3">Call Status</th>
           </tr>
@@ -430,6 +478,13 @@ function UsersTable({ rows, emptyMessage }: { rows: UserRow[]; emptyMessage: str
               <td className="py-2 px-3 text-slate-700">{r.email || <span className="text-slate-300">—</span>}</td>
               <td className="py-2 px-3 text-slate-700">{r.phone || <span className="text-slate-300">—</span>}</td>
               <td className="py-2 px-3 text-slate-500">{r.country || '—'}</td>
+              <td className="py-2 px-3">
+                <span
+                  className="inline-block w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: r.is_active === 1 ? '#1baf7a' : '#cbd5e1' }}
+                  title={r.is_active === 1 ? 'Active - has a deposit or withdrawal' : 'No deposit or withdrawal yet'}
+                />
+              </td>
               <td className="py-2 px-3 text-slate-500">{r.client_status || '—'}</td>
               <td className="py-2 px-3">
                 <CallStatusBadge row={r} />
@@ -625,6 +680,178 @@ function CallsManagerStatsTable({ rows }: { rows: CallsManagerStat[] }) {
   );
 }
 
+const CHAT_SUPPORT_STATS_COLUMN_LABEL: Record<string, string> = {
+  month: 'Month',
+  name: 'Name',
+  sessions: 'Sessions',
+  users: 'Users',
+  rating: 'Rating',
+};
+
+// Shared plain table for the four Support Team (live chat) breakdowns under
+// the Managers tab - same ChatSupportStatRow shape, just a different column
+// list per view (monthly-trend rows have `month`, all-time-total rows don't;
+// rating is only meaningful on manager rows, not country/summary totals).
+function ChatSupportStatsTable({
+  rows,
+  columns,
+  emptyMessage,
+}: {
+  rows: ChatSupportStatRow[];
+  columns: Array<'month' | 'name' | 'sessions' | 'users' | 'rating'>;
+  emptyMessage: string;
+}) {
+  if (rows.length === 0) {
+    return <div className="p-6 text-center text-sm text-slate-400">{emptyMessage}</div>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-200">
+            {columns.map((c) => (
+              <th key={c} className={`py-2 px-3 ${c === 'sessions' || c === 'users' || c === 'rating' ? 'text-right' : ''}`}>
+                {CHAT_SUPPORT_STATS_COLUMN_LABEL[c]}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={`${r.month ?? ''}-${r.name}-${i}`} className="border-t border-slate-100">
+              {columns.map((c) => (
+                <td
+                  key={c}
+                  className={`py-2 px-3 ${c === 'sessions' || c === 'users' || c === 'rating' ? 'text-right' : ''} ${
+                    c === 'name' ? 'font-medium text-slate-900' : 'text-slate-600'
+                  }`}
+                >
+                  {c === 'month'
+                    ? monthLabel(r.month || '')
+                    : c === 'rating'
+                      ? r.rating ?? <span className="text-slate-300">—</span>
+                      : c === 'sessions' || c === 'users'
+                        ? r[c].toLocaleString()
+                        : r[c]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Day-by-day table for the Calls tab's "Daily" view - same rows the chart
+// above it plots. Rows below the average (computed by the caller over
+// whatever date range/filters are active) are colored red, so a
+// below-average day is visible in the table too, not just the chart.
+function DailyCallsTable({ rows, average }: { rows: DailyCallStat[]; average: number }) {
+  if (rows.length === 0) {
+    return <div className="p-6 text-center text-sm text-slate-400">No calls in this range yet.</div>;
+  }
+  const sorted = [...rows].sort((a, b) => b.date.localeCompare(a.date));
+  const successRate = (successful: number, total: number) => (total > 0 ? `${((successful / total) * 100).toFixed(1)}%` : '—');
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm tabular-nums">
+        <thead>
+          <tr className="text-xs uppercase tracking-wide text-slate-400 border-b border-slate-200">
+            <th className="py-2 px-3 text-left">Date</th>
+            <th className="py-2 px-3 text-right">First Call</th>
+            <th className="py-2 px-3 text-right">Last Call</th>
+            <th className="py-2 px-3 text-right">Total Calls</th>
+            <th className="py-2 px-3 text-right">Successful</th>
+            <th className="py-2 px-3 text-right">Success Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map((r) => {
+            const belowAverage = r.totalCalls < average;
+            return (
+              <tr key={r.date} className={`border-b border-slate-100 hover:bg-slate-50 ${belowAverage ? 'bg-red-50' : ''}`}>
+                <td className={`py-2 px-3 text-left font-medium ${belowAverage ? 'text-red-700' : 'text-slate-700'}`}>{r.date}</td>
+                <td className={`py-2 px-3 text-right ${belowAverage ? 'text-red-600' : 'text-slate-700'}`}>{r.firstCallTime ?? '—'}</td>
+                <td className={`py-2 px-3 text-right ${belowAverage ? 'text-red-600' : 'text-slate-700'}`}>{r.lastCallTime ?? '—'}</td>
+                <td className={`py-2 px-3 text-right font-medium ${belowAverage ? 'text-red-600' : 'text-slate-700'}`}>
+                  {r.totalCalls.toLocaleString()}
+                </td>
+                <td className={`py-2 px-3 text-right ${belowAverage ? 'text-red-600' : 'text-slate-700'}`}>
+                  {r.successfulCalls.toLocaleString()}
+                </td>
+                <td className={`py-2 px-3 text-right ${belowAverage ? 'text-red-600' : 'text-slate-700'}`}>
+                  {successRate(r.successfulCalls, r.totalCalls)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Hour-of-day breakdown for the Calls tab's "Hourly" view - same
+// manager/status/date filters as Call Log and Daily (filteredCallRows),
+// regrouped into the 24 hour-of-day buckets (e.g. "15:00-16:00") instead of
+// calendar days, so the admin can see which hours see the most/least call
+// traffic across the whole filtered range.
+interface HourlyCallStat {
+  hour: number; // 0-23
+  totalCalls: number;
+  successfulCalls: number;
+  totalMinutes: number;
+}
+
+function HourlyCallsTable({ rows }: { rows: HourlyCallStat[] }) {
+  if (rows.every((r) => r.totalCalls === 0)) {
+    return <div className="p-6 text-center text-sm text-slate-400">No calls in this range yet.</div>;
+  }
+  const average = rows.reduce((sum, r) => sum + r.totalCalls, 0) / rows.length;
+  const successRate = (successful: number, total: number) => (total > 0 ? `${((successful / total) * 100).toFixed(1)}%` : '—');
+  const hourLabel = (h: number) => `${String(h).padStart(2, '0')}:00–${String((h + 1) % 24).padStart(2, '0')}:00`;
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm tabular-nums">
+        <thead>
+          <tr className="text-xs uppercase tracking-wide text-slate-400 border-b border-slate-200">
+            <th className="py-2 px-3 text-left">Hour</th>
+            <th className="py-2 px-3 text-right">Total Calls</th>
+            <th className="py-2 px-3 text-right">Successful</th>
+            <th className="py-2 px-3 text-right">Success Rate</th>
+            <th className="py-2 px-3 text-right">Minutes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => {
+            const belowAverage = r.totalCalls < average;
+            return (
+              <tr key={r.hour} className={`border-b border-slate-100 hover:bg-slate-50 ${belowAverage ? 'bg-red-50' : ''}`}>
+                <td className={`py-2 px-3 text-left font-medium ${belowAverage ? 'text-red-700' : 'text-slate-700'}`}>
+                  {hourLabel(r.hour)}
+                </td>
+                <td className={`py-2 px-3 text-right font-medium ${belowAverage ? 'text-red-600' : 'text-slate-700'}`}>
+                  {r.totalCalls.toLocaleString()}
+                </td>
+                <td className={`py-2 px-3 text-right ${belowAverage ? 'text-red-600' : 'text-slate-700'}`}>
+                  {r.successfulCalls.toLocaleString()}
+                </td>
+                <td className={`py-2 px-3 text-right ${belowAverage ? 'text-red-600' : 'text-slate-700'}`}>
+                  {successRate(r.successfulCalls, r.totalCalls)}
+                </td>
+                <td className={`py-2 px-3 text-right ${belowAverage ? 'text-red-600' : 'text-slate-700'}`}>
+                  {r.totalMinutes.toFixed(1)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function LocalOpsTable({ rows, emptyMessage }: { rows: LocalOpRow[]; emptyMessage: string }) {
   if (rows.length === 0) {
     return <div className="p-6 text-center text-sm text-slate-400">{emptyMessage}</div>;
@@ -655,6 +882,57 @@ function LocalOpsTable({ rows, emptyMessage }: { rows: LocalOpRow[]; emptyMessag
   );
 }
 
+// Referred clients of the LocalService affiliate account - active/inactive
+// badge comes straight from the synced row's own `active` flag (itself read
+// from the source page's own CSS class, not derived here or in data.ts).
+function LocalServiceClientsTable({ rows, emptyMessage }: { rows: LocalServiceClientRow[]; emptyMessage: string }) {
+  if (rows.length === 0) {
+    return <div className="p-6 text-center text-sm text-slate-400">{emptyMessage}</div>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm tabular-nums">
+        <thead>
+          <tr className="text-xs uppercase tracking-wide text-slate-400 border-b border-slate-200">
+            <th className="py-2 px-3 text-left">Name</th>
+            <th className="py-2 px-3 text-left">UID</th>
+            <th className="py-2 px-3 text-left">Registered</th>
+            <th className="py-2 px-3 text-left">Status</th>
+            <th className="py-2 px-3 text-right">Trades</th>
+            <th className="py-2 px-3 text-right">Volume</th>
+            <th className="py-2 px-3 text-right">Profit</th>
+            <th className="py-2 px-3 text-right">Commission</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50">
+              <td className="py-2 px-3 text-left font-medium text-slate-700">{r.name || '—'}</td>
+              <td className="py-2 px-3 text-left text-slate-500">{r.uid || '—'}</td>
+              <td className="py-2 px-3 text-left text-slate-500 whitespace-nowrap">{r.reg_date || '—'}</td>
+              <td className="py-2 px-3 text-left">
+                <span
+                  className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                    r.active === 1 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+                  }`}
+                >
+                  {r.active === 1 ? 'Active' : 'Inactive'}
+                </span>
+              </td>
+              <td className="py-2 px-3 text-right text-slate-700">{r.total_trades.toLocaleString()}</td>
+              <td className="py-2 px-3 text-right text-slate-700">{r.total_volume.toFixed(2)}</td>
+              <td className={`py-2 px-3 text-right font-medium ${r.total_profit < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                {money(r.total_profit, '$')}
+              </td>
+              <td className="py-2 px-3 text-right text-slate-700">{money(r.total_commission, '$')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function LiteFinancePanel() {
   const [section, setSection] = useState<'finance' | 'users' | 'statistics' | 'local' | 'active' | 'calls' | 'managers'>('finance');
   const [data, setData] = useState<BrokerLiteData | null>(null);
@@ -662,6 +940,8 @@ export default function LiteFinancePanel() {
   const [error, setError] = useState('');
   const [exportingDeclined, setExportingDeclined] = useState(false);
   const [exportDeclinedMessage, setExportDeclinedMessage] = useState('');
+  const [exportingInactiveClients, setExportingInactiveClients] = useState(false);
+  const [exportInactiveClientsMessage, setExportInactiveClientsMessage] = useState('');
 
   const [tab, setTab] = useState<'deposits' | 'withdrawals'>('deposits');
 
@@ -687,32 +967,86 @@ export default function LiteFinancePanel() {
   };
   const [localOpsDateFrom, setLocalOpsDateFrom] = useState(firstOfThisMonthISO());
   const [localOpsDateTo, setLocalOpsDateTo] = useState('');
-  const [localOpsTab, setLocalOpsTab] = useState<'in' | 'out'>('in');
+  const [localOpsTab, setLocalOpsTab] = useState<'in' | 'out' | 'clients'>('in');
+  const [localClientSearch, setLocalClientSearch] = useState('');
+  const [localClientStatusFilters, setLocalClientStatusFilters] = useState<string[]>([]);
+  const [localClientPage, setLocalClientPage] = useState(1);
 
   const [activeSearch, setActiveSearch] = useState('');
   const [activePage, setActivePage] = useState(1);
 
-  const [callsView, setCallsView] = useState<'log' | 'stats'>('log');
+  const [callsView, setCallsView] = useState<'log' | 'stats' | 'daily' | 'hourly'>('log');
   const [callsManagerFilters, setCallsManagerFilters] = useState<string[]>([]);
   const [callsStatusFilters, setCallsStatusFilters] = useState<string[]>([]);
   const [callsDateFrom, setCallsDateFrom] = useState(firstOfThisMonthISO());
   const [callsDateTo, setCallsDateTo] = useState('');
   const [callsPage, setCallsPage] = useState(1);
+  const [selectedDailyManager, setSelectedDailyManager] = useState<string | null>(null);
+  // Users tab defaults to a cheap preview (most recent PREVIEW_USERS_LIMIT
+  // clients) instead of the full table - per the admin, the Users tab is
+  // almost never actually searched (Active Users / Local Service / Calls
+  // cover the "find someone specific" cases), it's just glanced at for the
+  // big picture. Flipping to true fetches everyone, on demand, via
+  // handleEnableUserSearch below. Every OTHER number on this panel (Active
+  // Clients, Total Clients (Morocco), monthly registrations, etc.) comes
+  // from its own separate server-side COUNT/aggregate query in data.ts, not
+  // from this list - none of them are affected by this at all.
+  const [usersSearchMode, setUsersSearchMode] = useState(false);
+  const PREVIEW_USERS_LIMIT = 300;
+  const FULL_USERS_LIMIT = 20000;
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (opts?: { force?: boolean; usersLimit?: number }) => {
+    const usersLimit = opts?.usersLimit ?? PREVIEW_USERS_LIMIT;
+    const force = opts?.force ?? false;
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/admin/broker-lite/data?limit=5000&usersLimit=20000', { headers: authHeaders() });
+      // Short browser-side cache, keyed by usersLimit so the cheap preview
+      // and a full on-demand search never overwrite each other's cached
+      // copy. load() is only ever called on mount/button-click (no
+      // polling, no mutation handlers refetch it), so a reload or
+      // re-navigation within this window is the dominant repeat-read
+      // pattern. 60s balances staleness against cutting exactly that
+      // pattern to zero D1 reads - nothing here needs by-the-second
+      // freshness. sessionStorage (not localStorage) so it clears with the
+      // tab, same lifetime as the admin session itself.
+      const CACHE_KEY = `mz_broker_lite_cache_${usersLimit}`;
+      const CACHE_TTL_MS = 60_000;
+      if (!force) {
+        try {
+          const cached = sessionStorage.getItem(CACHE_KEY);
+          if (cached) {
+            const { at, json } = JSON.parse(cached);
+            if (Date.now() - at < CACHE_TTL_MS) {
+              setData(json);
+              if (usersLimit === FULL_USERS_LIMIT) setUsersSearchMode(true);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch {
+          // Corrupt/blocked storage - fall through to a normal fetch.
+        }
+      }
+
+      const res = await fetch(`/api/admin/broker-lite/data?limit=5000&usersLimit=${usersLimit}`, { headers: authHeaders() });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Failed to load');
       setData(json);
+      if (usersLimit === FULL_USERS_LIMIT) setUsersSearchMode(true);
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), json }));
+      } catch {
+        // Storage full/blocked (private window, quota) - not fatal, just no cache this time.
+      }
     } catch (e: any) {
       setError(e.message || 'Failed to load broker-lite data');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const handleEnableUserSearch = () => load({ usersLimit: FULL_USERS_LIMIT });
 
   const handleExportDeclined = async () => {
     setExportingDeclined(true);
@@ -726,6 +1060,24 @@ export default function LiteFinancePanel() {
       setExportDeclinedMessage(e.message || 'Export failed');
     } finally {
       setExportingDeclined(false);
+    }
+  };
+
+  const handleExportInactiveClients = async () => {
+    setExportingInactiveClients(true);
+    setExportInactiveClientsMessage('');
+    try {
+      const res = await fetch('/api/admin/broker-lite/export-inactive-clients-sheet', {
+        method: 'POST',
+        headers: authHeaders(),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.message || 'Export failed');
+      setExportInactiveClientsMessage(json.message);
+    } catch (e: any) {
+      setExportInactiveClientsMessage(e.message || 'Export failed');
+    } finally {
+      setExportingInactiveClients(false);
     }
   };
 
@@ -786,6 +1138,10 @@ export default function LiteFinancePanel() {
     setCallsPage(1);
   }, [callsManagerFilters, callsStatusFilters, callsDateFrom, callsDateTo]);
 
+  useEffect(() => {
+    setLocalClientPage(1);
+  }, [localClientSearch, localClientStatusFilters]);
+
   const totals = data?.totals;
   const localOpsTotals = data?.localOpsTotals;
 
@@ -798,6 +1154,17 @@ export default function LiteFinancePanel() {
     totals?.deposits_this_month_amount
       ? ((localOpsTotals?.withdrawals_this_month_amount ?? 0) / totals.deposits_this_month_amount) * 100
       : 0;
+
+  // `totals.deposits_total_amount`/`withdrawals_total_amount` only cover the
+  // litefinance_deposits/withdrawals tables, which hold the CURRENT month
+  // only (re-scraped fresh every sync - see schema.sql's comment) - so they
+  // aren't a true all-time total. `monthlyStats` is the one feed that
+  // already merges that live current-month data with
+  // litefinance_monthly_stats_history (hand-entered, March 2022 onward -
+  // see data.ts), so summing it here is the only way to get a real
+  // start-of-2022-to-date total for the Finance tab's cards.
+  const allTimeDeposits = (data?.monthlyStats ?? []).reduce((sum, m) => sum + (m.deposits ?? 0), 0);
+  const allTimeWithdrawals = (data?.monthlyStats ?? []).reduce((sum, m) => sum + (m.withdrawals ?? 0), 0);
 
   const rawRows: TxRow[] = tab === 'deposits' ? data?.deposits ?? [] : data?.withdrawals ?? [];
   const userRows: UserRow[] = data?.users ?? [];
@@ -850,9 +1217,122 @@ export default function LiteFinancePanel() {
   const callsPageClamped = Math.min(callsPage, callsTotalPages);
   const pagedCallRows = filteredCallRows.slice((callsPageClamped - 1) * PAGE_SIZE, callsPageClamped * PAGE_SIZE);
 
+  // Calls tab's "Daily" view - same manager/status/date filters as the Call
+  // Log view above (filteredCallRows), just regrouped by day instead of
+  // listed row by row. Average is over whichever days are in range, so it
+  // adapts to the active date filter rather than a fixed month.
+  const dailyCallStatsMap = new Map<string, DailyCallStat & { firstCallStart: string | null; lastCallStart: string | null }>();
+  for (const r of filteredCallRows) {
+    const date = r.call_start.slice(0, 10);
+    const existing = dailyCallStatsMap.get(date) ?? {
+      date,
+      totalCalls: 0,
+      successfulCalls: 0,
+      firstCallTime: null,
+      lastCallTime: null,
+      firstCallStart: null,
+      lastCallStart: null,
+    };
+    existing.totalCalls += 1;
+    if (r.hangup_cause === 'ANSWERED') existing.successfulCalls += 1;
+    if (!existing.firstCallStart || r.call_start < existing.firstCallStart) {
+      existing.firstCallStart = r.call_start;
+      existing.firstCallTime = r.call_start.slice(11, 16);
+    }
+    if (!existing.lastCallStart || r.call_start > existing.lastCallStart) {
+      existing.lastCallStart = r.call_start;
+      existing.lastCallTime = r.call_start.slice(11, 16);
+    }
+    dailyCallStatsMap.set(date, existing);
+  }
+  const dailyCallStats = Array.from(dailyCallStatsMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+  const dailyCallsAverage =
+    dailyCallStats.length > 0 ? dailyCallStats.reduce((sum, d) => sum + d.totalCalls, 0) / dailyCallStats.length : 0;
+
+  // Calls tab's "Hourly" view - same filteredCallRows as Daily, regrouped
+  // into hour-of-day buckets instead of calendar days. All 24 are built here
+  // (indices must line up with the hour itself for the lookup below) - the
+  // render slices this down to the 09:00-18:00 working-hours window.
+  const hourlyCallStats: HourlyCallStat[] = Array.from({ length: 24 }, (_, hour) => ({
+    hour,
+    totalCalls: 0,
+    successfulCalls: 0,
+    totalMinutes: 0,
+  }));
+  for (const r of filteredCallRows) {
+    const hour = Number(r.call_start.slice(11, 13));
+    if (Number.isNaN(hour)) continue;
+    const bucket = hourlyCallStats[hour];
+    bucket.totalCalls += 1;
+    if (r.hangup_cause === 'ANSWERED') bucket.successfulCalls += 1;
+    bucket.totalMinutes += (r.duration_sec ?? 0) / 60;
+  }
+
   // "Full month stats" view - defaults to the current month, same window
   // the sync itself is bounded to on a first run.
   const callsManagerStatsThisMonth = (data?.callsManagerStats ?? []).filter((m) => m.month === currentMonthKey);
+
+  // Per-manager daily breakdown for the Managers tab - real Commpeak-synced,
+  // Morocco-filtered calls (same callRows as the Calls tab), grouped by
+  // agent + day. Each manager gets its own average, so a below-average day
+  // is relative to that manager's own pace, not blended across managers.
+  const callsThisMonth = callRows.filter((r) => r.call_start.slice(0, 7) === currentMonthKey);
+  const perManagerDailyMap = new Map<
+    string,
+    Map<string, DailyCallStat & { firstCallStart: string | null; lastCallStart: string | null }>
+  >();
+  for (const r of callsThisMonth) {
+    const manager = r.agent_name || r.agent_code || 'Unknown';
+    const date = r.call_start.slice(0, 10);
+    if (!perManagerDailyMap.has(manager)) perManagerDailyMap.set(manager, new Map());
+    const dayMap = perManagerDailyMap.get(manager)!;
+    const existing = dayMap.get(date) ?? {
+      date,
+      totalCalls: 0,
+      successfulCalls: 0,
+      firstCallTime: null,
+      lastCallTime: null,
+      firstCallStart: null,
+      lastCallStart: null,
+    };
+    existing.totalCalls += 1;
+    if (r.hangup_cause === 'ANSWERED') existing.successfulCalls += 1;
+    if (!existing.firstCallStart || r.call_start < existing.firstCallStart) {
+      existing.firstCallStart = r.call_start;
+      existing.firstCallTime = r.call_start.slice(11, 16);
+    }
+    if (!existing.lastCallStart || r.call_start > existing.lastCallStart) {
+      existing.lastCallStart = r.call_start;
+      existing.lastCallTime = r.call_start.slice(11, 16);
+    }
+    dayMap.set(date, existing);
+  }
+  const perManagerDaily = Array.from(perManagerDailyMap.entries())
+    .map(([manager, dayMap]) => {
+      const days = Array.from(dayMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+      const average = days.length > 0 ? days.reduce((sum, d) => sum + d.totalCalls, 0) / days.length : 0;
+      return { manager, days, average };
+    })
+    .sort((a, b) => b.days.reduce((s, d) => s + d.totalCalls, 0) - a.days.reduce((s, d) => s + d.totalCalls, 0));
+
+  const localServiceClientRows: LocalServiceClientRow[] = data?.localServiceClients ?? [];
+  const localClientActiveCount = localServiceClientRows.filter((c) => c.active === 1).length;
+  const localClientSearchLower = localClientSearch.trim().toLowerCase();
+  const filteredLocalServiceClients = localServiceClientRows.filter((c) => {
+    if (localClientStatusFilters.length > 0) {
+      const status = c.active === 1 ? 'Active' : 'Inactive';
+      if (!localClientStatusFilters.includes(status)) return false;
+    }
+    if (!localClientSearchLower) return true;
+    const haystack = `${c.name || ''} ${c.uid || ''}`.toLowerCase();
+    return haystack.includes(localClientSearchLower);
+  });
+  const localClientTotalPages = Math.max(1, Math.ceil(filteredLocalServiceClients.length / PAGE_SIZE));
+  const localClientPageClamped = Math.min(localClientPage, localClientTotalPages);
+  const pagedLocalServiceClients = filteredLocalServiceClients.slice(
+    (localClientPageClamped - 1) * PAGE_SIZE,
+    localClientPageClamped * PAGE_SIZE
+  );
 
   const activeUserRows: ActiveUserRow[] = data?.activeUsers ?? [];
   const activeSearchLower = activeSearch.trim().toLowerCase();
@@ -993,6 +1473,18 @@ export default function LiteFinancePanel() {
         </button>
       </div>
 
+      <div className="flex items-center justify-end mb-2">
+        <button
+          onClick={() => load({ force: true, usersLimit: usersSearchMode ? FULL_USERS_LIMIT : PREVIEW_USERS_LIMIT })}
+          disabled={loading}
+          title="Bypass the 60s cache and re-fetch now - useful right after running a Tampermonkey sync"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-medium disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          Refresh
+        </button>
+      </div>
+
       {data?.lastSync && (
         <p className="text-xs text-slate-400 mb-4">
           Last page synced: {new Date(data.lastSync.created_at).toLocaleString()} — {data.lastSync.kind} page{' '}
@@ -1019,10 +1511,10 @@ export default function LiteFinancePanel() {
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-2">
             <StatCard label="Unique Users (Morocco)" value={(totals?.unique_users ?? 0).toLocaleString()} />
             <StatCard
-              label="Deposits (Morocco)"
-              value={money(totals?.deposits_total_amount ?? 0, '$')}
+              label="Deposits (Morocco, This Month)"
+              value={money(totals?.deposits_this_month_amount ?? 0, '$')}
               sub={`${(totals?.deposits_success_count ?? 0).toLocaleString()} successful`}
-              thisMonth={`This month: ${money(totals?.deposits_this_month_amount ?? 0, '$')}`}
+              thisMonth={`Total since 2022: ${money(allTimeDeposits, '$')}`}
             />
             <PercentageCard
               label="Local Balance Deposit %"
@@ -1031,10 +1523,10 @@ export default function LiteFinancePanel() {
             />
             <StatCard label="Declined (Morocco)" value={(totals?.deposits_declined_count ?? 0).toLocaleString()} />
             <StatCard
-              label="Withdrawals Done (Morocco)"
-              value={money(totals?.withdrawals_total_amount ?? 0, '$')}
+              label="Withdrawals Done (Morocco, This Month)"
+              value={money(totals?.withdrawals_this_month_amount ?? 0, '$')}
               sub={`${(totals?.withdrawals_done_count ?? 0).toLocaleString()} done`}
-              thisMonth={`This month: ${money(totals?.withdrawals_this_month_amount ?? 0, '$')}`}
+              thisMonth={`Total since 2022: ${money(allTimeWithdrawals, '$')}`}
             />
             <StatCard
               label="Withdrawals Pending (Morocco)"
@@ -1144,7 +1636,7 @@ export default function LiteFinancePanel() {
         <div className="space-y-8">
           <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-4">
             <h2 className="text-sm font-semibold text-slate-700 mb-3">Deposits vs Withdrawals by Month</h2>
-            <MonthlyChart data={data?.monthlyStats ?? []} />
+            <LiteFinanceMonthlyChart data={data?.monthlyStats ?? []} />
           </div>
           <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <h2 className="text-sm font-semibold text-slate-700 px-4 pt-4 pb-2">Monthly Totals</h2>
@@ -1218,28 +1710,102 @@ export default function LiteFinancePanel() {
               >
                 Local Balance Deposit ({localWithdrawalRows.length})
               </button>
+              <button
+                onClick={() => setLocalOpsTab('clients')}
+                className={`px-4 py-3 text-sm font-medium ${localOpsTab === 'clients' ? 'text-[#3B82F6] border-b-2 border-[#3B82F6]' : 'text-slate-400'}`}
+              >
+                Clients ({localServiceClientRows.length})
+              </button>
             </div>
 
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
-              <DateRangeFilter from={localOpsDateFrom} to={localOpsDateTo} onFrom={setLocalOpsDateFrom} onTo={setLocalOpsDateTo} />
-              {(localOpsDateFrom || localOpsDateTo) && (
-                <button
-                  onClick={() => {
-                    setLocalOpsDateFrom('');
-                    setLocalOpsDateTo('');
-                  }}
-                  className="text-sm text-slate-400 hover:text-slate-600"
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
+            {localOpsTab !== 'clients' ? (
+              <>
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
+                  <DateRangeFilter from={localOpsDateFrom} to={localOpsDateTo} onFrom={setLocalOpsDateFrom} onTo={setLocalOpsDateTo} />
+                  {(localOpsDateFrom || localOpsDateTo) && (
+                    <button
+                      onClick={() => {
+                        setLocalOpsDateFrom('');
+                        setLocalOpsDateTo('');
+                      }}
+                      className="text-sm text-slate-400 hover:text-slate-600"
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
 
-            {localOpsTab === 'in' ? (
-              <LocalOpsTable rows={localDepositRows} emptyMessage="No local deposits in range — run the Tampermonkey sync." />
+                {localOpsTab === 'in' ? (
+                  <LocalOpsTable rows={localDepositRows} emptyMessage="No local deposits in range — run the Tampermonkey sync." />
+                ) : (
+                  <LocalOpsTable rows={localWithdrawalRows} emptyMessage="No local withdrawals in range — run the Tampermonkey sync." />
+                )}
+              </>
             ) : (
               <>
-                <LocalOpsTable rows={localWithdrawalRows} emptyMessage="No local withdrawals in range — run the Tampermonkey sync." />
+                <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
+                  <input
+                    type="text"
+                    placeholder="Search name or UID…"
+                    value={localClientSearch}
+                    onChange={(e) => setLocalClientSearch(e.target.value)}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 min-w-[200px]"
+                  />
+                  <MultiSelectFilter
+                    placeholder="All statuses"
+                    options={['Active', 'Inactive']}
+                    selected={localClientStatusFilters}
+                    onToggle={(s) => toggleInArray(setLocalClientStatusFilters, s)}
+                    onClear={() => setLocalClientStatusFilters([])}
+                  />
+                  {(localClientSearch || localClientStatusFilters.length > 0) && (
+                    <button
+                      onClick={() => {
+                        setLocalClientSearch('');
+                        setLocalClientStatusFilters([]);
+                      }}
+                      className="text-sm text-slate-400 hover:text-slate-600"
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                  <button
+                    onClick={handleExportInactiveClients}
+                    disabled={exportingInactiveClients}
+                    title="Appends inactive local service clients (Name, UID) to the call center's 'no-active clients' sheet tab - never touches rows already there"
+                    className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-medium disabled:opacity-50"
+                  >
+                    <Sheet size={14} className={exportingInactiveClients ? 'animate-pulse' : ''} />
+                    {exportingInactiveClients ? 'Exporting…' : 'Export Inactive Clients to Sheet'}
+                  </button>
+                </div>
+                {exportInactiveClientsMessage && (
+                  <div className="px-4 py-2 text-xs text-slate-500 border-b border-slate-200 bg-slate-50">
+                    {exportInactiveClientsMessage}
+                  </div>
+                )}
+                <div className="px-4 py-2.5 border-b border-slate-200 text-sm text-slate-600">
+                  {filteredLocalServiceClients.length.toLocaleString()} client
+                  {filteredLocalServiceClients.length === 1 ? '' : 's'}
+                  {localServiceClientRows.length !== filteredLocalServiceClients.length &&
+                    ` of ${localServiceClientRows.length.toLocaleString()} total`}
+                  {' — '}
+                  {localClientActiveCount.toLocaleString()} active, {(localServiceClientRows.length - localClientActiveCount).toLocaleString()} inactive
+                </div>
+                <LocalServiceClientsTable
+                  rows={pagedLocalServiceClients}
+                  emptyMessage={
+                    localServiceClientRows.length === 0
+                      ? 'No local service clients synced yet — run the Tampermonkey sync.'
+                      : 'No rows match these filters.'
+                  }
+                />
+                <Pagination
+                  page={localClientPageClamped}
+                  totalPages={localClientTotalPages}
+                  onPrev={() => setLocalClientPage((p) => Math.max(1, p - 1))}
+                  onNext={() => setLocalClientPage((p) => Math.min(localClientTotalPages, p + 1))}
+                />
               </>
             )}
           </div>
@@ -1293,8 +1859,8 @@ export default function LiteFinancePanel() {
       ) : section === 'calls' ? (
         <>
           <p className="text-xs text-slate-400 mb-4">
-            From admin.litefinance.com/calls/index (Commpeak). "Successful" has no field of its own in LiteFinance's
-            panel - a call counts as successful here when Hangup Cause is ANSWERED.
+            From admin.litefinance.com/calls/index (Commpeak), Morocco clients only. "Successful" has no field of its
+            own in LiteFinance's panel - a call counts as successful here when Hangup Cause is ANSWERED.
           </p>
 
           <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -1310,6 +1876,18 @@ export default function LiteFinancePanel() {
                 className={`px-4 py-3 text-sm font-medium ${callsView === 'stats' ? 'text-[#3B82F6] border-b-2 border-[#3B82F6]' : 'text-slate-400'}`}
               >
                 Monthly Stats
+              </button>
+              <button
+                onClick={() => setCallsView('daily')}
+                className={`px-4 py-3 text-sm font-medium ${callsView === 'daily' ? 'text-[#3B82F6] border-b-2 border-[#3B82F6]' : 'text-slate-400'}`}
+              >
+                Daily
+              </button>
+              <button
+                onClick={() => setCallsView('hourly')}
+                className={`px-4 py-3 text-sm font-medium ${callsView === 'hourly' ? 'text-[#3B82F6] border-b-2 border-[#3B82F6]' : 'text-slate-400'}`}
+              >
+                Hourly
               </button>
             </div>
 
@@ -1352,23 +1930,87 @@ export default function LiteFinancePanel() {
                   onNext={() => setCallsPage((p) => Math.min(callsTotalPages, p + 1))}
                 />
               </>
-            ) : (
+            ) : callsView === 'stats' ? (
               <>
                 <div className="px-4 py-2.5 border-b border-slate-200 text-sm text-slate-600">
                   {monthLabel(currentMonthKey)} — per-manager totals
                 </div>
                 <CallsManagerStatsTable rows={callsManagerStatsThisMonth} />
               </>
+            ) : callsView === 'daily' ? (
+              <>
+                <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
+                  <DateRangeFilter from={callsDateFrom} to={callsDateTo} onFrom={setCallsDateFrom} onTo={setCallsDateTo} />
+                  <MultiSelectFilter
+                    placeholder="All managers"
+                    options={callsManagerOptions}
+                    selected={callsManagerFilters}
+                    onToggle={(m) => toggleInArray(setCallsManagerFilters, m)}
+                    onClear={() => setCallsManagerFilters([])}
+                  />
+                  <MultiSelectFilter
+                    placeholder="All statuses"
+                    options={callsStatusOptions}
+                    selected={callsStatusFilters}
+                    onToggle={(s) => toggleInArray(setCallsStatusFilters, s)}
+                    onClear={() => setCallsStatusFilters([])}
+                  />
+                  {callsFiltersActive && (
+                    <button onClick={clearCallsFilters} className="text-sm text-slate-400 hover:text-slate-600">
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+                <div className="px-4 py-2.5 border-b border-slate-200 text-sm text-slate-600">
+                  {dailyCallStats.length} day{dailyCallStats.length === 1 ? '' : 's'} in range — average{' '}
+                  {dailyCallsAverage.toFixed(1)} call{dailyCallsAverage === 1 ? '' : 's'}/day
+                </div>
+                <div className="p-4 border-b border-slate-200">
+                  <DailyCallsChart data={dailyCallStats} average={dailyCallsAverage} />
+                </div>
+                <DailyCallsTable rows={dailyCallStats} average={dailyCallsAverage} />
+              </>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
+                  <DateRangeFilter from={callsDateFrom} to={callsDateTo} onFrom={setCallsDateFrom} onTo={setCallsDateTo} />
+                  <MultiSelectFilter
+                    placeholder="All managers"
+                    options={callsManagerOptions}
+                    selected={callsManagerFilters}
+                    onToggle={(m) => toggleInArray(setCallsManagerFilters, m)}
+                    onClear={() => setCallsManagerFilters([])}
+                  />
+                  <MultiSelectFilter
+                    placeholder="All statuses"
+                    options={callsStatusOptions}
+                    selected={callsStatusFilters}
+                    onToggle={(s) => toggleInArray(setCallsStatusFilters, s)}
+                    onClear={() => setCallsStatusFilters([])}
+                  />
+                  {callsFiltersActive && (
+                    <button onClick={clearCallsFilters} className="text-sm text-slate-400 hover:text-slate-600">
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+                <div className="px-4 py-2.5 border-b border-slate-200 text-sm text-slate-600">
+                  Calls per working hour (09:00–18:00) across every day in range (manager/status/date filters above apply
+                  here too) - hours below the average for this range are in red.
+                </div>
+                <HourlyCallsTable rows={hourlyCallStats.slice(9, 18)} />
+              </>
             )}
           </div>
         </>
       ) : section === 'managers' ? (
         <>
+          <h2 className="text-sm font-semibold text-slate-700 mb-2">Commpeak Sync</h2>
           <p className="text-xs text-slate-400 mb-6">
             {monthLabel(currentMonthKey)} to date ({daysElapsedThisMonth} day{daysElapsedThisMonth === 1 ? '' : 's'} so far) -
             daily averages divide this month's totals by days elapsed, not a full 30/31-day month.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             {callsManagerStatsThisMonth.length === 0 ? (
               <div className="col-span-2 rounded-xl border border-slate-200 bg-white shadow-sm p-6 text-center text-sm text-slate-400">
                 No calls synced for this month yet.
@@ -1396,9 +2038,118 @@ export default function LiteFinancePanel() {
               })
             )}
           </div>
+
+          <h2 className="text-sm font-semibold text-slate-700 mb-2">Daily, Per Manager</h2>
+          <p className="text-xs text-slate-400 mb-6">
+            {monthLabel(currentMonthKey)}, real synced calls per manager per day. Each manager's average (dashed line)
+            and below-average days (red) are relative to that manager's own month, not blended with the other manager.
+          </p>
+          {perManagerDaily.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6 text-center text-sm text-slate-400">
+              No calls synced for this month yet.
+            </div>
+          ) : (
+            (() => {
+              const activeManager =
+                selectedDailyManager && perManagerDaily.some((m) => m.manager === selectedDailyManager)
+                  ? selectedDailyManager
+                  : perManagerDaily[0].manager;
+              const active = perManagerDaily.find((m) => m.manager === activeManager)!;
+              return (
+                <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+                  <div className="flex border-b border-slate-200">
+                    {perManagerDaily.map((m) => (
+                      <button
+                        key={m.manager}
+                        onClick={() => setSelectedDailyManager(m.manager)}
+                        className={`px-4 py-3 text-sm font-medium ${
+                          m.manager === activeManager ? 'text-[#3B82F6] border-b-2 border-[#3B82F6]' : 'text-slate-400'
+                        }`}
+                      >
+                        {m.manager}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="px-4 py-2.5 border-b border-slate-200 text-sm text-slate-600">
+                    {active.days.length} day{active.days.length === 1 ? '' : 's'} — average {active.average.toFixed(1)}{' '}
+                    calls/day
+                  </div>
+                  <div className="p-4 border-b border-slate-200">
+                    <DailyCallsChart data={active.days} average={active.average} />
+                  </div>
+                  <DailyCallsTable rows={active.days} average={active.average} />
+                </div>
+              );
+            })()
+          )}
+
+          <h2 className="text-sm font-semibold text-slate-700 mt-10 mb-2">Support Team (Live Chat)</h2>
+          <p className="text-xs text-slate-400 mb-6">
+            admin.litefinance.com's Chat &gt; Support statistics page - a different channel from the Commpeak calls
+            above. Synced via the "Sync Support Stats" button on that page; re-fetched per month, so figures for the
+            current month fill in as the month progresses.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-700 px-4 pt-4 pb-2">Monthly — By Manager</h3>
+              <ChatSupportStatsTable
+                rows={data?.chatSupportStats.supportTeamMonthly ?? []}
+                columns={['month', 'name', 'sessions', 'users', 'rating']}
+                emptyMessage="No support-chat data synced yet."
+              />
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-700 px-4 pt-4 pb-2">
+                All-Time — By Country
+              </h3>
+              <ChatSupportStatsTable
+                rows={data?.chatSupportStats.supportTeamByCountryTotal ?? []}
+                columns={['name', 'sessions', 'users']}
+                emptyMessage="No support-chat data synced yet."
+              />
+            </div>
+          </div>
+
+          <h2 className="text-sm font-semibold text-slate-700 mb-2">Morocco Support (All Managers)</h2>
+          <p className="text-xs text-slate-400 mb-6">
+            Every manager who has replied to a Morocco chat, not just the two tracked above.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-700 px-4 pt-4 pb-2">Monthly — Morocco Total</h3>
+              <ChatSupportStatsTable
+                rows={data?.chatSupportStats.moroccoSummaryMonthly ?? []}
+                columns={['month', 'sessions', 'users']}
+                emptyMessage="No support-chat data synced yet."
+              />
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-700 px-4 pt-4 pb-2">All-Time — By Manager (Morocco)</h3>
+              <ChatSupportStatsTable
+                rows={data?.chatSupportStats.moroccoByManagerTotal ?? []}
+                columns={['name', 'sessions', 'users']}
+                emptyMessage="No support-chat data synced yet."
+              />
+            </div>
+          </div>
         </>
       ) : (
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+          {!usersSearchMode && (
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-slate-200 bg-amber-50">
+              <p className="text-sm text-amber-800">
+                Showing the {userRows.length.toLocaleString()} most recently registered clients only - search and
+                filters below only cover these. Click to load every client and search the full list.
+              </p>
+              <button
+                onClick={handleEnableUserSearch}
+                disabled={loading}
+                className="shrink-0 rounded-lg bg-[#3B82F6] text-white text-sm font-medium px-4 py-1.5 disabled:opacity-50"
+              >
+                {loading ? 'Loading…' : 'Search All Clients'}
+              </button>
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
             <input
               type="text"
@@ -1430,7 +2181,9 @@ export default function LiteFinancePanel() {
           </div>
           <div className="px-4 py-2.5 border-b border-slate-200 text-sm text-slate-600">
             {filteredUserRows.length.toLocaleString()} user{filteredUserRows.length === 1 ? '' : 's'}
-            {userRows.length !== filteredUserRows.length && ` of ${userRows.length.toLocaleString()} total`}
+            {usersSearchMode &&
+              userRows.length !== filteredUserRows.length &&
+              ` of ${userRows.length.toLocaleString()} total`}
           </div>
           <UsersTable
             rows={pagedUserRows}

@@ -88,6 +88,24 @@ interface CallRow {
   hangupCause: string | null;
 }
 
+// From /affiliate/referrals?id=<LocalService affiliate> - see schema.sql's
+// litefinance_local_service_clients comment. id is the referral's
+// litefinance_users.id (same FK space as CallRow.userId above); uid is the
+// separate UID column shown on that page.
+interface LocalServiceClientRow {
+  id: string;
+  uid: string | null;
+  name: string | null;
+  regDate: string | null;
+  active: boolean;
+  totalDpst: number | null;
+  totalWdrw: number | null;
+  totalCommission: number | null;
+  totalTrades: number | null;
+  totalVolume: number | null;
+  totalProfit: number | null;
+}
+
 async function upsertDeposits(db: any, rows: DepositRow[]): Promise<number> {
   if (rows.length === 0) return 0;
   const stmt = db.prepare(
@@ -200,6 +218,65 @@ async function upsertCalls(db: any, rows: CallRow[]): Promise<number> {
   return rows.length;
 }
 
+// From admin.litefinance.com/chat/statistics-support - see schema.sql's
+// litefinance_chat_support_stats comment for what bucket_type/bucket_key/
+// country_filter/manager_filter mean. id is computed here (not sent by the
+// client) from those same fields, so re-syncing the same month's requests
+// just refreshes the same rows.
+interface ChatSupportStatRow {
+  bucketType: string;
+  bucketKey: string;
+  dateFrom: string;
+  dateTo: string;
+  countryFilter: string;
+  managerFilter: string;
+  sessions: number | null;
+  users: number | null;
+  rating: number | null;
+}
+
+async function upsertChatSupportStats(db: any, rows: ChatSupportStatRow[]): Promise<number> {
+  if (rows.length === 0) return 0;
+  const stmt = db.prepare(
+    `INSERT INTO litefinance_chat_support_stats
+      (id, bucket_type, bucket_key, date_from, date_to, country_filter, manager_filter, sessions, users, rating, synced_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+     ON CONFLICT(id) DO UPDATE SET
+       sessions=excluded.sessions, users=excluded.users, rating=excluded.rating, synced_at=CURRENT_TIMESTAMP`
+  );
+  const batch = rows.map((r) => {
+    const id = `${r.bucketType}|${r.bucketKey}|${r.dateFrom}|${r.dateTo}|${r.countryFilter}|${r.managerFilter}`;
+    return stmt.bind(
+      id, r.bucketType, r.bucketKey, r.dateFrom, r.dateTo, r.countryFilter ?? '', r.managerFilter ?? '',
+      r.sessions, r.users, r.rating
+    );
+  });
+  await db.batch(batch);
+  return rows.length;
+}
+
+async function upsertLocalServiceClients(db: any, rows: LocalServiceClientRow[]): Promise<number> {
+  if (rows.length === 0) return 0;
+  const stmt = db.prepare(
+    `INSERT INTO litefinance_local_service_clients
+      (id, uid, name, reg_date, active, total_dpst, total_wdrw, total_commission, total_trades, total_volume, total_profit, synced_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+     ON CONFLICT(id) DO UPDATE SET
+       uid=excluded.uid, name=excluded.name, reg_date=excluded.reg_date, active=excluded.active,
+       total_dpst=excluded.total_dpst, total_wdrw=excluded.total_wdrw, total_commission=excluded.total_commission,
+       total_trades=excluded.total_trades, total_volume=excluded.total_volume, total_profit=excluded.total_profit,
+       synced_at=CURRENT_TIMESTAMP`
+  );
+  const batch = rows.map((r) =>
+    stmt.bind(
+      r.id, r.uid ?? null, r.name ?? null, r.regDate ?? null, r.active ? 1 : 0,
+      r.totalDpst, r.totalWdrw, r.totalCommission, r.totalTrades, r.totalVolume, r.totalProfit
+    )
+  );
+  await db.batch(batch);
+  return rows.length;
+}
+
 export async function onRequestPost(context: any) {
   const { request, env } = context;
 
@@ -243,9 +320,20 @@ export async function onRequestPost(context: any) {
   }
 
   const { kind, page, rows } = body;
-  if (kind !== 'deposits' && kind !== 'withdrawals' && kind !== 'users' && kind !== 'local_ops' && kind !== 'calls') {
+  if (
+    kind !== 'deposits' &&
+    kind !== 'withdrawals' &&
+    kind !== 'users' &&
+    kind !== 'local_ops' &&
+    kind !== 'calls' &&
+    kind !== 'local_service_clients' &&
+    kind !== 'chat_support_stats'
+  ) {
     return new Response(
-      JSON.stringify({ error: 'kind must be "deposits", "withdrawals", "users", "local_ops", or "calls"' }),
+      JSON.stringify({
+        error:
+          'kind must be "deposits", "withdrawals", "users", "local_ops", "calls", "local_service_clients", or "chat_support_stats"',
+      }),
       { status: 400, headers: { 'Content-Type': 'application/json' } }
     );
   }
@@ -266,6 +354,10 @@ export async function onRequestPost(context: any) {
         ? await upsertUsers(env.DB, rows as UserRow[])
         : kind === 'local_ops'
         ? await upsertLocalOps(env.DB, rows as LocalOpRow[])
+        : kind === 'local_service_clients'
+        ? await upsertLocalServiceClients(env.DB, rows as LocalServiceClientRow[])
+        : kind === 'chat_support_stats'
+        ? await upsertChatSupportStats(env.DB, rows as ChatSupportStatRow[])
         : await upsertCalls(env.DB, rows as CallRow[]);
 
     await env.DB.prepare(

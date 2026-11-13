@@ -35,6 +35,12 @@ const BASE = 'https://invest-panel.com';
 // full backfill.
 const MAX_LIST_PAGES = 5;
 
+// Deposits are only kept at sync time if they reached a final state -
+// "Created" (not yet acted on) is skipped entirely, same convention as
+// tampermonkey/litefinance-sync.user.js's WANTED_STATUSES.deposits. Applies
+// to deposits only, per explicit admin request - withdrawals are untouched.
+const WANTED_DEPOSIT_STATUSES = ['deposited', 'declined'];
+
 interface SyncResult {
   ok: boolean;
   message: string;
@@ -338,10 +344,16 @@ export async function syncInvestizoData(env: InvestizoEnv, source: 'cron' | 'man
       await insertStatsSnapshot(env.DB, stats);
     }
 
-    const [depositRows, withdrawalRows] = await Promise.all([
+    const [depositRowsRaw, withdrawalRows] = await Promise.all([
       fetchListPages(jar, 'deposits', MAX_LIST_PAGES),
       fetchListPages(jar, 'withdrawals', MAX_LIST_PAGES),
     ]);
+
+    // Deposits cells: [#, Date, User, Method, Purse/Transaction, Account,
+    // Account amount, Payment, Status] - status is the last cell, index 8.
+    const depositRows = depositRowsRaw.filter((r) =>
+      WANTED_DEPOSIT_STATUSES.includes((r.cells[8] || '').toLowerCase())
+    );
 
     const depositsSynced = await upsertListRows(env.DB, 'broker_deposits', depositRows);
     const withdrawalsSynced = await upsertListRows(env.DB, 'broker_withdrawals', withdrawalRows);

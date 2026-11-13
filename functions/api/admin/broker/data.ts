@@ -51,6 +51,37 @@ export async function onRequestGet(context: any) {
   const now = new Date();
   const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 
+  // There's no foreign key between broker_users and broker_deposits/
+  // broker_withdrawals (deposits/withdrawals only ever captured a free-text
+  // user_name, never a user id) - AND broker_users itself is deliberately
+  // NOT a full mirror of every Investizo user (see its schema.sql comment),
+  // so "active" is computed straight off the deposits/withdrawals tables
+  // (which ARE fully synced) rather than requiring a broker_users match.
+  // display_name keeps whichever casing last appeared in either table;
+  // broker_users is only joined in afterwards, best-effort, for
+  // country/verification/email/phone when that user happens to be seeded.
+  const ACTIVE_USERS_CTE = `
+    WITH activity AS (
+      SELECT user_name FROM broker_deposits WHERE user_name IS NOT NULL AND user_name != ''
+      UNION ALL
+      SELECT user_name FROM broker_withdrawals WHERE user_name IS NOT NULL AND user_name != ''
+    ),
+    active_names AS (
+      SELECT LOWER(TRIM(user_name)) AS uname, MAX(user_name) AS display_name
+      FROM activity GROUP BY uname
+    ),
+    dep_agg AS (
+      SELECT LOWER(TRIM(user_name)) AS uname, COUNT(*) AS deposit_count, COALESCE(SUM(account_amount),0) AS total_deposited
+      FROM broker_deposits WHERE user_name IS NOT NULL AND user_name != '' AND LOWER(status) IN ${SUCCESS_STATUSES}
+      GROUP BY uname
+    ),
+    wd_agg AS (
+      SELECT LOWER(TRIM(user_name)) AS uname, COUNT(*) AS withdrawal_count, COALESCE(SUM(account_amount),0) AS total_withdrawn
+      FROM broker_withdrawals WHERE user_name IS NOT NULL AND user_name != '' AND LOWER(status) IN ${SUCCESS_STATUSES}
+      GROUP BY uname
+    )
+  `;
+
   try {
     const [
       latestStats,
@@ -63,6 +94,8 @@ export async function onRequestGet(context: any) {
       monthlyDeposits,
       monthlyWithdrawals,
       monthlyRegistrations,
+      activeUsers,
+      activeUsersCount,
     ] = await Promise.all([
       env.DB.prepare('SELECT * FROM broker_stats_snapshots ORDER BY synced_at DESC LIMIT 1').first(),
       env.DB.prepare(`SELECT * FROM broker_deposits ORDER BY ${CHRONO_KEY} DESC LIMIT ?`).bind(limit).all(),
@@ -118,6 +151,23 @@ export async function onRequestGet(context: any) {
          FROM broker_users WHERE reg_date IS NOT NULL AND reg_date != ''
          GROUP BY month ORDER BY month DESC LIMIT 12`
       ).all(),
+      env.DB.prepare(
+        `${ACTIVE_USERS_CTE}
+         SELECT an.display_name AS user_name, bu.country, bu.verification_status, bu.email, bu.phone,
+           COALESCE(dep_agg.deposit_count,0) AS deposit_count,
+           COALESCE(dep_agg.total_deposited,0) AS total_deposited,
+           COALESCE(wd_agg.withdrawal_count,0) AS withdrawal_count,
+           COALESCE(wd_agg.total_withdrawn,0) AS total_withdrawn
+         FROM active_names an
+         LEFT JOIN dep_agg ON dep_agg.uname = an.uname
+         LEFT JOIN wd_agg ON wd_agg.uname = an.uname
+         LEFT JOIN broker_users bu ON LOWER(TRIM(bu.name)) = an.uname
+         ORDER BY (COALESCE(dep_agg.total_deposited,0) + COALESCE(wd_agg.total_withdrawn,0)) DESC
+         LIMIT 5000`
+      ).all(),
+      // Exact count, separate from the LIMIT 5000 row fetch above, so the
+      // stat card is never silently wrong if active users ever exceed that.
+      env.DB.prepare(`${ACTIVE_USERS_CTE} SELECT COUNT(*) AS count FROM active_names`).first(),
     ]);
 
     const monthlyMap = new Map<string, { month: string; deposits: number; withdrawals: number }>();
@@ -145,6 +195,8 @@ export async function onRequestGet(context: any) {
         monthlyRegistrations: monthlyRegistrationStats,
         localBalance: localBalance || null,
         expenses: expenses?.results || [],
+        activeUsers: activeUsers?.results || [],
+        activeUsersCount: Number(activeUsersCount?.count || 0),
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );

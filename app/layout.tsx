@@ -17,22 +17,29 @@ const inter = Inter({ subsets: ['latin'] });
 // 🔥 Build-time environment variable
 const isIntelOnlyBuild = process.env.NEXT_PUBLIC_BUILD_TARGET === 'intel';
 const isAdminOnlyBuild = process.env.NEXT_PUBLIC_BUILD_TARGET === 'admin';
+const isAccountantOnlyBuild = process.env.NEXT_PUBLIC_BUILD_TARGET === 'accountant';
+const isInternalToolingBuild = isAdminOnlyBuild || isAccountantOnlyBuild;
 
 // Conditional metadata based on build target
 export const metadata = {
-  title: isAdminOnlyBuild
+  title: isAccountantOnlyBuild
+    ? 'MPIntellect Accountant'
+    : isAdminOnlyBuild
     ? 'MPIntellect Admin'
     : isIntelOnlyBuild
     ? 'MZ Primer – Intel Systems'
     : 'MPIntellect – Your Gateway to Smart Trading',
-  description: isAdminOnlyBuild
+  description: isAccountantOnlyBuild
+    ? 'Internal invoicing and accounting tools.'
+    : isAdminOnlyBuild
     ? 'Internal admin tools.'
     : isIntelOnlyBuild
     ? 'Complete IT solutions for businesses and individuals. Development, hardware, integration, and support.'
     : 'MPIntellect is a premium platform built to help traders get started with speed, confidence, and security. Access exclusive insights, AI tools, and global markets.',
-  // admin.mpintellect.com is internal tooling only - never indexed (belt and
-  // suspenders alongside build-admin.mjs's robots.txt override).
-  ...(isAdminOnlyBuild ? { robots: { index: false, follow: false } } : {}),
+  // admin.mpintellect.com and accountant.mpintellect.com are internal tooling
+  // only - never indexed (belt and suspenders alongside build-admin.mjs/
+  // build-accountant.mjs's robots.txt override).
+  ...(isInternalToolingBuild ? { robots: { index: false, follow: false } } : {}),
   manifest: '/manifest.json',
 };
 
@@ -51,11 +58,12 @@ export default function Layout({ children }: { children: ReactNode }) {
         className={`${inter.className} bg-white text-gray-900 relative`}
         suppressHydrationWarning 
       >      
-        {/* Decorative/marketing-only - admin.mpintellect.com is internal
-            tooling, not a page a client sees. */}
-        {!isAdminOnlyBuild && <AnimatedBackground />}
+        {/* Decorative/marketing-only - admin.mpintellect.com and
+            accountant.mpintellect.com are internal tooling, not pages a
+            client sees. */}
+        {!isInternalToolingBuild && <AnimatedBackground />}
 
-        {!isAdminOnlyBuild && (
+        {!isInternalToolingBuild && (
           <Script id="consent-mode-defaults" strategy="beforeInteractive">
             {`
               window.dataLayer = window.dataLayer || [];
@@ -71,13 +79,14 @@ export default function Layout({ children }: { children: ReactNode }) {
           </Script>
         )}
 
-        <ClientLayoutWrapper isIntelOnlyBuild={isIntelOnlyBuild} isAdminOnlyBuild={isAdminOnlyBuild}>
+        <ClientLayoutWrapper isIntelOnlyBuild={isIntelOnlyBuild} isAdminOnlyBuild={isInternalToolingBuild}>
           {children}
         </ClientLayoutWrapper>
 
-        {/* Analytics & Tracking - Only load on main build, never on intel or
-            admin (no ads/marketing tracking belongs on internal tooling) */}
-        {!isIntelOnlyBuild && !isAdminOnlyBuild && (
+        {/* Analytics & Tracking - Only load on main build, never on intel,
+            admin, or accountant (no ads/marketing tracking belongs on
+            internal tooling) */}
+        {!isIntelOnlyBuild && !isInternalToolingBuild && (
           <>
             <Suspense fallback={null}>
               <FacebookPixel />
@@ -121,7 +130,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </>
         )}
 
-        {!isAdminOnlyBuild && <CookieConsent />}
+        {!isInternalToolingBuild && <CookieConsent />}
 
         <Suspense fallback={null} />
 

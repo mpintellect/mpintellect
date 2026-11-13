@@ -459,6 +459,86 @@ CREATE TABLE IF NOT EXISTS litefinance_calls (
   synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Referred clients of the LocalService affiliate account (nouhaila laarj,
+-- admin.litefinance.com/affiliate/referrals?id=3827279 - her LiteFinance
+-- user profile's own "Username" field is literally "LocalService"), scraped
+-- from that page's "Referrals network" tab. One row per client, aggregated
+-- across all of that client's MT4/MT5 sub-accounts for whatever date range
+-- was selected on the page at sync time - this is a refreshed snapshot
+-- (upserted by id), not an append-only history. id is litefinance_users.id
+-- (from the referral name's /users/view?id= link) - the SAME FK space as
+-- litefinance_calls.user_id. uid is the separate "UID" column shown on that
+-- page (a different number from id). active comes directly from the page's
+-- own "active"/"inactive" row CSS class (confirmed live - not a color
+-- guess), not derived from any of the numeric columns.
+CREATE TABLE IF NOT EXISTS litefinance_local_service_clients (
+  id TEXT PRIMARY KEY,
+  uid TEXT,
+  name TEXT,
+  reg_date TEXT, -- "DD.MM.YYYY"
+  active INTEGER, -- 1 = active (green), 0 = inactive (red)
+  total_dpst REAL,
+  total_wdrw REAL,
+  total_commission REAL,
+  total_trades INTEGER,
+  total_volume REAL,
+  total_profit REAL,
+  synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Pre-aggregated rows scraped from admin.litefinance.com/chat/statistics-
+-- support (the live-chat support widget's own stats page - a different
+-- channel from litefinance_calls, which only covers Commpeak phone calls).
+-- That page already groups/aggregates server-side (by manager, by country,
+-- or a plain combined total), so each row here is one of THOSE pre-computed
+-- numbers, not a raw chat session - tampermonkey/litefinance-sync.user.js
+-- requests a handful of fixed (date range, grouping, country filter,
+-- manager filter) combinations per month rather than re-deriving this
+-- breakdown from raw data ourselves.
+--   bucket_type: 'manager' (one row per manager for that request) | 'country'
+--     (one row per country) | 'summary' (the page's own single combined
+--     "SUMMARY" row for that request - bucket_key is always 'TOTAL').
+--   bucket_key: the exact Name-column text for that row (a manager's display
+--     name, a country name, or 'TOTAL').
+--   country_filter / manager_filter: the filter actually applied to the
+--     request that produced this row ('' when that filter wasn't used) -
+--     'MA' + manager_filter='' means "every manager who touched Morocco
+--     chats"; manager_filter='10447,10529' + country_filter='' means "the
+--     two tracked support-team managers, every country". Together with
+--     bucket_type/bucket_key/date_from/date_to this is the row's natural key
+--     (see sync.ts's upsertChatSupportStats), so re-syncing the same month
+--     just refreshes the same rows instead of duplicating them.
+CREATE TABLE IF NOT EXISTS litefinance_chat_support_stats (
+  id TEXT PRIMARY KEY,
+  bucket_type TEXT NOT NULL,
+  bucket_key TEXT NOT NULL,
+  date_from TEXT NOT NULL, -- "YYYY-MM-DD HH:MM:SS", already chronologically sortable
+  date_to TEXT NOT NULL,
+  country_filter TEXT NOT NULL DEFAULT '',
+  manager_filter TEXT NOT NULL DEFAULT '',
+  sessions INTEGER,
+  users INTEGER,
+  rating REAL,
+  synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_litefinance_chat_support_stats_lookup
+  ON litefinance_chat_support_stats(bucket_type, country_filter, manager_filter, date_from);
+
+-- Pre-2026-11 monthly deposit/withdrawal totals, hand-entered by the admin
+-- from LiteFinance's own historical reporting (March 2022 - October 2026) -
+-- litefinance_deposits/litefinance_withdrawals only ever hold the CURRENT
+-- month (the Tampermonkey sync re-scrapes "this month" each time, nothing
+-- older), so there was no way to show a full multi-year trend without this.
+-- One-time seed, not touched by any sync - data.ts's monthly stats merge
+-- this table for any month it covers with the live-computed totals above
+-- for whatever month(s) aren't in here (in practice: this table stops where
+-- the live sync's coverage begins, no overlap to reconcile).
+CREATE TABLE IF NOT EXISTS litefinance_monthly_stats_history (
+  month TEXT PRIMARY KEY, -- "YYYY-MM"
+  deposits REAL NOT NULL,
+  withdrawals REAL NOT NULL
+);
+
 -- Manually-entered outflows from the local (Morocco) cash balance - office
 -- expenses, transfers, marketing spend, etc. - that never show up in
 -- Investizo's own deposit/withdrawal lists. Subtracted from the local
@@ -574,8 +654,96 @@ CREATE INDEX IF NOT EXISTS idx_litefinance_withdrawals_date ON litefinance_withd
 CREATE INDEX IF NOT EXISTS idx_litefinance_sync_log_created ON litefinance_sync_log(created_at);
 CREATE INDEX IF NOT EXISTS idx_litefinance_sync_sessions_expires ON litefinance_sync_sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_litefinance_users_reg_date ON litefinance_users(reg_date);
+-- The one above indexes the raw "DD.MM.YYYY HH:MM" column, but data.ts's
+-- USER_CHRONO_KEY sorts by a re-sliced "YYYYMMDD HH:MM" expression (so it
+-- sorts correctly as text) - a plain-column index can't serve an
+-- expression-based ORDER BY, so that first index was never actually usable
+-- for the main Users-list query. Live-verified on production: adding this
+-- expression index cut that query's D1 rows_read from ~21,000 to ~13,000
+-- (and proportionally further once the result is actually smaller than the
+-- full table, e.g. ~6,600 at LIMIT 2000) - found while investigating an
+-- unexpectedly high daily D1 rows-read count.
+CREATE INDEX IF NOT EXISTS idx_litefinance_users_chrono ON litefinance_users ((substr(reg_date,7,4) || substr(reg_date,4,2) || substr(reg_date,1,2) || substr(reg_date,12,5)));
 CREATE INDEX IF NOT EXISTS idx_litefinance_local_ops_date ON litefinance_local_ops(tx_date);
 CREATE INDEX IF NOT EXISTS idx_litefinance_calls_date ON litefinance_calls(call_start);
 CREATE INDEX IF NOT EXISTS idx_litefinance_calls_agent ON litefinance_calls(agent_code);
 CREATE INDEX IF NOT EXISTS idx_litefinance_calls_user_id ON litefinance_calls(user_id);
 CREATE INDEX IF NOT EXISTS idx_broker_local_expenses_date ON broker_local_expenses(expense_date);
+
+-- ----------------------------------------------------------------------------
+-- Accountant (accountant.mpintellect.com) - company invoicing for services/
+-- payments to clients & partners, plus a general expense ledger and a
+-- revenue/P&L overview derived from the two. Entirely separate from the
+-- broker_local_expenses table above, which is specifically the Morocco cash
+-- balance's own outflows, not general company accounting. Same admin-gate
+-- convention as the rest of /api/admin/* (Bearer <ADMIN_PASSWORD|ADMIN_KEY>).
+-- ----------------------------------------------------------------------------
+
+-- Free-form company profile used to prefill invoice headers/payment
+-- instructions (name, address, tax/ICE id, bank name/account/IBAN/SWIFT) and
+-- to track the next invoice number to auto-assign - a plain key/value store
+-- since these fields are few, rarely change, and don't need their own typed
+-- columns. Edited from app/accountant/settings/page.tsx.
+CREATE TABLE IF NOT EXISTS accountant_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT
+);
+
+CREATE TABLE IF NOT EXISTS accountant_clients (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL, -- company or person name, shown on the invoice as "Bill To"
+  contact_name TEXT,
+  email TEXT,
+  phone TEXT,
+  address TEXT,
+  tax_id TEXT, -- ICE/tax number, if the client has one
+  country TEXT,
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- One row per invoice; subtotal/tax/total are computed from
+-- accountant_invoice_items at read time (data.ts), not stored here, so
+-- editing a line item can never leave a stale total behind.
+CREATE TABLE IF NOT EXISTS accountant_invoices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_number TEXT UNIQUE NOT NULL, -- e.g. "INV-2026-0001", assigned from accountant_settings' counter
+  client_id INTEGER NOT NULL REFERENCES accountant_clients(id),
+  issue_date TEXT NOT NULL, -- "YYYY-MM-DD"
+  due_date TEXT,
+  currency TEXT NOT NULL DEFAULT 'USD', -- 'USD' | 'MAD'
+  status TEXT NOT NULL DEFAULT 'draft', -- 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
+  tax_rate REAL NOT NULL DEFAULT 0, -- percentage, e.g. 20 for 20% TVA - 0 when not applicable
+  notes TEXT,
+  payment_instructions TEXT, -- bank details shown on the invoice, prefilled from accountant_settings but editable per invoice
+  paid_at TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS accountant_invoice_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_id INTEGER NOT NULL REFERENCES accountant_invoices(id),
+  description TEXT NOT NULL,
+  quantity REAL NOT NULL DEFAULT 1,
+  unit_price REAL NOT NULL DEFAULT 0,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS accountant_expenses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  expense_date TEXT NOT NULL, -- "YYYY-MM-DD"
+  description TEXT NOT NULL,
+  category TEXT,
+  vendor TEXT,
+  currency TEXT NOT NULL DEFAULT 'USD',
+  amount REAL NOT NULL, -- always a positive magnitude, `type` carries the sign/meaning
+  type TEXT NOT NULL DEFAULT 'expense', -- 'expense' | 'revenue' | 'bank_fee' - lets one ledger hold a full bank-statement import (client payments, spend, bank fees), not just manual outflows
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_accountant_invoices_issue_date ON accountant_invoices(issue_date);
+CREATE INDEX IF NOT EXISTS idx_accountant_invoices_client ON accountant_invoices(client_id);
+CREATE INDEX IF NOT EXISTS idx_accountant_invoice_items_invoice ON accountant_invoice_items(invoice_id);
+CREATE INDEX IF NOT EXISTS idx_accountant_expenses_date ON accountant_expenses(expense_date);

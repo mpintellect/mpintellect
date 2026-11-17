@@ -67,10 +67,11 @@ export async function onRequestPost(context: any) {
     }
 
     const type = ['expense', 'revenue', 'bank_fee'].includes(body.type) ? body.type : 'expense';
+    const fxRateToGbp = body.fxRateToGbp !== undefined && body.fxRateToGbp !== '' ? Number(body.fxRateToGbp) : null;
 
     const result = await env.DB.prepare(
-      `INSERT INTO accountant_expenses (expense_date, description, category, vendor, currency, amount, type, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO accountant_expenses (expense_date, description, category, vendor, currency, amount, type, fx_rate_to_gbp, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
       .bind(
         expenseDate,
@@ -80,6 +81,7 @@ export async function onRequestPost(context: any) {
         (body.currency || 'USD').trim(),
         amount,
         type,
+        Number.isFinite(fxRateToGbp) ? fxRateToGbp : null,
         (body.notes || '').trim() || null
       )
       .run();

@@ -7,9 +7,16 @@
 // formally-invoiced revenue is NOT folded into the ledger totals below,
 // since accountant_invoices and accountant_expenses are two independent
 // sources and summing them would double-count a client payment recorded in
-// both. Currencies are never mixed/converted (no exchange-rate data source
-// here), so every total is reported per currency separately. Same admin
-// gate as the rest of /api/admin/* (Bearer <ADMIN_PASSWORD|ADMIN_KEY>).
+// both. Per-currency totals are never summed together directly (no implicit
+// conversion) - each `rows` entry is one currency's own numbers. A separate
+// `gbpEquivalent` total IS computed per period, for UK tax declaration,
+// using each row's own `fx_rate_to_gbp` (the real historical spot rate on
+// its own expense_date, looked up per transaction, never estimated) - see
+// [[accountant-bank-import]] memory for the specific rates/dates used and
+// why. A row in a non-GBP currency with no rate backfilled yet is excluded
+// from gbpEquivalent and counted in `unconvertedCount` so the UI can warn
+// rather than silently under-report. Same admin gate as the rest of
+// /api/admin/* (Bearer <ADMIN_PASSWORD|ADMIN_KEY>).
 
 function checkAuth(request: Request, env: any): boolean {
   const authHeader = request.headers.get('Authorization');
@@ -61,6 +68,8 @@ export async function onRequestGet(context: any) {
       vendorByFYRows,
       vendorAllTimeRows,
       monthlyRows,
+      gbpByFYRows,
+      gbpAllTimeRows,
     ] = await Promise.all([
       env.DB.prepare(
         `SELECT i.currency, SUM(${INVOICE_TOTAL_EXPR}) AS total, COUNT(*) AS count
@@ -110,6 +119,26 @@ export async function onRequestGet(context: any) {
          FROM accountant_expenses
          GROUP BY month, type, currency
          ORDER BY month`
+      ).all(),
+      // GBP-equivalent totals for tax declaration: GBP rows pass through
+      // as-is, non-GBP rows are converted using their own backfilled
+      // fx_rate_to_gbp (the real spot rate for that transaction's date,
+      // never an estimate), and any non-GBP row still missing a rate is
+      // excluded and counted so the UI can flag it instead of silently
+      // under-reporting.
+      env.DB.prepare(
+        `SELECT ${FISCAL_YEAR_EXPR} AS fiscalYearEnd, type,
+           SUM(CASE WHEN currency = 'GBP' THEN amount WHEN fx_rate_to_gbp IS NOT NULL THEN amount * fx_rate_to_gbp ELSE 0 END) AS total,
+           SUM(CASE WHEN currency != 'GBP' AND fx_rate_to_gbp IS NULL THEN 1 ELSE 0 END) AS unconverted
+         FROM accountant_expenses
+         GROUP BY fiscalYearEnd, type`
+      ).all(),
+      env.DB.prepare(
+        `SELECT type,
+           SUM(CASE WHEN currency = 'GBP' THEN amount WHEN fx_rate_to_gbp IS NOT NULL THEN amount * fx_rate_to_gbp ELSE 0 END) AS total,
+           SUM(CASE WHEN currency != 'GBP' AND fx_rate_to_gbp IS NULL THEN 1 ELSE 0 END) AS unconverted
+         FROM accountant_expenses
+         GROUP BY type`
       ).all(),
     ]);
 
@@ -195,6 +224,23 @@ export async function onRequestGet(context: any) {
         net: r.revenue - r.expense - r.bank_fee,
       }));
 
+    // GBP-equivalent bucket per fiscal year, plus how many non-GBP rows (if
+    // any) still lack a backfilled rate and were excluded from it.
+    const gbpByFiscalYear = new Map<number, Bucket & { unconverted: number }>();
+    for (const r of (gbpByFYRows?.results || []) as any[]) {
+      const bucket = gbpByFiscalYear.get(r.fiscalYearEnd) || { ...emptyBucket(), unconverted: 0 };
+      bucket[r.type as keyof Bucket] = r.total;
+      bucket.unconverted += r.unconverted;
+      gbpByFiscalYear.set(r.fiscalYearEnd, bucket);
+    }
+    const toGbpRow = (t: Bucket & { unconverted: number }) => ({
+      revenue: t.revenue,
+      expense: t.expense,
+      bankFees: t.bank_fee,
+      net: t.revenue - t.expense - t.bank_fee,
+      unconvertedCount: t.unconverted,
+    });
+
     const fiscalYears = Array.from(byFiscalYear.entries())
       .sort(([a], [b]) => a - b)
       .map(([fiscalYearEnd, byCurrency]) => ({
@@ -203,6 +249,7 @@ export async function onRequestGet(context: any) {
         rows: Array.from(byCurrency.entries()).map(([currency, t]) => toRow(currency, t)),
         categories: topNByType(categoriesByFY.get(fiscalYearEnd) || []),
         topVendors: topNByType(vendorsByFY.get(fiscalYearEnd) || []),
+        gbpEquivalent: toGbpRow(gbpByFiscalYear.get(fiscalYearEnd) || { ...emptyBucket(), unconverted: 0 }),
       }));
 
     const allTimeByCurrency = new Map<string, Bucket>();
@@ -211,10 +258,16 @@ export async function onRequestGet(context: any) {
       bucket[r.type as keyof Bucket] = r.total;
       allTimeByCurrency.set(r.currency, bucket);
     }
+    const gbpAllTimeBucket = { ...emptyBucket(), unconverted: 0 };
+    for (const r of (gbpAllTimeRows?.results || []) as any[]) {
+      gbpAllTimeBucket[r.type as keyof Bucket] = r.total;
+      gbpAllTimeBucket.unconverted += r.unconverted;
+    }
     const allTime = {
       rows: Array.from(allTimeByCurrency.entries()).map(([currency, t]) => toRow(currency, t)),
       categories: categoriesAllTime,
       topVendors: vendorsAllTime,
+      gbpEquivalent: toGbpRow(gbpAllTimeBucket),
     };
 
     return new Response(

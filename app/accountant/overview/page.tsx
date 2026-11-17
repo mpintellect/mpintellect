@@ -28,10 +28,19 @@ interface BreakdownRow {
   count: number;
 }
 
+interface GbpEquivalent {
+  revenue: number;
+  expense: number;
+  bankFees: number;
+  net: number;
+  unconvertedCount: number;
+}
+
 interface Period {
   rows: LedgerRow[];
   categories: BreakdownRow[];
   topVendors: BreakdownRow[];
+  gbpEquivalent: GbpEquivalent;
 }
 
 interface FiscalYear extends Period {
@@ -109,6 +118,42 @@ function LedgerTable({ rows }: { rows: LedgerRow[] }) {
         ))}
       </tbody>
     </table>
+  );
+}
+
+function GbpEquivalentCard({ gbp, multiCurrency }: { gbp: GbpEquivalent; multiCurrency: boolean }) {
+  if (!multiCurrency) return null;
+  return (
+    <div className="mx-4 mb-4 rounded-lg bg-slate-50 border border-slate-200 px-4 py-3">
+      <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-2">
+        GBP Equivalent (for tax declaration)
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+        <div>
+          <div className="text-xs text-slate-400">Revenue</div>
+          <div className="text-emerald-600 font-medium">{money(gbp.revenue, 'GBP')}</div>
+        </div>
+        <div>
+          <div className="text-xs text-slate-400">Expenses</div>
+          <div className="text-red-600 font-medium">{money(gbp.expense, 'GBP')}</div>
+        </div>
+        <div>
+          <div className="text-xs text-slate-400">Bank Fees</div>
+          <div className="text-red-600 font-medium">{money(gbp.bankFees, 'GBP')}</div>
+        </div>
+        <div>
+          <div className="text-xs text-slate-400">Net</div>
+          <div className="text-slate-800 font-semibold">{money(gbp.net, 'GBP')}</div>
+        </div>
+      </div>
+      <p className="text-xs text-slate-400 mt-2">
+        Non-GBP amounts converted using each transaction's own historical exchange rate on its date (see the Rate shown per row in{' '}
+        <Link href="/accountant/expenses" className="underline hover:text-slate-600">Expenses</Link>).
+        {gbp.unconvertedCount > 0 && (
+          <span className="text-amber-600 font-medium"> {gbp.unconvertedCount} non-GBP transaction{gbp.unconvertedCount === 1 ? '' : 's'} missing a rate - excluded from this total.</span>
+        )}
+      </p>
+    </div>
   );
 }
 
@@ -259,6 +304,9 @@ export default function AccountantOverviewPage() {
             <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
               <h2 className="text-sm font-semibold text-slate-700 px-4 pt-4 pb-2">Revenue vs. Expenses</h2>
               <LedgerTable rows={activePeriod?.rows ?? []} />
+              {activePeriod && (
+                <GbpEquivalentCard gbp={activePeriod.gbpEquivalent} multiCurrency={activePeriod.rows.length > 1} />
+              )}
               <p className="px-4 pb-4 pt-2 text-xs text-slate-400">
                 From the bank ledger (<Link href="/accountant/expenses" className="underline hover:text-slate-600">Expenses</Link> page). Fiscal year runs 1 Sep – 31 Aug. Formally invoiced/paid amounts (see Outstanding above) are tracked separately and not included here.
               </p>

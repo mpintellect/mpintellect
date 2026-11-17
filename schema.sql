@@ -739,6 +739,7 @@ CREATE TABLE IF NOT EXISTS accountant_expenses (
   currency TEXT NOT NULL DEFAULT 'USD',
   amount REAL NOT NULL, -- always a positive magnitude, `type` carries the sign/meaning
   type TEXT NOT NULL DEFAULT 'expense', -- 'expense' | 'revenue' | 'bank_fee' - lets one ledger hold a full bank-statement import (client payments, spend, bank fees), not just manual outflows
+  fx_rate_to_gbp REAL, -- historical spot rate on expense_date to convert `amount` -> GBP (e.g. 0.74345 for USD); NULL for GBP rows (implicitly 1) and for non-GBP rows not yet backfilled - never guessed, always looked up for the actual transaction date
   notes TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

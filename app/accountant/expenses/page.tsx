@@ -16,6 +16,7 @@ interface Expense {
   currency: string;
   amount: number;
   type: LedgerType;
+  fx_rate_to_gbp: number | null;
   notes: string | null;
 }
 
@@ -33,7 +34,7 @@ function money(n: number, currency: string) {
   return `${n.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currency}`;
 }
 
-const EMPTY_FORM = { expenseDate: '', description: '', category: '', vendor: '', currency: 'USD', amount: '', type: 'expense', notes: '' };
+const EMPTY_FORM = { expenseDate: '', description: '', category: '', vendor: '', currency: 'USD', amount: '', type: 'expense', fxRateToGbp: '', notes: '' };
 
 export default function AccountantExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -195,6 +196,16 @@ export default function AccountantExpensesPage() {
                 <option value="MAD">MAD</option>
                 <option value="GBP">GBP</option>
               </select>
+              {form.currency !== 'GBP' && (
+                <input
+                  type="number"
+                  step="0.00001"
+                  placeholder={`Exchange rate to GBP (e.g. 0.74345)`}
+                  value={form.fxRateToGbp}
+                  onChange={(e) => setForm({ ...form, fxRateToGbp: e.target.value })}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+                />
+              )}
               <select
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value })}
@@ -250,6 +261,11 @@ export default function AccountantExpensesPage() {
                     </td>
                     <td className={`py-2 px-4 text-right ${e.type === 'revenue' ? 'text-emerald-600' : 'text-red-600'}`}>
                       {e.type === 'revenue' ? '+' : '-'}{money(e.amount, e.currency)}
+                      {e.currency !== 'GBP' && e.fx_rate_to_gbp && (
+                        <div className="text-xs text-slate-400 font-normal mt-0.5">
+                          Rate {e.fx_rate_to_gbp} → {money(e.amount * e.fx_rate_to_gbp, 'GBP')}
+                        </div>
+                      )}
                     </td>
                     <td className="py-2 px-4 text-right">
                       <button onClick={() => handleDelete(e.id)} className="text-slate-400 hover:text-red-600">

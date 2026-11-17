@@ -157,8 +157,9 @@ export async function onRequestPost(context: any) {
 
     const result = await env.DB.prepare(
       `INSERT INTO accountant_invoices
-        (invoice_number, client_id, issue_date, due_date, currency, status, tax_rate, notes, payment_instructions)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        (invoice_number, client_id, issue_date, due_date, currency, status, tax_rate, notes, payment_instructions,
+         order_number, order_external_id, contract, payment_method, shipment_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
       .bind(
         invoiceNumber,
@@ -169,7 +170,12 @@ export async function onRequestPost(context: any) {
         status,
         taxRate,
         (body.notes || '').trim() || null,
-        (body.paymentInstructions || '').trim() || null
+        (body.paymentInstructions || '').trim() || null,
+        (body.orderNumber || '').trim() || null,
+        (body.orderExternalId || '').trim() || null,
+        (body.contract || '').trim() || null,
+        (body.paymentMethod || '').trim() || null,
+        (body.shipmentType || '').trim() || null
       )
       .run();
 
@@ -211,7 +217,8 @@ export async function onRequestPut(context: any) {
     await env.DB.prepare(
       `UPDATE accountant_invoices
        SET client_id = ?, issue_date = ?, due_date = ?, currency = ?, status = ?, tax_rate = ?,
-           notes = ?, payment_instructions = ?, paid_at = ?, updated_at = CURRENT_TIMESTAMP
+           notes = ?, payment_instructions = ?, order_number = ?, order_external_id = ?, contract = ?,
+           payment_method = ?, shipment_type = ?, paid_at = ?, updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`
     )
       .bind(
@@ -223,6 +230,11 @@ export async function onRequestPut(context: any) {
         Number(body.taxRate) || 0,
         (body.notes || '').trim() || null,
         (body.paymentInstructions || '').trim() || null,
+        (body.orderNumber || '').trim() || null,
+        (body.orderExternalId || '').trim() || null,
+        (body.contract || '').trim() || null,
+        (body.paymentMethod || '').trim() || null,
+        (body.shipmentType || '').trim() || null,
         paidAt,
         id
       )

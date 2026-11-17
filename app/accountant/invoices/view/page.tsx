@@ -15,6 +15,15 @@ import { ADMIN_SESSION_KEY } from '../../../admin/useAdminKey';
 // useSearchParams() requires a <Suspense> boundary in a static export build,
 // hence the wrapper component below.
 //
+// Styled to match the user's reference invoice template exactly (black thin
+// borders, boxed From/Client panels, centered "Invoice" title, a 5-column
+// meta row, a Form of Payment/Type of Shipment row, a Concept/Quantity/Uts/
+// Price/Value items table, and a Rate/Base/Value VAT box) - "Uts" is a
+// static label from that template (always "units"), not a stored field, so
+// nothing new has to be entered per line item. "Stamp and signature" is left
+// as a blank bordered area, same as the original (a physically signed/
+// stamped printout), not something generated here.
+//
 // "Print / Save as PDF" uses the browser's native window.print() rather than
 // a PDF-generation library - keeps this fully static, no Worker-side
 // rendering needed; @media print below hides everything except the invoice
@@ -45,6 +54,11 @@ interface Invoice {
   tax_rate: number;
   notes: string | null;
   payment_instructions: string | null;
+  order_number: string | null;
+  order_external_id: string | null;
+  contract: string | null;
+  payment_method: string | null;
+  shipment_type: string | null;
   subtotal: number;
   tax_amount: number;
   total: number;
@@ -63,8 +77,25 @@ function authHeaders() {
   return { Authorization: `Bearer ${sessionStorage.getItem(ADMIN_SESSION_KEY) || ''}` };
 }
 
-function money(n: number, currency: string) {
-  return `${n.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currency}`;
+function money(n: number) {
+  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatDate(d: string) {
+  const [y, m, day] = d.split('-').map(Number);
+  if (!y || !m || !day) return d;
+  const date = new Date(y, m - 1, day);
+  const suffix = (n: number) => (n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th');
+  return `${day}${suffix(day)} ${date.toLocaleString('en-US', { month: 'long' })}, ${y}`;
+}
+
+function Cell({ label, value, className = '' }: { label: string; value: React.ReactNode; className?: string }) {
+  return (
+    <div className={`border border-black ${className}`}>
+      <div className="text-xs font-bold px-2 py-1 border-b border-black">{label}</div>
+      <div className="text-sm px-2 py-1.5 min-h-[1.75rem]">{value}</div>
+    </div>
+  );
 }
 
 function InvoiceViewInner() {
@@ -113,6 +144,8 @@ function InvoiceViewInner() {
     return <div className="py-20 text-center text-red-600">{error || 'Invoice not found.'}</div>;
   }
 
+  const totalQuantity = items.reduce((sum, it) => sum + Number(it.quantity), 0);
+
   return (
     <div className="min-h-screen bg-slate-50 p-8 print:bg-white print:p-0">
       <div className="max-w-3xl mx-auto">
@@ -131,99 +164,144 @@ function InvoiceViewInner() {
           </button>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-10 print:border-0 print:shadow-none print:p-0">
-          <div className="flex justify-between items-start mb-10">
-            <div>
-              {company?.company_logo && (
-                <img src={company.company_logo} alt="" className="h-12 max-w-[10rem] object-contain mb-2" />
-              )}
-              <h1 className="text-xl font-bold text-slate-900">{company?.company_name || 'Your Company'}</h1>
-              {company?.company_address && <p className="text-sm text-slate-500 whitespace-pre-line">{company.company_address}</p>}
-              {company?.company_tax_id && <p className="text-sm text-slate-500">Tax ID: {company.company_tax_id}</p>}
-              {company?.company_email && <p className="text-sm text-slate-500">{company.company_email}</p>}
-              {company?.company_phone && <p className="text-sm text-slate-500">{company.company_phone}</p>}
+        <div className="bg-white shadow-sm print:shadow-none p-10 text-black font-sans text-sm">
+          {/* Logo */}
+          {company?.company_logo && (
+            <img src={company.company_logo} alt="" className="h-20 w-20 object-contain border border-black p-1 mb-3" />
+          )}
+
+          {/* From / Client panels */}
+          <div className="grid grid-cols-2 gap-6 mb-8">
+            <div className="border border-black">
+              <div className="font-bold px-2 py-1">{company?.company_name || 'Your Company'}</div>
+              <div className="px-2 pb-2 text-xs leading-relaxed">
+                {company?.company_address && <div className="whitespace-pre-line">Address: {company.company_address}</div>}
+              </div>
+              <div className="border-t border-black px-2 py-1.5 text-xs">
+                {company?.company_email && <div>E-Mail: {company.company_email}</div>}
+                {company?.company_phone && <div>Phone: {company.company_phone}</div>}
+              </div>
             </div>
-            <div className="text-right">
-              <h2 className="text-2xl font-bold text-slate-900 mb-1">INVOICE</h2>
-              <p className="text-sm text-slate-500">{invoice.invoice_number}</p>
-              <p className="text-xs uppercase tracking-wide mt-2 font-semibold text-slate-400">{invoice.status}</p>
+            <div>
+              <div className="text-xs font-bold mb-1">Client:</div>
+              <div className="border border-black">
+                <div className="font-bold px-2 py-1">{invoice.client_name}</div>
+                <div className="px-2 pb-2 text-xs leading-relaxed">
+                  {invoice.client_tax_id && <div>Company No. {invoice.client_tax_id}</div>}
+                  {invoice.client_address && (
+                    <div className="whitespace-pre-line">
+                      Address: {invoice.client_address}
+                      {invoice.client_country ? `, ${invoice.client_country}` : ''}
+                    </div>
+                  )}
+                  {invoice.client_email && <div>E-Mail: {invoice.client_email}</div>}
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 mb-10">
-            <div>
-              <h3 className="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-1">Bill To</h3>
-              <p className="font-medium text-slate-900">{invoice.client_name}</p>
-              {invoice.client_contact_name && <p className="text-sm text-slate-500">{invoice.client_contact_name}</p>}
-              {invoice.client_address && <p className="text-sm text-slate-500 whitespace-pre-line">{invoice.client_address}</p>}
-              {invoice.client_tax_id && <p className="text-sm text-slate-500">Tax ID: {invoice.client_tax_id}</p>}
-              {invoice.client_email && <p className="text-sm text-slate-500">{invoice.client_email}</p>}
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-slate-500">
-                Issue Date: <span className="text-slate-800">{invoice.issue_date}</span>
-              </p>
-              {invoice.due_date && (
-                <p className="text-sm text-slate-500">
-                  Due Date: <span className="text-slate-800">{invoice.due_date}</span>
-                </p>
-              )}
-            </div>
+          <h1 className="text-center text-2xl font-bold mb-6">Invoice</h1>
+
+          {/* Meta row */}
+          <div className="grid grid-cols-5 mb-4">
+            <Cell label="Date" value={formatDate(invoice.issue_date)} />
+            <Cell label="Number" value={invoice.invoice_number} className="border-l-0" />
+            <Cell label="Order Number" value={invoice.order_number || ''} className="border-l-0" />
+            <Cell label="Order external ID" value={invoice.order_external_id || ''} className="border-l-0" />
+            <Cell label="Contract" value={invoice.contract || ''} className="border-l-0" />
           </div>
 
-          <table className="w-full text-sm mb-6">
+          {/* Payment / shipment row */}
+          <div className="grid grid-cols-2 mb-6">
+            <Cell label="Form of Payment" value={invoice.payment_method || ''} />
+            <Cell label="Type of Shipment" value={invoice.shipment_type || ''} className="border-l-0" />
+          </div>
+
+          {/* Line items */}
+          <table className="w-full border-collapse mb-0">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-200">
-                <th className="py-2">Description</th>
-                <th className="py-2 text-right">Qty</th>
-                <th className="py-2 text-right">Unit Price</th>
-                <th className="py-2 text-right">Amount</th>
+              <tr className="text-xs font-bold">
+                <th className="border border-black px-2 py-1 w-10">№</th>
+                <th className="border border-black px-2 py-1 text-left">Concept</th>
+                <th className="border border-black px-2 py-1 w-16">Quantity</th>
+                <th className="border border-black px-2 py-1 w-14"></th>
+                <th className="border border-black px-2 py-1 w-20">Price</th>
+                <th className="border border-black px-2 py-1 w-24">Value</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((it) => (
-                <tr key={it.id} className="border-b border-slate-100">
-                  <td className="py-2 text-slate-800">{it.description}</td>
-                  <td className="py-2 text-right text-slate-600">{it.quantity}</td>
-                  <td className="py-2 text-right text-slate-600">{money(it.unit_price, invoice.currency)}</td>
-                  <td className="py-2 text-right text-slate-800">{money(it.quantity * it.unit_price, invoice.currency)}</td>
+              {items.map((it, i) => (
+                <tr key={it.id} className="text-sm">
+                  <td className="border border-black px-2 py-1 text-center">{i + 1}</td>
+                  <td className="border border-black px-2 py-1">{it.description}</td>
+                  <td className="border border-black px-2 py-1 text-center">{it.quantity}</td>
+                  <td className="border border-black px-2 py-1 text-center text-xs">Uts</td>
+                  <td className="border border-black px-2 py-1 text-right">{money(it.unit_price)}</td>
+                  <td className="border border-black px-2 py-1 text-right">{money(it.quantity * it.unit_price)}</td>
                 </tr>
               ))}
+              <tr className="text-sm font-bold">
+                <td className="border border-black px-2 py-1" colSpan={2}>Subtotal</td>
+                <td className="border border-black px-2 py-1 text-center" colSpan={2}>{totalQuantity}</td>
+                <td className="border border-black px-2 py-1"></td>
+                <td className="border border-black px-2 py-1 text-right">{money(invoice.subtotal)}</td>
+              </tr>
             </tbody>
           </table>
 
-          <div className="flex justify-end mb-10">
-            <div className="w-56 text-sm space-y-1">
-              <div className="flex justify-between text-slate-600">
-                <span>Subtotal</span>
-                <span>{money(invoice.subtotal, invoice.currency)}</span>
+          {/* VAT + total */}
+          <div className="flex justify-end mt-4">
+            <div className="w-72">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="text-xs font-bold">
+                    <th className="border border-black px-2 py-1 text-left"></th>
+                    <th className="border border-black px-2 py-1">Rate</th>
+                    <th className="border border-black px-2 py-1">Base</th>
+                    <th className="border border-black px-2 py-1">Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border border-black px-2 py-1 font-bold">VAT:</td>
+                    <td className="border border-black px-2 py-1 text-right">{invoice.tax_rate}%</td>
+                    <td className="border border-black px-2 py-1 text-right">{money(invoice.subtotal)}</td>
+                    <td className="border border-black px-2 py-1 text-right">{money(invoice.tax_amount)}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className="flex justify-between items-center border border-black px-2 py-1.5 mt-3 font-bold">
+                <span>Invoice total:</span>
+                <span>{money(invoice.total)}</span>
               </div>
-              {invoice.tax_rate > 0 && (
-                <div className="flex justify-between text-slate-600">
-                  <span>Tax ({invoice.tax_rate}%)</span>
-                  <span>{money(invoice.tax_amount, invoice.currency)}</span>
-                </div>
-              )}
-              <div className="flex justify-between font-bold text-slate-900 text-base border-t border-slate-200 pt-1">
-                <span>Total</span>
-                <span>{money(invoice.total, invoice.currency)}</span>
-              </div>
+              <div className="text-right text-xs mt-1">Currency: {invoice.currency}</div>
             </div>
           </div>
 
-          {invoice.payment_instructions && (
-            <div className="mb-6">
-              <h3 className="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-1">Payment Instructions</h3>
-              <p className="text-sm text-slate-600 whitespace-pre-line">{invoice.payment_instructions}</p>
+          {(invoice.payment_instructions || invoice.notes) && (
+            <div className="mt-8 space-y-4">
+              {invoice.payment_instructions && (
+                <div>
+                  <h3 className="text-xs font-bold mb-1">Payment Instructions</h3>
+                  <p className="text-sm whitespace-pre-line">{invoice.payment_instructions}</p>
+                </div>
+              )}
+              {invoice.notes && (
+                <div>
+                  <h3 className="text-xs font-bold mb-1">Notes</h3>
+                  <p className="text-sm whitespace-pre-line">{invoice.notes}</p>
+                </div>
+              )}
             </div>
           )}
 
-          {invoice.notes && (
-            <div>
-              <h3 className="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-1">Notes</h3>
-              <p className="text-sm text-slate-600 whitespace-pre-line">{invoice.notes}</p>
-            </div>
-          )}
+          <div className="mt-10 text-center">
+            <div className="font-bold text-sm mb-2">Stamp and signature</div>
+            <div className="border border-black h-24 w-56 mx-auto" />
+          </div>
+
+          <div className="mt-10 text-center text-xs text-slate-500">Page 1 of 1</div>
         </div>
       </div>
     </div>

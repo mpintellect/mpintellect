@@ -70,6 +70,11 @@ export default function AccountantInvoicesPage() {
   const [taxRate, setTaxRate] = useState('0');
   const [notes, setNotes] = useState('');
   const [paymentInstructions, setPaymentInstructions] = useState('');
+  const [orderNumber, setOrderNumber] = useState('');
+  const [orderExternalId, setOrderExternalId] = useState('');
+  const [contract, setContract] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('Bank Transfer');
+  const [shipmentType, setShipmentType] = useState('');
   const [items, setItems] = useState<LineItem[]>([{ ...EMPTY_ITEM }]);
 
   const load = useCallback(async () => {
@@ -113,6 +118,11 @@ export default function AccountantInvoicesPage() {
     setIssueDate(new Date().toISOString().slice(0, 10));
     setDueDate('');
     setNotes('');
+    setOrderNumber('');
+    setOrderExternalId('');
+    setContract('');
+    setPaymentMethod('Bank Transfer');
+    setShipmentType('');
     setItems([{ ...EMPTY_ITEM }]);
   };
 
@@ -156,6 +166,11 @@ export default function AccountantInvoicesPage() {
           taxRate: Number(taxRate) || 0,
           notes,
           paymentInstructions,
+          orderNumber,
+          orderExternalId,
+          contract,
+          paymentMethod,
+          shipmentType,
           items: cleanItems,
         }),
       });
@@ -293,6 +308,49 @@ export default function AccountantInvoicesPage() {
                   step="0.01"
                   value={taxRate}
                   onChange={(e) => setTaxRate(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-4">
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Order Number</label>
+                <input
+                  value={orderNumber}
+                  onChange={(e) => setOrderNumber(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Order External ID</label>
+                <input
+                  value={orderExternalId}
+                  onChange={(e) => setOrderExternalId(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Contract</label>
+                <input
+                  value={contract}
+                  onChange={(e) => setContract(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Form of Payment</label>
+                <input
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Type of Shipment</label>
+                <input
+                  value={shipmentType}
+                  onChange={(e) => setShipmentType(e.target.value)}
                   className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
                 />
               </div>

@@ -716,6 +716,11 @@ CREATE TABLE IF NOT EXISTS accountant_invoices (
   tax_rate REAL NOT NULL DEFAULT 0, -- percentage, e.g. 20 for 20% TVA - 0 when not applicable
   notes TEXT,
   payment_instructions TEXT, -- bank details shown on the invoice, prefilled from accountant_settings but editable per invoice
+  order_number TEXT, -- fields matching the reference invoice template's meta row - all optional, usually blank
+  order_external_id TEXT,
+  contract TEXT,
+  payment_method TEXT, -- short label e.g. "Bank Transfer" - distinct from payment_instructions' full bank-details block
+  shipment_type TEXT,
   paid_at TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

@@ -171,6 +171,13 @@ export default function AccountantExpensesPage() {
                 className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm md:col-span-1 col-span-2"
               />
               <input
+                type="text"
+                placeholder="Reference (invoice #, etc.)"
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm md:col-span-1 col-span-2"
+              />
+              <input
                 type="number"
                 step="0.01"
                 placeholder="Amount"
@@ -237,7 +244,10 @@ export default function AccountantExpensesPage() {
                     <td className="py-2 px-4 text-slate-500">{TYPE_LABELS[e.type] || e.type}</td>
                     <td className="py-2 px-4 text-slate-500">{e.category || '—'}</td>
                     <td className="py-2 px-4 text-slate-500">{e.vendor || '—'}</td>
-                    <td className="py-2 px-4 text-slate-700">{e.description}</td>
+                    <td className="py-2 px-4 text-slate-700">
+                      {e.description}
+                      {e.notes && <div className="text-xs text-slate-400 mt-0.5">Ref: {e.notes}</div>}
+                    </td>
                     <td className={`py-2 px-4 text-right ${e.type === 'revenue' ? 'text-emerald-600' : 'text-red-600'}`}>
                       {e.type === 'revenue' ? '+' : '-'}{money(e.amount, e.currency)}
                     </td>
